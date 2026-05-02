@@ -1,5 +1,7 @@
 # archeglyph
 
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+
 A node-and-edge graph rendering tool with strict content/style separation — like LaTeX for diagrams.
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
@@ -112,4 +114,8 @@ See [`docs/design.md` §2](docs/design.md) for the full set. Highlights:
 
 ## License
 
-TBD.
+**[GNU Affero General Public License v3.0 or later](LICENSE)** (AGPL-3.0-or-later).
+
+Why AGPL: archeglyph is meant to stay open. AGPL ensures forks — including network-served forks like a hosted public instance — also remain open. You can use archeglyph freely (locally, in your project, on your own infra); modifications you distribute or host as a service must be shared back under the same license. Internal use is unrestricted.
+
+Files include `SPDX-License-Identifier: AGPL-3.0-or-later` headers as a short-form indicator.

@@ -3,12 +3,22 @@ node_modules/
 **/dist/
 **/.bun-cache/
 
-# archegraph build artifacts (composed contract / dag / gcode are derived)
+# archegraph build artifacts (derived from spec + source)
 .archegraph/specs/*/gcontract.pb
+.archegraph/specs/*/gcontract.db
 .archegraph/specs/*/gspec_delta.pb
 .archegraph/specs/*/dag.pb
 .archegraph/gcode.pb
-.archegraph/archebuild.db
+.archegraph/gcode.db
+.archegraph/index.scip
+.archegraph/server.pid
+.archegraph/server.port
+
+# archebuild runtime (build server's per-project state)
+.archebuild/
+archebuild.db
+archebuild.db-shm
+archebuild.db-wal
 
 # editor / build outputs (when they exist)
 **/.vite/

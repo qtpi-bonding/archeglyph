@@ -1,0 +1,33 @@
+server:
+  db_path: "./archebuild.db"
+
+execution:
+  max_parallelism: 1
+  default_timeout_seconds: 180
+  executor: shell
+
+  prompt_template: |
+    Your task is to {{change_type}} {{symbols}} in `{{file}}` ({{language}}).
+
+    Spec:
+    ```
+    {{self}}
+    ```
+
+    Author notes:
+    {{description}}
+
+    Requirements:
+    - Follow `docs/style-guide.md` exactly — especially §3.3 (Option<T> / Result<T, E>
+      canonical shapes) and §3.5–3.6 (named imports/exports only).
+    - Include `// SPDX-License-Identifier: AGPL-3.0-or-later` as the first line.
+    - Only create or modify the file `{{file}}`. Do not touch other files.
+    - Match the exports listed in the author notes EXACTLY — same names, same
+      order, same shapes.
+
+  commands:
+    - attempts: 3
+      command: 'claude -p "$(cat {{config_file}})" --output-format json --max-turns 8 --allowedTools "Write,Edit,Read"'
+
+git:
+  commit_template: "feat: {{node_label}}"

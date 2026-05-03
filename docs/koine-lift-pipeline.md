@@ -1,7 +1,7 @@
 # archeglyph — project-layer pipeline for Koine lifting
 
 **Status:** forward-looking note. Not required for v1 implementation; required before archeglyph's TS source can be lifted into Koine's Archelemma IR as a unit. Capture now so the requirement isn't lost when we get there.
-**Date:** 2026-05-02
+**Date:** 2026-05-02 (refreshed after Koine slices 1-7 shipped)
 
 ## Context
 
@@ -31,46 +31,40 @@ For each lift run across the archeglyph monorepo:
 
 Output: one Archelemma module representing the entire archeglyph repo's structural surface, with annotated holes where lifter coverage is incomplete.
 
-## Required code-style constraints
+## Code-style rules
 
-For project-layer stitching to work, archeglyph code must follow three rules from day one. These are cheap to follow and expensive to retrofit:
+Code-style rules — what does and doesn't lift, what's forbidden by design, what's engineering debt, and the cascading-loss patterns to avoid — live in **[`docs/style-guide.md`](./style-guide.md)**, the consolidated AI-facing guide.
 
-1. **No namespace imports** — `import * as ns from './foo'; ns.bar()` doesn't lift (the namespace `ns` has no value-type the typechecker can model). Use **named imports** instead:
-   - ❌ `import * as utils from './utils'; utils.helper()`
-   - ✅ `import { helper } from './utils'; helper()`
+Three pipeline-relevant constraints worth highlighting (full reasoning + alternatives in the style guide):
 
-2. **No re-exports** — `export * from './sub'` and `export { x } from './sub'` aren't modeled. Each `index.ts` (if used at all) must re-import + re-declare/re-export explicitly, or consumers import directly from sub-paths:
-   - ❌ `export * from './loaders';` (in `core/src/index.ts`)
-   - ✅ Consumers import from `'@archeglyph/core/loaders'` directly
-   - ✅ Or: `import { loadDiagram } from './loaders'; export { loadDiagram };` (explicit re-export)
+1. **No namespace imports** (`import * as ns from './foo'`) — the namespace `ns` has no value-type the typechecker can model.
+2. **No re-exports** (`export * from './sub'`, `export { x } from './sub'`) — not modeled by the lifter; re-import + re-declare instead.
+3. **No `export default`** — use named exports throughout.
 
-3. **No `export default`** — works for named exports; default-export shape is "untested" per Koine docs. Use named exports throughout:
-   - ❌ `export default function render(...) { ... }`
-   - ✅ `export function render(...) { ... }`
-
-These constraints affect package public-API ergonomics slightly (more verbose imports) but don't affect anything else. They're consistent with the broader "explicit over implicit" style that the lifter rewards.
+These are cheap to follow from day one and expensive to retrofit. See style-guide §3.5–3.6 and §4 for the reasoning and full set of import/export constraints.
 
 ## Lifter feature requirements
 
-The pipeline assumes some Koine lifter features land that are not yet shipped. See the parallel discussion of priorities. Minimum requirements for archeglyph to lift its core logic:
+As of 2026-05-02, **Koine lifter slices 1-7 have shipped**, covering most of the surface that archeglyph's pure-logic code needs:
 
-- `Option<T>` as a built-in Coproduct (or: archeglyph's protobuf codegen emits `Option<T>` directly instead of `T | undefined`)
-- `Result<T, E>` as a built-in Coproduct (archeglyph uses Result-style error handling instead of try/catch)
-- `Map<K, V>` as a built-in type (many proto `map<K, V>` fields)
-- Unary operators (`!`, `-`, `+`)
-- Type assertions (`as T`) — lift as identity at FFI seams
+- ✅ `Option<T>`, `Result<T, E>`, `Map<K, V>`, `Set<T>`, `Promise<T>` as built-in types
+- ✅ `null` / `undefined` lift to `None`; `T | null` types collapse to `Option<T>`
+- ✅ Optional chaining (`?.`) and nullish coalescing (`??`)
+- ✅ Unary operators (`!`, `-`, `+`)
+- ✅ Type assertions (`as T`, `as const`) — lift as identity at boundary calls
+- ✅ Array indexing (`arr[i]` → `List.at`)
+- ✅ `for...of` over arrays
+- ✅ Index signatures (`interface M { [k]: V }` → `Map<K, V>` alias)
+- ✅ `let` accumulator pattern (flat reassignment via SSA rewrite)
+- ✅ `++` / `--` desugar
+- ✅ LHS and parameter destructuring (basic shapes)
+- ✅ `break` and `continue` inside loop bodies
+- ✅ Class parameter properties, field initializers, static fields, static method calls
+- ✅ Same-module interface inheritance
 
-The pipeline can run today with current lifter capabilities; it just produces more `Unsupported` holes per file. As lifter features land, the same pipeline produces denser IR with no archeglyph-side changes.
+Items deferred (see style-guide §5 for workarounds): explicit enum values, bare `None` constructor recognition, auto-wrap `T → Some(T)`, cross-module interface inheritance, spread/rest, default parameters, per-method generics.
 
-## Code patterns to avoid (cause cascading IR holes)
-
-Beyond the import constraints, archeglyph code should also avoid the three patterns that cause **block-level or scope-level cascading losses** in lifted IR (vs single-point losses, which are tolerable):
-
-1. **Mutated `let`** — one reassignment cascades through the entire scope (variable + every reference becomes Unsupported). Use `const` + recursion or fold helpers.
-2. **`break` / `continue` / early `return` inside loops** — the entire loop becomes one Unsupported statement. Use recursive helpers or accumulate-then-process patterns.
-3. **`try` / `catch`** — entire try block becomes Unsupported. Use `Result<T, E>` everywhere and avoid try/catch except at the very outer JS-interop boundary (where the loss is bounded).
-
-Single-point losses are acceptable (async/await, throw, optional chaining, type assertions, null/undefined literals at JS seams). The function's structural shape lifts cleanly around them; only the specific expression becomes a leaf-level Unsupported.
+The pipeline can run today; as remaining items land, the same pipeline produces denser IR with no archeglyph-side changes.
 
 ## Implementation notes (when this work begins)
 
@@ -84,6 +78,6 @@ Single-point losses are acceptable (async/await, throw, optional chaining, type 
 Not v1. v1 ships the archeglyph CLI + editor + core engine without any Koine integration. The lift pipeline becomes relevant when:
 
 - archeglyph is mature enough that lift-clean source is worth the discipline overhead, AND
-- Koine lifter has shipped enough features that lifting archeglyph produces useful IR (rather than mostly-Unsupported placeholder forests).
+- the remaining engineering-debt items in style-guide §5 are far enough along that lifting archeglyph produces useful IR (rather than mostly-Unsupported placeholder forests).
 
-Until then, the value of this doc is: **don't paint into a corner**. Apply the three code-style constraints (no namespace imports, no re-exports, no `export default`) from day one of archeglyph implementation, and avoid the three cascading-loss patterns (mutated `let`, break-in-loop, try/catch wrapping logic). These are cheap discipline; retrofitting them later is expensive.
+Until then, the value of this doc is: **don't paint into a corner**. Apply the code-style rules in `style-guide.md` from day one. They're cheap discipline now; retrofitting them later is expensive.

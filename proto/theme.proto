@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+syntax = "proto3";
+package archeglyph.theme.v1;
+
+import "style.proto";
+
+message Theme {
+  uint32 schema_version = 1;
+  string name = 2;
+  optional string description = 3;
+
+  // Future: theme inheritance. v1: empty.
+  optional string extends = 4;
+
+  // Primitive design values. Token references in style files use these.
+  Tokens tokens = 5;
+
+  // Named components per element type. Each component is referenced by
+  // `name` from style entries' `component` field. No match expressions —
+  // binding is always explicit, produced by external tools or hand-authoring.
+  repeated NodeComponent       node_components = 6;
+  repeated EdgeComponent       edge_components = 7;
+  repeated NodeComponent       group_components = 8;       // groups use NodeComponent
+  repeated AnnotationComponent annotation_components = 9;
+
+  // No canvas field on Theme. Canvas is per-document data, lives in Stylesheet.
+  // Theme can express its canvas-related defaults via tokens — e.g.,
+  //   theme.tokens.colors["background"] = "#1a1a1a"
+  //   theme.tokens.sizes["node_spacing"] = 40
+  // — and stylesheets reference them: canvas { background { value: "$colors.background" } }.
+  // The merge "use stylesheet value if set, else theme token, else code default" is
+  // resolver logic, not encoded in the schema.
+}
+
+// ============================================================================
+// COMPONENT BUNDLES — typed groupings of glyphs per element type.
+// Each is name-bound only; the name is referenced from style entries.
+// ============================================================================
+
+message NodeComponent {
+  // Required. Element style entries reference this via their `component` field.
+  string name = 1;
+
+  // The styling — same Glyph types used in style entries.
+  optional archeglyph.style.v1.Glyph2D shape = 2;
+  optional archeglyph.style.v1.Typography typography = 3;
+}
+
+message EdgeComponent {
+  string name = 1;
+  optional archeglyph.style.v1.Glyph1D connection = 2;
+  optional archeglyph.style.v1.Typography typography = 3;
+}
+
+message AnnotationComponent {
+  string name = 1;
+  optional archeglyph.style.v1.Glyph2D shape = 2;
+  optional archeglyph.style.v1.Typography typography = 3;
+  optional archeglyph.style.v1.Glyph1D callout = 4;
+}
+
+message Tokens {
+  // Color tokens. Values are literal hex/rgb. Referenced from style as
+  // "$colors.<name>" anywhere a Color is expected.
+  map<string, string> colors = 1;
+
+  // Typography tokens. Referenced as "$fonts.<name>".
+  map<string, FontSpec> fonts = 2;
+
+  // Numeric sizes (for stroke widths, glow radii, font sizes, etc).
+  // Referenced as "$sizes.<name>".
+  map<string, double> sizes = 3;
+
+  // Spacing values (for paddings, label offsets, etc).
+  map<string, double> spacings = 4;
+
+  // Stroke dash patterns ("5,5", "2,2,5,5", etc).
+  // Referenced as "$dashes.<name>".
+  map<string, string> dashes = 5;
+
+  // Custom SVG path data for Glyph2D.shape_kind.custom_path_ref.
+  // Referenced as "$shape_paths.<name>".
+  map<string, string> shape_paths = 6;
+}
+
+message FontSpec {
+  string family = 1;
+  optional double size = 2;
+  optional archeglyph.style.v1.FontWeight weight = 3;
+}

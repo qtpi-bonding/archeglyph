@@ -1,0 +1,146 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+syntax = "proto3";
+package archeglyph.content.v1;
+
+// ============================================================================
+// 1. ENVELOPE
+// ============================================================================
+
+// Diagram is the file-level artifact: a Graph + presentation envelope metadata.
+message Diagram {
+  uint32 schema_version = 1;
+
+  // Stable id for this diagram artifact. Required.
+  string id = 2;
+
+  // Human-readable title (localizable). Used by tooling/file-pickers;
+  // NOT rendered into the SVG by default.
+  repeated Localization title = 3;
+
+  // The graph topology.
+  Graph graph = 4;
+
+  // Envelope-level metadata.
+  DiagramMetadata metadata = 5;
+}
+
+message DiagramMetadata {
+  // Where this diagram came from: "hand", "archegraph-importer-v1", etc.
+  optional string generator = 1;
+
+  // ISO 8601 timestamps.
+  optional string created_at = 2;
+  optional string updated_at = 3;
+
+  // BCP 47 code of the canonical Localization to fall back to when render-time
+  // --locale doesn't match any explicit Localization entry.
+  // Defaults to "en" if unset.
+  optional string canonical_locale = 4;
+
+  // Free-form, namespaced keys. Convention: "<tool>.<key>".
+  // e.g., "archegraph.source_commit", "archegraph.symbol_root".
+  map<string, string> extra = 10;
+}
+
+// ============================================================================
+// 2. GRAPH (pure topology — could be used standalone)
+// ============================================================================
+
+message Graph {
+  // Nodes keyed by id. Map enforces uniqueness.
+  // Iteration during render: sorted lex by key.
+  map<string, Node> nodes = 1;
+
+  // Edges keyed by id. Map enforces uniqueness.
+  // Multiple edges between same (source, target) supported via different ids.
+  map<string, Edge> edges = 2;
+
+  // Groups keyed by id. Groups may nest (a group's parent_group references another group).
+  map<string, Group> groups = 3;
+}
+
+message Node {
+  // Stable id. MUST equal the key in Graph.nodes.
+  string id = 1;
+
+  // Display label (one Localization entry per locale).
+  // Render picks based on --locale flag, falls back to canonical_locale's entry.
+  // If empty, renderer falls back to `id` for display.
+  repeated Localization label = 2;
+
+  // Containing group (single physical containment; cross-cutting concerns use tags).
+  // Groups may themselves have a parent_group → nested hierarchy supported.
+  optional string parent_group = 3;
+
+  // Free-form, namespaced tags. e.g., "archegraph.symbol", "team": "backend".
+  // Categorization (what was previously the `kind` field) goes here by convention —
+  // common keys: "kind", "type", "layer", "domain". Authors pick what suits their
+  // domain. Importers use namespaced keys (e.g., "archegraph.kind").
+  map<string, string> tags = 4;
+}
+
+message Edge {
+  // Stable id. MUST equal the key in Graph.edges.
+  // Convention: "<source>__<target>" with optional "__<n>" suffix when multiple.
+  string id = 1;
+
+  // Source node id. Must reference an existing node.
+  string source = 2;
+
+  // Target node id.
+  string target = 3;
+
+  // Display label (localizable).
+  repeated Localization label = 4;
+
+  // Disambiguates multiple edges between same (source, target).
+  uint32 ordinal = 5;
+
+  // Free-form tags. Categorization goes here (e.g., "kind": "depends_on").
+  map<string, string> tags = 6;
+}
+
+message Group {
+  // Stable id. MUST equal the key in Graph.groups.
+  string id = 1;
+
+  // Display label (localizable).
+  repeated Localization label = 2;
+
+  // Parent group id, for nested groups. Empty = top-level group.
+  // Group hierarchy must be acyclic (validation enforces).
+  optional string parent_group = 3;
+
+  // Free-form tags.
+  map<string, string> tags = 4;
+}
+
+// ============================================================================
+// 3. LOCALIZATION (one locale's text content)
+// ============================================================================
+
+// One locale's version of a text. Markdown source with KaTeX-style math.
+// Used as `repeated Localization` wherever localizable text is needed
+// (Node/Edge/Group `label`, Diagram `title`, AnnotationEntry `content`).
+//
+// Document's DiagramMetadata.canonical_locale determines which entry is the
+// fallback when render-time --locale doesn't match any explicit entry.
+//
+// Markdown formatting (rendered in v2+, treated literally in v1):
+//   plain text                       -> as-is
+//   **bold**, *italic*               -> formatting
+//   _underline_, ~~strikethrough~~   -> formatting
+//   `inline code`                    -> monospace
+//   [link text](url)                 -> hyperlink
+//   \n                               -> line break
+//
+// Math (KaTeX convention; rendered in v2+):
+//   $...$                            -> inline math
+//   $$...$$                          -> display math (larger, block-level)
+message Localization {
+  // BCP 47 locale code, e.g., "en", "es", "fr-CA", "zh-Hans".
+  string locale = 1;
+
+  // Markdown source in this locale.
+  string source = 2;
+}

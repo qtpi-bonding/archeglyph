@@ -1,0 +1,11 @@
+services:
+  dev:
+    build: .
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    ports:
+      - "5173:5173"
+    command: bash
+    stdin_open: true
+    tty: true

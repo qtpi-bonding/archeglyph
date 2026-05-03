@@ -1,0 +1,15 @@
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - BASIC
+  except:
+    # design.md §11 / architecture.md commit to a flat proto/ layout
+    # (proto/{content,style,theme}.proto). These two rules want
+    # proto/archeglyph/<pkg>/v1/<file>.proto. Honor the design.
+    - DIRECTORY_SAME_PACKAGE
+    - PACKAGE_DIRECTORY_MATCH
+breaking:
+  use:
+    - FILE

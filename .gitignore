@@ -1,0 +1,20 @@
+node_modules/
+.bun-cache/
+**/dist/
+**/.bun-cache/
+
+# archegraph build artifacts (composed contract / dag / gcode are derived)
+.archegraph/specs/*/gcontract.pb
+.archegraph/specs/*/gspec_delta.pb
+.archegraph/specs/*/dag.pb
+.archegraph/gcode.pb
+.archegraph/archebuild.db
+
+# editor / build outputs (when they exist)
+**/.vite/
+**/.parcel-cache/
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*~

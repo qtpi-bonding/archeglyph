@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - local: ["bunx", "protoc-gen-es"]
+    out: packages/proto/src/gen
+    opt:
+      - target=ts

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "archegraph": {
+      "command": "archegraph-mcp",
+      "args": []
+    }
+  }
+}

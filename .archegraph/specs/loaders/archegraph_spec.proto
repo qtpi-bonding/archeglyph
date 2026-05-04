@@ -168,34 +168,3 @@ extend google.protobuf.MessageOptions {
 extend google.protobuf.ServiceOptions {
   optional ServiceOptions svc_opts = 50000;
 }
-
-// ── Retired field numbers (DO NOT REUSE) ───────────────────────────────────
-//
-// proto2 `reserved` is illegal inside `extend` blocks (it's only valid
-// inside a regular `message` body), so we can't enforce these at the
-// schema level. Treat the list below as the canonical "burned" set —
-// any future extend on these google types must skip these numbers.
-// Recycling them risks silently corrupting old serialized data tagged
-// at the same numbers under the prior schema.
-//
-// MessageOptions:
-//   50000 — was `optional string msg_file`. Now reused intentionally as
-//           the envelope (optional MessageOptions opts = 50000;) — wire
-//           data shape is incompatible (length-delimited msg vs string),
-//           but compose only reads the new shape so old snapshots never
-//           cross-pollute. Keeping the field number aligns with how the
-//           dogfood specs were tagged on disk and keeps the extension's
-//           "this is THE archegraph annotation" identity consistent.
-//   50001 — was `optional string svc_file` on ServiceOptions. Same
-//           reuse pattern (envelope on ServiceOptions at 50000 here too,
-//           in a different scope, so this number is free / unused now).
-//   50002 — was `repeated HelperMethod helper_method` (never wired up).
-//           Reserved permanently.
-//   50003 — was `repeated string body` on MethodOptions. Moved to
-//           MethodBody entries on the implementation message —
-//           interfaces don't have bodies; the prior collapse was a
-//           category error. Reserved permanently. See
-//           docs/specs/2026-04-30-implementation-as-first-class-spec-entity.md.
-//
-// MethodOptions:
-//   50003 — see above.

@@ -111,16 +111,25 @@ service Loader {
 // self-referential pattern produces 0.)
 //
 // Body implementation guidance for the agent:
-// - Use @bufbuild/protobuf's textproto parser (`fromTextproto` against the
-//   appropriate Schema descriptor: DiagramSchema / StylesheetSchema /
-//   ThemeSchema, all imported from @archeglyph/proto/gen/<file>_pb).
+// - Use `fromTextproto` from `@archeglyph/proto/util/textproto` against the
+//   appropriate Schema descriptor (DiagramSchema / StylesheetSchema /
+//   ThemeSchema, imported from @archeglyph/proto/gen/<file>_pb).
+// - NOTE: `fromTextproto` is currently a STUB that throws at runtime. The
+//   JS/TS protobuf ecosystem ships no proto3 text-format parser; a real
+//   one will land in a follow-up. For this pillar, just call the stub —
+//   loader-pillar callers throwing at runtime is the expected interim
+//   behavior. Do NOT try to find an alternative parser; do NOT inline a
+//   parser; do NOT switch to JSON. The stub exists, import it, call it.
 // - Validate that the parsed message's `schema_version` field equals 1.
-//   Throw an `Error` with a descriptive message if not.
-// - On parse failure (textproto syntax invalid), let the parser's exception
-//   propagate — boundary code is allowed to throw per docs/style-guide.md
-//   §3.7 (this file lives at packages/core/src/loaders/, a boundary path).
-// - Return the parsed message directly. Do not wrap in Result here; a thin
-//   hand-authored adapter layer in `loaders/index.ts` will translate
+//   Throw an `Error` with a descriptive message if not. (This validation
+//   is unreachable today since the parser stub throws first, but write it
+//   anyway — it documents the post-parse contract for when the real
+//   parser lands.)
+// - On parse failure, let the parser's exception propagate — boundary
+//   code is allowed to throw per docs/style-guide.md §3.7 (this file
+//   lives at packages/core/src/loaders/, a boundary path).
+// - Return the parsed message directly. Do not wrap in Result here; a
+//   thin hand-authored adapter layer in `loaders/index.ts` will translate
 //   throwing calls into Result<T, LoadError> for pure-logic callers.
 //
 // Imports the agent will need:
@@ -130,11 +139,9 @@ service Loader {
 // - `Diagram`, `Stylesheet`, `Theme` (data types) — from
 //   `@archeglyph/proto/gen/content_pb`, `@archeglyph/proto/gen/style_pb`,
 //   `@archeglyph/proto/gen/theme_pb` respectively.
-// - `DiagramSchema`, `StylesheetSchema`, `ThemeSchema` (codec descriptors,
-//   needed for textproto parsing) — same modules as their type counterparts.
-// - `fromTextproto` (or analogous) from `@bufbuild/protobuf/wire/json` or
-//   the textproto-specific module if `@bufbuild/protobuf` provides one;
-//   the agent should grep for the canonical import path in node_modules.
+// - `DiagramSchema`, `StylesheetSchema`, `ThemeSchema` (codec descriptors)
+//   — same modules as their type counterparts.
+// - `fromTextproto` from `@archeglyph/proto/util/textproto` (the stub).
 message LoaderImpl {
   option (archegraph.spec.opts) = {
     impl_of:   "Loader"

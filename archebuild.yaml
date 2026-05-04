@@ -2,32 +2,132 @@ server:
   db_path: "./archebuild.db"
 
 execution:
-  max_parallelism: 1
-  default_timeout_seconds: 180
+  max_parallelism: 2
+  default_timeout_seconds: 600
   executor: shell
 
   prompt_template: |
-    Your task is to {{change_type}} {{symbols}} in `{{file}}` ({{language}}).
+    Implement {{symbols}} in `{{file}}` ({{language}}, change_type={{change_type}}, kind={{kind}}).
 
-    Spec:
+    Description: {{description}}
+
+    Spec + existing impl (if any):
     ```
     {{self}}
     ```
 
-    Author notes:
-    {{description}}
+    Generated schema (on disk next to your target — empty for AGENT_ONLY):
+    ```
+    {{schema}}
+    ```
 
-    Requirements:
-    - Follow `docs/style-guide.md` exactly — especially §3.3 (Option<T> / Result<T, E>
-      canonical shapes) and §3.5–3.6 (named imports/exports only).
-    - Include `// SPDX-License-Identifier: AGPL-3.0-or-later` as the first line.
-    - Only create or modify the file `{{file}}`. Do not touch other files.
-    - Match the exports listed in the author notes EXACTLY — same names, same
-      order, same shapes.
+    Types this references:
+    {{out_dependency}}
+
+    Contained members (methods/fields):
+    {{out_containment}}
+
+    Callers (where this is used):
+    {{in_dependency}}
+
+    Project rules:
+    - Follow `docs/style-guide.md` exactly. Especially §3.3 (Option<T> / Result<T, E>
+      canonical shapes — import from `@archeglyph/proto/util/result`), §3.5–3.6
+      (named imports / exports only, no re-exports), §3.7 (boundary code rules).
+    - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
+    - For services: write a class `<Interface>Impl implements <Interface>`.
+      Import the interface and request/response types from `./schema.gen`.
+      For data-model types (Diagram / Stylesheet / Theme etc.), import from the
+      buf-generated path shown in `{{out_dependency}}` — typically
+      `@archeglyph/proto/gen/<file>_pb`. Do NOT re-export `<Interface>` from
+      impl.ts — the sibling `index.ts` barrel pulls it from schema.gen and
+      would collide.
+    - Implement method bodies FULLY per the description. Do not stub with
+      `throw new Error('not implemented')`.
+    - For brownfield MODIFIED files: edit in place, preserve existing content.
+
+  delete_prompt_template: |
+    Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.
+
+    File: {{file}}
+    Description: {{description}}
+
+    Existing definition (to remove):
+    ```
+    {{self}}
+    ```
+
+    Callers / referencers (already migrated by upstream nodes; do not touch):
+    {{in_dependency}}
+
+    Rules:
+    - If `{{file}}` contained only `{{symbol}}` (no other top-level symbols),
+      delete the whole file.
+    - Otherwise, excise just the symbol's definition; leave everything else
+      intact.
 
   commands:
-    - attempts: 3
-      command: 'claude -p "$(cat {{config_file}})" --output-format json --max-turns 8 --allowedTools "Write,Edit,Read"'
+    - attempts: 4
+      command: 'claude -p "$(cat {{config_file}})" --model opus --output-format json --max-turns 100 --allowedTools "Write,Edit,Read,Bash,Glob,Grep"'
+
+  # Cross-archegraph-boundary type imports. archegraph's TS codegen needs
+  # to know how to spell the import for a foreign-namespace proto package
+  # — info it can't derive (the proto only has its package FQN; the TS
+  # specifier is a buf+npm convention). Map each external proto package
+  # to its canonical buf-emitted module path. PR G feature.
+  codegen:
+    external_package_imports:
+      "archeglyph.content.v1": "@archeglyph/proto/gen/content_pb"
+      "archeglyph.style.v1":   "@archeglyph/proto/gen/style_pb"
+      "archeglyph.theme.v1":   "@archeglyph/proto/gen/theme_pb"
+
+  # Refresh buf-generated TS before the build sees the source tree, so the
+  # data-model types in `packages/proto/src/gen/` can never be stale w.r.t.
+  # the .protos when compose / index runs against the worktree.
+  pre_dag:
+    # `-p archeglyph` pins the compose project name. Without it, compose
+    # derives the project name from the worktree dir (e.g.
+    # `archebuild-<id>-_dag`) which produces an invalid Docker image
+    # reference (`-_` is rejected as malformed). Pinned name also caches
+    # the built image across all per-DAG and per-node worktrees.
+    #
+    # `-T` disables pseudo-TTY allocation. The build server inherits its
+    # parent shell's TTY; without -T, `docker compose run` allocates a
+    # PTY and is then SIGTTIN-stopped the moment it tries to read input.
+    # Buf is fully non-interactive so we don't need a TTY anyway.
+    #
+    # `bun install` runs first because each per-DAG worktree is a fresh
+    # git checkout with no `node_modules/`. Without this step, `buf
+    # generate`'s `bunx protoc-gen-es` falls through to the unscoped npm
+    # name (the binary's name in @bufbuild/protoc-gen-es) and 404s. With
+    # `--frozen-lockfile`, install is a few-second no-op-or-pull from the
+    # bun cache — fast enough to run per build.
+    - label: regen-proto
+      # `< /dev/null`: the build server inherits its parent's tty as stdin
+      # and forks children with that same stdin. `-T` disables docker's PTY
+      # *output* allocation, but stdin still points at the user's tty. As
+      # soon as anything inside the container probes stdin (bun install
+      # progress UI does this), SIGTTIN stops the whole tree because the
+      # child isn't the foreground process group. Redirecting stdin to
+      # /dev/null severs the controlling-tty link cleanly.
+      command: docker compose -p archeglyph run --rm -T dev bash -lc "bun install --frozen-lockfile && bun run proto:gen" < /dev/null
+
+  # Auto-SCIP runs from cwd = worktree_root, and `npx @sourcegraph/scip-typescript`
+  # needs the binary resolvable in `./node_modules/.bin/`. The link inherits the
+  # project root's bun-installed deps (bun.lock pins @bufbuild/protoc-gen-es +
+  # typescript). scip-typescript emits symbols based on AST + tsconfig include —
+  # unresolved package imports don't block local symbol emission, so the
+  # workspace-cross-package types resolve via tsconfig paths at typecheck time
+  # without needing per-worktree node_modules surgery.
+  post_dag:
+    - label: link-node-modules
+      command: |
+        [ -e node_modules ] || ln -s ../../../node_modules node_modules
+
+retries:
+  agent: 3
+  timeout: 3
+  commit: 1
 
 git:
   commit_template: "feat: {{node_label}}"

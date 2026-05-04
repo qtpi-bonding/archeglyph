@@ -1,0 +1,201 @@
+syntax = "proto2";
+package archegraph.spec;
+
+import "google/protobuf/descriptor.proto";
+
+// Annotations for archegraph spec protos.
+// Import this in user-written .proto specs to annotate
+// messages and services with target file paths and implementation
+// metadata.
+//
+// All annotations live inside a single per-scope envelope —
+// (archegraph.spec.opts) on MessageOptions or ServiceOptions — so
+// new fields are an internal evolution rather than a fresh global
+// extension-number choice. The 5XXXX range we burn is one number
+// per scope (50000), not one per annotation.
+//
+// Example — data struct:
+//
+//   import "archegraph_spec.proto";
+//   message Account {
+//     option (archegraph.spec.opts) = {
+//       msg_file: "src/models/account/implement.rs"
+//     };
+//     string account_id = 1;
+//   }
+//
+// Example — service interface + struct + impl block (one code entity per
+// message, one file per code entity, multi-impl ready):
+//
+//   service AccountStore {
+//     option (archegraph.spec.svc_opts) = {
+//       svc_file: "src/account_store/schema_gen.rs"
+//     };
+//     rpc ForgetAccount(ForgetAccountRequest) returns (ForgetAccountResponse);
+//   }
+//
+//   // The data struct (separate from any impl block).
+//   message AccountStorePostgres {
+//     option (archegraph.spec.opts) = {
+//       msg_file: "src/account_store/account_store_postgres.rs"
+//     };
+//   }
+//
+//   // Impl block. (impl_for, impl_of) names the (struct, trait) pair, and
+//   // impl_file is this block's own dedicated file. Add a sibling message
+//   // with the same impl_for and a different impl_of to land a second
+//   // trait impl on the same struct (e.g. HealthCheck) — multi-impl is
+//   // just multiple impl-block messages, no syntactic extension needed.
+//   message AccountStorePostgresAsAccountStore {
+//     option (archegraph.spec.opts) = {
+//       impl_of:   "AccountStore"
+//       impl_for:  "AccountStorePostgres"
+//       impl_file: "src/account_store/impl_account_store.rs"
+//       method_body: { method: "ForgetAccount" uses: "Account" uses: "AccountIdentity" }
+//     };
+//   }
+//
+// See docs/specs/2026-04-30-implementation-as-first-class-spec-entity.md
+// for the full design.
+
+// Per-message annotations. Attaches to any proto `message`. The envelope
+// distinguishes data-struct messages (msg_file set) from impl-block messages
+// (impl_of + impl_for + impl_file + method_body set). The two modes are
+// mutually exclusive — compose rejects a message that sets both.
+//
+// Multi-impl model: a single Rust struct can carry many `impl Trait for X`
+// blocks. Each block is its own code entity, so each gets its own spec
+// message. The data-struct message defines `X` once (msg_file set, no
+// impl_*); each impl-block message names the (struct, trait) pair via
+// (impl_for, impl_of) and writes its own file via impl_file. The mapper
+// materializes the impl-block contract node at `impl#[<impl_for>][<impl_of>]`
+// — exactly the shape rust-analyzer SCIP produces for `impl Trait for Struct`,
+// so contract and gcode line up automatically. The (impl_for, impl_of) pair
+// must be unique across the compose set.
+message MessageOptions {
+  // CODEGEN_ONLY data struct: file the generated struct lands at.
+  // Ignored when the message is an impl block (impl_of set).
+  optional string msg_file = 1;
+
+  // Marks this message as an impl block of the named trait. Triggers
+  // impl-block codegen + impl-block-method node emission in the spec graph.
+  // The trait must exist as a `service` in the same compose set.
+  optional string impl_of = 2;
+
+  // File the agent-owned impl block lands at. Required when impl_of is set;
+  // ignored otherwise. One impl block per file under the new "one code
+  // entity per file" rule — no regen markers needed.
+  optional string impl_file = 3;
+
+  // Per-method body declarations. One entry per trait method whose body
+  // references symbols beyond what's captured by its parameter / return-type
+  // signature dependencies. The mapper emits an Invocation edge from the
+  // impl-block-method node (NOT the trait-method node) to each entry in
+  // `uses`. Only valid when impl_of is also set.
+  repeated MethodBody method_body = 4;
+
+  // Names the data struct this impl block attaches to (the `for X` half of
+  // `impl Trait for X`). Required when impl_of is set; ignored otherwise.
+  // The named struct must resolve to a data-struct message (msg_file set,
+  // impl_of unset) in the same compose set. Decoupling struct identity from
+  // the impl-block message's own name is what allows multi-impl: many
+  // impl-block messages can share the same impl_for, each with its own
+  // impl_of, and each materializes a distinct contract node at
+  // `impl#[<impl_for>][<impl_of>]`. Use the simple type name when both
+  // messages live in the same proto package, fully-qualified
+  // (`<package>.<name>`) otherwise.
+  optional string impl_for = 5;
+
+  // Per-entity check steps. Each becomes a Node.post_node entry on the
+  // BuildDag node compose materializes for this message (run first inside
+  // post_node, before ExecutionConfig.post_node_defaults). Action-oriented
+  // name: spec authors think in terms of "what does this entity claim?",
+  // not "what runs when in the build pipeline." Lifecycle position is
+  // decided at the runtime layer, not authored here. See
+  // docs/specs/2026-04-30-build-lifecycle-phases.md.
+  repeated CheckStep check = 6;
+}
+
+// Per-service annotations. Attaches to any proto `service`.
+message ServiceOptions {
+  // File the trait declaration lands at. Codegen writes the trait
+  // there; verify identifies the service by it. For Rust this is
+  // typically `src/<module>/schema_gen.rs` directly (the spec author
+  // names the codegen target — there's no implicit redirect).
+  optional string svc_file = 1;
+
+  // Per-trait check steps. Same shape + semantics as MessageOptions.check.
+  repeated CheckStep check = 2;
+}
+
+// Per-entity check step. Spec author asserts what THIS entity must
+// satisfy. Compose flows these onto BuildDag.Node.post_node (run first
+// inside post_node, before ExecutionConfig defaults). Action-oriented
+// name; lifecycle position is decided at the runtime layer.
+message CheckStep {
+  // Human-readable label. Surfaces in NodeResult / status events.
+  optional string label = 1;
+  // Literal shell command. Templated against the per-node metadata bag
+  // (same one prompt_template sees) before exec. CWD = per-node
+  // worktree's project_subpath.
+  optional string command = 2;
+}
+
+// Body-level declaration on an implementation message.
+message MethodBody {
+  // Trait method name (matches one of the rpc names on the implemented
+  // service). Required.
+  optional string method = 1;
+
+  // Container symbols the method's body uses. One Invocation edge per
+  // entry, sourced from the impl-block-method node. Symbols may be the
+  // simple type name when in the same proto package, or fully qualified
+  // (`<package>.<name>`) otherwise.
+  repeated string uses = 2;
+}
+
+// Envelope extensions. The two have distinct field names (`opts`,
+// `svc_opts`) because protobuf-parse's pure Rust parser doesn't resolve
+// extensions by `(name, extendee)` — it indexes by name only and
+// conflates same-named extensions across scopes. The field number 50000
+// is reused but only because the parser disambiguates extensions by
+// scope at the field-number level (different unknown_fields slot per
+// extendee), so the wire format stays unambiguous.
+extend google.protobuf.MessageOptions {
+  optional MessageOptions opts = 50000;
+}
+
+extend google.protobuf.ServiceOptions {
+  optional ServiceOptions svc_opts = 50000;
+}
+
+// ── Retired field numbers (DO NOT REUSE) ───────────────────────────────────
+//
+// proto2 `reserved` is illegal inside `extend` blocks (it's only valid
+// inside a regular `message` body), so we can't enforce these at the
+// schema level. Treat the list below as the canonical "burned" set —
+// any future extend on these google types must skip these numbers.
+// Recycling them risks silently corrupting old serialized data tagged
+// at the same numbers under the prior schema.
+//
+// MessageOptions:
+//   50000 — was `optional string msg_file`. Now reused intentionally as
+//           the envelope (optional MessageOptions opts = 50000;) — wire
+//           data shape is incompatible (length-delimited msg vs string),
+//           but compose only reads the new shape so old snapshots never
+//           cross-pollute. Keeping the field number aligns with how the
+//           dogfood specs were tagged on disk and keeps the extension's
+//           "this is THE archegraph annotation" identity consistent.
+//   50001 — was `optional string svc_file` on ServiceOptions. Same
+//           reuse pattern (envelope on ServiceOptions at 50000 here too,
+//           in a different scope, so this number is free / unused now).
+//   50002 — was `repeated HelperMethod helper_method` (never wired up).
+//           Reserved permanently.
+//   50003 — was `repeated string body` on MethodOptions. Moved to
+//           MethodBody entries on the implementation message —
+//           interfaces don't have bodies; the prior collapse was a
+//           category error. Reserved permanently. See
+//           docs/specs/2026-04-30-implementation-as-first-class-spec-entity.md.
+//
+// MethodOptions:
+//   50003 — see above.

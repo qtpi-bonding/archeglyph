@@ -1,0 +1,148 @@
+syntax = "proto3";
+package archeglyph.spec.loaders;
+
+import "archegraph_spec.proto";
+import "content.proto";
+import "style.proto";
+import "theme.proto";
+
+// =============================================================================
+// archeglyph loader pillar — textproto → typed proto messages
+// =============================================================================
+//
+// First REAL archegraph spec test for the project (after the util scaffold).
+// The Loader is a boundary service per docs/style-guide.md §3.7: it wraps the
+// JS interop with @bufbuild/protobuf's textproto parser. It may throw on parse
+// failure; pure-logic callers wrap throwing calls into Result<T, LoadError>
+// in a hand-authored adapter layer (out of scope for this spec).
+//
+// Architectural notes for the agent:
+// - This file exercises CROSS-PACKAGE proto type references. The rpcs return
+//   archeglyph.content.v1.Diagram / archeglyph.style.v1.Stylesheet /
+//   archeglyph.theme.v1.Theme — types defined in proto/{content,style,theme}.proto
+//   and emitted to TypeScript by buf at packages/proto/src/gen/<file>_pb.ts.
+//   The agent should import these from `@archeglyph/proto/gen/<file>_pb`.
+// - This is BOUNDARY code (path = packages/core/src/loaders/...). The
+//   relaxed boundary rules in style-guide §3.7 apply: throws, async, type
+//   assertions all OK as needed for the JS interop.
+
+
+// =============================================================================
+// Request type
+// =============================================================================
+
+// LoadRequest — single-field input wrapper for textproto source.
+//
+// All loader rpcs take this so signatures are uniform. The wrapping is a
+// proto-rpc requirement (rpcs need named message types for input/output);
+// in TS this is just `{ text: string }`.
+message LoadRequest {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/loaders/load_request/impl.ts"
+  };
+
+  // Textproto source to parse.
+  string text = 1;
+}
+
+
+// =============================================================================
+// Loader service
+// =============================================================================
+
+// Loader — boundary service interface for parsing textproto into typed
+// proto messages.
+//
+// Three rpcs, one per top-level archeglyph file format type. Each takes
+// `LoadRequest { text: string }` and returns the parsed proto message
+// (Diagram / Stylesheet / Theme).
+//
+// This message describes the INTERFACE only. Codegen emits
+// `export interface Loader { ... }` in its svc_file. The agent does NOT
+// run on the service node — see the LoaderImpl / LoaderImplAsLoader
+// sibling messages below for the concrete impl class the agent fills.
+service Loader {
+  option (archegraph.spec.svc_opts) = {
+    svc_file: "packages/core/src/loaders/loader/impl.ts"
+  };
+
+  // Parse a Diagram from textproto source.
+  rpc LoadDiagram(LoadRequest) returns (archeglyph.content.v1.Diagram);
+
+  // Parse a Stylesheet from textproto source.
+  rpc LoadStylesheet(LoadRequest) returns (archeglyph.style.v1.Stylesheet);
+
+  // Parse a Theme from textproto source.
+  rpc LoadTheme(LoadRequest) returns (archeglyph.theme.v1.Theme);
+}
+
+
+// =============================================================================
+// Concrete impl class + impl-block
+// =============================================================================
+//
+// To trigger the agent on a TS service, the multi-impl model requires a
+// SEPARATE concrete-struct message (`LoaderImpl`) plus a sibling
+// impl-block message (`LoaderImplAsLoader`). The impl-block message is
+// what classifies as CodeGenThenAgentGen — codegen emits the class scaffold
+// with `throw new Error("not implemented")` method stubs, and the agent
+// replaces the stubs with real bodies.
+//
+// (For Rust this is the trait+struct+impl triple. TS uses the same idiom:
+// the data-struct file gets an empty `class LoaderImpl {}`, and the impl-
+// block file gets `class LoaderImpl implements Loader { ... }` with
+// agent-filled method bodies. Two classes with the same name in different
+// modules — fine since they're never imported into the same scope.)
+
+
+// LoaderImpl — self-referential carrier+impl-block (the TS pattern).
+// `impl_for: "LoaderImpl"` points at this same message; there's no
+// separate `msg_file` carrier struct.
+//
+// Why one message, not two: in Rust the carrier+impl split (`struct
+// Foo;` + `impl Trait for Foo {}`) creates a real syntactic edge SCIP
+// picks up. TS classes can't be split across files, so two same-named
+// classes in different modules are unrelated and the gspec edge from
+// impl-block to carrier never gets realized in code. Collapsing to one
+// message that's both carrier and impl-block (only impl_file, no
+// msg_file) skips the unsatisfiable edge — matches archegraph's
+// brownfield TS example pattern. (Confirmed clean-verify on the probe
+// spec — the explicit-carrier pattern produced 1 drift, the collapsed
+// self-referential pattern produces 0.)
+//
+// Body implementation guidance for the agent:
+// - Use @bufbuild/protobuf's textproto parser (`fromTextproto` against the
+//   appropriate Schema descriptor: DiagramSchema / StylesheetSchema /
+//   ThemeSchema, all imported from @archeglyph/proto/gen/<file>_pb).
+// - Validate that the parsed message's `schema_version` field equals 1.
+//   Throw an `Error` with a descriptive message if not.
+// - On parse failure (textproto syntax invalid), let the parser's exception
+//   propagate — boundary code is allowed to throw per docs/style-guide.md
+//   §3.7 (this file lives at packages/core/src/loaders/, a boundary path).
+// - Return the parsed message directly. Do not wrap in Result here; a thin
+//   hand-authored adapter layer in `loaders/index.ts` will translate
+//   throwing calls into Result<T, LoadError> for pure-logic callers.
+//
+// Imports the agent will need:
+// - `Loader` (interface) — from `../loader/impl` (sibling per archegraph
+//   convention) or as resolved by the codegen schema.gen.
+// - `LoadRequest` — same.
+// - `Diagram`, `Stylesheet`, `Theme` (data types) — from
+//   `@archeglyph/proto/gen/content_pb`, `@archeglyph/proto/gen/style_pb`,
+//   `@archeglyph/proto/gen/theme_pb` respectively.
+// - `DiagramSchema`, `StylesheetSchema`, `ThemeSchema` (codec descriptors,
+//   needed for textproto parsing) — same modules as their type counterparts.
+// - `fromTextproto` (or analogous) from `@bufbuild/protobuf/wire/json` or
+//   the textproto-specific module if `@bufbuild/protobuf` provides one;
+//   the agent should grep for the canonical import path in node_modules.
+message LoaderImpl {
+  option (archegraph.spec.opts) = {
+    impl_of:   "Loader"
+    impl_for:  "LoaderImpl"
+    impl_file: "packages/core/src/loaders/impl_loader/impl.ts"
+
+    method_body: { method: "LoadDiagram" }
+    method_body: { method: "LoadStylesheet" }
+    method_body: { method: "LoadTheme" }
+  };
+}

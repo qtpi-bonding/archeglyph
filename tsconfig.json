@@ -8,10 +8,14 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
-    "isolatedModules": true,
     "resolveJsonModule": true,
-    "verbatimModuleSyntax": true,
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@archeglyph/proto": ["./packages/proto/src/index.ts"],
+      "@archeglyph/proto/util/result": ["./packages/proto/src/util/result.ts"],
+      "@archeglyph/proto/gen/*": ["./packages/proto/src/gen/*.ts"]
+    }
   },
-  "include": ["packages/*/src/**/*.ts"]
+  "include": ["packages/**/*.ts"]
 }

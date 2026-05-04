@@ -11,6 +11,8 @@ node_modules/
 .archegraph/gcode.pb
 .archegraph/gcode.db
 .archegraph/index.scip
+# scip-typescript without --output puts index.scip at project root
+/index.scip
 .archegraph/server.pid
 .archegraph/server.port
 

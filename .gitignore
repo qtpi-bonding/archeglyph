@@ -3,18 +3,19 @@ node_modules/
 **/dist/
 **/.bun-cache/
 
-# archegraph build artifacts (derived from spec + source)
-.archegraph/specs/*/gcontract.pb
-.archegraph/specs/*/gcontract.db
-.archegraph/specs/*/gspec_delta.pb
-.archegraph/specs/*/dag.pb
+# archegraph code-graph artifacts (derived from source — high churn, regenerable)
 .archegraph/gcode.pb
 .archegraph/gcode.db
 .archegraph/index.scip
 # scip-typescript without --output puts index.scip at project root
 /index.scip
+# archegraph server runtime (per-process)
 .archegraph/server.pid
 .archegraph/server.port
+
+# Spec-level artifacts (.archegraph/specs/*/{gcontract,gspec_delta,dag}.{pb,db})
+# are NOT ignored — they capture the contract/build state of a specific spec
+# revision and are committable like the spec.proto itself.
 
 # archebuild runtime (build server's per-project state)
 .archebuild/

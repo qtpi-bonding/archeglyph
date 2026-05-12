@@ -1,0 +1,18 @@
+# Input for VisibilityFilter.filter. Carries the loaded Diagram and an
+# optional Stylesheet — absent stylesheet means no visibility decisions
+# to apply, filter becomes a no-op pass-through.
+
+file: "packages/core/src/resolver/filter_request/impl.ts"
+doc: "Input for VisibilityFilter.filter: a Diagram and optional Stylesheet."
+
+structs: [
+  { name: "FilterRequest"
+    fields: [
+      { name: "diagram",
+        type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",
+        type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } },
+        is_optional: true }
+    ]
+  }
+]

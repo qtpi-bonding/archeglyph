@@ -1,0 +1,32 @@
+# Output of StyleCascade AND of TokenResolver. Same proto shape; the
+# semantic difference is documented per stage:
+#   - After StyleCascade: glyphs may contain unresolved $token.path
+#     string refs in string fields (e.g. "$colors.primary").
+#   - After TokenResolver: all resolvable $token refs have been
+#     substituted; unresolved refs (no matching token) pass through
+#     verbatim for renderer fallback.
+# Layout pillar consumes the post-TokenResolver form.
+
+file: "packages/core/src/resolver/resolved_diagram/impl.ts"
+doc: "Cascaded diagram with per-element glyphs. Output of StyleCascade and TokenResolver."
+
+structs: [
+  { name: "ResolvedDiagram"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "nodes",
+        type: { named: { symbol: "ResolvedNode" } },
+        is_repeated: true },
+      { name: "edges",
+        type: { named: { symbol: "ResolvedEdge" } },
+        is_repeated: true },
+      { name: "groups",
+        type: { named: { symbol: "ResolvedGroup" } },
+        is_repeated: true },
+      { name: "annotations",
+        type: { named: { symbol: "ResolvedAnnotation" } },
+        is_repeated: true }
+    ]
+  }
+]

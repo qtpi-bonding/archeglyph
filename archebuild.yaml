@@ -6,65 +6,70 @@ execution:
   default_timeout_seconds: 600
   executor: shell
 
-  prompt_template: |
-    Implement {{symbols}} in `{{file}}` ({{language}}, change_type={{change_type}}, kind={{kind}}).
+  # Prompt templates rendered for the agent step, keyed by ChangeType.
+  # Resolution at exec time:
+  #   1. templates.<change_type> if non-empty (add / modify / delete)
+  #   2. else templates.default
+  templates:
+    default: |
+      Implement {{symbols}} in `{{file}}` ({{language}}, change_type={{change_type}}, kind={{kind}}).
 
-    Description: {{description}}
+      Description: {{description}}
 
-    Spec + existing impl (if any):
-    ```
-    {{self}}
-    ```
+      Spec + existing impl (if any):
+      ```
+      {{self}}
+      ```
 
-    Generated schema (on disk next to your target — empty for AGENT_ONLY):
-    ```
-    {{schema}}
-    ```
+      Generated schema (on disk next to your target — empty for AGENT_ONLY):
+      ```
+      {{schema}}
+      ```
 
-    Types this references:
-    {{out_dependency}}
+      Types this references:
+      {{out_dependency}}
 
-    Contained members (methods/fields):
-    {{out_containment}}
+      Contained members (methods/fields):
+      {{out_containment}}
 
-    Callers (where this is used):
-    {{in_dependency}}
+      Callers (where this is used):
+      {{in_dependency}}
 
-    Project rules:
-    - Follow `docs/style-guide.md` exactly. Especially §3.3 (Option<T> / Result<T, E>
-      canonical shapes — import from `@archeglyph/proto/util/result`), §3.5–3.6
-      (named imports / exports only, no re-exports), §3.7 (boundary code rules).
-    - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
-    - For services: write a class `<Interface>Impl implements <Interface>`.
-      Import the interface and request/response types from `./schema.gen`.
-      For data-model types (Diagram / Stylesheet / Theme etc.), import from the
-      buf-generated path shown in `{{out_dependency}}` — typically
-      `@archeglyph/proto/gen/<file>_pb`. Do NOT re-export `<Interface>` from
-      impl.ts — the sibling `index.ts` barrel pulls it from schema.gen and
-      would collide.
-    - Implement method bodies FULLY per the description. Do not stub with
-      `throw new Error('not implemented')`.
-    - For brownfield MODIFIED files: edit in place, preserve existing content.
+      Project rules:
+      - Follow `docs/style-guide.md` exactly. Especially §3.3 (Option<T> / Result<T, E>
+        canonical shapes — import from `@archeglyph/proto/util/result`), §3.5–3.6
+        (named imports / exports only, no re-exports), §3.7 (boundary code rules).
+      - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
+      - For services: write a class `<Interface>Impl implements <Interface>`.
+        Import the interface and request/response types from `./schema_gen`.
+        For data-model types (Diagram / Stylesheet / Theme etc.), import from the
+        buf-generated path shown in `{{out_dependency}}` — typically
+        `@archeglyph/proto/gen/<file>_pb`. Do NOT re-export `<Interface>` from
+        impl.ts — the sibling `index.ts` barrel pulls it from schema_gen and
+        would collide.
+      - Implement method bodies FULLY per the description. Do not stub with
+        `throw new Error('not implemented')`.
+      - For brownfield MODIFIED files: edit in place, preserve existing content.
 
-  delete_prompt_template: |
-    Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.
+    delete: |
+      Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.
 
-    File: {{file}}
-    Description: {{description}}
+      File: {{file}}
+      Description: {{description}}
 
-    Existing definition (to remove):
-    ```
-    {{self}}
-    ```
+      Existing definition (to remove):
+      ```
+      {{self}}
+      ```
 
-    Callers / referencers (already migrated by upstream nodes; do not touch):
-    {{in_dependency}}
+      Callers / referencers (already migrated by upstream nodes; do not touch):
+      {{in_dependency}}
 
-    Rules:
-    - If `{{file}}` contained only `{{symbol}}` (no other top-level symbols),
-      delete the whole file.
-    - Otherwise, excise just the symbol's definition; leave everything else
-      intact.
+      Rules:
+      - If `{{file}}` contained only `{{symbol}}` (no other top-level symbols),
+        delete the whole file.
+      - Otherwise, excise just the symbol's definition; leave everything else
+        intact.
 
   commands:
     - attempts: 4
@@ -80,6 +85,9 @@ execution:
       "archeglyph.content.v1": "@archeglyph/proto/gen/content_pb"
       "archeglyph.style.v1":   "@archeglyph/proto/gen/style_pb"
       "archeglyph.theme.v1":   "@archeglyph/proto/gen/theme_pb"
+      # Hand-authored utility module (not buf-generated). Lets specs
+      # reference Result/Ok/Err via FQN `archeglyph.util.Result` etc.
+      "archeglyph.util":       "@archeglyph/proto/util/result"
 
   # Refresh buf-generated TS before the build sees the source tree, so the
   # data-model types in `packages/proto/src/gen/` can never be stale w.r.t.

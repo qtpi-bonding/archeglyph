@@ -1,0 +1,34 @@
+# VisibilityFilter — graph-level visibility/render-mode pre-pass.
+#
+# Reads visibility decisions from the stylesheet's per-element entries
+# and applies four transformations:
+#
+#   1. HIDDEN nodes → omitted (and incident edges).
+#   2. EXPANDED groups → group entry omitted; children re-parented.
+#   3. CONTRACTED groups → group entry kept + marked is_super_node;
+#      ALL descendants omitted; incident edges re-pointed to the
+#      group's id.
+#   4. BOUNDED (default) groups → kept as-is, children intact.
+#
+# Output is purely topological — no glyph data, no positions.
+# Pure logic. Sync (no is_async). Errors via Result<FilteredDiagram, ResolveError>.
+
+file: "packages/core/src/resolver/visibility_filter/schema_gen.ts"
+doc: "VisibilityFilter interface — pre-layout topology pass."
+
+interfaces: [
+  { name: "VisibilityFilter"
+    methods: [
+      { name: "filter"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "FilterRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "FilteredDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+      }
+    ]
+  }
+]

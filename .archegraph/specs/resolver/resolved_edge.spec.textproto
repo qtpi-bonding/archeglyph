@@ -1,0 +1,27 @@
+# Visible edge with cascaded Glyph1D (connection) + Typography + layout.
+
+file: "packages/core/src/resolver/resolved_edge/impl.ts"
+doc: "Visible edge with cascaded Glyph1D + Typography + layout hints."
+
+structs: [
+  { name: "ResolvedEdge"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "source",
+        type: { primitive: CHARACTER } },
+      { name: "target",
+        type: { primitive: CHARACTER } },
+      { name: "connection",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.EdgeLayout" } },
+        is_optional: true },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true }
+    ]
+  }
+]

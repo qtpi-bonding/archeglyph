@@ -1,0 +1,33 @@
+# Visible node with its fully-cascaded glyphs. After StyleCascade the
+# `shape` / `typography` fields may carry unresolved $token refs;
+# after TokenResolver they're concrete values (or fallback literals
+# for unresolved refs).
+#
+# Layout hints (layout field) come from the stylesheet's NodeStyleEntry
+# verbatim — resolver doesn't merge them with theme (theme has no
+# layout surface in v1).
+
+file: "packages/core/src/resolver/resolved_node/impl.ts"
+doc: "Visible node with cascaded Glyph2D + Typography + layout hints."
+
+structs: [
+  { name: "ResolvedNode"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parent_group",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.NodeLayout" } },
+        is_optional: true },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true }
+    ]
+  }
+]

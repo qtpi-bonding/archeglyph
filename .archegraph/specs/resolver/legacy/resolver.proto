@@ -1,0 +1,575 @@
+syntax = "proto3";
+package archeglyph.spec.resolver;
+
+import "archegraph_spec.proto";
+import "content.proto";
+import "style.proto";
+import "theme.proto";
+
+// =============================================================================
+// archeglyph resolver pillar — visibility pre-pass + style cascade
+// =============================================================================
+//
+// Pipeline position (per docs/design.md §3.2 + §5.1):
+//
+//   loader → [resolver] → layout → renderer
+//
+// Resolver runs entirely AFTER loaders have produced typed Diagram /
+// Stylesheet / Theme objects, and entirely BEFORE layout calls elkjs.
+// It is pure logic with no IO. It produces a `ResolvedDiagram` whose
+// per-element glyphs are fully token-resolved and ready for layout.
+//
+// Architectural notes for the agent:
+//
+// - All three sub-services here are PURE LOGIC. The spec marks them
+//   `sync: true` (Plan F flag), so codegen emits sync interface methods
+//   returning T directly (NOT Promise<T>). Implementations MUST be sync
+//   too — no `async`, no `Promise.resolve`, no `await`. This is the
+//   project's first test of the `sync` flag and lifts cleanly through
+//   Koine (docs/koine-lift-pipeline.md).
+//
+// - Errors. Per docs/style-guide.md §3.3, pure-logic services use
+//   Result<T, E> rather than throwing. Define a `ResolveError` union in
+//   each impl and return Result<Output, ResolveError>. Do NOT throw.
+//   Boundary code (loaders) is allowed to throw; resolver is not.
+//
+// - Imports. Cross-package data-model types (Diagram, Stylesheet, Theme,
+//   Glyph2D, Glyph1D, Typography, NodeLayout, etc.) come from the buf-
+//   emitted modules under @archeglyph/proto/gen/<file>_pb. The
+//   archebuild.yaml `external_package_imports` map already wires the
+//   three external packages (content.v1, style.v1, theme.v1) — codegen
+//   will emit the correct import paths automatically; the agent just
+//   uses what schema codegen provides.
+//
+// - Pillar-internal types (FilteredDiagram, ResolvedDiagram, etc.) are
+//   declared INTRA per CLAUDE.md's flavor rule — archegraph emits TS
+//   classes for them at the msg_file paths below. The agent imports
+//   sibling types via relative paths (`../filtered_diagram` etc.) the
+//   same way loaders/loader/impl.ts imported `../load_request`.
+//
+// - Three services, linear pipeline:
+//     1. VisibilityFilter      Diagram + Stylesheet → FilteredDiagram
+//     2. StyleCascade          FilteredDiagram + Stylesheet + Theme → ResolvedDiagram
+//     3. TokenResolver         ResolvedDiagram + Theme.tokens → ResolvedDiagram
+//   A higher-level orchestrator (NOT in this spec — hand-authored later
+//   in `index.ts`) chains them. Keeping the pillar's three stages as
+//   separate services pays off for archegraph: each becomes its own DAG
+//   node, gets its own validators, and shows up as a distinct vertex in
+//   archescope.
+
+
+// =============================================================================
+// Request types
+// =============================================================================
+//
+// One request type per service rpc. Each is a thin wrapper because proto
+// rpcs require named message types for input. In TS these collapse to
+// simple object types like `{ diagram, stylesheet }`.
+
+// FilterRequest — input for VisibilityFilter.Filter.
+message FilterRequest {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filter_request/impl.ts"
+  };
+
+  // The loaded content. Required.
+  archeglyph.content.v1.Diagram diagram = 1;
+
+  // The loaded stylesheet, if any. Visibility decisions are driven by
+  // NodeStyleEntry.visibility and GroupLayout.render_mode in the
+  // stylesheet, so an absent stylesheet means "everything visible,
+  // groups render BOUNDED" — the filter is a no-op pass-through.
+  optional archeglyph.style.v1.Stylesheet stylesheet = 2;
+}
+
+// CascadeRequest — input for StyleCascade.Cascade.
+message CascadeRequest {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/cascade_request/impl.ts"
+  };
+
+  // Output of VisibilityFilter — graph topology after the pre-pass.
+  // Required.
+  FilteredDiagram filtered = 1;
+
+  // Per-element overrides. Absent stylesheet → only theme components +
+  // renderer code defaults apply (no per-element layer in the cascade).
+  optional archeglyph.style.v1.Stylesheet stylesheet = 2;
+
+  // Theme components + tokens. Absent theme → cascade starts from the
+  // per-element override layer; un-set fields fall through to renderer
+  // code defaults at render time.
+  optional archeglyph.theme.v1.Theme theme = 3;
+}
+
+// ResolveTokensRequest — input for TokenResolver.ResolveTokens.
+message ResolveTokensRequest {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolve_tokens_request/impl.ts"
+  };
+
+  // Output of StyleCascade — may contain unresolved $token refs in
+  // string fields (e.g. `"$colors.primary"`). Required.
+  ResolvedDiagram resolved = 1;
+
+  // Token table from the theme. Absent tokens → any $token ref in the
+  // resolved diagram is left as-is (the renderer falls back to its
+  // built-in defaults when it sees an unresolved $ref).
+  optional archeglyph.theme.v1.Tokens tokens = 2;
+}
+
+
+// =============================================================================
+// Pillar-internal data types
+// =============================================================================
+
+// FilteredDiagram — output of VisibilityFilter; topology-only snapshot
+// after the visibility/render-mode pre-pass. Each visible element keeps
+// its source identity (id) so downstream stages can correlate back to
+// per-element entries in the stylesheet.
+//
+// Transformations applied (per design.md §5.1 + style.proto:147 enum):
+//   - HIDDEN nodes (NodeStyleEntry.visibility = HIDDEN) → omitted.
+//     Edges incident to a hidden node → also omitted (an edge renders
+//     iff both endpoints are visible).
+//   - EXPANDED groups (GroupLayout.render_mode = EXPANDED) → group
+//     entry omitted; its children are re-parented to the group's
+//     parent_group (their `parent_group` field is rewritten).
+//   - CONTRACTED groups (GroupLayout.render_mode = CONTRACTED) → group
+//     entry kept but marked `is_super_node = true`; ALL descendant
+//     nodes/groups omitted from the output. Edges that originally
+//     terminated at a descendant are re-pointed to the contracted
+//     group's id (super-node behavior). This is the same operation
+//     §5.4 of design.md described as "collapsed-group node" — it is
+//     ONE mechanism, not two.
+//   - BOUNDED (default) groups → kept as-is, children intact.
+//
+// The output preserves source ids verbatim — no synthetic ids. A
+// CONTRACTED group's id stays the original group id; the `is_super_node`
+// flag is the only tell.
+message FilteredDiagram {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filtered_diagram/impl.ts"
+  };
+
+  // Source diagram's id (carried through verbatim for traceability).
+  string id = 1;
+
+  // Visible nodes after the filter. Order preserved from source.
+  repeated FilteredNode nodes = 2;
+
+  // Visible edges (both endpoints visible) after the filter. Edges
+  // pointing at descendants of CONTRACTED groups have been re-pointed
+  // to the group's super-node id.
+  repeated FilteredEdge edges = 3;
+
+  // Visible groups (BOUNDED + CONTRACTED). EXPANDED groups are absent.
+  repeated FilteredGroup groups = 4;
+
+  // Annotations in the stylesheet that are visible. (Annotations have
+  // no visibility field today — they're either present in the
+  // stylesheet or not — but this slot is the right place to carry them
+  // forward so the cascade has one input shape.)
+  repeated FilteredAnnotation annotations = 5;
+}
+
+// FilteredNode — a visible content node, source-id preserved.
+message FilteredNode {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filtered_node/impl.ts"
+  };
+
+  string id = 1;                                 // source Node.id
+  optional string parent_group = 2;              // possibly rewritten by EXPANDED collapse
+  map<string, string> tags = 3;                  // carried through
+  repeated archeglyph.content.v1.Localization label = 4;
+}
+
+// FilteredEdge — a visible edge, source-id preserved. Endpoints may
+// have been re-pointed up to a CONTRACTED group's super-node id.
+message FilteredEdge {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filtered_edge/impl.ts"
+  };
+
+  string id = 1;
+  string source = 2;                             // possibly re-pointed
+  string target = 3;                             // possibly re-pointed
+  uint32 ordinal = 4;
+  map<string, string> tags = 5;
+  repeated archeglyph.content.v1.Localization label = 6;
+}
+
+// FilteredGroup — a visible group. `is_super_node = true` marks a
+// CONTRACTED group whose descendants have been folded away.
+message FilteredGroup {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filtered_group/impl.ts"
+  };
+
+  string id = 1;
+  optional string parent_group = 2;
+  map<string, string> tags = 3;
+  repeated archeglyph.content.v1.Localization label = 4;
+
+  // True when the group was CONTRACTED. Layout pillar uses this to
+  // size the super-node and append the `+N hidden` indicator.
+  bool is_super_node = 5;
+
+  // When is_super_node is true, the count of descendants folded away
+  // (used by renderer for the `+N` indicator). Zero otherwise.
+  uint32 hidden_descendant_count = 6;
+}
+
+// FilteredAnnotation — a visible annotation entry. Keyed by the
+// stylesheet's annotation entry id.
+message FilteredAnnotation {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/filtered_annotation/impl.ts"
+  };
+
+  string id = 1;
+  // The full annotation entry from the stylesheet, carried through —
+  // resolver doesn't transform annotation content during visibility
+  // filtering. The cascade reads anchor, content, etc. from this.
+  archeglyph.style.v1.AnnotationEntry entry = 2;
+}
+
+
+// =============================================================================
+// Resolved data types — output of StyleCascade and TokenResolver
+// =============================================================================
+
+// ResolvedDiagram — output of StyleCascade (with possibly-unresolved
+// $token refs) AND of TokenResolver (with all $tokens resolved). Same
+// proto shape; the semantic difference is documented per stage. Layout
+// pillar consumes the post-TokenResolver form.
+//
+// Each visible element from FilteredDiagram appears here exactly once,
+// augmented with the cascaded glyphs ready for the renderer.
+message ResolvedDiagram {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolved_diagram/impl.ts"
+  };
+
+  string id = 1;
+  repeated ResolvedNode nodes = 2;
+  repeated ResolvedEdge edges = 3;
+  repeated ResolvedGroup groups = 4;
+  repeated ResolvedAnnotation annotations = 5;
+}
+
+// ResolvedNode — a visible node with its fully-cascaded glyphs.
+message ResolvedNode {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolved_node/impl.ts"
+  };
+
+  string id = 1;
+  optional string parent_group = 2;
+
+  // Cascaded visual glyphs. theme component → per-element override →
+  // (after TokenResolver) token-resolved.
+  archeglyph.style.v1.Glyph2D shape = 3;
+  archeglyph.style.v1.Typography typography = 4;
+
+  // Layout hints carried through unchanged from NodeStyleEntry.layout.
+  // Layout pillar consumes these (size for elkjs, position for skip-
+  // elkjs override, etc.). Resolver does not interpret them.
+  optional archeglyph.style.v1.NodeLayout layout = 5;
+
+  // Display label, locale-resolved later by the renderer.
+  repeated archeglyph.content.v1.Localization label = 6;
+}
+
+// ResolvedEdge — a visible edge with its fully-cascaded glyphs.
+message ResolvedEdge {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolved_edge/impl.ts"
+  };
+
+  string id = 1;
+  string source = 2;
+  string target = 3;
+
+  archeglyph.style.v1.Glyph1D connection = 4;
+  archeglyph.style.v1.Typography typography = 5;
+  optional archeglyph.style.v1.EdgeLayout layout = 6;
+
+  repeated archeglyph.content.v1.Localization label = 7;
+}
+
+// ResolvedGroup — a visible group (BOUNDED or CONTRACTED super-node)
+// with its fully-cascaded glyphs.
+message ResolvedGroup {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolved_group/impl.ts"
+  };
+
+  string id = 1;
+  optional string parent_group = 2;
+
+  archeglyph.style.v1.Glyph2D shape = 3;
+  archeglyph.style.v1.Typography typography = 4;
+  optional archeglyph.style.v1.GroupLayout layout = 5;
+
+  repeated archeglyph.content.v1.Localization label = 6;
+
+  // Carried through from FilteredGroup so the renderer can show the
+  // `+N hidden` indicator on contracted super-nodes.
+  bool is_super_node = 7;
+  uint32 hidden_descendant_count = 8;
+}
+
+// ResolvedAnnotation — a visible annotation with its fully-cascaded
+// glyphs. The callout glyph is only populated when the annotation is
+// anchored (per design.md §5.1 cascade output); free annotations have
+// shape + typography only.
+message ResolvedAnnotation {
+  option (archegraph.spec.opts) = {
+    msg_file: "packages/core/src/resolver/resolved_annotation/impl.ts"
+  };
+
+  string id = 1;
+  archeglyph.style.v1.Glyph2D shape = 2;
+  archeglyph.style.v1.Typography typography = 3;
+
+  // Set iff the source AnnotationEntry has an anchor. Empty (default-
+  // constructed) when the annotation is unanchored.
+  archeglyph.style.v1.Glyph1D callout = 4;
+
+  // Anchor info carried through (renderer uses this for projection
+  // onto the anchor target's outline). Absent for unanchored.
+  optional archeglyph.style.v1.AnnotationLayout layout = 5;
+}
+
+
+// =============================================================================
+// Service 1: VisibilityFilter
+// =============================================================================
+
+// VisibilityFilter — graph-level visibility/render-mode pre-pass.
+//
+// Reads visibility decisions from the stylesheet's per-element entries
+// and applies the four transformations documented on FilteredDiagram
+// above. Output is purely topological — no glyph data, no positions.
+//
+// Pure logic. Sync. No IO.
+service VisibilityFilter {
+  option (archegraph.spec.svc_opts) = {
+    svc_file: "packages/core/src/resolver/visibility_filter/impl.ts"
+    sync: true
+  };
+
+  // Apply the visibility pre-pass.
+  rpc Filter(FilterRequest) returns (FilteredDiagram);
+}
+
+// VisibilityFilterImpl — concrete impl class (TS self-referential
+// pattern: one message that's both the carrier and the impl-block, no
+// separate msg_file; see CLAUDE.md / archegraph-spec-workflow skill).
+//
+// Implementation guidance for the agent:
+//
+// - Iterate diagram.graph.nodes / edges / groups in their map iteration
+//   order (sorted lex by key per design.md §3.2 determinism rule).
+//
+// - Build a set `hidden_node_ids` from stylesheet.nodes entries whose
+//   `visibility = HIDDEN`. A missing entry implies visible.
+//
+// - For each group, look up stylesheet.groups[group.id]?.layout?.render_mode.
+//   Default = BOUNDED when entry or field missing.
+//
+// - EXPANDED handling: collect EXPANDED group ids first (no transitive
+//   expansion needed for v1 — each EXPANDED group lifts its direct
+//   children up to its parent_group). For each child of an EXPANDED
+//   group, rewrite parent_group to the EXPANDED group's parent_group
+//   (which may itself be unset → top level).
+//
+// - CONTRACTED handling: collect CONTRACTED group ids. Build a map
+//   `contracted_root[descendant_id] = ancestor_group_id` covering every
+//   descendant of every CONTRACTED group. Use this to:
+//     1. Skip those descendants when emitting FilteredNodes / FilteredGroups.
+//     2. Re-point edge source/target to the ancestor when an endpoint
+//        is in `contracted_root`.
+//     3. Count descendants per CONTRACTED group → `hidden_descendant_count`.
+//
+// - Apply ordering: HIDDEN check first (per-node), then EXPANDED
+//   collapse (rewrites parent_group), then CONTRACTED collapse
+//   (omits descendants, re-points edges). Annotations pass through
+//   verbatim — no visibility field on AnnotationEntry today.
+//
+// - Edge filter: drop edges whose source OR target ended up in the
+//   hidden set, or whose endpoint is a descendant of a CONTRACTED
+//   group AND the descendant itself wasn't already mapped to the
+//   ancestor (defensive — should be covered by the re-point step).
+//
+// - Determinism: do not call `Math.random` or rely on Map insertion
+//   order beyond what proto map iteration guarantees. The output's
+//   `repeated` arrays MUST be ordered by id ascending so reruns are
+//   byte-identical.
+message VisibilityFilterImpl {
+  option (archegraph.spec.opts) = {
+    impl_of:   "VisibilityFilter"
+    impl_for:  "VisibilityFilterImpl"
+    impl_file: "packages/core/src/resolver/visibility_filter_impl/impl.ts"
+
+    method_body: { method: "Filter" uses: "FilteredNode" uses: "FilteredEdge" uses: "FilteredGroup" uses: "FilteredAnnotation" }
+  };
+}
+
+
+// =============================================================================
+// Service 2: StyleCascade
+// =============================================================================
+
+// StyleCascade — per-element cascade producing resolved glyphs.
+//
+// For each visible element in FilteredDiagram, walks the cascade
+// (per design.md §5.1):
+//   1. Theme name-bound component (when stylesheet entry has `component:
+//      "X"` AND theme has a component with `name: "X"`). Layer its
+//      glyphs onto an empty starting set.
+//   2. Per-element override fields from the stylesheet entry. Layer
+//      each set field on top of the theme layer. Field-level overlay:
+//      Glyph2D.stroke.color from layer A and Glyph2D.glow from layer
+//      B coexist; both setting Glyph2D.stroke.color → later wins.
+//
+// Output is a ResolvedDiagram with cascaded glyphs that may still
+// contain `$token.path` string refs (resolved by TokenResolver).
+//
+// Pure logic. Sync. No IO.
+service StyleCascade {
+  option (archegraph.spec.svc_opts) = {
+    svc_file: "packages/core/src/resolver/style_cascade/impl.ts"
+    sync: true
+  };
+
+  rpc Cascade(CascadeRequest) returns (ResolvedDiagram);
+}
+
+// StyleCascadeImpl — concrete impl class.
+//
+// Implementation guidance for the agent:
+//
+// - Per-element-type cascades are independent. Process all
+//   FilteredNodes, then FilteredEdges, then FilteredGroups, then
+//   FilteredAnnotations. Inside each loop, glyph types are also
+//   independent (Glyph2D and Typography for nodes/groups don't
+//   share fields).
+//
+// - Theme component lookup: stylesheet.nodes[id]?.component is a
+//   string name; theme.node_components is a map keyed by `name`.
+//   Empty component name OR missing component entry → no theme layer
+//   contribution; start the cascade from the per-element override.
+//
+// - Field-level overlay: implement a `mergeGlyph2D(base, layer)`
+//   helper that walks each scalar/sub-message field. For scalars,
+//   "set" is determined by proto3 presence (use the `case` accessor
+//   from @bufbuild/protobuf for `optional` scalars; for `repeated`
+//   fields, non-empty wins; for sub-messages, recurse). The same
+//   pattern works for Glyph1D, Typography, callouts.
+//
+// - Annotations: only set ResolvedAnnotation.callout when
+//   FilteredAnnotation.entry has an anchor (entry.anchor field is
+//   present per style.proto:419 AnnotationEntry shape). Otherwise
+//   leave callout default-constructed (renderer treats empty Glyph1D
+//   as "no callout"). Conditional logic only — no separate cascade
+//   pass.
+//
+// - Layout passthrough: copy stylesheet.nodes[id]?.layout into
+//   ResolvedNode.layout verbatim. Same for edges, groups,
+//   annotations. Resolver does NOT merge layout fields with theme;
+//   layout comes from the stylesheet only (theme has no layout
+//   surface in v1).
+//
+// - DO NOT resolve token refs here. If a glyph field references
+//   `$colors.primary`, it stays as the literal string `"$colors.primary"`
+//   in the output. TokenResolver handles the next pass.
+//
+// - Determinism: same iteration ordering rules as VisibilityFilterImpl.
+message StyleCascadeImpl {
+  option (archegraph.spec.opts) = {
+    impl_of:   "StyleCascade"
+    impl_for:  "StyleCascadeImpl"
+    impl_file: "packages/core/src/resolver/style_cascade_impl/impl.ts"
+
+    method_body: { method: "Cascade" uses: "ResolvedNode" uses: "ResolvedEdge" uses: "ResolvedGroup" uses: "ResolvedAnnotation" }
+  };
+}
+
+
+// =============================================================================
+// Service 3: TokenResolver
+// =============================================================================
+
+// TokenResolver — resolve `$token.path` string refs against
+// theme.tokens. Final stage of the resolver pipeline.
+//
+// Walks every string field in the cascaded glyphs. If the value
+// matches `^\$[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$`
+// (e.g., `"$colors.primary"`), look up the dotted path in the tokens
+// table and substitute the concrete value (typically a hex color or
+// pixel string). Refs that don't resolve are left as-is — renderer
+// fallback handles them.
+//
+// Output proto shape is identical to input; only string field
+// contents change. This is what makes returning ResolvedDiagram from
+// both StyleCascade and TokenResolver clean.
+//
+// Pure logic. Sync. No IO.
+service TokenResolver {
+  option (archegraph.spec.svc_opts) = {
+    svc_file: "packages/core/src/resolver/token_resolver/impl.ts"
+    sync: true
+  };
+
+  rpc ResolveTokens(ResolveTokensRequest) returns (ResolvedDiagram);
+}
+
+// TokenResolverImpl — concrete impl class.
+//
+// Implementation guidance for the agent:
+//
+// - Tokens shape: theme.proto's `Tokens` message has top-level
+//   sub-tables (colors, fonts, sizes, etc. — verify against the
+//   actual proto when implementing). A ref `$colors.primary` is a
+//   path: split on '.', first segment selects the sub-table, rest
+//   index into it.
+//
+// - Walk string fields generically. Don't hard-code which Glyph2D /
+//   Glyph1D / Typography fields can carry token refs — assume any
+//   string scalar can. Use a small recursive walker that handles:
+//     - scalar string fields with $ prefix → look up + replace
+//     - non-$ string fields → leave alone
+//     - sub-messages → recurse
+//     - repeated → map over elements
+//     - maps → process values (keys are not subject to token resolution)
+//
+// - Unresolved refs (e.g. `$colors.nonexistent`) → leave the literal
+//   `$colors.nonexistent` string in the output. Do NOT throw and do
+//   NOT return an error — silently leaving the ref is the spec'd
+//   behavior (renderer falls back to its own defaults).
+//
+// - Edge case: a string field whose VALUE happens to start with `$`
+//   but isn't a valid token path (e.g. `"$invalid path"`). Match
+//   against the regex strictly; non-matching strings pass through
+//   unchanged.
+//
+// - Performance note: the diagram is small (typical archeglyph file
+//   is dozens to low hundreds of elements). A naive walker is fine;
+//   no need for codegen reflection tricks.
+//
+// - Determinism: walking proto messages by their declared field order
+//   is automatic with @bufbuild/protobuf reflection. Don't introduce
+//   ordering via Object.keys on a record — that's insertion-order
+//   dependent across runtimes.
+message TokenResolverImpl {
+  option (archegraph.spec.opts) = {
+    impl_of:   "TokenResolver"
+    impl_for:  "TokenResolverImpl"
+    impl_file: "packages/core/src/resolver/token_resolver_impl/impl.ts"
+
+    method_body: { method: "ResolveTokens" }
+  };
+}

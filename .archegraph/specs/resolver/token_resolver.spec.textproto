@@ -1,0 +1,35 @@
+# TokenResolver — resolve `$token.path` string refs against theme.tokens.
+# Final stage of the resolver pipeline.
+#
+# Walks every string field in the cascaded glyphs. If the value matches
+# the regex `^\$[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$`
+# (e.g. "$colors.primary"), look up the dotted path in the tokens table
+# and substitute the concrete value (typically a hex color or pixel
+# string). Refs that don't resolve are left as-is — renderer fallback
+# handles them.
+#
+# Output proto shape is identical to input; only string field contents
+# change. This is what makes returning ResolvedDiagram from both
+# StyleCascade and TokenResolver clean.
+#
+# Pure logic. Sync. Errors via Result<ResolvedDiagram, ResolveError>.
+
+file: "packages/core/src/resolver/token_resolver/schema_gen.ts"
+doc: "TokenResolver interface — resolve $token refs against theme.tokens."
+
+interfaces: [
+  { name: "TokenResolver"
+    methods: [
+      { name: "resolveTokens"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "ResolveTokensRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+      }
+    ]
+  }
+]

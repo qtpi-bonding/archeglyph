@@ -1,0 +1,35 @@
+# Output of VisibilityFilter — topology-only snapshot after the
+# visibility/render-mode pre-pass. Each visible element keeps its
+# source identity (id) so downstream stages can correlate back to
+# per-element entries in the stylesheet.
+#
+# Transformations applied (per design.md §5.1):
+#   - HIDDEN nodes → omitted (incident edges also dropped).
+#   - EXPANDED groups → group omitted; children re-parented up.
+#   - CONTRACTED groups → group kept + is_super_node=true; all
+#     descendants omitted; incident edges re-pointed to the group.
+#   - BOUNDED (default) groups → kept as-is.
+
+file: "packages/core/src/resolver/filtered_diagram/impl.ts"
+doc: "Topology-only snapshot after visibility/render-mode pre-pass."
+
+structs: [
+  { name: "FilteredDiagram"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "nodes",
+        type: { named: { symbol: "FilteredNode" } },
+        is_repeated: true },
+      { name: "edges",
+        type: { named: { symbol: "FilteredEdge" } },
+        is_repeated: true },
+      { name: "groups",
+        type: { named: { symbol: "FilteredGroup" } },
+        is_repeated: true },
+      { name: "annotations",
+        type: { named: { symbol: "FilteredAnnotation" } },
+        is_repeated: true }
+    ]
+  }
+]

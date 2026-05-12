@@ -1,0 +1,19 @@
+# Input for TokenResolver.resolveTokens. Takes the cascade output (may
+# contain unresolved $token.path string refs) and the theme's tokens
+# table. Absent tokens → any $token refs are left as-is for renderer
+# fallback to handle.
+
+file: "packages/core/src/resolver/resolve_tokens_request/impl.ts"
+doc: "Input for TokenResolver.resolveTokens."
+
+structs: [
+  { name: "ResolveTokensRequest"
+    fields: [
+      { name: "resolved",
+        type: { named: { symbol: "ResolvedDiagram" } } },
+      { name: "tokens",
+        type: { named: { symbol: "archeglyph.theme.v1.Tokens" } },
+        is_optional: true }
+    ]
+  }
+]

@@ -1,0 +1,25 @@
+# Visible annotation with cascaded glyphs. Callout glyph is only
+# populated when the annotation is anchored (per design.md §5.1
+# cascade output); free annotations get a default-constructed callout
+# that the renderer treats as "no callout".
+
+file: "packages/core/src/resolver/resolved_annotation/impl.ts"
+doc: "Visible annotation with cascaded shape + typography (+ optional callout for anchored)."
+
+structs: [
+  { name: "ResolvedAnnotation"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "callout",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } },
+        is_optional: true }
+    ]
+  }
+]

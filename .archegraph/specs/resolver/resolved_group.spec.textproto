@@ -1,0 +1,33 @@
+# Visible group (BOUNDED or CONTRACTED super-node) with cascaded
+# glyphs. is_super_node + hidden_descendant_count carry through from
+# FilteredGroup so the renderer can show the `+N hidden` indicator
+# on contracted super-nodes.
+
+file: "packages/core/src/resolver/resolved_group/impl.ts"
+doc: "Visible group with cascaded glyphs. is_super_node marks CONTRACTED."
+
+structs: [
+  { name: "ResolvedGroup"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parent_group",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.GroupLayout" } },
+        is_optional: true },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true },
+      { name: "is_super_node",
+        type: { primitive: BOOLEAN } },
+      { name: "hidden_descendant_count",
+        type: { primitive: INTEGER } }
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+# Resolver pillar error type. All three resolver services return
+# Result<Output, ResolveError> per docs/style-guide.md §3.3. ResolveError
+# carries a human-readable message; specific failure modes are
+# distinguished by message text for v1 (no variants yet).
+
+file: "packages/core/src/resolver/resolve_error/impl.ts"
+doc: "Error type returned by all three resolver services."
+
+structs: [
+  { name: "ResolveError"
+    fields: [
+      { name: "message", type: { primitive: CHARACTER } }
+    ]
+  }
+]

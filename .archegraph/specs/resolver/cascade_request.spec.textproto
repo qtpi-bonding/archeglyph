@@ -1,0 +1,23 @@
+# Input for StyleCascade.cascade. Takes the output of VisibilityFilter
+# (filtered topology), the original stylesheet (per-element overrides),
+# and the theme (components + tokens). Stylesheet + theme are optional;
+# absent stylesheet → cascade starts from theme layer only; absent theme
+# → cascade starts from per-element override layer (or empty).
+
+file: "packages/core/src/resolver/cascade_request/impl.ts"
+doc: "Input for StyleCascade.cascade."
+
+structs: [
+  { name: "CascadeRequest"
+    fields: [
+      { name: "filtered",
+        type: { named: { symbol: "FilteredDiagram" } } },
+      { name: "stylesheet",
+        type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } },
+        is_optional: true },
+      { name: "theme",
+        type: { named: { symbol: "archeglyph.theme.v1.Theme" } },
+        is_optional: true }
+    ]
+  }
+]

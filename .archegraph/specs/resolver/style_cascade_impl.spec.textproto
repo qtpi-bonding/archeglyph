@@ -1,0 +1,65 @@
+# StyleCascadeImpl — concrete implementation of StyleCascade.
+#
+# Implementation guidance:
+#
+# - Per-element-type cascades are independent. Process all
+#   FilteredNodes, then FilteredEdges, then FilteredGroups, then
+#   FilteredAnnotations. Inside each loop, glyph types are also
+#   independent (Glyph2D and Typography for nodes/groups don't share
+#   fields).
+#
+# - Theme component lookup: stylesheet.nodes[id]?.component is a
+#   string name; theme.node_components is a map keyed by `name`.
+#   Empty component name OR missing component entry → no theme layer
+#   contribution; start the cascade from the per-element override.
+#
+# - Field-level overlay: implement a `mergeGlyph2D(base, layer)`
+#   helper that walks each scalar/sub-message field. For scalars,
+#   "set" is determined by proto3 presence (use the `case` accessor
+#   from @bufbuild/protobuf for `optional` scalars; for `repeated`
+#   fields, non-empty wins; for sub-messages, recurse). The same
+#   pattern works for Glyph1D, Typography, callouts.
+#
+# - Annotations: only set ResolvedAnnotation.callout when the
+#   FilteredAnnotation.entry has an anchor (entry.anchor field is
+#   present per style.proto AnnotationEntry shape). Otherwise leave
+#   callout default-constructed (renderer treats empty Glyph1D as
+#   "no callout"). Conditional logic only — no separate cascade pass.
+#
+# - Layout passthrough: copy stylesheet.nodes[id]?.layout into
+#   ResolvedNode.layout verbatim. Same for edges, groups, annotations.
+#   Resolver does NOT merge layout fields with theme — layout comes
+#   from the stylesheet only (theme has no layout surface in v1).
+#
+# - DO NOT resolve token refs here. If a glyph field references
+#   `$colors.primary`, it stays as the literal string `"$colors.primary"`
+#   in the output. TokenResolver handles the next pass.
+#
+# - Errors: return Err(ResolveError) on malformed inputs (e.g.
+#   stylesheet references a theme component name that doesn't exist
+#   in the theme). Do NOT throw.
+#
+# - Determinism: same iteration ordering rules as VisibilityFilterImpl.
+#   Output's `repeated` arrays MUST be ordered by id ascending.
+
+file: "packages/core/src/resolver/style_cascade/impl.ts"
+doc: "In-memory StyleCascade implementation. Pure logic, sync, Result-returning."
+
+structs: [
+  { name: "StyleCascadeImpl"
+    implements: ["StyleCascade"]
+    methods: [
+      { name: "cascade"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "CascadeRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+        uses: ["ResolvedNode", "ResolvedEdge", "ResolvedGroup", "ResolvedAnnotation"]
+      }
+    ]
+  }
+]

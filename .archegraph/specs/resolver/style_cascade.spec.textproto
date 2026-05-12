@@ -1,0 +1,37 @@
+# StyleCascade — per-element style cascade producing resolved glyphs.
+#
+# For each visible element in FilteredDiagram, walks the cascade
+# (per design.md §5.1):
+#   1. Theme name-bound component (when the stylesheet entry has
+#      `component: "X"` AND the theme has a component with `name: "X"`).
+#      Layer its glyphs onto an empty starting set.
+#   2. Per-element override fields from the stylesheet entry.
+#      Layer each set field on top of the theme layer. Field-level
+#      overlay: Glyph2D.stroke.color from layer A and Glyph2D.glow
+#      from layer B coexist; both setting Glyph2D.stroke.color → later wins.
+#
+# Output is a ResolvedDiagram with cascaded glyphs that may still
+# contain `$token.path` string refs (resolved by TokenResolver in the
+# next stage).
+#
+# Pure logic. Sync. Errors via Result<ResolvedDiagram, ResolveError>.
+
+file: "packages/core/src/resolver/style_cascade/schema_gen.ts"
+doc: "StyleCascade interface — per-element cascade producing resolved glyphs."
+
+interfaces: [
+  { name: "StyleCascade"
+    methods: [
+      { name: "cascade"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "CascadeRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+      }
+    ]
+  }
+]

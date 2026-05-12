@@ -1,0 +1,66 @@
+# VisibilityFilterImpl — concrete implementation of VisibilityFilter.
+#
+# Implementation guidance:
+#
+# - Iterate diagram.graph.nodes / edges / groups in their map iteration
+#   order (sorted lex by key per design.md §3.2 determinism rule).
+#
+# - Build a set `hidden_node_ids` from stylesheet.nodes entries whose
+#   `visibility = HIDDEN`. A missing entry implies visible.
+#
+# - For each group, look up stylesheet.groups[group.id]?.layout?.render_mode.
+#   Default = BOUNDED when entry or field missing.
+#
+# - EXPANDED handling: collect EXPANDED group ids first (no transitive
+#   expansion needed for v1 — each EXPANDED group lifts its direct
+#   children up to its parent_group). For each child of an EXPANDED
+#   group, rewrite parent_group to the EXPANDED group's parent_group
+#   (which may itself be unset → top level).
+#
+# - CONTRACTED handling: collect CONTRACTED group ids. Build a map
+#   `contracted_root[descendant_id] = ancestor_group_id` covering every
+#   descendant of every CONTRACTED group. Use this to:
+#     1. Skip those descendants when emitting FilteredNodes / FilteredGroups.
+#     2. Re-point edge source/target to the ancestor when an endpoint
+#        is in `contracted_root`.
+#     3. Count descendants per CONTRACTED group → hidden_descendant_count.
+#
+# - Apply ordering: HIDDEN check first (per-node), then EXPANDED
+#   collapse (rewrites parent_group), then CONTRACTED collapse
+#   (omits descendants, re-points edges). Annotations pass through
+#   verbatim — no visibility field on AnnotationEntry today.
+#
+# - Edge filter: drop edges whose source OR target ended up in the
+#   hidden set, or whose endpoint is a descendant of a CONTRACTED
+#   group AND the descendant itself wasn't already mapped to the
+#   ancestor (defensive — should be covered by the re-point step).
+#
+# - Errors: return Err(ResolveError) on malformed inputs (e.g.
+#   parent_group references unknown group id). Do NOT throw.
+#
+# - Determinism: do not call Math.random or rely on Map insertion
+#   order beyond what proto map iteration guarantees. The output's
+#   `repeated` arrays MUST be ordered by id ascending so reruns are
+#   byte-identical.
+
+file: "packages/core/src/resolver/visibility_filter/impl.ts"
+doc: "In-memory VisibilityFilter implementation. Pure logic, sync, Result-returning."
+
+structs: [
+  { name: "VisibilityFilterImpl"
+    implements: ["VisibilityFilter"]
+    methods: [
+      { name: "filter"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "FilterRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "FilteredDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+        uses: ["FilteredNode", "FilteredEdge", "FilteredGroup", "FilteredAnnotation"]
+      }
+    ]
+  }
+]

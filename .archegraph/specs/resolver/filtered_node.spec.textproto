@@ -1,0 +1,27 @@
+# Visible content node after the visibility/render-mode pre-pass.
+# Source id preserved verbatim. `parent_group` may have been rewritten
+# if the original parent was an EXPANDED group (children re-parented
+# up to the EXPANDED group's parent_group).
+
+file: "packages/core/src/resolver/filtered_node/impl.ts"
+doc: "Visible content node, source-id preserved."
+
+structs: [
+  { name: "FilteredNode"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parent_group",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "tags",
+        type: { named: { symbol: "Map", args: [
+          { primitive: CHARACTER },
+          { primitive: CHARACTER }
+        ]}}},
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true }
+    ]
+  }
+]

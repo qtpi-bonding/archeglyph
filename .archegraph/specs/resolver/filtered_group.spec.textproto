@@ -1,0 +1,31 @@
+# Visible group after visibility pre-pass. is_super_node=true marks a
+# CONTRACTED group whose descendants have been folded away (the layout
+# pillar uses this to size the super-node and append the `+N hidden`
+# indicator).
+
+file: "packages/core/src/resolver/filtered_group/impl.ts"
+doc: "Visible group. is_super_node=true marks a CONTRACTED super-node."
+
+structs: [
+  { name: "FilteredGroup"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parent_group",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "tags",
+        type: { named: { symbol: "Map", args: [
+          { primitive: CHARACTER },
+          { primitive: CHARACTER }
+        ]}}},
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true },
+      { name: "is_super_node",
+        type: { primitive: BOOLEAN } },
+      { name: "hidden_descendant_count",
+        type: { primitive: INTEGER } }
+    ]
+  }
+]

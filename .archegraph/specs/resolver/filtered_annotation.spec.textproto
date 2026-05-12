@@ -1,0 +1,19 @@
+# Visible annotation entry. Resolver doesn't transform annotation
+# content during the visibility pass — annotations either appear in
+# the stylesheet or not (no visibility field on AnnotationEntry today).
+# The full source entry is carried through so the cascade can read
+# anchor + content from it.
+
+file: "packages/core/src/resolver/filtered_annotation/impl.ts"
+doc: "Visible annotation entry, source AnnotationEntry carried through verbatim."
+
+structs: [
+  { name: "FilteredAnnotation"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "entry",
+        type: { named: { symbol: "archeglyph.style.v1.AnnotationEntry" } } }
+    ]
+  }
+]

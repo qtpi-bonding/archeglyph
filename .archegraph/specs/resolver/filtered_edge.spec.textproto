@@ -1,0 +1,28 @@
+# Visible edge after visibility pre-pass. Endpoints may have been
+# re-pointed up to a CONTRACTED group's super-node id.
+
+file: "packages/core/src/resolver/filtered_edge/impl.ts"
+doc: "Visible edge, source/target possibly re-pointed to a contracted ancestor."
+
+structs: [
+  { name: "FilteredEdge"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "source",
+        type: { primitive: CHARACTER } },
+      { name: "target",
+        type: { primitive: CHARACTER } },
+      { name: "ordinal",
+        type: { primitive: INTEGER } },
+      { name: "tags",
+        type: { named: { symbol: "Map", args: [
+          { primitive: CHARACTER },
+          { primitive: CHARACTER }
+        ]}}},
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true }
+    ]
+  }
+]

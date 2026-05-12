@@ -1,0 +1,62 @@
+# TokenResolverImpl — concrete implementation of TokenResolver.
+#
+# Implementation guidance:
+#
+# - Tokens shape: theme.proto's Tokens message has top-level sub-tables
+#   (colors, fonts, sizes, etc. — verify against the actual proto when
+#   implementing). A ref `$colors.primary` is a path: split on '.',
+#   first segment selects the sub-table, rest index into it.
+#
+# - Walk string fields generically. Don't hard-code which Glyph2D /
+#   Glyph1D / Typography fields can carry token refs — assume any
+#   string scalar can. Use a small recursive walker that handles:
+#     - scalar string fields with $ prefix → look up + replace
+#     - non-$ string fields → leave alone
+#     - sub-messages → recurse
+#     - repeated → map over elements
+#     - maps → process values (keys are NOT subject to token resolution)
+#
+# - Unresolved refs (e.g. `$colors.nonexistent`) → leave the literal
+#   `$colors.nonexistent` string in the output. Do NOT throw and do
+#   NOT return Err — silently leaving the ref is the spec'd behavior
+#   (renderer falls back to its own defaults).
+#
+# - Edge case: a string field whose VALUE happens to start with `$`
+#   but isn't a valid token path (e.g. `"$invalid path"`). Match
+#   against the regex strictly; non-matching strings pass through
+#   unchanged.
+#
+# - Errors: return Err(ResolveError) only on structural problems
+#   (e.g. theme.tokens itself is malformed). A missing ref is NOT an
+#   error per the spec.
+#
+# - Performance: the diagram is small (typical archeglyph file is
+#   dozens to low hundreds of elements). A naive walker is fine; no
+#   need for codegen reflection tricks.
+#
+# - Determinism: walking proto messages by their declared field order
+#   is automatic with @bufbuild/protobuf reflection. Don't introduce
+#   ordering via Object.keys on a record — that's insertion-order
+#   dependent across runtimes.
+
+file: "packages/core/src/resolver/token_resolver/impl.ts"
+doc: "In-memory TokenResolver implementation. Pure logic, sync, Result-returning."
+
+structs: [
+  { name: "TokenResolverImpl"
+    implements: ["TokenResolver"]
+    methods: [
+      { name: "resolveTokens"
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "ResolveTokensRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+        uses: ["ResolvedNode", "ResolvedEdge", "ResolvedGroup", "ResolvedAnnotation"]
+      }
+    ]
+  }
+]

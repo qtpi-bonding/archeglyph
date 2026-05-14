@@ -23,6 +23,9 @@ node_modules/
 
 # archebuild runtime (build server's per-project state)
 .archebuild/
+
+# Per-build history snapshots (transient, not durable contract artifacts)
+.archegraph/builds/
 archebuild.db
 archebuild.db-shm
 archebuild.db-wal

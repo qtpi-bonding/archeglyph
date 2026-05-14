@@ -13,9 +13,13 @@ node_modules/
 .archegraph/server.pid
 .archegraph/server.port
 
-# Spec-level artifacts (.archegraph/specs/*/{gcontract,gspec_delta,dag}.{pb,db})
-# are NOT ignored — they capture the contract/build state of a specific spec
-# revision and are committable like the spec.proto itself.
+# Spec-level artifact contract (durable, tracked):
+#   gspec_delta.pb  — the spec delta (what the build will do)
+#   gcode_before.pb — the gcode snapshot the spec was authored against (needed by verify)
+# Spec-level display + runtime outputs (regenerable, NOT tracked):
+.archegraph/specs/*/gcontract.pb
+.archegraph/specs/*/gbuild_delta.pb
+.archegraph/specs/*/gdrift_delta.pb
 
 # archebuild runtime (build server's per-project state)
 .archebuild/

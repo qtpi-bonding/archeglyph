@@ -2,7 +2,7 @@ server:
   db_path: "./archebuild.db"
 
 execution:
-  max_parallelism: 2
+  max_parallelism: 5
   default_timeout_seconds: 600
   executor: shell
 
@@ -73,7 +73,7 @@ execution:
 
   commands:
     - attempts: 4
-      command: 'claude -p "$(cat {{config_file}})" --model opus --output-format json --max-turns 100 --allowedTools "Write,Edit,Read,Bash,Glob,Grep"'
+      command: 'claude -p "$(cat {{config_file}})" --model sonnet --output-format json --max-turns 150 --allowedTools "Write,Edit,Read,Bash,Glob,Grep"'
 
   # Cross-archegraph-boundary type imports. archegraph's TS codegen needs
   # to know how to spell the import for a foreign-namespace proto package

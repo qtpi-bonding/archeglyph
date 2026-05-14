@@ -1,0 +1,37 @@
+# An annotation after layout. Annotations are ALWAYS explicitly positioned —
+# they never go through elkjs. Their position comes directly from
+# AnnotationLayout.position in the style file (canvas-relative, or
+# anchor-parent-relative when anchored to an element).
+#
+# The layout stage passes annotations through unchanged from ResolvedAnnotation,
+# only copying the position from their AnnotationLayout into the top-level
+# position field for the renderer's convenience.
+
+file: "packages/core/src/layout/laid_out_annotation/impl.ts"
+doc: "Annotation with resolved glyphs and explicit position (never auto-laid-out)."
+
+structs: [
+  { name: "LaidOutAnnotation"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      # Canvas-relative, or anchor-element-relative when anchored.
+      # Copied from AnnotationLayout.position.
+      { name: "position",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      # Present when the annotation has an anchor (floating callout to an element).
+      { name: "callout",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } },
+        is_optional: true },
+      # Full layout preserved for renderer: anchor target, anchor_position
+      # (outline projection hint), label.
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } },
+        is_optional: true }
+    ]
+  }
+]

@@ -1,0 +1,82 @@
+# Boundary interface to elkjs. Handles the full elkjs interaction:
+# converting ResolvedDiagram to elkjs's ELKNode input graph, calling
+# elk.layout(), and converting the result back to LaidOutDiagram.
+#
+# This is a RAW layout — position overrides from the style file are NOT
+# applied here. ElkAdapterImpl produces positions purely from elkjs output.
+# LayoutEngineImpl applies overrides on top of this result.
+#
+# Implementation notes for ElkAdapterImpl:
+#
+# Import: `import ELK from 'elkjs/lib/elk.bundled.js'`
+# Construct once: `const elk = new ELK()`
+#
+# Building the elkjs input:
+# - Root ELKNode: id="root", layoutOptions: { "org.eclipse.elk.algorithm":
+#   "org.eclipse.elk.layered" }
+# - Nodes: each ResolvedNode → ELK child with id=node.id, width and height
+#   from node.layout?.size (if set), otherwise use a default size (e.g. 120x40).
+# - Groups with isSuperNode=false: ELK compound node (has its own children
+#   array). Set node.id as ELK parent for each child node/group.
+# - Groups with isSuperNode=true: ELK leaf node (no children array) — the
+#   VisibilityFilter already removed its children from the diagram.
+# - Edges: each ResolvedEdge → ELK edge with sources=[edge.source],
+#   targets=[edge.target].
+# - Annotations: SKIP — never go through elkjs (always explicitly positioned).
+#
+# Converting elkjs output to LaidOutDiagram:
+# - Walk the ELK result recursively (ELK returns a nested tree matching the
+#   input hierarchy).
+# - For each ELK node: extract x, y (position) and width, height (size).
+#   ELK positions are relative to the node's parent container — this matches
+#   LaidOutNode.position semantics.
+# - For each ELK edge: extract sections array (startPoint, bendPoints,
+#   endPoint per section) → EdgeSection[].
+# - Annotations: copy directly from ResolvedDiagram.annotations, extracting
+#   position from annotation.layout?.position ?? { x: 0, y: 0 }.
+# - Build LaidOutNode/LaidOutEdge/LaidOutGroup/LaidOutAnnotation/LaidOutDiagram
+#   using Object.assign(new Xxx(), { ... }) for each.
+
+file: "packages/core/src/layout/elk_adapter/impl.ts"
+doc: "elkjs boundary — converts ResolvedDiagram to elkjs input, runs layout, converts result back."
+
+structs: [
+  { name: "ElkAdapterImpl"
+    implements: ["ElkAdapter"]
+    methods: [
+      { name: "runLayout"
+        is_async: true
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: [
+          "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
+          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection"
+        ]
+      }
+    ]
+  }
+]
+
+interfaces: [
+  { name: "ElkAdapter"
+    methods: [
+      { name: "runLayout"
+        is_async: true
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+      }
+    ]
+  }
+]

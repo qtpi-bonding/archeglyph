@@ -50,6 +50,9 @@ execution:
       - Implement method bodies FULLY per the description. Do not stub with
         `throw new Error('not implemented')`.
       - For brownfield MODIFIED files: edit in place, preserve existing content.
+      - When constructing data objects, initialize all fields at construction with
+        `Object.assign(new Xxx(), { field1, field2, ... })`. Do NOT construct with
+        `new Xxx()` and then assign fields individually after.
 
     delete: |
       Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.

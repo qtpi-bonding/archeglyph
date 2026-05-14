@@ -1,0 +1,39 @@
+# A node after layout. Carries the resolved glyphs from the resolver stage
+# plus the position and size assigned by elkjs (or overridden by an explicit
+# NodeLayout.position in the style file).
+#
+# position: parent-relative (canvas if parentGroup is empty, parent group
+# frame otherwise). Matches the NodeLayout.position convention.
+# size: computed by elkjs from the NodeLayout.size hint (if present) or
+# elkjs auto-sizing. Renderer uses this for shape bounds and label clipping.
+
+file: "packages/core/src/layout/laid_out_node/impl.ts"
+doc: "Node with resolved glyphs and layout-assigned position/size."
+
+structs: [
+  { name: "LaidOutNode"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parentGroup",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "position",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true },
+      # Preserved for renderer use: source/target attachment hints and
+      # decoration positions need the node's layout to project outline points.
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.NodeLayout" } },
+        is_optional: true }
+    ]
+  }
+]

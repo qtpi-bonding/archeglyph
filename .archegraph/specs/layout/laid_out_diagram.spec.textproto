@@ -1,0 +1,27 @@
+# The complete output of the layout stage. Everything the renderer needs:
+# topology, resolved glyphs, and positions for every element.
+# No further lookups into the style or theme files are required after this point.
+
+file: "packages/core/src/layout/laid_out_diagram/impl.ts"
+doc: "Fully positioned diagram. Complete input for the renderer — no further style lookups needed."
+
+structs: [
+  { name: "LaidOutDiagram"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "nodes",
+        type: { named: { symbol: "LaidOutNode" } },
+        is_repeated: true },
+      { name: "edges",
+        type: { named: { symbol: "LaidOutEdge" } },
+        is_repeated: true },
+      { name: "groups",
+        type: { named: { symbol: "LaidOutGroup" } },
+        is_repeated: true },
+      { name: "annotations",
+        type: { named: { symbol: "LaidOutAnnotation" } },
+        is_repeated: true }
+    ]
+  }
+]

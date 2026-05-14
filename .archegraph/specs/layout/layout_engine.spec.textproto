@@ -1,0 +1,60 @@
+# Orchestrates the full layout pipeline:
+#   1. Call ElkAdapter.runLayout(diagram) → raw LaidOutDiagram (elk positions)
+#   2. Apply position overrides: for any node/edge/group whose style entry has
+#      an explicit position set (NodeLayout.position, GroupLayout.position,
+#      EdgeLayout.waypoints), replace the elkjs result with the override.
+#   3. Return the final LaidOutDiagram.
+#
+# Position override semantics (§5.3 of docs/design.md):
+# - Node: if resolved.layout?.position is set, replace laidOutNode.position
+#   with that value. Size from elkjs is kept (explicit size override is a
+#   separate NodeLayout.size field, not implemented in v1).
+# - Group: same as node — GroupLayout.position overrides elkjs position.
+# - Edge: if resolved.layout?.waypoints is non-empty, discard elkjs sections
+#   and build a single EdgeSection from the waypoints array instead
+#   (startPoint=waypoints[0], endPoint=waypoints[last], bendPoints=middle).
+# - Annotations: already explicitly positioned by ElkAdapter; no override step.
+#
+# The LayoutEngineImpl holds an ElkAdapterImpl instance (constructed internally).
+# There is no external injection in v1 — the adapter is an implementation detail.
+
+file: "packages/core/src/layout/layout_engine/impl.ts"
+doc: "Layout orchestrator — runs elkjs via ElkAdapter then applies style position overrides."
+
+structs: [
+  { name: "LayoutEngineImpl"
+    implements: ["LayoutEngine"]
+    methods: [
+      { name: "layout"
+        is_async: true
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "LayoutRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: ["ElkAdapter", "LaidOutDiagram"]
+      }
+    ]
+  }
+]
+
+interfaces: [
+  { name: "LayoutEngine"
+    methods: [
+      { name: "layout"
+        is_async: true
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "LayoutRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+      }
+    ]
+  }
+]

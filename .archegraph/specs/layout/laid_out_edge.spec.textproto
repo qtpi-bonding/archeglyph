@@ -1,0 +1,37 @@
+# An edge after layout. Carries the resolved glyphs from the resolver stage
+# plus the path computed by elkjs (sections with bend points).
+#
+# sections: elkjs edge path, decomposed into segments. Most edges have one
+# section. Renderer walks sections in order to build the SVG path.
+# The EdgeLayout.waypoints from the style file (if any) WIN over elkjs
+# sections — the LayoutEngineImpl.layout() method applies this override
+# before producing the final LaidOutEdge.
+
+file: "packages/core/src/layout/laid_out_edge/impl.ts"
+doc: "Edge with resolved glyphs and layout-assigned path sections."
+
+structs: [
+  { name: "LaidOutEdge"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "source",
+        type: { primitive: CHARACTER } },
+      { name: "target",
+        type: { primitive: CHARACTER } },
+      { name: "sections",
+        type: { named: { symbol: "EdgeSection" } },
+        is_repeated: true },
+      { name: "connection",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.EdgeLayout" } },
+        is_optional: true }
+    ]
+  }
+]

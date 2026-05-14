@@ -1,0 +1,15 @@
+# Error returned when layout fails. The only failure mode in practice is
+# elkjs throwing (malformed graph, unreachable layout algorithm). A missing
+# position override is not an error — it's silently covered by the elkjs result.
+
+file: "packages/core/src/layout/layout_error/impl.ts"
+doc: "Error value returned by the layout stage."
+
+structs: [
+  { name: "LayoutError"
+    fields: [
+      { name: "message",
+        type: { primitive: CHARACTER } }
+    ]
+  }
+]

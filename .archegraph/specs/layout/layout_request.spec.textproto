@@ -1,0 +1,15 @@
+# Input to the layout stage. Carries the post-TokenResolver ResolvedDiagram
+# (glyphs fully resolved, $token refs substituted, visibility filter and group
+# collapse already applied by the resolver stage).
+
+file: "packages/core/src/layout/layout_request/impl.ts"
+doc: "Input to the layout stage."
+
+structs: [
+  { name: "LayoutRequest"
+    fields: [
+      { name: "diagram",
+        type: { named: { symbol: "ResolvedDiagram" } } }
+    ]
+  }
+]

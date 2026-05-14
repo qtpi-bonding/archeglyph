@@ -1,0 +1,44 @@
+# A group after layout. Two distinct cases depending on isSuperNode:
+#
+# isSuperNode=false (BOUNDED or EXPANDED render mode):
+#   Rendered as a container rectangle. position/size define the bounding box
+#   of the group in its parent's coordinate space. Children are laid out inside.
+#
+# isSuperNode=true (CONTRACTED render mode, set by VisibilityFilter):
+#   Rendered as a single node (not a container). Children are hidden;
+#   hiddenDescendantCount drives the +N indicator. The group was passed to
+#   elkjs as a leaf node, so its position/size come from elkjs treating it
+#   as a regular node.
+
+file: "packages/core/src/layout/laid_out_group/impl.ts"
+doc: "Group with resolved glyphs and layout-assigned position/size."
+
+structs: [
+  { name: "LaidOutGroup"
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "parentGroup",
+        type: { primitive: CHARACTER },
+        is_optional: true },
+      { name: "position",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "shape",
+        type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography",
+        type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "label",
+        type: { named: { symbol: "archeglyph.content.v1.Localization" } },
+        is_repeated: true },
+      { name: "isSuperNode",
+        type: { primitive: BOOLEAN } },
+      { name: "hiddenDescendantCount",
+        type: { primitive: INTEGER } },
+      { name: "layout",
+        type: { named: { symbol: "archeglyph.style.v1.GroupLayout" } },
+        is_optional: true }
+    ]
+  }
+]

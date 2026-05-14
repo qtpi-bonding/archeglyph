@@ -1,0 +1,25 @@
+# One segment of an elkjs edge path. elkjs decomposes edges into sections —
+# each section has a start point, zero or more bend points, and an end point.
+# Most edges in the layered algorithm produce one section; hierarchical edges
+# (crossing group boundaries) can produce multiple.
+#
+# Coordinates are in the coordinate space of the lowest-common-ancestor group
+# of the edge's source and target (or canvas-relative if no common group).
+# This matches the EdgeLayout.waypoints convention in the style file.
+
+file: "packages/core/src/layout/edge_section/impl.ts"
+doc: "One segment of an elkjs-computed edge path."
+
+structs: [
+  { name: "EdgeSection"
+    fields: [
+      { name: "startPoint",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "bendPoints",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } },
+        is_repeated: true },
+      { name: "endPoint",
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+  }
+]

@@ -35,7 +35,10 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
-        uses: ["LayoutAdapter"]
+        # LayoutAdapter is accessed via the class field this.adapter, not as a
+        # direct type reference in the method body. No uses needed — the invocation
+        # of this.adapter.runLayout() is the structural dependency.
+        uses: []
       }
     ]
   }

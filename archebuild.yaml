@@ -53,6 +53,8 @@ execution:
       - When constructing data objects, initialize all fields at construction with
         `Object.assign(new Xxx(), { field1, field2, ... })`. Do NOT construct with
         `new Xxx()` and then assign fields individually after.
+      - If a parameter comment says it is an array (e.g. "param is Foo[]"), declare
+        it as `Foo[]` in TypeScript even if the schema skeleton shows `Foo`.
 
     delete: |
       Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.

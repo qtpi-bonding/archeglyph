@@ -1,0 +1,99 @@
+# Pure SVG generation helpers. All functions are stateless string transformers —
+# no I/O, no mutation, deterministic output. Used internally by SvgRendererImpl.
+#
+# Floats must be rounded to 2 decimal places throughout (use a helper like
+# `r(n: number): string => n.toFixed(2)`). This is the archeglyph determinism
+# guarantee — same layout → same SVG bytes.
+#
+# ── shapePath ──────────────────────────────────────────────────────────────────
+# Converts a Glyph2D shape_kind + position + size to an SVG <path> or <rect>/<ellipse>.
+# Shape mapping:
+#   SHAPE_UNSPECIFIED / SHAPE_RECT → <rect x y width height rx=0>
+#   SHAPE_ELLIPSE                  → <ellipse cx cy rx ry>
+#   SHAPE_CYLINDER                 → <rect> with top ellipse cap (two <path> elements)
+#   SHAPE_TRIANGLE .. SHAPE_DECAGON → regular n-gon inscribed in bbox via polygon points
+#     n-gon formula: for k in 0..n: angle = 2π*k/n - π/2 (start at top)
+#     point = (cx + rx*cos(angle), cy + ry*sin(angle))
+#   custom_path_ref → emit a <use href="#<ref>"> referencing a <symbol> in <defs>
+#     (for v1, render as SHAPE_RECT fallback with a data-shape-ref attribute)
+# Returns the SVG element string (no surrounding whitespace).
+# Apply stroke/fill from Glyph2D.stroke and Glyph2D.fill as inline style or attributes.
+#
+# ── edgePath ───────────────────────────────────────────────────────────────────
+# Converts EdgeSection[] to an SVG path d="" attribute value.
+# Walk sections in order: M startPoint, for each section emit L bendPoints
+# then L endPoint. Result: "M x0,y0 L x1,y1 ... L xn,yn".
+# Rounds all coords to 2dp. Empty sections array → returns "".
+#
+# ── textElement ────────────────────────────────────────────────────────────────
+# Converts a label (Localization[]) + Typography + anchor position to an SVG
+# <text> element. For v1 use the first Localization entry (index 0); if empty
+# return "".
+# Attributes from Typography:
+#   font        → font-family
+#   size        → font-size (in px)
+#   weight      → font-weight (NORMAL=400, BOLD=700)
+#   color       → fill
+#   align       → text-anchor (LEFT="start", CENTER="middle", RIGHT="end")
+#   visible     → if false return ""
+# Position: place text at the provided Vec2 anchor (center of element for nodes/groups).
+#
+# ── arrowMarkers ───────────────────────────────────────────────────────────────
+# Given the set of ArrowheadVariant values in use across all edges, returns a
+# <defs> block containing one <marker> per variant. Marker id = "ah-<variant-name>".
+# Variants:
+#   ARROWHEAD_NONE    → no marker emitted
+#   ARROWHEAD_OPEN    → two-line open arrow (chevron, not filled)
+#   ARROWHEAD_UNSPECIFIED / default → filled triangle (same as OPEN but filled)
+#   ARROWHEAD_DIAMOND → filled diamond
+#   ARROWHEAD_CIRCLE  → filled circle
+# Edge <path> elements reference markers via marker-end="url(#ah-<variant>)".
+# Returns "" if no edges have arrowheads.
+#
+# ── viewBox ────────────────────────────────────────────────────────────────────
+# Computes the SVG viewBox string "minX minY width height" from a LaidOutDiagram.
+# Walk all nodes, groups, annotations — take the union of their bounding boxes.
+# Add 16px padding on all sides. Round to 2dp.
+# If the diagram is empty, return "0 0 100 100".
+
+file: "packages/core/src/renderer/svg_painter/impl.ts"
+doc: "Pure SVG string helpers — shape paths, edge paths, text elements, arrowhead markers, viewBox."
+
+methods: [
+  { name: "shapePath"
+    inputs: [
+      { name: "shape",    type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size",     type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  # sections param is EdgeSection[] (array) — declare as EdgeSection[], not EdgeSection
+  { name: "edgePath"
+    inputs: [
+      { name: "sections", type: { named: { symbol: "EdgeSection" } } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  # label param is Localization[] (array); variants param is ArrowheadVariant[] (array)
+  { name: "textElement"
+    inputs: [
+      { name: "label",      type: { named: { symbol: "archeglyph.content.v1.Localization" } } },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "anchor",     type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  { name: "arrowMarkers"
+    inputs: [
+      { name: "variants", type: { named: { symbol: "archeglyph.style.v1.ArrowheadVariant" } } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  { name: "viewBox"
+    inputs: [
+      { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

@@ -1,0 +1,106 @@
+# Main SVG renderer. Takes a fully laid-out diagram and emits a deterministic
+# SVG string. Sync — no async, no I/O.
+#
+# Output structure:
+#
+#   <!-- archeglyph version=1 -->
+#   <svg xmlns="http://www.w3.org/2000/svg"
+#        viewBox="<computed by svgPainter.viewBox>"
+#        style="background: <canvas background color or #ffffff>">
+#     <defs>
+#       <!-- arrowhead markers from svgPainter.arrowMarkers -->
+#     </defs>
+#     <!-- groups, outer first (ascending depth order) -->
+#     <!-- nodes, sorted by id -->
+#     <!-- edges, sorted by id -->
+#     <!-- annotations, sorted by id -->
+#   </svg>
+#
+# Implementation notes for SvgRendererImpl.render():
+#
+# 1. Collect arrowhead variants in use:
+#    Walk diagram.edges, collect edge.layout?.arrowheads?.start and .end
+#    (ArrowheadVariant). Deduplicate. Pass to svgPainter.arrowMarkers().
+#
+# 2. Render groups outer-first:
+#    Sort diagram.groups by id for determinism.
+#    For groups with isSuperNode=false: render as a container rect using
+#      svgPainter.shapePath(group.shape, group.position, group.size) for
+#      the background, then svgPainter.textElement for the label at
+#      (group.position.x + group.size.x/2, group.position.y + 12).
+#    For groups with isSuperNode=true: render as a node shape with a
+#      "+N" indicator — use svgPainter.shapePath for the shape, then two
+#      text elements: the group label and "+<hiddenDescendantCount>" below it.
+#
+# 3. Render nodes:
+#    Sort diagram.nodes by id.
+#    For each node: svgPainter.shapePath(node.shape, node.position, node.size)
+#    then svgPainter.textElement(node.label, node.typography,
+#      { x: node.position.x + node.size.x/2, y: node.position.y + node.size.y/2 }).
+#
+# 4. Render edges:
+#    Sort diagram.edges by id.
+#    For each edge:
+#      path d = svgPainter.edgePath(edge.sections)
+#      emit <path d="..." fill="none" stroke="<color>" stroke-width="<width>"
+#                  marker-end="url(#ah-<end-variant>)"
+#                  marker-start="url(#ah-<start-variant>)" />
+#      if edge has a label: svgPainter.textElement at midpoint of first section.
+#
+# 5. Render annotations:
+#    Sort diagram.annotations by id.
+#    If annotation has a callout (layout?.anchor is set):
+#      emit <line> from annotation.position to the anchor element's center
+#      using the callout Glyph1D stroke style.
+#    Emit svgPainter.shapePath(annotation.shape, annotation.position, size)
+#      where size = annotation.layout?.size ?? { x: 120, y: 40 } (default).
+#    Emit svgPainter.textElement for the label.
+#
+# 6. Wrap in <svg> with viewBox from svgPainter.viewBox(diagram).
+#    Prefix with the metadata comment.
+#
+# Error: return Err(RenderError) only if diagram.id is empty (structural
+# invariant violation). All other problems (missing glyphs, unknown shapes)
+# use defaults silently.
+
+file: "packages/core/src/renderer/svg_renderer/impl.ts"
+doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string."
+
+structs: [
+  { name: "SvgRendererImpl"
+    implements: ["SvgRenderer"]
+    methods: [
+      { name: "render"
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "LaidOutDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: CHARACTER },
+          { named: { symbol: "RenderError" } }
+        ]}}
+        uses: [
+          "LaidOutNode", "LaidOutEdge", "LaidOutGroup", "LaidOutAnnotation",
+          "EdgeSection"
+        ]
+      }
+    ]
+  }
+]
+
+interfaces: [
+  { name: "SvgRenderer"
+    methods: [
+      { name: "render"
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "LaidOutDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: CHARACTER },
+          { named: { symbol: "RenderError" } }
+        ]}}
+      }
+    ]
+  }
+]

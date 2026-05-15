@@ -1,0 +1,17 @@
+# Error returned when rendering fails. In practice the renderer is robust —
+# unknown shape kinds fall back to SHAPE_RECT, missing typography fields use
+# code defaults. RenderError is reserved for structural problems (e.g.
+# a LaidOutDiagram with inconsistent internal state) that should never occur
+# in production but are surfaced as values rather than exceptions.
+
+file: "packages/core/src/renderer/render_error/impl.ts"
+doc: "Error value returned by the renderer."
+
+structs: [
+  { name: "RenderError"
+    fields: [
+      { name: "message",
+        type: { primitive: CHARACTER } }
+    ]
+  }
+]

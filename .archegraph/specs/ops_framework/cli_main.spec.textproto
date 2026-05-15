@@ -1,0 +1,79 @@
+# CLI entry point. Single function `run(argv)` invoked by bin/archeglyph.ts.
+#
+# Responsibilities:
+#   1. Top-level dispatch: --help, --version, subcommand lookup
+#   2. Per-op argv parsing + Zod validation
+#   3. Dispatch to dispatchCli (for ops) or runMcpServer (for mcp subcommand)
+#   4. Exit code mapping (parse errors → 2, op errors → 1, ok → op's exit code)
+#
+# Exits via process.exit at the very end of run(); never throws to the caller.
+# Errors during op execution are logged to stderr and produce exit code 1.
+
+file: "packages/cli/src/main.ts"
+doc: "CLI argv dispatcher for the archeglyph binary."
+
+methods: [
+  # run: top-level CLI entry. Called by bin/archeglyph.ts with argv minus argv[0,1].
+  #
+  # TypeScript signature:
+  #   export async function run(argv: string[]): Promise<void>
+  #
+  # End-of-function: process.exit(code). Never returns to caller.
+  #
+  # Algorithm:
+  #
+  # 1. If argv is empty OR argv[0] is '--help' or '-h' or 'help':
+  #      process.stdout.write(formatRootHelp(REGISTRY))
+  #      process.exit(0)
+  #
+  # 2. If argv[0] is '--version' or '-V':
+  #      Read version from packages/cli/package.json at build time, or hardcode
+  #      '0.0.0' for now. process.stdout.write(version + '\n'); process.exit(0)
+  #
+  # 3. const subcommand = argv[0]; const rest = argv.slice(1)
+  #
+  # 4. If subcommand === 'mcp':
+  #      const ctx = createOpContext()
+  #      await runMcpServer(ctx)
+  #      process.exit(0)
+  #
+  # 5. Look up op: const op = REGISTRY.find(o => o.name === subcommand)
+  #    If not found:
+  #      process.stderr.write(`unknown subcommand: ${subcommand}\n\n`)
+  #      process.stderr.write(formatRootHelp(REGISTRY))
+  #      process.exit(1)
+  #
+  # 6. If rest includes '--help' or '-h':
+  #      process.stdout.write(formatOpHelp(op))
+  #      process.exit(0)
+  #
+  # 7. Parse + validate:
+  #      try { const params = parseArgv(op.params, rest) }
+  #      catch (err if ZodError or parseArgs error):
+  #        process.stderr.write(`error parsing arguments for '${subcommand}':\n`)
+  #        process.stderr.write(formatZodError(err) + '\n\n')
+  #        process.stderr.write(formatOpHelp(op))
+  #        process.exit(2)
+  #
+  # 8. Dispatch:
+  #      const ctx = createOpContext()
+  #      try {
+  #        const code = await dispatchCli(op, params, ctx)
+  #        process.exit(code)
+  #      } catch (err: unknown) {
+  #        ctx.logger.error(err instanceof Error ? err.message : String(err))
+  #        process.exit(1)
+  #      }
+  #
+  # formatZodError helper (inline in this file, not exported):
+  #   For ZodError: list each issue as `  <path.join('.')>: <message>`
+  #   For other errors: just the .message
+  { name: "run"
+    is_async: true
+    inputs: [
+      { name: "argv", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } }
+    ]
+    output: { primitive: VOID }
+    uses: ["REGISTRY", "parseArgv", "formatOpHelp", "formatRootHelp", "createOpContext", "dispatchCli", "runMcpServer"]
+  }
+]

@@ -1,0 +1,228 @@
+# Core Operation framework — single source of truth for both CLI and MCP surfaces.
+#
+# An Operation is a typed unit of work with one Zod schema describing its
+# parameters. The same schema drives:
+#   - CLI argv parsing (via packages/ops/src/zod_argv.ts)
+#   - MCP tool input validation + JSON Schema emission (future)
+#
+# Adding a new op = write one file matching the Operation<P, O> shape, register
+# it in registry.ts. Both surfaces pick it up automatically — no drift possible.
+#
+# Files in this pillar:
+#   packages/ops/src/op.ts          ← this spec
+#   packages/ops/src/registry.ts    ← registry of all ops (empty initially)
+#   packages/ops/src/zod_argv.ts    ← Zod → util.parseArgs glue + help text
+#   packages/cli/src/main.ts        ← argv dispatcher
+#   packages/cli/src/mcp_server.ts  ← mcp subcommand (v1 stub)
+#
+# Language note: Operation<P, O> uses two type parameters (params, output).
+# A known Koine cascading-loss pattern — accepted at the boundary type that
+# every op extends. The free dispatcher functions also need per-call generics.
+#
+# ── Logger ─────────────────────────────────────────────────────────────────────
+# Trio of streams ops use for human-readable progress / warnings / errors.
+# Emit exactly:
+#
+#   export interface Logger {
+#     info(message: string): void;
+#     warn(message: string): void;
+#     error(message: string): void;
+#   }
+#
+# All three streams write to stderr by default (see consoleLogger). stdout is
+# reserved for op output that callers might pipe to other tools.
+#
+# ── Operation<P, O> ────────────────────────────────────────────────────────────
+# Every op is an object literal matching this shape. Not a class — plain data
+# plus an execute function. Emit exactly:
+#
+#   export interface Operation<P, O> {
+#     name: string;
+#     description: string;
+#     params: z.ZodSchema<P>;
+#     format: (output: O) => string;
+#     execute: (params: P, ctx: OpContext) => Promise<O>;
+#     exitCode?: (output: O) => number;
+#   }
+#
+# Use arrow-function field syntax (`format: (output: O) => string`) NOT method
+# shorthand (`format(output: O): string`) — ops are object literals, not class
+# instances; method shorthand subtly changes `this` semantics. Import `z` from
+# 'zod'.
+#
+# Field semantics:
+#   - name: subcommand name on the CLI (kebab-case) AND the MCP tool name.
+#     e.g. "render", "validate", "init".
+#   - description: one-line human description; surfaces in both --help text
+#     AND MCP tool schema.
+#   - params: Zod schema. Single source of truth for parameter shape, types,
+#     and field descriptions (.describe() calls become --help text AND
+#     JSON Schema descriptions).
+#   - format: pure function turning the op's output into the string printed
+#     to stdout by the CLI. MCP serializes the raw output via JSON.stringify
+#     instead — format() is CLI-only.
+#   - execute: the actual work. Receives validated typed params and a context.
+#     Returns the op's output value.
+#   - exitCode: optional. Returns a process exit code given the output.
+#     Defaults to 0. Useful for validate (returns 2 on schema violation), etc.
+#
+# ── OpContext ──────────────────────────────────────────────────────────────────
+# Execution context threaded through every op. Carries cross-cutting state that
+# ops shouldn't reach into globals for. Emit as an interface, NOT a class:
+#
+#   export interface OpContext {
+#     projectRoot: string;
+#     logger: Logger;
+#   }
+#
+# (archegraph's contract-skeleton may render this as `export class OpContext`
+# with definite-assignment fields — override that and emit an interface.)
+#
+# Construct with createOpContext() for the default console-logger variant;
+# ops + tests construct directly when they need a custom logger.
+#
+# ── consoleLogger ──────────────────────────────────────────────────────────────
+# The default Logger implementation. Writes to stderr only.
+# Emit as a `const`, not a function. Exact code:
+#
+#   export const consoleLogger: Logger = {
+#     info:  (m) => process.stderr.write(`${m}\n`),
+#     warn:  (m) => process.stderr.write(`warning: ${m}\n`),
+#     error: (m) => process.stderr.write(`error: ${m}\n`),
+#   };
+#
+# Spec models this as a zero-input "method" returning Logger so the contract
+# has a node; the agent's job is to emit it as the const above.
+#
+# ── createOpContext ────────────────────────────────────────────────────────────
+# Default OpContext factory. Signature:
+#
+#   export function createOpContext(projectRoot?: string): OpContext
+#
+# Defaults: projectRoot ?? process.cwd(); logger = consoleLogger.
+# Body:
+#   return { projectRoot: projectRoot ?? process.cwd(), logger: consoleLogger };
+#
+# ── dispatchCli ────────────────────────────────────────────────────────────────
+# Run an op for the CLI surface. Signature:
+#
+#   export async function dispatchCli<P, O>(
+#     op: Operation<P, O>,
+#     params: P,
+#     ctx: OpContext,
+#   ): Promise<number>
+#
+# Behavior:
+#   1. const output = await op.execute(params, ctx)
+#   2. const text = op.format(output);
+#      if (text.length > 0) process.stdout.write(text + '\n')
+#   3. return op.exitCode?.(output) ?? 0
+#
+# Errors thrown by execute propagate to caller (main.ts catches them).
+# Note: the spec uses `unsupported` for the op + params types because the
+# generics P, O can't be carried through the textproto schema cleanly. The
+# emitted TS signature MUST be `<P, O>(op: Operation<P, O>, params: P, ctx: OpContext)`.
+#
+# ── dispatchMcp ────────────────────────────────────────────────────────────────
+# Run an op for the MCP surface. Signature:
+#
+#   export async function dispatchMcp<P, O>(
+#     op: Operation<P, O>,
+#     params: P,
+#     ctx: OpContext,
+#   ): Promise<{ content: { type: 'text'; text: string }[] }>
+#
+# Behavior:
+#   1. const output = await op.execute(params, ctx)
+#   2. const json = JSON.stringify(output, null, 2)
+#   3. return { content: [{ type: 'text', text: json }] }
+#
+# The MCP SDK expects exactly the `{ content: [{ type: 'text', text }] }` shape
+# for tool results — match it.
+
+file: "packages/ops/src/op.ts"
+doc: "Operation framework: Operation<P,O>, OpContext, Logger, dispatchCli, dispatchMcp."
+
+interfaces: [
+  { name: "Logger"
+    methods: [
+      { name: "info"
+        inputs: [{ name: "message", type: { primitive: CHARACTER } }]
+        output: { primitive: VOID }
+      },
+      { name: "warn"
+        inputs: [{ name: "message", type: { primitive: CHARACTER } }]
+        output: { primitive: VOID }
+      },
+      { name: "error"
+        inputs: [{ name: "message", type: { primitive: CHARACTER } }]
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  },
+  { name: "Operation"
+    type_params: [
+      { name: "P" },
+      { name: "O" }
+    ]
+    methods: [
+      { name: "format"
+        inputs: [{ name: "output", type: { type_var: { name: "O" } } }]
+        output: { primitive: CHARACTER }
+      },
+      { name: "execute"
+        is_async: true
+        inputs: [
+          { name: "params", type: { type_var: { name: "P" } } },
+          { name: "ctx",    type: { named: { symbol: "OpContext" } } }
+        ]
+        output: { type_var: { name: "O" } }
+      }
+    ]
+    typescript: {}
+  }
+]
+
+structs: [
+  { name: "OpContext"
+    fields: [
+      { name: "projectRoot", type: { primitive: CHARACTER } },
+      { name: "logger",      type: { named: { symbol: "Logger" } } }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "consoleLogger"
+    inputs: []
+    output: { named: { symbol: "Logger" } }
+  },
+  { name: "createOpContext"
+    inputs: [
+      { name: "projectRoot", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    output: { named: { symbol: "OpContext" } }
+  },
+  { name: "dispatchCli"
+    is_async: true
+    inputs: [
+      { name: "op",     type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "params", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "ctx",    type: { named: { symbol: "OpContext" } } }
+    ]
+    output: { primitive: INTEGER }
+    uses: ["Operation"]
+  },
+  { name: "dispatchMcp"
+    is_async: true
+    inputs: [
+      { name: "op",     type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "params", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "ctx",    type: { named: { symbol: "OpContext" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["Operation"]
+  }
+]

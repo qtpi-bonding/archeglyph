@@ -1,0 +1,40 @@
+# MCP stdio server entry — invoked by `archeglyph mcp`.
+#
+# v1 status: STUB. We pin @modelcontextprotocol/sdk so the dep + types exist,
+# but full implementation lands in a later pillar (after at least one real op
+# is in REGISTRY, so there's something to register as an MCP tool).
+#
+# When the full implementation lands, this function will:
+#   1. Construct a new Server from @modelcontextprotocol/sdk/server
+#   2. Register one MCP tool per entry in REGISTRY:
+#        - tool name = op.name
+#        - description = op.description
+#        - inputSchema = zod-to-json-schema(op.params)
+#        - handler: validate args with op.params.parse, then dispatchMcp(op, ...)
+#   3. Connect a StdioServerTransport
+#   4. Block (await server.connect; server keeps running until stdin closes)
+
+file: "packages/cli/src/mcp_server.ts"
+doc: "MCP stdio server entry for the `archeglyph mcp` subcommand (v1 stub)."
+
+methods: [
+  # runMcpServer: stub entry for the mcp subcommand.
+  #
+  # TypeScript signature:
+  #   export async function runMcpServer(ctx: OpContext): Promise<void>
+  #
+  # Stub implementation:
+  #   ctx.logger.error('mcp subcommand is not yet implemented in v1');
+  #   ctx.logger.error('this is a stub; full MCP server lands after op_render');
+  #   process.exit(1);
+  #
+  # No MCP SDK imports in the stub body. The dep is pinned in package.json so
+  # the future implementation has type-checked access immediately.
+  { name: "runMcpServer"
+    is_async: true
+    inputs: [
+      { name: "ctx", type: { named: { symbol: "OpContext" } } }
+    ]
+    output: { primitive: VOID }
+  }
+]

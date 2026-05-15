@@ -1,0 +1,130 @@
+# Zod → argv glue + help text generation.
+#
+# Bridges Zod schemas (the source of truth for op params) to:
+#   1. Node's built-in util.parseArgs for CLI parsing
+#   2. Human-readable --help output
+#
+# This file owns ALL knowledge of how Zod schemas map to CLI flags. The MCP
+# surface ignores it entirely — MCP uses Zod directly for JSON Schema emission.
+#
+# Why custom (not citty/commander): keeping Zod as single source of truth means
+# we can't declare args twice. The alternative — citty + a Zod↔citty bridge —
+# has the same line count as this custom layer and adds a dep.
+#
+# Import in every function:
+#   import { parseArgs } from 'node:util';
+#   import { z } from 'zod';
+#   import type { Operation } from './op';
+#
+# ── parseArgv ──────────────────────────────────────────────────────────────────
+# Parse `argv` against an op's Zod params schema. Signature:
+#
+#   export function parseArgv<P>(
+#     schema: z.ZodObject<z.ZodRawShape>,
+#     argv: string[],
+#   ): P
+#
+# Algorithm:
+#   1. Walk schema.shape to build a util.parseArgs `options` config. For each
+#      [key, fieldSchema] in schema.shape:
+#        a. kebab-case the key for the CLI flag name
+#           (e.g. "outputPath" → "output-path")
+#        b. Unwrap ZodOptional / ZodDefault to reach the inner type. Map:
+#             ZodString  → { type: 'string' }
+#             ZodNumber  → { type: 'string' }   // parseFloat after parse step
+#             ZodBoolean → { type: 'boolean' }
+#             ZodEnum    → { type: 'string' }
+#             ZodArray<ZodString> → { type: 'string', multiple: true }
+#           Any other Zod shape: throw `parseArgv: unsupported Zod type for
+#           field "<key>" — use a different schema, or restructure`.
+#   2. const { values } = parseArgs({ args: argv, options, allowPositionals: false })
+#   3. Convert kebab-case keys in `values` back to camelCase to form the
+#      pre-validation object (the inverse of step 1a).
+#   4. For ZodNumber fields, parseFloat the string value before validation.
+#   5. const parsed = schema.parse(rebuilt) — this throws ZodError on
+#      validation failures (missing required, wrong type, .refine() failures).
+#   6. Return parsed as P (the call site guarantees the schema matches P).
+#
+# On Zod validation failure, re-throw the ZodError unchanged.
+# On unknown flags (parseArgs throws), let the error propagate.
+#
+# ── formatOpHelp ───────────────────────────────────────────────────────────────
+# Produce the --help block for one subcommand. Signature:
+#
+#   export function formatOpHelp(op: Operation<unknown, unknown>): string
+#
+# Output shape (lines joined with \n, no trailing newline at very end):
+#
+#   archeglyph <op.name> — <op.description>
+#
+#   Usage: archeglyph <op.name> [options]
+#
+#   Options:
+#     --<flag>  <type>  <description>  [required|optional|default: X]
+#     ...
+#
+# Field inspection (walk op.params as ZodObject; for each [key, fieldSchema]):
+#   - flag name = kebab-case(key)
+#   - type label =
+#       ZodString  → 'string'
+#       ZodNumber  → 'number'
+#       ZodBoolean → 'boolean'
+#       ZodEnum    → 'enum<A|B|C>'  (join values with |)
+#       ZodArray<ZodString> → 'string[]'
+#   - description = fieldSchema.description ?? '(no description)'
+#   - required tag:
+#       ZodOptional → '[optional]'
+#       ZodDefault  → `[default: ${defaultValue}]`
+#       else        → '[required]'
+#
+# Pad columns for readability: flag widest first, then type widest, then desc.
+# Use 2-space indent inside the Options block.
+#
+# ── formatRootHelp ─────────────────────────────────────────────────────────────
+# Produce the top-level --help (no subcommand chosen). Signature:
+#
+#   export function formatRootHelp(ops: Operation<unknown, unknown>[]): string
+#
+# Output shape (lines joined with \n, no trailing newline):
+#
+#   archeglyph — node-and-edge graph rendering tool
+#
+#   Usage: archeglyph <subcommand> [options]
+#
+#   Subcommands:
+#     <op.name>  <op.description>
+#     ...
+#     mcp        Run the Model Context Protocol stdio server
+#     help       Show this help (or pass --help to any subcommand)
+#
+#   Run `archeglyph <subcommand> --help` for per-command details.
+#
+# Pad the subcommand name column. Sort: ops in array order (insertion),
+# then `mcp`, then `help`.
+
+file: "packages/ops/src/zod_argv.ts"
+doc: "Zod-driven argv parsing + help text generation for the CLI surface."
+
+methods: [
+  { name: "parseArgv"
+    inputs: [
+      { name: "schema", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "argv",   type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+  },
+  { name: "formatOpHelp"
+    inputs: [
+      { name: "op", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    output: { primitive: CHARACTER }
+    uses: ["Operation"]
+  },
+  { name: "formatRootHelp"
+    inputs: [
+      { name: "ops", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    output: { primitive: CHARACTER }
+    uses: ["Operation"]
+  }
+]

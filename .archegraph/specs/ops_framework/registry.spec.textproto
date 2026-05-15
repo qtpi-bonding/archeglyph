@@ -1,0 +1,33 @@
+# Central registry of all archeglyph operations.
+#
+# The CLI dispatcher and the MCP server both read this array to discover
+# operations. Each op pillar (render, validate, init, format, watch, bind)
+# adds two lines to this file: an import and an array entry.
+#
+# In the ops_framework pillar, the registry ships empty. The CLI's --help
+# enumerates it (showing zero subcommands aside from built-in `mcp` and
+# `help`); the MCP server registers zero tools. As subsequent op pillars
+# land, both surfaces light up automatically.
+
+file: "packages/ops/src/registry.ts"
+doc: "Central registry of all archeglyph operations. Empty in ops_framework; ops register here in subsequent pillars."
+
+methods: [
+  # REGISTRY: the array. Spec models it as a zero-input function returning
+  # Operation<any, any>[] so the contract has a node; emit as `export const`,
+  # not a function.
+  #
+  # TypeScript code (write exactly):
+  #   import type { Operation } from './op';
+  #
+  #   export const REGISTRY: Operation<unknown, unknown>[] = [];
+  #
+  # When ops are added in future pillars, the lines look like:
+  #   import { renderOp } from './render';
+  #   export const REGISTRY: Operation<unknown, unknown>[] = [renderOp, ...];
+  { name: "REGISTRY"
+    inputs: []
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["Operation"]
+  }
+]

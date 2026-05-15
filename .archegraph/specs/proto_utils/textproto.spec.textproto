@@ -1,0 +1,149 @@
+# Proto3 text-format parse and serialize utilities.
+# These are the only two functions that ever read/write .diag.txtpb /
+# .style.txtpb / .theme.txtpb on disk or in memory.
+#
+# Language note: both functions use per-method type parameters, a known
+# Koine cascading-loss pattern. Accepted here — proto boundary, no class
+# to push the type param up to.
+#
+# The file already contains a non-functional stub for `fromTextproto`.
+# Both functions must be written; preserve the SPDX header.
+
+file: "packages/proto/src/util/textproto.ts"
+doc: "Proto3 text-format parse (fromTextproto) and serialize (toTextproto) utilities."
+
+methods: [
+  # fromTextproto parses a proto3 text-format string into a typed protobuf message.
+  # It is the entry point for all file loading in archeglyph (.diag.txtpb,
+  # .style.txtpb, .theme.txtpb). The existing stub throws at runtime — replace it.
+  #
+  # TypeScript signature (write exactly):
+  #   export function fromTextproto<Desc extends DescMessage>(
+  #     schema: Desc,
+  #     input: string,
+  #   ): MessageShape<Desc>
+  #
+  # Imports (replace stub imports):
+  #   import type { DescMessage, MessageShape } from '@bufbuild/protobuf';
+  #   import { create, ScalarType } from '@bufbuild/protobuf';
+  #
+  # Implementation:
+  #
+  # 1. Call `create(schema)` to get a default-initialized message object typed
+  #    as MessageShape<Desc>. Mutate it while parsing.
+  #
+  # 2. Tokenize `input`. Discard comments (# to end-of-line) and whitespace.
+  #    Token kinds: Identifier [a-zA-Z_][a-zA-Z0-9_]*, Integer (decimal/hex,
+  #    optional leading '-'), Float (digits + dot/exponent, optional '-'),
+  #    String (double-quoted, C-style escapes: \n \r \t \\ \" \' \0 \xHH \uHHHH),
+  #    Boolean (bare 'true' / 'false'), Punctuation (: { } [ ] ,).
+  #
+  # 3. Top-level grammar: sequence of field_name [':'] value.
+  #    The ':' is optional when value starts with '{'. 'value' is:
+  #      string literal | number | boolean | identifier (enum name) |
+  #      '{' field* '}' (nested message) | '[' value* ']' (repeated).
+  #
+  # 4. Field lookup: fd = schema.fields.find(f => f.name === fieldName).
+  #    If not found: skip the value tokens silently (unknown field).
+  #    Use fd.localName (camelCase) as the TS property key.
+  #
+  # 5. Field kinds and parse rules:
+  #
+  #    fieldKind === 'scalar' (fd.scalar: ScalarType):
+  #      STRING(9)           → string literal → string
+  #      BOOL(8)             → 'true'/'false' → boolean
+  #      BYTES(12)           → string literal → Uint8Array (decode as base64)
+  #      DOUBLE(1), FLOAT(2) → parseFloat → number
+  #      INT32(5), UINT32(13), INT64(3), UINT64(4), SFIXED32(15), SFIXED64(16),
+  #      SINT32(17), SINT64(18), FIXED32(7), FIXED64(6) → parseInt → number
+  #      Assign: obj[fd.localName] = parsedValue
+  #
+  #    fieldKind === 'enum' (fd.enum: DescEnum):
+  #      Identifier → fd.enum.values.find(v => v.name === token)?.number
+  #      Integer → parseInt
+  #      Assign: obj[fd.localName] = resolvedNumber
+  #
+  #    fieldKind === 'message' (fd.message: DescMessage):
+  #      Parse '{' body '}' recursively.
+  #      Assign: obj[fd.localName] = parsedNestedMessage
+  #
+  #    fieldKind === 'list':
+  #      Append to obj[fd.localName] (already [] from create()).
+  #      Two forms: bracketed '[' items ']'; or bare repetition (each
+  #      occurrence appends one item). listKind 'scalar'/'enum'/'message'
+  #      sets the element parse rule.
+  #
+  #    fieldKind === 'map':
+  #      Each entry is a message with proto fields 'key' and 'value'.
+  #      Parse as a message, then:
+  #        (obj[fd.localName] as Record<string,unknown>)[entry.key] = entry.value
+  #
+  # 6. Oneof: when fd.oneof is defined, do NOT assign to obj[fd.localName].
+  #    Instead: (obj as Record<string,unknown>)[fd.oneof.localName] =
+  #               { case: fd.localName, value: parsedValue }
+  #
+  # 7. Throw Error('fromTextproto: <reason>') on malformed input (unclosed
+  #    brace, unexpected token, unterminated string).
+  #    Unknown field names: silently skip (consume their value tokens).
+  { name: "fromTextproto"
+    inputs: [
+      { name: "schema", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "input",  type: { primitive: CHARACTER } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+  },
+  # toTextproto serializes a protobuf message to canonical proto3 text format.
+  # Used by the `format` CLI subcommand and any code writing archeglyph files.
+  #
+  # TypeScript signature (write exactly):
+  #   export function toTextproto<Desc extends DescMessage>(
+  #     schema: Desc,
+  #     message: MessageShape<Desc>,
+  #   ): string
+  #
+  # Implementation:
+  #
+  # 1. Walk schema.fields in ascending field-number order (f.number).
+  #    Skip default-valued fields:
+  #      scalar → 0, false, "" ; list → length 0 ; map → no keys ;
+  #      message → undefined/null ; enum → 0
+  #    Oneof: read (msg as Record<string,unknown>)[f.oneof.localName].
+  #    Skip if case === undefined. Track visited oneof names to emit once.
+  #
+  # 2. Field name: always f.name (snake_case, not localName).
+  #
+  # 3. Scalar format:
+  #      STRING  → double-quoted, escaping: \ → \\ " → \" newline → \n
+  #                tab → \t  carriage return → \r  other ctrl → \xHH
+  #      BOOL    → 'true' / 'false'
+  #      BYTES   → double-quoted base64-encoded string
+  #      integers → decimal (BigInt.toString() if bigint)
+  #      DOUBLE/FLOAT → value.toString()
+  #
+  # 4. Enum: f.enum.values.find(v => v.number === val)?.name ?? val.toString()
+  #
+  # 5. Message: 'field_name: {\n<indented body>\n<indent>}'
+  #    Each nesting level adds 2 spaces of indentation.
+  #
+  # 6. List: 'field_name: [\n<indent+2>item,\n...\n<indent>]'
+  #    Scalar/enum items inline; message items as '{...}' blocks.
+  #
+  # 7. Map: one entry per key sorted by key string:
+  #      field_name: { key: "<k>" value: { ... } }
+  #
+  # 8. Oneof: read discriminant { case, value }; find fd where fd.localName===case;
+  #    serialize using fd.name as the textproto field name. Track visited oneofs.
+  #
+  # 9. Indentation: 2 spaces per nesting level, top-level = 0.
+  #    Lines separated by '\n'. No trailing newline.
+  #
+  # 10. Round-trip: fromTextproto(schema, toTextproto(schema, msg)) must produce
+  #     equivalent field values (field order may differ).
+  { name: "toTextproto"
+    inputs: [
+      { name: "schema",  type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "message", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

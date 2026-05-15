@@ -79,10 +79,7 @@ structs: [
           { primitive: CHARACTER },
           { named: { symbol: "RenderError" } }
         ]}}
-        uses: [
-          "LaidOutNode", "LaidOutEdge", "LaidOutGroup", "LaidOutAnnotation",
-          "EdgeSection"
-        ]
+        uses: []
       }
     ]
   }

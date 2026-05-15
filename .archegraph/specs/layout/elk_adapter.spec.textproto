@@ -35,7 +35,10 @@
 # - Annotations: copy directly from ResolvedDiagram.annotations, extracting
 #   position from annotation.layout?.position ?? { x: 0, y: 0 }.
 # - Build LaidOutNode/LaidOutEdge/LaidOutGroup/LaidOutAnnotation/LaidOutDiagram
-#   using Object.assign(new Xxx(), { ... }) for each.
+#   with all fields supplied at construction time (see archebuild.yaml rule).
+#   NOTE: accessing elkjs result properties requires type assertions (e.g.
+#   `(elkNode as any).x`) — this is unavoidable at the elkjs boundary and
+#   acceptable here. Keep all type assertions confined to this file.
 
 file: "packages/core/src/layout/elk_adapter/impl.ts"
 doc: "elkjs boundary — converts ResolvedDiagram to elkjs input, runs layout, converts result back."

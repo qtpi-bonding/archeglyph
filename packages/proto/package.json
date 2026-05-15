@@ -8,7 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./util/result": "./src/util/result.ts",
-    "./util/textproto": "./src/util/textproto.ts",
+    "./util/json": "./src/util/json.ts",
     "./gen/*": "./src/gen/*.ts"
   },
   "dependencies": {

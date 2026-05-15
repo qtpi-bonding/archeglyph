@@ -1,0 +1,62 @@
+# Proto3 JSON parse and serialize utilities.
+# These are the only two functions that ever read/write .diag.json /
+# .style.json / .theme.json on disk or in memory.
+#
+# History note: an earlier iteration of this pillar shipped a hand-rolled
+# proto3 text-format parser/serializer here (textproto.ts, ~500 LoC).
+# Replaced with JSON because @bufbuild/protobuf ships a battle-tested
+# fromJson/toJson pair and we don't want to own a parser. Trade-off: lose
+# inline `#` comments in source files. Recovered via the schema's
+# `description` field on container types.
+#
+# Language note: both functions use per-method type parameters, a known
+# Koine cascading-loss pattern. Accepted here — proto boundary, no class
+# to push the type param up to.
+
+file: "packages/proto/src/util/json.ts"
+doc: "Proto3 JSON parse (fromJson) and serialize (toJson) utilities — thin wrappers around @bufbuild/protobuf."
+
+methods: [
+  # fromJson parses a proto3 JSON string into a typed protobuf message.
+  # It is the entry point for all file loading in archeglyph (.diag.json,
+  # .style.json, .theme.json).
+  #
+  # TypeScript signature:
+  #   export function fromJson<Desc extends DescMessage>(
+  #     schema: Desc,
+  #     text: string,
+  #   ): MessageShape<Desc>
+  #
+  # Implementation: JSON.parse(text) then delegate to bufbuild's fromJson.
+  # The wrapper exists to take a string (not a parsed JsonValue) so callers
+  # don't have to do their own JSON.parse, and to keep a single import point
+  # for archeglyph's "load a file" operation.
+  { name: "fromJson"
+    inputs: [
+      { name: "schema", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "text",   type: { primitive: CHARACTER } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+  },
+  # toJson serializes a protobuf message to canonical proto3 JSON form.
+  # Used by the `format` CLI subcommand and any code writing archeglyph files.
+  #
+  # TypeScript signature:
+  #   export function toJson<Desc extends DescMessage>(
+  #     schema: Desc,
+  #     message: MessageShape<Desc>,
+  #   ): string
+  #
+  # Implementation: delegate to bufbuild's toJson, then JSON.stringify with
+  # 2-space indentation for human-readable output.
+  #
+  # Round-trip: fromJson(schema, toJson(schema, msg)) must produce a message
+  # equivalent to msg.
+  { name: "toJson"
+    inputs: [
+      { name: "schema",  type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } },
+      { name: "message", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

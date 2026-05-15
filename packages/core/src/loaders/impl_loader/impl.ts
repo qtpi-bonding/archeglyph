@@ -5,11 +5,11 @@ import { LoadRequest } from '../load_request';
 import { Loader } from '../loader';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
-import { fromTextproto } from '@archeglyph/proto/util/textproto';
+import { fromJson } from '@archeglyph/proto/util/json';
 
 export class LoaderImpl implements Loader {
   async loadDiagram(request: LoadRequest): Promise<Diagram> {
-    const diagram = fromTextproto(DiagramSchema, request.text);
+    const diagram = fromJson(DiagramSchema, request.text);
     if (diagram.schemaVersion !== 1) {
       throw new Error(
         `loadDiagram: unsupported schema_version ${diagram.schemaVersion} (expected 1)`,
@@ -18,7 +18,7 @@ export class LoaderImpl implements Loader {
     return diagram;
   }
   async loadStylesheet(request: LoadRequest): Promise<Stylesheet> {
-    const stylesheet = fromTextproto(StylesheetSchema, request.text);
+    const stylesheet = fromJson(StylesheetSchema, request.text);
     if (stylesheet.schemaVersion !== 1) {
       throw new Error(
         `loadStylesheet: unsupported schema_version ${stylesheet.schemaVersion} (expected 1)`,
@@ -27,7 +27,7 @@ export class LoaderImpl implements Loader {
     return stylesheet;
   }
   async loadTheme(request: LoadRequest): Promise<Theme> {
-    const theme = fromTextproto(ThemeSchema, request.text);
+    const theme = fromJson(ThemeSchema, request.text);
     if (theme.schemaVersion !== 1) {
       throw new Error(
         `loadTheme: unsupported schema_version ${theme.schemaVersion} (expected 1)`,

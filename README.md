@@ -32,11 +32,11 @@ Etymology: *archē* (ἀρχή, origin/principle) + *glyphē* (γλυφή, carvi
 ## How it works (overview)
 
 ```
-content.diag.txtpb   ──┐
+content.diag.json    ──┐
                         ├─► loader ─► resolver ─► layout (elkjs) ─► renderer ─► output.svg
-style.style.txtpb    ──┤
+style.style.json     ──┤
                         │
-theme.theme.txtpb    ──┘
+theme.theme.json     ──┘
 (optional)
 ```
 
@@ -44,7 +44,7 @@ theme.theme.txtpb    ──┘
 - **style** — per-element layout, visual overrides, component bindings, annotations
 - **theme** — design system: tokens (colors, fonts, sizes) + named components
 
-All three files are textproto. The renderer emits a deterministic SVG with an embedded provenance comment.
+All three files are canonical proto3 JSON. The renderer emits a deterministic SVG with an embedded provenance comment.
 
 ## File structure (planned)
 

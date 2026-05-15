@@ -14,7 +14,7 @@
     "paths": {
       "@archeglyph/proto": ["./packages/proto/src/index.ts"],
       "@archeglyph/proto/util/result": ["./packages/proto/src/util/result.ts"],
-      "@archeglyph/proto/util/textproto": ["./packages/proto/src/util/textproto.ts"],
+      "@archeglyph/proto/util/json": ["./packages/proto/src/util/json.ts"],
       "@archeglyph/proto/gen/*": ["./packages/proto/src/gen/*.ts"]
     }
   },

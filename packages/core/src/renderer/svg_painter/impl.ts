@@ -93,10 +93,6 @@ function markerElementFor(id: string): string {
 }
 
 export function viewBox(diagram: LaidOutDiagram): string {
-  if (diagram.nodes.length === 0 && diagram.groups.length === 0 && diagram.annotations.length === 0) {
-    return '0 0 100 100';
-  }
-
   let minX: number = Infinity;
   let minY: number = Infinity;
   let maxX: number = -Infinity;
@@ -119,6 +115,24 @@ export function viewBox(diagram: LaidOutDiagram): string {
     minY = Math.min(minY, ann.position.y);
     maxX = Math.max(maxX, ann.position.x);
     maxY = Math.max(maxY, ann.position.y);
+  }
+  for (const edge of diagram.edges) {
+    for (const section of edge.sections) {
+      minX = Math.min(minX, section.startPoint.x, section.endPoint.x);
+      minY = Math.min(minY, section.startPoint.y, section.endPoint.y);
+      maxX = Math.max(maxX, section.startPoint.x, section.endPoint.x);
+      maxY = Math.max(maxY, section.startPoint.y, section.endPoint.y);
+      for (const bp of section.bendPoints) {
+        minX = Math.min(minX, bp.x);
+        minY = Math.min(minY, bp.y);
+        maxX = Math.max(maxX, bp.x);
+        maxY = Math.max(maxY, bp.y);
+      }
+    }
+  }
+
+  if (minX === Infinity) {
+    return '0 0 100 100';
   }
 
   const pad: number = 16;

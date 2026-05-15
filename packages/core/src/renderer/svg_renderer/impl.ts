@@ -2,12 +2,12 @@
 
 import { create } from '@bufbuild/protobuf';
 import { type ArrowheadVariant, type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
-import { Ok, type Result } from '@archeglyph/proto/util/result';
+import { Ok, Err, type Result } from '@archeglyph/proto/util/result';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
 import { type LaidOutEdge } from '../../layout/laid_out_edge';
 import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
-import { type RenderError } from '../render_error';
+import { RenderError } from '../render_error';
 import { arrowMarkers, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
 
 export interface SvgRenderer {
@@ -16,6 +16,10 @@ export interface SvgRenderer {
 
 export class SvgRendererImpl implements SvgRenderer {
   render(diagram: LaidOutDiagram): Result<string, RenderError> {
+    if (diagram.id === '') {
+      return Err(Object.assign(new RenderError(), { message: 'diagram.id must not be empty' }));
+    }
+
     const vb: string = viewBox(diagram);
 
     const sortedGroups: LaidOutGroup[] = diagram.groups.slice().sort(
@@ -36,10 +40,7 @@ export class SvgRendererImpl implements SvgRenderer {
       }
     }
 
-    let defsContent: string = '';
-    for (const variant of variantsSeen.values()) {
-      defsContent = defsContent + arrowMarkers(variant);
-    }
+    const defs: string = arrowMarkers([...variantsSeen]);
 
     let groupsSvg: string = '';
     for (const group of sortedGroups) {
@@ -47,9 +48,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerX: number = group.position.x + group.size.x / 2;
       const centerY: number = group.position.y + group.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
-      const labelSvg: string = group.label.length > 0
-        ? textElement(group.label[0], group.typography, center)
-        : '';
+      const labelSvg: string = textElement(group.label, group.typography, center);
       groupsSvg = groupsSvg + `<g id="group-${group.id}">${shape}${labelSvg}</g>`;
     }
 
@@ -59,22 +58,17 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerX: number = node.position.x + node.size.x / 2;
       const centerY: number = node.position.y + node.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
-      const labelSvg: string = node.label.length > 0
-        ? textElement(node.label[0], node.typography, center)
-        : '';
+      const labelSvg: string = textElement(node.label, node.typography, center);
       nodesSvg = nodesSvg + `<g id="node-${node.id}">${shape}${labelSvg}</g>`;
     }
 
     let edgesSvg: string = '';
     for (const edge of sortedEdges) {
-      let pathSvg: string = '';
-      for (const section of edge.sections) {
-        pathSvg = pathSvg + edgePath(section);
-      }
+      const pathSvg: string = edgePath(edge.sections);
       const hasLabel: boolean = edge.label.length > 0 && edge.sections.length > 0;
       const labelSvg: string = hasLabel
         ? textElement(
-            edge.label[0],
+            edge.label,
             edge.typography,
             create(Vec2Schema, {
               x: (edge.sections[0].startPoint.x + edge.sections[0].endPoint.x) / 2,
@@ -85,7 +79,7 @@ export class SvgRendererImpl implements SvgRenderer {
       edgesSvg = edgesSvg + `<g id="edge-${edge.id}">${pathSvg}${labelSvg}</g>`;
     }
 
-    const svg: string = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"><defs>${defsContent}</defs>${groupsSvg}${nodesSvg}${edgesSvg}</svg>`;
+    const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${defs}${groupsSvg}${nodesSvg}${edgesSvg}</svg>`;
 
     return Ok(svg);
   }

@@ -15,8 +15,8 @@
 #   (startPoint=waypoints[0], endPoint=waypoints[last], bendPoints=middle).
 # - Annotations: already explicitly positioned by ElkAdapter; no override step.
 #
-# The LayoutEngineImpl holds an ElkAdapterImpl instance (constructed internally).
-# There is no external injection in v1 — the adapter is an implementation detail.
+# The LayoutEngineImpl holds a LayoutAdapter instance (ElkAdapterImpl, constructed
+# internally). There is no external injection in v1 — the adapter is an implementation detail.
 
 file: "packages/core/src/layout/layout_engine/impl.ts"
 doc: "Layout orchestrator — runs elkjs via ElkAdapter then applies style position overrides."
@@ -35,7 +35,7 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
-        uses: ["ElkAdapter"]
+        uses: ["LayoutAdapter"]
       }
     ]
   }

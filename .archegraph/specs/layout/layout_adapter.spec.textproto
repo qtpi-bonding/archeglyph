@@ -1,10 +1,11 @@
-# Boundary interface to elkjs. Handles the full elkjs interaction:
-# converting ResolvedDiagram to elkjs's ELKNode input graph, calling
-# elk.layout(), and converting the result back to LaidOutDiagram.
+# Generic boundary interface to an external auto-layout algorithm.
+# Currently implemented by ElkAdapterImpl using elkjs, but the interface
+# is algorithm-agnostic — swapping to dagre or a custom layouter requires
+# only a new implementation, not an interface change.
 #
 # This is a RAW layout — position overrides from the style file are NOT
-# applied here. ElkAdapterImpl produces positions purely from elkjs output.
-# LayoutEngineImpl applies overrides on top of this result.
+# applied here. ElkAdapterImpl produces positions purely from the algorithm's
+# output. LayoutEngineImpl applies overrides on top of this result.
 #
 # Implementation notes for ElkAdapterImpl:
 #
@@ -40,12 +41,12 @@
 #   `(elkNode as any).x`) — this is unavoidable at the elkjs boundary and
 #   acceptable here. Keep all type assertions confined to this file.
 
-file: "packages/core/src/layout/elk_adapter/impl.ts"
-doc: "elkjs boundary — converts ResolvedDiagram to elkjs input, runs layout, converts result back."
+file: "packages/core/src/layout/layout_adapter/impl.ts"
+doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back."
 
 structs: [
   { name: "ElkAdapterImpl"
-    implements: ["ElkAdapter"]
+    implements: ["LayoutAdapter"]
     methods: [
       { name: "runLayout"
         is_async: true
@@ -67,7 +68,7 @@ structs: [
 ]
 
 interfaces: [
-  { name: "ElkAdapter"
+  { name: "LayoutAdapter"
     methods: [
       { name: "runLayout"
         is_async: true

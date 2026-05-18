@@ -1,0 +1,203 @@
+# renderOp — first end-to-end Operation in archeglyph.
+#
+# Stitches loaders → resolver (visibility filter → style cascade → token
+# resolver) → layout → renderer into a single CLI/MCP-callable op.
+# Registered into `packages/ops/src/registry.ts` by a sibling MODIFIED
+# entry in this same pillar.
+#
+# Files in this pillar (parallels ops_framework's flat-in-src convention):
+#   packages/ops/src/render/op.ts               ← this spec
+#   packages/ops/src/render/render_params.ts    ← RenderParams + zod schema
+#   packages/ops/src/render/render_output.ts    ← RenderOutput
+#   packages/ops/src/render/render_op_error.ts  ← RenderOpError (extends Error)
+#
+# ── renderOp (the const) ───────────────────────────────────────────────────────
+# Object literal matching Operation<RenderParams, RenderOutput>. Spec models
+# it as a zero-input method returning `unsupported` so the contract has a
+# node; emit as `export const`, NOT a function (same pattern as REGISTRY in
+# ops_framework/registry.ts).
+#
+# Emit shape (write exactly):
+#
+#   import { promises as fs } from 'node:fs';
+#   import * as path from 'node:path';
+#   import { create } from '@bufbuild/protobuf';
+#   import {
+#     loadDiagram,
+#     loadStylesheet,
+#     loadTheme,
+#   } from '@archeglyph/core/loaders';
+#   import { VisibilityFilterImpl } from '@archeglyph/core/resolver/visibility_filter';
+#   import { StyleCascadeImpl } from '@archeglyph/core/resolver/style_cascade';
+#   import { TokenResolverImpl } from '@archeglyph/core/resolver/token_resolver';
+#   import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
+#   import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
+#   import { FilterRequest } from '@archeglyph/core/resolver/filter_request';
+#   import { CascadeRequest } from '@archeglyph/core/resolver/cascade_request';
+#   import { ResolveTokensRequest } from '@archeglyph/core/resolver/resolve_tokens_request';
+#   import { LayoutRequest } from '@archeglyph/core/layout/layout_request';
+#   import { ThemeSchema, type Theme } from '@archeglyph/proto/gen/theme_pb';
+#   import { type Stylesheet } from '@archeglyph/proto/gen/style_pb';
+#   import type { Operation, OpContext } from '../op';
+#   import { RenderParams, renderParamsSchema } from './render_params';
+#   import { RenderOutput } from './render_output';
+#   import { RenderOpError } from './render_op_error';
+#
+#   export const renderOp: Operation<RenderParams, RenderOutput> = {
+#     name: 'render',
+#     description: 'Render a Diagram JSON file to an SVG.',
+#     params: renderParamsSchema,
+#     format: (output) =>
+#       `wrote ${output.bytesWritten} bytes to ${output.outPath}`,
+#     execute: async (params, ctx) => {
+#       // 1. Load diagram (required).
+#       const diagramText = await fs.readFile(
+#         path.resolve(ctx.projectRoot, params.diagram), 'utf8');
+#       const diagramR = await loadDiagram(diagramText);
+#       if (!diagramR.ok) throw new RenderOpError('load', diagramR.error);
+#       const diagram = diagramR.value;
+#
+#       // 2. Load stylesheet (optional).
+#       let stylesheet: Stylesheet | undefined;
+#       if (params.style !== undefined) {
+#         const text = await fs.readFile(
+#           path.resolve(ctx.projectRoot, params.style), 'utf8');
+#         const r = await loadStylesheet(text);
+#         if (!r.ok) throw new RenderOpError('load', r.error);
+#         stylesheet = r.value;
+#       }
+#
+#       // 3. Load theme (optional, default to built-in placeholder).
+#       let theme: Theme;
+#       if (params.theme !== undefined) {
+#         const text = await fs.readFile(
+#           path.resolve(ctx.projectRoot, params.theme), 'utf8');
+#         const r = await loadTheme(text);
+#         if (!r.ok) throw new RenderOpError('load', r.error);
+#         theme = r.value;
+#       } else {
+#         theme = defaultTheme();
+#         ctx.logger.info('no --theme provided; using built-in placeholder');
+#       }
+#
+#       // 4. Visibility filter.
+#       const filterReq = Object.assign(new FilterRequest(), { diagram, stylesheet });
+#       const filteredR = new VisibilityFilterImpl().filter(filterReq);
+#       if (!filteredR.ok) throw new RenderOpError('resolve', filteredR.error);
+#
+#       // 5. Style cascade.
+#       const cascadeReq = Object.assign(new CascadeRequest(), {
+#         filtered: filteredR.value, stylesheet, theme });
+#       const cascadedR = new StyleCascadeImpl().cascade(cascadeReq);
+#       if (!cascadedR.ok) throw new RenderOpError('resolve', cascadedR.error);
+#
+#       // 6. Token resolver.
+#       const tokensReq = Object.assign(new ResolveTokensRequest(), {
+#         resolved: cascadedR.value, tokens: theme.tokens });
+#       const resolvedR = new TokenResolverImpl().resolveTokens(tokensReq);
+#       if (!resolvedR.ok) throw new RenderOpError('resolve', resolvedR.error);
+#
+#       // 7. Layout.
+#       const layoutReq = Object.assign(new LayoutRequest(), { diagram: resolvedR.value });
+#       const laidOutR = await new LayoutEngineImpl().layout(layoutReq);
+#       if (!laidOutR.ok) throw new RenderOpError('layout', laidOutR.error);
+#
+#       // 8. Render.
+#       const svgR = new SvgRendererImpl().render(laidOutR.value);
+#       if (!svgR.ok) throw new RenderOpError('render', svgR.error);
+#       const svg = svgR.value;
+#
+#       // 9. Resolve outPath + write.
+#       const outPath = path.resolve(
+#         ctx.projectRoot,
+#         params.out ?? deriveOutPath(params.diagram));
+#       await fs.writeFile(outPath, svg, 'utf8');
+#       const bytesWritten = Buffer.byteLength(svg, 'utf8');
+#
+#       return { svg, outPath, bytesWritten };
+#     },
+#   };
+#
+# Why each stage constructs its impl class with `new` instead of taking it
+# from a registry: the four pipeline stages are pure-logic singletons with
+# no DI surface; injecting them here would be ceremony with no payoff. If a
+# future pillar needs to swap, say, the layout engine for a test stub, the
+# refactor lives in this op (not the pipeline).
+#
+# Why `Object.assign(new Xxx(), { … })` for request types: matches the
+# project-rule from archebuild.yaml ("When constructing data objects,
+# initialize all fields at construction"). These request classes have
+# definite-assignment fields (`diagram!: …`), so direct construction
+# doesn't satisfy their invariants.
+#
+# ── deriveOutPath ──────────────────────────────────────────────────────────────
+# Pure helper. Replaces the path's extension with .svg.
+#
+# Signature:
+#   export function deriveOutPath(diagramPath: string): string
+#
+# Body:
+#   const ext = path.extname(diagramPath);
+#   return ext.length === 0
+#     ? diagramPath + '.svg'
+#     : diagramPath.slice(0, -ext.length) + '.svg';
+#
+# Examples:
+#   "foo.json"          → "foo.svg"
+#   "foo.diagram.json"  → "foo.diagram.svg"
+#   "foo"               → "foo.svg"
+#
+# ── defaultTheme ───────────────────────────────────────────────────────────────
+# Placeholder until @archeglyph/themes ships. Returns a minimal Theme proto
+# with empty tokens — sufficient for diagrams that don't use $token refs.
+#
+# Signature:
+#   export function defaultTheme(): Theme
+#
+# Body:
+#   return create(ThemeSchema, { name: 'archeglyph-default', tokens: undefined });
+#
+# When @archeglyph/themes lands, swap this body to import + return the
+# bundled `light` theme. The signature stays stable; only the body changes.
+
+file: "packages/ops/src/render/op.ts"
+doc: "renderOp: the first end-to-end Operation. Glues loaders → resolver → layout → renderer."
+
+methods: [
+  { name: "renderOp"
+    inputs: []
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: [
+      "Operation",
+      "OpContext",
+      "RenderParams",
+      "RenderOutput",
+      "RenderOpError",
+      "renderParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "VisibilityFilterImpl",
+      "StyleCascadeImpl",
+      "TokenResolverImpl",
+      "LayoutEngineImpl",
+      "SvgRendererImpl",
+      "FilterRequest",
+      "CascadeRequest",
+      "ResolveTokensRequest",
+      "LayoutRequest",
+      "deriveOutPath",
+      "defaultTheme"
+    ]
+  },
+  { name: "deriveOutPath"
+    inputs: [
+      { name: "diagramPath", type: { primitive: CHARACTER } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  { name: "defaultTheme"
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  }
+]

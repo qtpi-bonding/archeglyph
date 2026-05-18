@@ -1,0 +1,73 @@
+# RenderParams — typed input shape for the `render` op.
+#
+# Single source of truth for both CLI argv parsing and MCP tool schema, via
+# the paired `renderParamsSchema` zod object. Per ops_framework conventions
+# (see packages/ops/src/op.ts → Operation<P, O>), the params type and its
+# zod schema travel together — the schema's .describe() calls become both
+# CLI --help text and JSON Schema descriptions.
+#
+# Field semantics:
+#   - diagram: positional path to a Diagram JSON file (required).
+#     archeglyph's on-disk format is JSON (see proto_utils pillar, commit
+#     2670f88). Loader will parse via @archeglyph/proto/util/json.
+#   - style: path to a Stylesheet JSON file (optional). When omitted, no
+#     stylesheet overrides apply; the diagram's intrinsic per-node styles
+#     and the active theme provide the visual.
+#   - theme: path to a Theme JSON file (optional). When omitted, render
+#     uses a built-in default placeholder until @archeglyph/themes pillar
+#     ships (see render/op.ts for the placeholder helper).
+#   - out: explicit output path (optional). When omitted, defaults to the
+#     diagram path with `.svg` extension swapped in (sibling-file rule
+#     from the design statement). `-` is NOT special; we don't pipe SVG.
+#
+# Emit shape (write exactly):
+#
+#   import { z } from 'zod';
+#
+#   export interface RenderParams {
+#     diagram: string;
+#     style?: string;
+#     theme?: string;
+#     out?: string;
+#   }
+#
+#   export const renderParamsSchema: z.ZodType<RenderParams> = z.object({
+#     diagram: z.string().describe('path to the Diagram JSON file'),
+#     style: z.string().optional().describe('path to a Stylesheet JSON file'),
+#     theme: z.string().optional().describe('path to a Theme JSON file'),
+#     out: z.string().optional().describe('output SVG path; defaults to the diagram path with .svg extension'),
+#   });
+#
+# Use `z.ZodType<RenderParams>` (not `z.ZodSchema<RenderParams>` or letting
+# inference do it) so that adding/removing a field in the interface causes
+# a typecheck failure if the schema isn't updated in lockstep — the explicit
+# annotation enforces the single-source-of-truth invariant. zod_argv reads
+# `op.params.shape` to enumerate flags, so the schema must be a ZodObject;
+# `z.ZodType` is the narrowest parameterized base that still satisfies that.
+#
+# The spec models renderParamsSchema as a zero-input method returning an
+# unsupported TypeRef so the contract has a node for it; emit as a `const`
+# not a function (same pattern as REGISTRY in ops_framework/registry.ts).
+
+file: "packages/ops/src/render/render_params.ts"
+doc: "RenderParams interface + renderParamsSchema zod schema for the render op."
+
+structs: [
+  { name: "RenderParams"
+    fields: [
+      { name: "diagram", type: { primitive: CHARACTER } },
+      { name: "style",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "theme",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "out",     type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "renderParamsSchema"
+    inputs: []
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["RenderParams"]
+  }
+]

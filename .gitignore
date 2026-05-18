@@ -13,13 +13,15 @@ node_modules/
 .archegraph/server.pid
 .archegraph/server.port
 
-# Spec-level artifact contract (durable, tracked):
-#   gspec_delta.pb  — the spec delta (what the build will do)
-#   gcode_before.pb — the gcode snapshot the spec was authored against (needed by verify)
-# Spec-level display + runtime outputs (regenerable, NOT tracked):
+# Spec-level derived/ artifacts (regenerable from .spec.textproto via `archegraph plan`; NOT tracked):
+.archegraph/specs/*/derived/
+# Legacy top-level derived artifacts (pre-derived/ convention) — still ignored:
 .archegraph/specs/*/gcontract.pb
 .archegraph/specs/*/gbuild_delta.pb
 .archegraph/specs/*/gdrift_delta.pb
+.archegraph/specs/*/gspec_delta.pb
+.archegraph/specs/*/gcode_before.pb
+.archegraph/specs/*/spec.md
 
 # archebuild runtime (build server's per-project state)
 .archebuild/

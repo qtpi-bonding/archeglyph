@@ -28,6 +28,7 @@ node_modules/
 
 # Per-build history snapshots (transient, not durable contract artifacts)
 .archegraph/builds/
+.archegraph/specs/*/builds/
 archebuild.db
 archebuild.db-shm
 archebuild.db-wal

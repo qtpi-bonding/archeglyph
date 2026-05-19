@@ -1,0 +1,11 @@
+file: "packages/core/src/validator/validate_error/impl.ts"
+doc: "ValidateError — exceptional failure of the Validator itself. NOT a rule violation (those are Violation in violations[]). Reserved for cases like null/malformed Diagram getting past loadDiagram, which shouldn't happen in practice."
+
+structs: [
+  { name: "ValidateError"
+    fields: [
+      { name: "message", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

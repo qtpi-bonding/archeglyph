@@ -1,0 +1,59 @@
+file: "packages/core/src/validator/validator/impl.ts"
+doc: "Validator capability — structural integrity checks on a Diagram. Single pass, accumulates ALL violations (don't bail on first), deterministic ordering."
+
+interfaces: [
+  { name: "Validator"
+    doc:
+      "Sync, pure function. Ok payload carries violations (may be empty or "
+      "populated). Err is reserved for validator-itself failures (rare). Used "
+      "by validateOp and eventually by the editor for live overlays."
+    methods: [
+      { name: "validate"
+        inputs: [
+          { name: "request", type: { named: { symbol: "ValidateRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ValidateResponse" } },
+          { named: { symbol: "ValidateError" } }
+        ]}}
+      }
+    ]
+    typescript: {}
+  }
+]
+
+structs: [
+  { name: "ValidatorImpl"
+    implements: ["Validator"]
+    doc:
+      "Three structural checks against diagram.graph in a single pass:\n"
+      "  1. Edge.source / Edge.target reference existing Node.id.\n"
+      "  2. Node.parent_group references existing Group.id (empty/undefined "
+      "     means top-level; not a violation).\n"
+      "  3. Group.parent_group: references existing Group.id AND the chain is "
+      "     acyclic (DFS color marking — WHITE/GRAY/BLACK).\n"
+      "\n"
+      "Accumulate all violations into one list — don't bail on first. Sort the "
+      "final list by (ViolationKind enum-declaration order, location string) "
+      "for deterministic snapshots. Iterate all map keys via "
+      "Object.keys(...).sort() per the established sorted-key pattern in "
+      "visibility_filter/impl.ts (the canonical reference for sort-key "
+      "discipline in this codebase).\n"
+      "\n"
+      "GROUP_CYCLE location format: comma-joined cycle path with the closing "
+      "element repeated, e.g. 'a, b, c, a'."
+    methods: [
+      { name: "validate"
+        inputs: [
+          { name: "request", type: { named: { symbol: "ValidateRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ValidateResponse" } },
+          { named: { symbol: "ValidateError" } }
+        ]}}
+        uses: ["Violation", "ViolationKind"]
+      }
+    ]
+    typescript: {}
+  }
+]

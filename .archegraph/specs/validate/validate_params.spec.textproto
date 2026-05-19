@@ -1,0 +1,28 @@
+file: "packages/ops/src/validate/validate_params.ts"
+doc: "ValidateParams + validateParamsSchema. Mirror RenderParams shape minus the `out` field (validate produces no output file)."
+
+structs: [
+  { name: "ValidateParams"
+    doc: "Typed input for the validate op. diagram is required positional; style and theme are optional filesystem paths."
+    fields: [
+      { name: "diagram", type: { primitive: CHARACTER } },
+      { name: "style",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "theme",   type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "validateParamsSchema"
+    doc:
+      "Zod schema mirror of ValidateParams. Mirror renderParamsSchema in "
+      "render/render_params.ts exactly — same `export const`, same "
+      "`z.ZodType<ValidateParams>` annotation, same `.describe()` per field. "
+      "zod_argv consumes `.shape` for CLI flag emission so it must remain a "
+      "ZodObject under the surface type."
+    inputs: []
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["ValidateParams"]
+  }
+]

@@ -35,26 +35,71 @@ execution:
       Callers (where this is used):
       {{in_dependency}}
 
-      Project rules:
-      - Follow `docs/style-guide.md` exactly. Especially §3.3 (Option<T> / Result<T, E>
-        canonical shapes — import from `@archeglyph/proto/util/result`), §3.5–3.6
-        (named imports / exports only, no re-exports), §3.7 (boundary code rules).
+      Project rules (apply to every node — these are the project-wide conventions
+      so individual decl docs don't need to restate them):
+
+      Style + layout:
+      - Follow `docs/style-guide.md` exactly. It's the single source of truth for
+        archeglyph TS conventions AND the Koine lift rules (this code must round-trip
+        cleanly through `koine-lifter-ts` into the Archelemma IR — most "weird"
+        constraints come from there). Particularly relevant sections:
+        - §2 Approved patterns (canonical TS forms — write code in these shapes).
+        - §3.3 Option<T> / Result<T, E> canonical shapes — import from
+          `@archeglyph/proto/util/result`. Never invent your own Result variants.
+        - §3.5–3.6 named imports / exports only, no re-exports.
+        - §3.7 boundary code rules (where throwing IS allowed — ops only).
+        - §4 Conventions Koine doesn't enforce but archeglyph commits to.
+        - §6 Cascading-loss patterns — avoid bodies that are mostly `await` chains
+          (per §6, those become Unsupported in the IR). Restructure as adapter
+          calls + sync helpers when possible.
+        - §7 Forbidden patterns (mutation through aliased refs, etc.).
       - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
       - For services: write a class `<Interface>Impl implements <Interface>`.
         Import the interface and request/response types from `./schema_gen`.
         For data-model types (Diagram / Stylesheet / Theme etc.), import from the
         buf-generated path shown in `{{out_dependency}}` — typically
         `@archeglyph/proto/gen/<file>_pb`. Do NOT re-export `<Interface>` from
-        impl.ts — the sibling `index.ts` barrel pulls it from schema_gen and
-        would collide.
+        impl.ts — the sibling `index.ts` barrel pulls it from schema_gen and would collide.
+
+      Construction + types:
+      - When constructing data objects, initialize all fields at construction with
+        `Object.assign(new Xxx(), { field1, field2, ... })`. Do NOT construct with
+        `new Xxx()` then assign fields individually after. Applies to every
+        Request/Response/Output class in this codebase — they all use
+        definite-assignment fields with no constructor.
+      - If a parameter comment says it is an array (e.g. "param is Foo[]"), declare
+        it as `Foo[]` in TypeScript even if the schema skeleton shows `Foo`.
+
+      Error handling — load-bearing distinction:
+      - Result type: import `Result, Ok, Err` from `@archeglyph/proto/util/result`.
+        Discriminate the union with `result.kind === 'err'`, NOT a truthy check on
+        `result.error`. Both ok and err variants populate `.value` / `.error`
+        respectively; only `.kind` is the safe discriminator.
+      - In `@archeglyph/core/*` impls: NEVER throw. Return `Err(someError)`. Every
+        core capability (loaders, resolver, validator, layout, renderer) returns
+        Result<T, _>. Throwing inside core breaks the boundary the ops framework
+        relies on.
+      - In `@archeglyph/ops/<op>/op.ts` (the op boundary): throwing is the right
+        thing. Wrap any stage's Err into the op's <Op>OpError (extends Error) and
+        throw it. cli_main's catch block formats it for the user.
+      - Loaders return `Promise<Result<T, LoadError>>` — await them. async stage
+        impls likewise return Promise<Result<...>>. Sync stage impls return
+        Result<...> directly (no Promise).
+
+      File I/O patterns:
+      - In ops/<op>/op.ts file reads: use Node's `readFile(resolve(ctx.projectRoot,
+        params.x), 'utf8')`. Loaders take text, not bytes — always pass utf8.
+      - In core/*: no direct file I/O. Stages operate on already-loaded proto values
+        passed in via Request types.
+
+      Build behavior:
       - Implement method bodies FULLY per the description. Do not stub with
         `throw new Error('not implemented')`.
       - For brownfield MODIFIED files: edit in place, preserve existing content.
-      - When constructing data objects, initialize all fields at construction with
-        `Object.assign(new Xxx(), { field1, field2, ... })`. Do NOT construct with
-        `new Xxx()` and then assign fields individually after.
-      - If a parameter comment says it is an array (e.g. "param is Foo[]"), declare
-        it as `Foo[]` in TypeScript even if the schema skeleton shows `Foo`.
+      - Read adjacent files for patterns — they're the canonical reference. e.g.
+        `renderOp` in `packages/ops/src/render/op.ts` is the canonical Operation
+        literal example; `VisibilityFilterImpl` in `packages/core/src/resolver/
+        visibility_filter/impl.ts` is the canonical sorted-key iteration example.
 
     delete: |
       Delete the symbol `{{symbol}}` ({{kind}}) from the codebase.

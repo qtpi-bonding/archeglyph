@@ -1,0 +1,35 @@
+file: "packages/core/src/validator/violation/impl.ts"
+doc: "Violation: a single rule failure reported by the Validator. Discriminated by ViolationKind so callers (CLI, MCP, future editor) can render/filter structurally."
+
+enums: [
+  { name: "ViolationKind"
+    doc:
+      "Discriminator tag. One variant per rule in docs/design.md §15 deferred list. "
+      "Emit as a TS string-literal enum (`GROUP_CYCLE = 'GROUP_CYCLE'`) — values "
+      "appear in JSON-shaped MCP output and CLI text, both need to read cleanly."
+    values: [
+      { name: "GROUP_CYCLE" },
+      { name: "EDGE_SOURCE_MISSING" },
+      { name: "EDGE_TARGET_MISSING" },
+      { name: "NODE_PARENT_GROUP_MISSING" },
+      { name: "GROUP_PARENT_GROUP_MISSING" }
+    ]
+    typescript: {}
+  }
+]
+
+structs: [
+  { name: "Violation"
+    doc:
+      "One rule failure. location is the diagram-coord string identifying the "
+      "failing entity — edge id for edge endpoint kinds, node id for node-parent-"
+      "group, group id for group-parent-group, comma-joined cycle path "
+      "(closing element repeated) for GROUP_CYCLE."
+    fields: [
+      { name: "kind",     type: { named: { symbol: "ViolationKind" } } },
+      { name: "location", type: { primitive: CHARACTER } },
+      { name: "message",  type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

@@ -1,0 +1,11 @@
+file: "packages/core/src/validator/validate_request/impl.ts"
+doc: "Input to the Validator — just wraps the Diagram. Stylesheet/theme aren't needed; validation is structural-only."
+
+structs: [
+  { name: "ValidateRequest"
+    fields: [
+      { name: "diagram", type: { named: { symbol: "archeglyph.content.v1.Diagram" } } }
+    ]
+    typescript: {}
+  }
+]

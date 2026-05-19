@@ -1,0 +1,54 @@
+file: "packages/ops/src/validate/op.ts"
+doc:
+  "validateOp — second end-to-end Operation. Mirror renderOp at "
+  "packages/ops/src/render/op.ts; same shape, but skip layout + render. "
+  "Pillar files: op.ts (validateOp + defaultTheme helper), validate_params.ts, "
+  "validate_output.ts, validate_op_error.ts. Plus brownfield MODIFIED to "
+  "packages/ops/src/registry.ts adding validateOp to REGISTRY."
+
+methods: [
+  { name: "validateOp"
+    doc:
+      "Operation literal. Pipeline:\n"
+      "  load diagram → Validator → optional load stylesheet/theme → "
+      "visibility filter → style cascade → token resolver → assemble output.\n"
+      "Each stage Err → throw ValidateOpError(stage, cause). Track completed "
+      "stages in stagesRun so partial-failure diagnostics are useful. "
+      "exitCode: o.passed ? 0 : 1.\n"
+      "\n"
+      "When --theme is omitted: call defaultTheme() (re-declared here for the "
+      "same reason as render/op.ts — each op pillar self-contained until the "
+      "themes content pillar ships) and log via ctx.logger.info that the "
+      "default is in use."
+    inputs: []
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: [
+      "Operation",
+      "OpContext",
+      "ValidateParams",
+      "ValidateOutput",
+      "ValidateOpError",
+      "validateParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "ValidatorImpl",
+      "ValidateRequest",
+      "VisibilityFilterImpl",
+      "StyleCascadeImpl",
+      "TokenResolverImpl",
+      "FilterRequest",
+      "CascadeRequest",
+      "ResolveTokensRequest",
+      "defaultTheme"
+    ]
+  },
+  { name: "defaultTheme"
+    doc:
+      "Placeholder Theme used when --theme is omitted. Identical to "
+      "render/op.ts's defaultTheme — keep them in sync. Both swap to importing "
+      "@archeglyph/themes when that pillar ships."
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  }
+]

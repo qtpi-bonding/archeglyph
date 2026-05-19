@@ -1,0 +1,23 @@
+file: "packages/ops/src/validate/validate_output.ts"
+doc: "ValidateOutput — return shape of the validate op."
+
+structs: [
+  { name: "ValidateOutput"
+    doc:
+      "Op-level result. violations is the flat list from the Validator (sorted "
+      "by ValidateResponse's contract). passed is `violations.length === 0`. "
+      "stagesRun lists the pipeline stages that completed in order — useful "
+      "for partial-failure diagnostics (e.g. 'cascade failed' tells you "
+      "violations may be incomplete because we never reached token resolver)."
+    fields: [
+      { name: "violations", type: { named: { symbol: "Array", args: [
+        { named: { symbol: "Violation" } }
+      ]}}},
+      { name: "passed",    type: { primitive: BOOLEAN } },
+      { name: "stagesRun", type: { named: { symbol: "Array", args: [
+        { primitive: CHARACTER }
+      ]}}}
+    ]
+    typescript: {}
+  }
+]

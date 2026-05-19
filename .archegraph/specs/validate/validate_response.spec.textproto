@@ -1,0 +1,13 @@
+file: "packages/core/src/validator/validate_response/impl.ts"
+doc: "Output of the Validator — accumulated violations. Empty list = clean diagram. Sorted by (ViolationKind ordinal, location) for deterministic snapshots."
+
+structs: [
+  { name: "ValidateResponse"
+    fields: [
+      { name: "violations", type: { named: { symbol: "Array", args: [
+        { named: { symbol: "Violation" } }
+      ]}}}
+    ]
+    typescript: {}
+  }
+]

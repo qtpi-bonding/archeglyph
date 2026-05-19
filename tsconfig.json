@@ -20,6 +20,10 @@
       "@archeglyph/ops/op": ["./packages/ops/src/op.ts"],
       "@archeglyph/ops/registry": ["./packages/ops/src/registry.ts"],
       "@archeglyph/ops/zod_argv": ["./packages/ops/src/zod_argv.ts"],
+      "@archeglyph/core/loaders": ["./packages/core/src/loaders/index.ts"],
+      "@archeglyph/core/resolver/*": ["./packages/core/src/resolver/*/index.ts"],
+      "@archeglyph/core/layout/*": ["./packages/core/src/layout/*/index.ts"],
+      "@archeglyph/core/renderer/*": ["./packages/core/src/renderer/*/index.ts"],
       "@archeglyph/cli": ["./packages/cli/src/main.ts"],
       "@archeglyph/cli/mcp_server": ["./packages/cli/src/mcp_server.ts"]
     }

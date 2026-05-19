@@ -1,38 +1,35 @@
-# RenderOutput — typed result of the `render` op.
-#
-# Returned by renderOp.execute and consumed by both the CLI surface
-# (renderOp.format prints a one-liner) and the MCP surface (the whole
-# value is JSON.stringify'd into the tool response).
-#
-# Field semantics:
-#   - svg: the SVG document text. On the CLI, this is the thing also
-#     written to disk at outPath; the field is kept on the output so
-#     MCP callers don't have to read the file back. ~10-200KB typically.
-#   - outPath: the absolute (or cwd-relative) path the SVG was written
-#     to. The op resolves this from params.out, or derives it from
-#     params.diagram (extension swap to .svg).
-#   - bytesWritten: byte length of the SVG written, for the format()
-#     one-liner: "wrote 12345 bytes to diagram.svg".
-#
-# Emit shape (write exactly):
-#
-#   export interface RenderOutput {
-#     svg: string;
-#     outPath: string;
-#     bytesWritten: number;
-#   }
-#
-# Note: `bytesWritten` is the UTF-8 byte length, not character count —
-# use `Buffer.byteLength(svg, 'utf8')` in the op, since that's the value
-# fs.writeFile actually wrote. Keep field order stable: format() reads
-# only outPath + bytesWritten; svg is at the front because it's the
-# logical primary output (MCP callers care most about this).
-
 file: "packages/ops/src/render/render_output.ts"
 doc: "RenderOutput: typed result returned by renderOp.execute."
 
 structs: [
   { name: "RenderOutput"
+    doc:
+      "Typed result of the `render` op. Returned from renderOp.execute and "
+      "consumed by both the CLI surface (renderOp.format prints a one-liner) "
+      "and the MCP surface (the whole value is JSON.stringify'd into the tool "
+      "response).\n"
+      "\n"
+      "Emit exactly:\n"
+      "  export interface RenderOutput {\n"
+      "    svg: string;\n"
+      "    outPath: string;\n"
+      "    bytesWritten: number;\n"
+      "  }\n"
+      "\n"
+      "Field semantics:\n"
+      "  - svg: the SVG document text. On the CLI, this is the thing also "
+      "written to disk at outPath; the field is kept on the output so MCP "
+      "callers don't have to read the file back. Typical size: 10-200KB.\n"
+      "  - outPath: the absolute (or cwd-relative) path the SVG was written "
+      "to. renderOp resolves this from params.out, or derives it from "
+      "params.diagram (extension swap to .svg via deriveOutPath()).\n"
+      "  - bytesWritten: UTF-8 byte length of the SVG written, NOT character "
+      "count. Use `Buffer.byteLength(svg, 'utf8')` since that's the value "
+      "fs.writeFile actually wrote. format() prints this in the one-liner: "
+      "\"wrote 12345 bytes to diagram.svg\".\n"
+      "\n"
+      "Field order matters: svg first (logical primary output — MCP callers "
+      "care most about this); format() reads only outPath + bytesWritten."
     fields: [
       { name: "svg",          type: { primitive: CHARACTER } },
       { name: "outPath",      type: { primitive: CHARACTER } },

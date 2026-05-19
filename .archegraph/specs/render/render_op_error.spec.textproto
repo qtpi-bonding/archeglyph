@@ -1,66 +1,56 @@
-# RenderOpError — boundary error thrown out of renderOp.execute.
-#
-# The render pipeline has four typed-Result sub-stages, each with its own
-# error type:
-#   - load    → LoadError    (from @archeglyph/core/loaders)
-#   - resolve → ResolveError (from @archeglyph/core/resolver)
-#   - layout  → LayoutError  (from @archeglyph/core/layout)
-#   - render  → RenderError  (from @archeglyph/core/renderer)
-#
-# RenderOpError flattens these into one throwable at the op boundary, so
-# main.ts's catch block (see ops_framework/cli_main.spec.textproto step 8)
-# gets a real Error with a clean .message — String(plain-object) gives
-# "[object Object]", which is why we extend Error rather than emitting a
-# plain `type` union.
-#
-# Emit shape (write exactly):
-#
-#   import type { LoadError } from '@archeglyph/core/loaders';
-#   import type { ResolveError } from '@archeglyph/core/resolver/resolve_error';
-#   import type { LayoutError } from '@archeglyph/core/layout/layout_error';
-#   import type { RenderError } from '@archeglyph/core/renderer/render_error';
-#
-#   export type RenderStage = 'load' | 'resolve' | 'layout' | 'render';
-#
-#   export type RenderStageError = LoadError | ResolveError | LayoutError | RenderError;
-#
-#   export class RenderOpError extends Error {
-#     readonly stage: RenderStage;
-#     readonly cause: RenderStageError;
-#     constructor(stage: RenderStage, cause: RenderStageError) {
-#       super(`render: ${stage}: ${cause.message}`);
-#       this.name = 'RenderOpError';
-#       this.stage = stage;
-#       this.cause = cause;
-#     }
-#   }
-#
-# Why a class extending Error rather than a discriminated-union literal:
-#   1. `throw err` produces `err.message` in main.ts's catch via Error.message;
-#      a plain object loses this.
-#   2. `instanceof RenderOpError` lets callers (future tests, MCP wrapper) do
-#      structural narrowing without sniffing the .stage field.
-#   3. The `stage`/`cause` fields carry the discriminated-union value cleanly
-#      for callers that want to inspect classification (e.g. exit-code
-#      derivation, MCP error-detail emission).
-#
-# The spec models RenderOpError as a struct with two fields (`stage`, `cause`)
-# plus a type alias each for RenderStage and RenderStageError. The agent's
-# job is to emit the class form per the doc comment above — contract-skeleton
-# rendering of a 2-field struct gets overridden by the comment, same pattern
-# as OpContext in ops_framework (`export interface OpContext` overrides the
-# default `export class` skeleton).
-#
-# `cause` field type is `unsupported` because TypeScript unions at type
-# position don't lift cleanly through the textproto schema (Koine
-# cascading-loss pattern, accepted at the boundary). The doc comment carries
-# the exact union literal so the agent emits the right type.
-
 file: "packages/ops/src/render/render_op_error.ts"
 doc: "RenderOpError: boundary Error class thrown from renderOp.execute when any pipeline stage fails."
 
 structs: [
   { name: "RenderOpError"
+    doc:
+      "Boundary error thrown out of renderOp.execute. Flattens the four "
+      "typed-Result stage errors (LoadError, ResolveError, LayoutError, "
+      "RenderError) into a single throwable.\n"
+      "\n"
+      "MUST extend `Error` — main.ts's catch block calls `err.message` (per "
+      "ops_framework/cli_main.spec.textproto step 8). A plain object would "
+      "stringify as \"[object Object]\" via the `String(err)` fallback, which "
+      "produces a useless error message.\n"
+      "\n"
+      "Emit exactly (override the contract-skeleton's `class { stage!: string; "
+      "cause!: unknown; }` rendering — the agent's job is to emit the class "
+      "form below, not a plain data class):\n"
+      "\n"
+      "  // SPDX-License-Identifier: AGPL-3.0-or-later\n"
+      "\n"
+      "  import type { LoadError } from '@archeglyph/core/loaders';\n"
+      "  import type { ResolveError } from '@archeglyph/core/resolver/resolve_error';\n"
+      "  import type { LayoutError } from '@archeglyph/core/layout/layout_error';\n"
+      "  import type { RenderError } from '@archeglyph/core/renderer/render_error';\n"
+      "\n"
+      "  export type RenderStage = 'load' | 'resolve' | 'layout' | 'render';\n"
+      "\n"
+      "  export type RenderStageError = LoadError | ResolveError | LayoutError | RenderError;\n"
+      "\n"
+      "  export class RenderOpError extends Error {\n"
+      "    readonly stage: RenderStage;\n"
+      "    readonly cause: RenderStageError;\n"
+      "    constructor(stage: RenderStage, cause: RenderStageError) {\n"
+      "      super(`render: ${stage}: ${cause.message}`);\n"
+      "      this.name = 'RenderOpError';\n"
+      "      this.stage = stage;\n"
+      "      this.cause = cause;\n"
+      "    }\n"
+      "  }\n"
+      "\n"
+      "Why a class extending Error rather than a discriminated-union literal:\n"
+      "  1. `throw err` produces `err.message` in main.ts's catch via "
+      "Error.message; a plain object loses this.\n"
+      "  2. `instanceof RenderOpError` lets callers (future tests, MCP wrapper) "
+      "do structural narrowing without sniffing the .stage field.\n"
+      "  3. The `stage`/`cause` fields carry the discriminated-union value "
+      "cleanly for callers that want to inspect classification.\n"
+      "\n"
+      "Note: spec declares `cause` as type `unsupported` because TS unions "
+      "at type position don't lift through the textproto schema (Koine "
+      "cascading-loss pattern). The emit-shape above resolves this with the "
+      "explicit `RenderStageError` type alias."
     fields: [
       { name: "stage", type: { primitive: CHARACTER } },
       { name: "cause", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }

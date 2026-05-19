@@ -1,39 +1,37 @@
-# Brownfield MODIFICATION to packages/ops/src/registry.ts: add renderOp.
-#
-# The ops_framework pillar shipped REGISTRY as an empty array. This pillar
-# adds the first op. Subsequent op pillars (validate, init, format, watch,
-# bind) repeat this same delta — one new INVOCATION edge per op.
-#
-# Uses the ConstantDecl.uses field (archegraph commit 7e4f070e) plus the
-# TS term-descriptor symbol-shape fix (commit b07d62e3, 2026-05-18) which
-# closes the trailing-period mismatch between contract symbols and SCIP.
-#
-# Emit shape (write exactly):
-#
-#   // SPDX-License-Identifier: AGPL-3.0-or-later
-#
-#   import type { Operation } from './op';
-#   import { renderOp } from './render/op';
-#
-#   export const REGISTRY: Operation<unknown, unknown>[] = [
-#     renderOp as unknown as Operation<unknown, unknown>,
-#   ];
-#
-# Why the `as unknown as Operation<unknown, unknown>` cast: REGISTRY is
-# typed as `Operation<unknown, unknown>[]`, but renderOp is the more
-# specific `Operation<RenderParams, RenderOutput>`. TS doesn't widen
-# generic parameters covariantly through the function-type position in
-# `execute: (params: P, ctx) => Promise<O>` — params is in contravariant
-# position so `Operation<RenderParams, …>` is NOT assignable to
-# `Operation<unknown, …>`. The double-cast through `unknown` is the
-# minimal-noise erasure; main.ts re-narrows when it dispatches.
-
 file: "packages/ops/src/registry.ts"
 doc: "Central registry of all archeglyph operations. Now includes renderOp."
 
 constants: [
   { name: "REGISTRY"
     change_type: MODIFIED
+    doc:
+      "MODIFIED to add renderOp. The ops_framework pillar shipped REGISTRY as "
+      "an empty array. This pillar (render) adds the first op. Subsequent op "
+      "pillars (validate, init, format, watch, bind) repeat the same delta — "
+      "one new entry in the array per op.\n"
+      "\n"
+      "Edit registry.ts in place (brownfield MODIFIED). Preserve everything "
+      "else in the file; only change the array body and add the import.\n"
+      "\n"
+      "Emit (final state of the file):\n"
+      "\n"
+      "  // SPDX-License-Identifier: AGPL-3.0-or-later\n"
+      "\n"
+      "  import type { Operation } from './op';\n"
+      "  import { renderOp } from './render/op';\n"
+      "\n"
+      "  export const REGISTRY: Operation<unknown, unknown>[] = [\n"
+      "    renderOp as unknown as Operation<unknown, unknown>,\n"
+      "  ];\n"
+      "\n"
+      "Why the `as unknown as Operation<unknown, unknown>` cast: REGISTRY is "
+      "typed as `Operation<unknown, unknown>[]`, but renderOp is the more "
+      "specific `Operation<RenderParams, RenderOutput>`. TS doesn't widen "
+      "generic parameters covariantly through the function-type position in "
+      "`execute: (params: P, ctx) => Promise<O>` — params is in contravariant "
+      "position, so `Operation<RenderParams, …>` is NOT assignable to "
+      "`Operation<unknown, …>`. The double-cast through `unknown` is the "
+      "minimal-noise erasure; main.ts re-narrows when it dispatches an op."
     type: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
     uses: ["renderOp"]
   }

@@ -3,7 +3,7 @@ server:
 
 execution:
   max_parallelism: 5
-  default_timeout_seconds: 600
+  default_timeout_seconds: 1800
   executor: shell
 
   # Prompt templates rendered for the agent step, keyed by ChangeType.

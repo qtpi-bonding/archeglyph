@@ -3,6 +3,7 @@ doc: "RenderOpError: boundary Error class thrown from renderOp.execute when any 
 
 structs: [
   { name: "RenderOpError"
+    extends: ["Error"]
     doc:
       "Boundary error thrown out of renderOp.execute. Flattens the four "
       "typed-Result stage errors (LoadError, ResolveError, LayoutError, "

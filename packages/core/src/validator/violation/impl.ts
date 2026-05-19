@@ -7,7 +7,6 @@ export enum ViolationKind {
   NodeParentGroupMissing,
   GroupParentGroupMissing,
 }
-import { ViolationKind } from './';
 
 export class Violation {
   kind!: ViolationKind;

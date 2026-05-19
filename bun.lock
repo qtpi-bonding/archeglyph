@@ -28,10 +28,20 @@
         "zod": "^3.23.0",
       },
     },
+    "packages/core": {
+      "name": "@archeglyph/core",
+      "version": "0.0.0",
+      "dependencies": {
+        "@archeglyph/proto": "*",
+        "@bufbuild/protobuf": "^2.0.0",
+        "elkjs": "^0.9.3",
+      },
+    },
     "packages/ops": {
       "name": "@archeglyph/ops",
       "version": "0.0.0",
       "dependencies": {
+        "@archeglyph/core": "*",
         "@archeglyph/proto": "*",
         "@bufbuild/protobuf": "^2.0.0",
         "zod": "^3.23.0",
@@ -47,6 +57,8 @@
   },
   "packages": {
     "@archeglyph/cli": ["@archeglyph/cli@workspace:packages/cli"],
+
+    "@archeglyph/core": ["@archeglyph/core@workspace:packages/core"],
 
     "@archeglyph/ops": ["@archeglyph/ops@workspace:packages/ops"],
 

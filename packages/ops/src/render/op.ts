@@ -30,7 +30,7 @@ export function deriveOutPath(diagramPath: string): string {
 }
 
 export function defaultTheme(): Theme {
-  return create(ThemeSchema);
+  return create(ThemeSchema, { name: 'archeglyph-default' });
 }
 
 export const renderOp: Operation<RenderParams, RenderOutput> = {

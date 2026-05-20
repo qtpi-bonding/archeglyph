@@ -3,6 +3,10 @@
 import { create } from '@bufbuild/protobuf';
 import { ThemeSchema, TokensSchema, FontSpecSchema, type Theme } from '@archeglyph/proto/gen/theme_pb';
 
+export function lightTheme(): Theme {
+  throw new Error('not implemented');
+}
+
 export function darkTheme(): Theme {
   return create(ThemeSchema, {
     name: 'dark',
@@ -49,9 +53,8 @@ export function darkTheme(): Theme {
     annotationComponents: [],
   });
 }
+
 export function getBundledTheme(name: string): Theme {
-  throw new Error('not implemented');
-}
-export function lightTheme(): Theme {
-  throw new Error('not implemented');
+  if (name === 'dark') return darkTheme();
+  return lightTheme();
 }

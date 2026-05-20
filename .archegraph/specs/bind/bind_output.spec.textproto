@@ -1,0 +1,17 @@
+file: "packages/ops/src/bind/bind_output.ts"
+doc: "BindOutput — what bindOp returns on success."
+
+structs: [
+  { name: "BindOutput"
+    doc:
+      "matched: count of elements whose predicate was true. "
+      "path: absolute path of the written stylesheet. "
+      "component: the component name that was applied (echo of params.component)."
+    fields: [
+      { name: "matched",   type: { primitive: INTEGER } },
+      { name: "path",      type: { primitive: CHARACTER } },
+      { name: "component", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

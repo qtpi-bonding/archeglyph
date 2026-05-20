@@ -1,0 +1,41 @@
+file: "packages/ops/src/bind/predicate.ts"
+doc:
+  "BindPredicate type and parsePredicate parser for the --where grammar.\n"
+  "v1 grammar: tag equality (tags.foo == 'bar'), && (left-assoc), "
+  "parent_group == 'X', id startsWith 'X'. No OR, no negation, no nesting."
+
+structs: [
+  { name: "BindPredicate"
+    doc:
+      "Compiled predicate function. Evaluates an element-shaped object and returns "
+      "true if it matches the --where expression.\n"
+      "Element shape: { id: string; tags: Record<string, string>; parent_group?: string }."
+    aliased: {
+      arrow: {
+        inputs: [
+          { unsupported: { reason: MAPPED_TYPE, source_excerpt: "{ id: string; tags: Record<string, string>; parent_group?: string }" } }
+        ]
+        output: { primitive: BOOLEAN }
+      }
+    }
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "parsePredicate"
+    doc:
+      "Parse a --where expression string into a BindPredicate.\n"
+      "Supported clauses (all case-sensitive):\n"
+      "  tags.<key> == '<value>'    tag equality\n"
+      "  parent_group == '<value>'  containment test\n"
+      "  id startsWith '<value>'    id prefix test\n"
+      "  <left> && <right>          conjunction (left-to-right, any depth)\n"
+      "Throws a plain Error with a descriptive message on unrecognised syntax."
+    inputs: [
+      { name: "expr", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "BindPredicate" } }
+    uses: ["BindPredicate"]
+  }
+]

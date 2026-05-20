@@ -1,0 +1,39 @@
+file: "packages/ops/src/bind/op.ts"
+doc:
+  "bindOp — Operation that writes component bindings into a stylesheet.\n"
+  "Reads content + stylesheet (creates empty stylesheet if the file is absent), "
+  "evaluates the --where predicate, and upserts component: '<name>' into each "
+  "matching element's style entry. Writes the updated stylesheet back to disk."
+
+constants: [
+  { name: "bindOp"
+    doc:
+      "Operation literal. Mirror initOp/formatOp shape — same ConstantDecl pattern.\n"
+      "Pipeline:\n"
+      "  load_diagram  — readFile + loadDiagram → BindOpError('load_diagram')\n"
+      "  resolve style — params.style ?? replaceExtension(diagramPath, '.style.json')\n"
+      "  load_style    — if style file exists: readFile + loadStylesheet;\n"
+      "                  if not: create(StylesheetSchema, {}). → BindOpError('load_style')\n"
+      "  parse_predicate — parsePredicate(params.where) → BindOpError('parse_predicate')\n"
+      "  match + upsert — iterate diagram.graph.<nodes|edges|groups> per elementType;\n"
+      "                   evaluate predicate against { id, tags, parent_group? };\n"
+      "                   upsert stylesheet map entry with component = params.component\n"
+      "  write         — writeFile(stylePath, toJson(StylesheetSchema, stylesheet))\n"
+      "                  → BindOpError('write')\n"
+      "format: (o) => `${o.matched} element(s) bound to '${o.component}' in ${o.path}`\n"
+      "exitCode: always 0."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "BindParams" } },
+      { named: { symbol: "BindOutput" } }
+    ]}}
+    uses: [
+      "Operation",
+      "OpContext",
+      "BindParams",
+      "BindOutput",
+      "BindOpError",
+      "bindParamsSchema",
+      "parsePredicate"
+    ]
+  }
+]

@@ -1,0 +1,16 @@
+file: "packages/ops/src/bind/bind_op_error.ts"
+doc: "BindOpError — thrown by bindOp on stage failure."
+
+structs: [
+  { name: "BindOpError"
+    doc:
+      "Extends Error. stage identifies which pipeline step failed: "
+      "'load_diagram' | 'load_style' | 'parse_predicate' | 'write'."
+    extends: [{ named: { symbol: "Error" } }]
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    typescript: {}
+  }
+]

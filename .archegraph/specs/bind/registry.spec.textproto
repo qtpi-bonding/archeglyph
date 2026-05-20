@@ -1,0 +1,15 @@
+file: "packages/ops/src/registry.ts"
+doc: "Extends the REGISTRY constant to include bindOp."
+
+constants: [
+  { name: "REGISTRY"
+    change_type: MODIFIED
+    doc:
+      "Brownfield MODIFIED: append bindOp to the array.\n"
+      "Add import after the initOp import; cast via "
+      "`bindOp as unknown as Operation<unknown, unknown>` — same erasure pattern "
+      "as the sibling entries."
+    type: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["bindOp"]
+  }
+]

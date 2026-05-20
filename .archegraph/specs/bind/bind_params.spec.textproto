@@ -1,0 +1,39 @@
+file: "packages/ops/src/bind/bind_params.ts"
+doc:
+  "BindParams + bindParamsSchema. Captures: content path, optional style path, "
+  "predicate expression, element type, and target component name."
+
+structs: [
+  { name: "BindParams"
+    doc:
+      "Typed input for the bind op.\n"
+      "  diagram:     path to .diag.json content file (positional)\n"
+      "  style:       path to .style.json stylesheet (optional; inferred as "
+      "<diagram-basename>.style.json if absent)\n"
+      "  where:       predicate expression string (--where)\n"
+      "  elementType: which graph element class to match against — "
+      "'node' | 'edge' | 'group'; defaults to 'node'\n"
+      "  component:   theme component name to write into matched entries (--component)"
+    fields: [
+      { name: "diagram",     type: { primitive: CHARACTER } },
+      { name: "style",       type: { primitive: CHARACTER }, is_optional: true },
+      { name: "where",       type: { primitive: CHARACTER } },
+      { name: "elementType", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "'node' | 'edge' | 'group'" } } },
+      { name: "component",   type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "bindParamsSchema"
+    doc:
+      "Zod schema mirror of BindParams. Mirror formatParamsSchema / initParamsSchema shape.\n"
+      "elementType uses z.enum(['node','edge','group']).default('node').\n"
+      "style is optional (z.string().optional())."
+    type: { named: { symbol: "z.ZodType", args: [
+      { named: { symbol: "BindParams" } }
+    ]}}
+    uses: ["BindParams"]
+  }
+]

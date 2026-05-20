@@ -74,23 +74,25 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
       Object.assign(new FilterRequest(), { diagram: diagramResult.value, stylesheet }),
     );
     if (filterResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'resolve', cause: filterResult.error });
+      throw Object.assign(new ValidateOpError(), { stage: 'filter', cause: filterResult.error });
     }
+    stagesRun.push('filter');
 
     const cascadeResult = new StyleCascadeImpl().cascade(
       Object.assign(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme }),
     );
     if (cascadeResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'resolve', cause: cascadeResult.error });
+      throw Object.assign(new ValidateOpError(), { stage: 'cascade', cause: cascadeResult.error });
     }
+    stagesRun.push('cascade');
 
     const resolveResult = new TokenResolverImpl().resolveTokens(
       Object.assign(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens }),
     );
     if (resolveResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'resolve', cause: resolveResult.error });
+      throw Object.assign(new ValidateOpError(), { stage: 'tokens', cause: resolveResult.error });
     }
-    stagesRun.push('resolve');
+    stagesRun.push('tokens');
 
     const violations = validateResult.value.violations;
     const passed = violations.length === 0;

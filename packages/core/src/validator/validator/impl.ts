@@ -5,7 +5,7 @@ import { Ok, Result } from '@archeglyph/proto/util/result';
 import { ValidateError } from '../validate_error';
 import { ValidateRequest } from '../validate_request';
 import { ValidateResponse } from '../validate_response';
-import { Violation, ViolationKind } from '../violation';
+import { Violation, ViolationKind, VIOLATION_KIND_ORDER } from '../violation';
 import { Validator } from './';
 
 export class ValidatorImpl implements Validator {
@@ -32,7 +32,7 @@ export class ValidatorImpl implements Validator {
       const edge = edgesMap[id];
       if (nodesMap[edge.source] === undefined) {
         violations.push(Object.assign(new Violation(), {
-          kind: ViolationKind.EdgeSourceMissing,
+          kind: ViolationKind.EDGE_SOURCE_MISSING,
           location: id,
           message: `edge '${id}' source '${edge.source}' does not reference an existing node`,
         }));
@@ -41,7 +41,7 @@ export class ValidatorImpl implements Validator {
       }
       if (nodesMap[edge.target] === undefined) {
         violations.push(Object.assign(new Violation(), {
-          kind: ViolationKind.EdgeTargetMissing,
+          kind: ViolationKind.EDGE_TARGET_MISSING,
           location: id,
           message: `edge '${id}' target '${edge.target}' does not reference an existing node`,
         }));
@@ -57,7 +57,7 @@ export class ValidatorImpl implements Validator {
       const p = normParent(node.parentGroup);
       if (p !== undefined && groupsMap[p] === undefined) {
         violations.push(Object.assign(new Violation(), {
-          kind: ViolationKind.NodeParentGroupMissing,
+          kind: ViolationKind.NODE_PARENT_GROUP_MISSING,
           location: id,
           message: `node '${id}' parent_group '${p}' does not reference an existing group`,
         }));
@@ -73,7 +73,7 @@ export class ValidatorImpl implements Validator {
       const p = normParent(group.parentGroup);
       if (p !== undefined && groupsMap[p] === undefined) {
         violations.push(Object.assign(new Violation(), {
-          kind: ViolationKind.GroupParentGroupMissing,
+          kind: ViolationKind.GROUP_PARENT_GROUP_MISSING,
           location: id,
           message: `group '${id}' parent_group '${p}' does not reference an existing group`,
         }));
@@ -102,7 +102,7 @@ export class ValidatorImpl implements Validator {
           cyclePath.push(parentId);
           const location = cyclePath.join(', ');
           violations.push(Object.assign(new Violation(), {
-            kind: ViolationKind.GroupCycle,
+            kind: ViolationKind.GROUP_CYCLE,
             location,
             message: `group cycle detected: ${location}`,
           }));
@@ -127,7 +127,7 @@ export class ValidatorImpl implements Validator {
     }
 
     violations.sort((a: Violation, b: Violation): number => {
-      const kindDiff = a.kind - b.kind;
+      const kindDiff = VIOLATION_KIND_ORDER[a.kind] - VIOLATION_KIND_ORDER[b.kind];
       if (kindDiff !== 0) {
         return kindDiff;
       } else {

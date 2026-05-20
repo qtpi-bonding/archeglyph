@@ -1,0 +1,28 @@
+file: "packages/ops/src/init/init_params.ts"
+doc:
+  "InitParams + initParamsSchema. Single optional `name` flag — basename "
+  "for the written diagram file. Defaults to 'diagram'. The .diag.json "
+  "suffix is appended by the op, not the user."
+
+structs: [
+  { name: "InitParams"
+    doc: "Typed input for the init op. name is optional with default; no positionals."
+    fields: [
+      { name: "name", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "initParamsSchema"
+    doc:
+      "Zod schema mirror of InitParams. Mirror formatParamsSchema in "
+      "format/format_params.ts. The `name` field carries `.default('diagram')` "
+      "so zod_argv emits it as an optional CLI flag with a built-in default."
+    type: { named: { symbol: "z.ZodType", args: [
+      { named: { symbol: "InitParams" } }
+    ]}}
+    uses: ["InitParams"]
+  }
+]

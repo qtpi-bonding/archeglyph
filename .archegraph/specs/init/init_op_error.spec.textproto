@@ -1,0 +1,20 @@
+file: "packages/ops/src/init/init_op_error.ts"
+doc: "Boundary Error thrown out of initOp.execute. Mirror FormatOpError in format/format_op_error.ts — same shape, different stage discriminator ('exists' | 'write')."
+
+structs: [
+  { name: "InitOpError"
+    extends: [{ named: { symbol: "Error" } }]
+    doc:
+      "Flattens typed-Result stage errors (target file already exists, "
+      "filesystem write failure) into one throwable so main.ts's catch "
+      "block gets a real .message. Express the cause union as a type alias "
+      "in the emitted file (spec models it as `unsupported` because TS "
+      "union-at-type-position doesn't lift through textproto — Koine "
+      "cascading-loss)."
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    typescript: {}
+  }
+]

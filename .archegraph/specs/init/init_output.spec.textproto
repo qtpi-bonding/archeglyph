@@ -1,0 +1,15 @@
+file: "packages/ops/src/init/init_output.ts"
+doc: "InitOutput — return shape of the init op."
+
+structs: [
+  { name: "InitOutput"
+    doc:
+      "Op-level result. path is the absolute filesystem path of the just-"
+      "written diagram file. Operation.format() turns it into a single "
+      "stdout confirmation line."
+    fields: [
+      { name: "path", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

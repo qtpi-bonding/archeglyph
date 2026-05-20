@@ -1,0 +1,16 @@
+file: "packages/ops/src/registry.ts"
+doc: "Central registry of archeglyph operations. Now includes initOp."
+
+constants: [
+  { name: "REGISTRY"
+    change_type: MODIFIED
+    doc:
+      "Brownfield MODIFIED: append initOp to the array. Add the import "
+      "after the existing formatOp import; cast via "
+      "`initOp as unknown as Operation<unknown, unknown>` — same erasure "
+      "pattern as the sibling entries on the lines above (Operation's "
+      "contravariant param position blocks the direct assignment)."
+    type: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["initOp"]
+  }
+]

@@ -1,0 +1,39 @@
+file: "packages/ops/src/init/op.ts"
+doc:
+  "initOp — fourth end-to-end Operation. Mirror formatOp at "
+  "packages/ops/src/format/op.ts in shape; semantics differ: no input "
+  "file, the op WRITES to disk. Builds a minimal valid Diagram via "
+  "@bufbuild/protobuf `create(DiagramSchema, …)`, canonicalizes via "
+  "toJson, and writes `<name>.diag.json` next to ctx.projectRoot.\n"
+  "\n"
+  "Pillar files: op.ts, init_params.ts, init_output.ts, init_op_error.ts. "
+  "Plus brownfield MODIFIED to packages/ops/src/registry.ts adding "
+  "initOp to REGISTRY. ConstantDecl shape per skill rule."
+
+constants: [
+  { name: "initOp"
+    doc:
+      "Operation literal. Side-effecting: writes a fresh diagram skeleton "
+      "to disk and returns the path for stdout confirmation.\n"
+      "  default name: 'diagram' (zod .default on the schema)\n"
+      "  target path: <ctx.projectRoot>/<name>.diag.json\n"
+      "  refusal:    if target already exists → throw InitOpError(stage='exists')\n"
+      "  IO failure: throw InitOpError(stage='write', cause)\n"
+      "Minimal Diagram body: { schemaVersion: 1, id: name, graph: {} } "
+      "built via create(DiagramSchema, …) then toJson(DiagramSchema, msg). "
+      "Output: InitOutput{path}. format: (o) => `wrote ${o.path}` so main.ts "
+      "prints one line of confirmation. exitCode: always 0 on success."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "InitParams" } },
+      { named: { symbol: "InitOutput" } }
+    ]}}
+    uses: [
+      "Operation",
+      "OpContext",
+      "InitParams",
+      "InitOutput",
+      "InitOpError",
+      "initParamsSchema"
+    ]
+  }
+]

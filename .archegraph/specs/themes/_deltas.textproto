@@ -1,0 +1,9 @@
+# Brownfield deletes for the themes pillar.
+# The two local defaultTheme() helpers in render/op.ts and validate/op.ts
+# are replaced by @archeglyph/themes' getBundledTheme('light') call;
+# the standalone helper functions are no longer needed.
+
+node_deltas: [
+  { symbol: "packages/ops/src/render/op.ts/defaultTheme()."   change_type: DELETED },
+  { symbol: "packages/ops/src/validate/op.ts/defaultTheme()." change_type: DELETED }
+]

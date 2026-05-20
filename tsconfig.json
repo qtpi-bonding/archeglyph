@@ -26,7 +26,8 @@
       "@archeglyph/core/renderer/*": ["./packages/core/src/renderer/*/index.ts"],
       "@archeglyph/core/validator/*": ["./packages/core/src/validator/*/index.ts"],
       "@archeglyph/cli": ["./packages/cli/src/main.ts"],
-      "@archeglyph/cli/mcp_server": ["./packages/cli/src/mcp_server.ts"]
+      "@archeglyph/cli/mcp_server": ["./packages/cli/src/mcp_server.ts"],
+      "@archeglyph/themes": ["./packages/themes/src/index.ts"]
     }
   },
   "include": ["packages/**/*.ts"]

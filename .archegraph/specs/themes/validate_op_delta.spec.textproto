@@ -1,0 +1,45 @@
+file: "packages/ops/src/validate/op.ts"
+doc:
+  "Brownfield MODIFIED — validateOp body switches local defaultTheme() → "
+  "@archeglyph/themes' getBundledTheme('light'). Local defaultTheme is "
+  "DELETED via _deltas.textproto."
+
+constants: [
+  { name: "validateOp"
+    change_type: MODIFIED
+    doc:
+      "Operation literal: name='validate', description, params (Zod "
+      "schema), format, exitCode (passed → 0, else 1), async execute. "
+      "Pipeline body: load → Validator → optional stylesheet/theme load "
+      "→ filter → cascade → tokens. Each stage's Err wrapped + thrown as "
+      "ValidateOpError with granular stage discriminator "
+      "'load'|'validate'|'filter'|'cascade'|'tokens'. Track completed "
+      "stages in stagesRun (push after each success).\n"
+      "\n"
+      "Theme-fallback site: when params.theme is undefined, call "
+      "getBundledTheme('light') and ctx.logger.info('no --theme "
+      "provided; using built-in placeholder'). passed = "
+      "violations.length === 0. Read the existing impl and preserve "
+      "everything except the theme-fallback line."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "ValidateParams" } },
+      { named: { symbol: "ValidateOutput" } }
+    ]}}
+    uses: [
+      "validateParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "ValidatorImpl",
+      "ValidateRequest",
+      "VisibilityFilterImpl",
+      "StyleCascadeImpl",
+      "TokenResolverImpl",
+      "FilterRequest",
+      "CascadeRequest",
+      "ResolveTokensRequest",
+      "ValidateOpError",
+      "getBundledTheme"
+    ]
+  }
+]

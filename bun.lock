@@ -43,6 +43,7 @@
       "dependencies": {
         "@archeglyph/core": "*",
         "@archeglyph/proto": "*",
+        "@archeglyph/themes": "*",
         "@bufbuild/protobuf": "^2.0.0",
         "zod": "^3.23.0",
       },
@@ -51,6 +52,14 @@
       "name": "@archeglyph/proto",
       "version": "0.0.0",
       "dependencies": {
+        "@bufbuild/protobuf": "^2.0.0",
+      },
+    },
+    "packages/themes": {
+      "name": "@archeglyph/themes",
+      "version": "0.0.0",
+      "dependencies": {
+        "@archeglyph/proto": "*",
         "@bufbuild/protobuf": "^2.0.0",
       },
     },
@@ -63,6 +72,8 @@
     "@archeglyph/ops": ["@archeglyph/ops@workspace:packages/ops"],
 
     "@archeglyph/proto": ["@archeglyph/proto@workspace:packages/proto"],
+
+    "@archeglyph/themes": ["@archeglyph/themes@workspace:packages/themes"],
 
     "@bufbuild/protobuf": ["@bufbuild/protobuf@2.12.0", "", {}, "sha512-B/XlCaFIP8LOwzo+bz5uFzATYokcwCKQcghqnlfwSmM5eX/qTkvDBnDPs+gXtX/RyjxJ4DRikECcPJbyALA8FA=="],
 

@@ -1,0 +1,74 @@
+file: "packages/themes/src/index.ts"
+doc:
+  "Bundled themes for archeglyph (architecture.md §8). Ships two named "
+  "themes — 'light' and 'dark' — plus a tiny name→Theme lookup. Pure data "
+  "module; no impl classes, no Result chains. Replaces the placeholder "
+  "defaultTheme() that currently duplicated in render/op.ts and "
+  "validate/op.ts (both removed via this pillar's _deltas).\n"
+  "\n"
+  "Token VOCABULARY is contract — stylesheets reference $colors.X / "
+  "$fonts.Y / etc., so the set of token keys is fixed below. Token VALUES "
+  "are design choice: Tokyo Night / Catppuccin / Solarized vibes per "
+  "§8.2, but our own colors (no trademark/attribution lift).\n"
+  "\n"
+  "Theme.extends is left empty (§8.4 — v2 feature). Component lists "
+  "(node/edge/group/annotation) are empty in v1 — adding components is "
+  "purely additive in future pillars."
+
+methods: [
+  { name: "lightTheme"
+    doc:
+      "Return a fresh Theme proto value with name='light'. Construct via "
+      "create(ThemeSchema, { name: 'light', tokens: { … } }) — never `new "
+      "ThemeProtoMessage()` directly (project rule). Component lists, "
+      "description, and extends remain unset (proto default = empty).\n"
+      "\n"
+      "REQUIRED token keys (values are design choice):\n"
+      "  colors:   background, foreground, muted, primary, accent, "
+      "success, warning, danger\n"
+      "  fonts:    body, mono\n"
+      "  sizes:    stroke_thin, stroke_normal, font_small, font_normal, "
+      "font_large\n"
+      "  spacings: node_padding, label_offset, node_spacing\n"
+      "  dashes:   dashed, dotted\n"
+      "  shape_paths: (empty map — no custom paths in v1)\n"
+      "\n"
+      "Palette: light-mode editor-vibe. Light neutral background, dark "
+      "foreground, restrained saturation. fonts.body = system sans-serif "
+      "stack (e.g. -apple-system, Segoe UI, …); fonts.mono = system mono "
+      "stack (e.g. ui-monospace, Menlo, Consolas, …). FontSpec.size on "
+      "fonts.body / fonts.mono optional — leave unset; size tokens drive "
+      "actual rendering size."
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  },
+  { name: "darkTheme"
+    doc:
+      "Mirror lightTheme — identical token vocabulary (same keys), "
+      "different values. name='dark'. Same construction pattern via "
+      "create(ThemeSchema, …). Component lists, description, and extends "
+      "left empty.\n"
+      "\n"
+      "Palette: dark-mode editor-vibe. Dark neutral background, light "
+      "foreground, slightly desaturated accents. Identical fonts.body / "
+      "fonts.mono stacks as lightTheme — palette differs, type doesn't."
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  },
+  { name: "getBundledTheme"
+    doc:
+      "Name → bundled Theme lookup. 'light' → lightTheme(); 'dark' → "
+      "darkTheme(); any other input → lightTheme() (silent fallback — "
+      "the discovery chain in architecture.md §8.3 is the caller's "
+      "responsibility, this function just dispatches).\n"
+      "\n"
+      "Returns a FRESH Theme on each call — do not memoize. Proto values "
+      "are mutable; sharing a memoized instance across callers risks "
+      "accidental mutation downstream."
+    inputs: [
+      { name: "name", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+    uses: ["lightTheme", "darkTheme"]
+  }
+]

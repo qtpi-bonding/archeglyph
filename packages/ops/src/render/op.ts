@@ -2,8 +2,8 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { extname, basename, dirname, join, resolve } from 'node:path';
-import { create } from '@bufbuild/protobuf';
-import { ThemeSchema, type Theme } from '@archeglyph/proto/gen/theme_pb';
+import { getBundledTheme } from '@archeglyph/themes';
+import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
@@ -27,10 +27,6 @@ export function deriveOutPath(diagramPath: string): string {
     : basename(diagramPath) + '.svg';
   const dir = dirname(diagramPath);
   return dir === '.' ? base : join(dir, base);
-}
-
-export function defaultTheme(): Theme {
-  return create(ThemeSchema, { name: 'archeglyph-default' });
 }
 
 export const renderOp: Operation<RenderParams, RenderOutput> = {
@@ -65,7 +61,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       theme = themeResult.value;
     } else {
       ctx.logger.info('no --theme provided; using built-in placeholder');
-      theme = defaultTheme();
+      theme = getBundledTheme('light');
     }
 
     const filterResult = new VisibilityFilterImpl().filter(

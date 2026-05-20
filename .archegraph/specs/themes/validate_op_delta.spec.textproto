@@ -25,36 +25,21 @@ constants: [
       { named: { symbol: "ValidateParams" } },
       { named: { symbol: "ValidateOutput" } }
     ]}}
-    # Top-level value-expression refs (the `params:` slot references
-    # validateParamsSchema). Body-level refs live on methods[0].uses
-    # below.
     uses: [
-      "validateParamsSchema"
-    ]
-    methods: [
-      { name: "execute"
-        is_async: true
-        inputs: [
-          { name: "params" type: { named: { symbol: "ValidateParams" } } },
-          { name: "ctx" type: { named: { symbol: "OpContext" } } }
-        ]
-        output: { named: { symbol: "ValidateOutput" } }
-        uses: [
-          "loadDiagram",
-          "loadStylesheet",
-          "loadTheme",
-          "ValidatorImpl",
-          "ValidateRequest",
-          "VisibilityFilterImpl",
-          "StyleCascadeImpl",
-          "TokenResolverImpl",
-          "FilterRequest",
-          "CascadeRequest",
-          "ResolveTokensRequest",
-          "ValidateOpError",
-          "getBundledTheme"
-        ]
-      }
+      "validateParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "ValidatorImpl",
+      "ValidateRequest",
+      "VisibilityFilterImpl",
+      "StyleCascadeImpl",
+      "TokenResolverImpl",
+      "FilterRequest",
+      "CascadeRequest",
+      "ResolveTokensRequest",
+      "ValidateOpError",
+      "getBundledTheme"
     ]
   }
 ]

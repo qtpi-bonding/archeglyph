@@ -24,40 +24,23 @@ constants: [
       { named: { symbol: "RenderParams" } },
       { named: { symbol: "RenderOutput" } }
     ]}}
-    # Top-level value-expression refs (the `params:` slot of the
-    # Operation object literal references renderParamsSchema). Body-level
-    # refs live on methods[0].uses below — scip attributes them to the
-    # inner `execute` symbol, so sourcing them from the outer const
-    # wouldn't match.
     uses: [
-      "renderParamsSchema"
-    ]
-    methods: [
-      { name: "execute"
-        is_async: true
-        inputs: [
-          { name: "params" type: { named: { symbol: "RenderParams" } } },
-          { name: "ctx" type: { named: { symbol: "OpContext" } } }
-        ]
-        output: { named: { symbol: "RenderOutput" } }
-        uses: [
-          "loadDiagram",
-          "loadStylesheet",
-          "loadTheme",
-          "VisibilityFilterImpl",
-          "StyleCascadeImpl",
-          "TokenResolverImpl",
-          "LayoutEngineImpl",
-          "SvgRendererImpl",
-          "FilterRequest",
-          "CascadeRequest",
-          "ResolveTokensRequest",
-          "LayoutRequest",
-          "RenderOpError",
-          "deriveOutPath",
-          "getBundledTheme"
-        ]
-      }
+      "renderParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "VisibilityFilterImpl",
+      "StyleCascadeImpl",
+      "TokenResolverImpl",
+      "LayoutEngineImpl",
+      "SvgRendererImpl",
+      "FilterRequest",
+      "CascadeRequest",
+      "ResolveTokensRequest",
+      "LayoutRequest",
+      "RenderOpError",
+      "deriveOutPath",
+      "getBundledTheme"
     ]
   }
 ]

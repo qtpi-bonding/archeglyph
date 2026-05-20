@@ -3,8 +3,10 @@
 import type { Operation } from './op';
 import { renderOp } from './render/op';
 import { validateOp } from './validate/op';
+import { formatOp } from './format/op';
 
 export const REGISTRY: Operation<unknown, unknown>[] = [
   renderOp as unknown as Operation<unknown, unknown>,
   validateOp as unknown as Operation<unknown, unknown>,
+  formatOp as unknown as Operation<unknown, unknown>,
 ];

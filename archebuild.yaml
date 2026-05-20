@@ -67,6 +67,15 @@ execution:
         `new Xxx()` then assign fields individually after. Applies to every
         Request/Response/Output class in this codebase — they all use
         definite-assignment fields with no constructor.
+      - For buf-generated proto values (anything from `@archeglyph/proto/gen/*_pb`):
+        use `create(XSchema, { field1, field2 })` from `@bufbuild/protobuf`. NEVER
+        `new XProtoMessage()` directly — protoc-gen-es emits a `Schema` factory and
+        `create()` is the only supported construction path. Import the type AND its
+        Schema from the same `_pb` module:
+        `import { Theme, ThemeSchema } from '@archeglyph/proto/gen/theme_pb'`.
+      - Discriminate proto `oneof` cases via the case property:
+        `if (msg.payload.case === 'frame') { msg.payload.value... }`. The payload
+        union is generated as `{ case: 'frame', value: Frame } | { case: undefined }`.
       - If a parameter comment says it is an array (e.g. "param is Foo[]"), declare
         it as `Foo[]` in TypeScript even if the schema skeleton shows `Foo`.
 

@@ -1,8 +1,8 @@
 file: "packages/ops/src/validate/op.ts"
 doc:
-  "Brownfield MODIFIED — validateOp body switches local defaultTheme() → "
-  "@archeglyph/themes' getBundledTheme('light'). Local defaultTheme is "
-  "DELETED via _deltas.textproto."
+  "Brownfield MODIFIED — validateOp's theme-fallback path now resolves "
+  "through @archeglyph/themes' getBundledTheme('light') instead of a local "
+  "placeholder."
 
 constants: [
   { name: "validateOp"
@@ -17,10 +17,10 @@ constants: [
       "stages in stagesRun (push after each success).\n"
       "\n"
       "Theme-fallback site: when params.theme is undefined, call "
-      "getBundledTheme('light') and ctx.logger.info('no --theme "
-      "provided; using built-in placeholder'). passed = "
-      "violations.length === 0. Read the existing impl and preserve "
-      "everything except the theme-fallback line."
+      "getBundledTheme('light') from @archeglyph/themes and "
+      "ctx.logger.info('no --theme provided; using built-in placeholder'). "
+      "passed = violations.length === 0. Read the existing impl and "
+      "preserve everything except the theme-fallback line."
     type: { named: { symbol: "Operation", args: [
       { named: { symbol: "ValidateParams" } },
       { named: { symbol: "ValidateOutput" } }

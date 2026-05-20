@@ -1,9 +1,9 @@
 file: "packages/ops/src/render/op.ts"
 doc:
-  "Brownfield MODIFIED — renderOp body switches local defaultTheme() → "
-  "@archeglyph/themes' getBundledTheme('light'). Local defaultTheme is "
-  "DELETED via _deltas.textproto. deriveOutPath is untouched (siblings "
-  "not mentioned are left intact per brownfield rules)."
+  "Brownfield MODIFIED — renderOp's theme-fallback path now resolves "
+  "through @archeglyph/themes' getBundledTheme('light') instead of a local "
+  "placeholder. Siblings not mentioned (deriveOutPath etc.) stay intact "
+  "per brownfield rules."
 
 constants: [
   { name: "renderOp"
@@ -12,12 +12,14 @@ constants: [
       "Operation literal: name='render', description, params (Zod schema), "
       "format, async execute. Pipeline body: load → resolver (filter / "
       "cascade / tokens) → layout → render, each stage's Err wrapped + "
-      "thrown as RenderOpError(stage, cause). Theme-fallback site: when "
-      "params.theme is undefined, call getBundledTheme('light') and "
+      "thrown as RenderOpError(stage, cause).\n"
+      "\n"
+      "Theme-fallback site: when params.theme is undefined, call "
+      "getBundledTheme('light') from @archeglyph/themes and "
       "ctx.logger.info('no --theme provided; using built-in placeholder'). "
-      "Everything else (loader chain, Object.assign request construction, "
-      "outPath assembly via deriveOutPath, writeFile + bytesWritten) is "
-      "unchanged from the existing impl — read it and preserve."
+      "Everything else (loader chain, request construction, outPath "
+      "assembly via deriveOutPath, writeFile + bytesWritten) is unchanged "
+      "from the existing impl — read it and preserve."
     type: { named: { symbol: "Operation", args: [
       { named: { symbol: "RenderParams" } },
       { named: { symbol: "RenderOutput" } }

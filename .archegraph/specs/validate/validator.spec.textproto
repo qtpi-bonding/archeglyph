@@ -24,7 +24,7 @@ interfaces: [
 
 structs: [
   { name: "ValidatorImpl"
-    implements: ["Validator"]
+    implements: [{ named: { symbol: "Validator" } }]
     doc:
       "Three structural checks against diagram.graph in a single pass:\n"
       "  1. Edge.source / Edge.target reference existing Node.id.\n"

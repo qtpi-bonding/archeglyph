@@ -68,7 +68,7 @@ doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string."
 
 structs: [
   { name: "SvgRendererImpl"
-    implements: ["SvgRenderer"]
+    implements: [{ named: { symbol: "SvgRenderer" } }]
     methods: [
       { name: "render"
         inputs: [

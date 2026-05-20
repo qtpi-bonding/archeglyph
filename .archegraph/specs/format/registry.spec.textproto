@@ -1,0 +1,16 @@
+file: "packages/ops/src/registry.ts"
+doc: "Central registry of archeglyph operations. Now includes formatOp."
+
+constants: [
+  { name: "REGISTRY"
+    change_type: MODIFIED
+    doc:
+      "Brownfield MODIFIED: append formatOp to the array. Add the import "
+      "after the existing validateOp import; cast via "
+      "`formatOp as unknown as Operation<unknown, unknown>` — same erasure "
+      "pattern as the validateOp entry on the line above (Operation's "
+      "contravariant param position blocks the direct assignment)."
+    type: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["formatOp"]
+  }
+]

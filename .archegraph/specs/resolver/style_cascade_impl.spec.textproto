@@ -47,7 +47,7 @@ doc: "In-memory StyleCascade implementation. Pure logic, sync, Result-returning.
 
 structs: [
   { name: "StyleCascadeImpl"
-    implements: ["StyleCascade"]
+    implements: [{ named: { symbol: "StyleCascade" } }]
     methods: [
       { name: "cascade"
         inputs: [

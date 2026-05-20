@@ -1,0 +1,15 @@
+file: "packages/ops/src/format/format_output.ts"
+doc: "FormatOutput — return shape of the format op."
+
+structs: [
+  { name: "FormatOutput"
+    doc:
+      "Op-level result. json is the canonical 2-space-indented JSON string "
+      "produced by toJson(schema, message). Operation.format() returns "
+      "this verbatim so main.ts writes it to stdout."
+    fields: [
+      { name: "json", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

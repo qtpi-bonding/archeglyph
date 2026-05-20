@@ -1,0 +1,32 @@
+file: "packages/ops/src/format/format_params.ts"
+doc: "FormatParams + formatParamsSchema. Single required positional `file` — path to a .diag.json / .style.json / .theme.json. Schema dispatch happens at execute() time based on the extension."
+
+structs: [
+  { name: "FormatParams"
+    doc: "Typed input for the format op. file is required positional; no flags."
+    fields: [
+      { name: "file", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "formatParamsSchema"
+    doc:
+      "Zod schema mirror of FormatParams. Mirror validateParamsSchema in "
+      "validate/validate_params.ts — same `export const`, same "
+      "`z.ZodType<FormatParams>` annotation, same `.describe()` on the "
+      "field. zod_argv consumes `.shape` for CLI flag emission so it must "
+      "remain a ZodObject under the surface type.\n"
+      "\n"
+      "NOTE: authored as ConstantDecl per the spec-workflow skill rule, "
+      "even though sibling validateParamsSchema uses MethodDecl. The "
+      "`z.ZodType<FormatParams>` type lifts structurally — symbol on the "
+      "TS side resolves to ZodType from the `zod` package."
+    type: { named: { symbol: "z.ZodType", args: [
+      { named: { symbol: "FormatParams" } }
+    ]}}
+    uses: ["FormatParams"]
+  }
+]

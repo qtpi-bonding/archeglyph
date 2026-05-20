@@ -46,7 +46,7 @@ doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs
 
 structs: [
   { name: "ElkAdapterImpl"
-    implements: ["LayoutAdapter"]
+    implements: [{ named: { symbol: "LayoutAdapter" } }]
     methods: [
       { name: "runLayout"
         is_async: true

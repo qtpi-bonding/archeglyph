@@ -48,7 +48,7 @@ doc: "In-memory VisibilityFilter implementation. Pure logic, sync, Result-return
 
 structs: [
   { name: "VisibilityFilterImpl"
-    implements: ["VisibilityFilter"]
+    implements: [{ named: { symbol: "VisibilityFilter" } }]
     methods: [
       { name: "filter"
         inputs: [

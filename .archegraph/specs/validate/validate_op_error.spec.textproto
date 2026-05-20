@@ -3,7 +3,7 @@ doc: "Boundary Error thrown out of validateOp.execute. Mirror RenderOpError in r
 
 structs: [
   { name: "ValidateOpError"
-    extends: ["Error"]
+    extends: [{ named: { symbol: "Error" } }]
     doc:
       "Flattens typed-Result stage errors (LoadError | ValidateError | "
       "ResolveError) into one throwable so main.ts's catch block gets a real "

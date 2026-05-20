@@ -13,16 +13,17 @@ structs: [
   }
 ]
 
-methods: [
+constants: [
   { name: "validateParamsSchema"
     doc:
       "Zod schema mirror of ValidateParams. Mirror renderParamsSchema in "
-      "render/render_params.ts exactly — same `export const`, same "
+      "render/render_params.ts — same `export const`, same "
       "`z.ZodType<ValidateParams>` annotation, same `.describe()` per field. "
       "zod_argv consumes `.shape` for CLI flag emission so it must remain a "
       "ZodObject under the surface type."
-    inputs: []
-    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    type: { named: { symbol: "z.ZodType", args: [
+      { named: { symbol: "ValidateParams" } }
+    ]}}
     uses: ["ValidateParams"]
   }
 ]

@@ -23,7 +23,7 @@ doc: "Layout orchestrator — runs elkjs via ElkAdapter then applies style posit
 
 structs: [
   { name: "LayoutEngineImpl"
-    implements: ["LayoutEngine"]
+    implements: [{ named: { symbol: "LayoutEngine" } }]
     methods: [
       { name: "layout"
         is_async: true

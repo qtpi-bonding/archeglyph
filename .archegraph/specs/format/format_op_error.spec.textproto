@@ -1,0 +1,20 @@
+file: "packages/ops/src/format/format_op_error.ts"
+doc: "Boundary Error thrown out of formatOp.execute. Mirror ValidateOpError in validate/validate_op_error.ts — same shape, different stage discriminator ('read' | 'dispatch' | 'parse')."
+
+structs: [
+  { name: "FormatOpError"
+    extends: [{ named: { symbol: "Error" } }]
+    doc:
+      "Flattens typed-Result stage errors (filesystem ENOENT, unknown "
+      "extension, LoadError) into one throwable so main.ts's catch block "
+      "gets a real .message. Express the cause union as a type alias in "
+      "the emitted file (spec models it as `unsupported` because TS "
+      "union-at-type-position doesn't lift through textproto — Koine "
+      "cascading-loss)."
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    typescript: {}
+  }
+]

@@ -2,11 +2,13 @@ file: "packages/ops/src/render/op.ts"
 doc:
   "renderOp: first end-to-end Operation in archeglyph. Stitches loaders → "
   "resolver (visibility filter → style cascade → token resolver) → layout "
-  "→ renderer into a single CLI/MCP-callable op. Plus two helpers in this "
-  "file: deriveOutPath, defaultTheme.\n"
+  "→ renderer into a single CLI/MCP-callable op. Plus helper "
+  "deriveOutPath in this file. defaultTheme was removed when "
+  "@archeglyph/themes shipped — the spec now declares its deletion via "
+  "_deltas.textproto.\n"
   "\n"
   "Pillar files (one .spec.textproto per .ts target):\n"
-  "  op.ts               ← renderOp + deriveOutPath + defaultTheme\n"
+  "  op.ts               ← renderOp (ConstantDecl) + deriveOutPath\n"
   "  render_params.ts    ← RenderParams + renderParamsSchema\n"
   "  render_output.ts    ← RenderOutput\n"
   "  render_op_error.ts  ← RenderOpError extends Error\n"
@@ -14,51 +16,22 @@ doc:
   "Plus brownfield MODIFIED to packages/ops/src/registry.ts adding renderOp "
   "to the REGISTRY array."
 
-methods: [
+constants: [
   { name: "renderOp"
     doc:
-      "The Operation literal. Emit as `export const renderOp: "
-      "Operation<RenderParams, RenderOutput> = { … }`, NOT a function — spec "
-      "models it as a method only because there's no const-with-arrow-body "
-      "decl shape (same workaround as REGISTRY in ops_framework).\n"
+      "Operation literal. Object fields: name='render', description, "
+      "params=renderParamsSchema cast, format formats bytesWritten + "
+      "outPath, async execute body. Pipeline: load diagram → load "
+      "stylesheet (if --style) → resolve theme (loadTheme if --theme else "
+      "getBundledTheme('light')) → visibility filter → style cascade → "
+      "token resolver → layout → svg renderer → writeFile.\n"
       "\n"
-      "Object literal fields: name='render', a one-line description, "
-      "params=renderParamsSchema, format=(o) => `wrote ${o.bytesWritten} "
-      "bytes to ${o.outPath}`, and an async execute(params, ctx) body.\n"
-      "\n"
-      "**Execute body — the core pipeline.** ORDER is load-bearing:\n"
-      "  1. Read params.diagram from disk → loadDiagram → on Result.error: "
-      "throw new RenderOpError('load', err).\n"
-      "  2. If params.style: same pattern → loadStylesheet. Store result in a "
-      "local `stylesheet: Stylesheet | undefined`.\n"
-      "  3. Theme: if params.theme provided, readFile + loadTheme; else call "
-      "defaultTheme() and ctx.logger.info('no --theme provided; using "
-      "built-in placeholder').\n"
-      "  4. Visibility filter → 5. Style cascade → 6. Token resolver → 7. "
-      "Layout → 8. Render. Construct each stage's Impl class inline with "
-      "`new` (no DI). For each stage's Result, throw RenderOpError with the "
-      "stage tag ('resolve' for steps 4–6, 'layout' for 7, 'render' for 8).\n"
-      "  9. Resolve outPath: params.out ?? deriveOutPath(params.diagram), "
-      "then path.resolve against ctx.projectRoot.\n"
-      "  10. fs.writeFile, compute bytesWritten via Buffer.byteLength(svg, "
-      "'utf8'). Return { svg, outPath, bytesWritten }.\n"
-      "\n"
-      "**Conventions to honor:**\n"
-      "  - Request types (FilterRequest, CascadeRequest, ResolveTokensRequest, "
-      "LayoutRequest) have definite-assignment fields and MUST be constructed "
-      "with `Object.assign(new XxxRequest(), { … })` per archebuild's project "
-      "rules. Plain `new XxxRequest()` followed by field assigns is wrong.\n"
-      "  - File reads use `path.resolve(ctx.projectRoot, params.<path>)` so "
-      "relative paths work from any cwd.\n"
-      "  - Loaders return `Result<T, LoadError>` from "
-      "`@archeglyph/core/loaders`. Resolver/layout/renderer Impls each "
-      "expose their own Result<T, _> shape — don't try to unify them in the "
-      "spec; let TypeScript infer.\n"
-      "  - Theme token-substitution feeds via theme.tokens into the "
-      "TokenResolver request; if theme is the defaultTheme(), tokens is "
-      "undefined and TokenResolver no-ops (which is fine)."
-    inputs: []
-    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+      "Each Err short-circuits via throw RenderOpError(stage, cause); "
+      "stages: 'load' / 'resolve' / 'layout' / 'render'."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "RenderParams" } },
+      { named: { symbol: "RenderOutput" } }
+    ]}}
     uses: [
       "Operation",
       "OpContext",
@@ -69,6 +42,7 @@ methods: [
       "loadDiagram",
       "loadStylesheet",
       "loadTheme",
+      "getBundledTheme",
       "VisibilityFilterImpl",
       "StyleCascadeImpl",
       "TokenResolverImpl",
@@ -78,34 +52,20 @@ methods: [
       "CascadeRequest",
       "ResolveTokensRequest",
       "LayoutRequest",
-      "deriveOutPath",
-      "defaultTheme"
+      "deriveOutPath"
     ]
-  },
+  }
+]
+
+methods: [
   { name: "deriveOutPath"
     doc:
       "Pure helper. Replace the file path's extension with `.svg`. "
       "If the path has no extension, append `.svg`. Use path.extname / "
-      "path.basename from 'node:path' — no regex.\n"
-      "\n"
-      "Examples: foo.json → foo.svg ; foo.diagram.json → foo.diagram.svg ; "
-      "foo → foo.svg."
+      "path.basename from 'node:path' — no regex."
     inputs: [
       { name: "diagramPath", type: { primitive: CHARACTER } }
     ]
     output: { primitive: CHARACTER }
-  },
-  { name: "defaultTheme"
-    doc:
-      "Placeholder used when --theme is omitted. Return a minimal Theme proto "
-      "with name='archeglyph-default' and undefined tokens. Construct via "
-      "`create(ThemeSchema, …)` from @bufbuild/protobuf — don't `new` proto "
-      "messages directly.\n"
-      "\n"
-      "Lives here until @archeglyph/themes pillar ships its `light` bundle; "
-      "at that point swap the body to import + return that. Signature stays "
-      "stable."
-    inputs: []
-    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
   }
 ]

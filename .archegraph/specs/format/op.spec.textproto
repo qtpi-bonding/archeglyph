@@ -1,0 +1,45 @@
+file: "packages/ops/src/format/op.ts"
+doc:
+  "formatOp — third end-to-end Operation. Mirror validateOp at "
+  "packages/ops/src/validate/op.ts; same shape, but no pipeline — just "
+  "read → loader → toJson → emit canonical JSON via FormatOutput.json. "
+  "Pillar files: op.ts, format_params.ts, format_output.ts, "
+  "format_op_error.ts. Plus brownfield MODIFIED to "
+  "packages/ops/src/registry.ts adding formatOp to REGISTRY.\n"
+  "\n"
+  "NOTE: formatOp is authored as ConstantDecl (not MethodDecl) per the "
+  "archegraph-spec-workflow skill rule for `export const X = { … }`. "
+  "Render/validate predate this rule and use the MethodDecl pattern — "
+  "their verify is dirty as a result. Don't mirror that shape here."
+
+constants: [
+  { name: "formatOp"
+    doc:
+      "Operation literal. Dispatches on params.file's extension to one of "
+      "the three loaders + matching proto schema:\n"
+      "  .diag.json  → loadDiagram  + archeglyph.content.v1.Diagram\n"
+      "  .style.json → loadStylesheet + archeglyph.style.v1.Stylesheet\n"
+      "  .theme.json → loadTheme    + archeglyph.theme.v1.Theme\n"
+      "Unknown extension → throw FormatOpError(stage='dispatch'). Loader "
+      "Err → throw FormatOpError(stage='parse', cause). Pass the decoded "
+      "message through toJson(schema, msg) for canonical 2-space JSON and "
+      "return FormatOutput{json}. format: (o) => o.json so main.ts writes "
+      "canonical output to stdout. exitCode: always 0 on success."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "FormatParams" } },
+      { named: { symbol: "FormatOutput" } }
+    ]}}
+    uses: [
+      "Operation",
+      "OpContext",
+      "FormatParams",
+      "FormatOutput",
+      "FormatOpError",
+      "formatParamsSchema",
+      "loadDiagram",
+      "loadStylesheet",
+      "loadTheme",
+      "toJson"
+    ]
+  }
+]

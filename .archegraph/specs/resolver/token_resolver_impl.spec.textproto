@@ -44,7 +44,7 @@ doc: "In-memory TokenResolver implementation. Pure logic, sync, Result-returning
 
 structs: [
   { name: "TokenResolverImpl"
-    implements: ["TokenResolver"]
+    implements: [{ named: { symbol: "TokenResolver" } }]
     methods: [
       { name: "resolveTokens"
         inputs: [

@@ -1,5 +1,5 @@
 file: "packages/ops/src/render/render_params.ts"
-doc: "RenderParams interface + renderParamsSchema zod schema for the render op."
+doc: "RenderParams class + renderParamsSchema zod schema for the render op."
 
 structs: [
   { name: "RenderParams"
@@ -8,14 +8,9 @@ structs: [
       "renderParamsSchema (single source of truth for both CLI argv and MCP "
       "tool schema).\n"
       "\n"
-      "Fields: diagram (required, positional), style (optional), theme "
-      "(optional), out (optional). All strings; the optional three are "
-      "filesystem paths. archeglyph's on-disk format is JSON.\n"
-      "\n"
-      "When out is omitted: default to the diagram path with `.svg` extension "
-      "swapped in (see deriveOutPath in op.ts). When theme is omitted: render "
-      "uses defaultTheme() from op.ts (placeholder until @archeglyph/themes "
-      "pillar ships)."
+      "Fields: diagram (required positional), style/theme/out (optional). "
+      "All strings; the optional three are filesystem paths. archeglyph's "
+      "on-disk format is JSON."
     fields: [
       { name: "diagram", type: { primitive: CHARACTER } },
       { name: "style",   type: { primitive: CHARACTER }, is_optional: true },
@@ -26,23 +21,20 @@ structs: [
   }
 ]
 
-methods: [
+constants: [
   { name: "renderParamsSchema"
     doc:
-      "Zod schema mirror of RenderParams. Emit as `export const`, not a "
-      "function — same modeling workaround as REGISTRY in ops_framework.\n"
+      "Zod schema mirror of RenderParams. `export const`, type-annotated "
+      "as `z.ZodType<RenderParams>` so interface/schema drift is a "
+      "typecheck failure. zod_argv reads `op.params.shape` to enumerate "
+      "CLI flags, so the underlying value must be a ZodObject — "
+      "z.ZodType is the narrowest base type that preserves that.\n"
       "\n"
-      "Type-annotate as `z.ZodType<RenderParams>` (not inference, not "
-      "z.ZodSchema) so interface/schema drift is a typecheck failure. "
-      "zod_argv reads `op.params.shape` to enumerate CLI flags, so the "
-      "schema must be a ZodObject — z.ZodType is the narrowest base that "
-      "preserves that.\n"
-      "\n"
-      "Each field's .describe() string becomes both --help text and the MCP "
-      "JSON Schema description — make them useful (one short sentence per "
-      "field)."
-    inputs: []
-    output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+      "Each field's .describe() string becomes --help text and the MCP "
+      "JSON Schema description."
+    type: { named: { symbol: "z.ZodType", args: [
+      { named: { symbol: "RenderParams" } }
+    ]}}
     uses: ["RenderParams"]
   }
 ]

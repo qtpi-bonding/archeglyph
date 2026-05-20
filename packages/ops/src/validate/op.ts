@@ -2,7 +2,8 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import type { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { create } from '@bufbuild/protobuf';
+import { ThemeSchema, type Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
@@ -17,7 +18,10 @@ import { ResolveTokensRequest } from '@archeglyph/core/resolver/resolve_tokens_r
 import { type ValidateParams, validateParamsSchema } from './validate_params';
 import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
-import { getBundledTheme } from '@archeglyph/themes';
+
+export function defaultTheme(): Theme {
+  return create(ThemeSchema, { name: 'archeglyph-default' });
+}
 
 export const validateOp: Operation<ValidateParams, ValidateOutput> = {
   name: 'validate',
@@ -63,7 +67,7 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
       theme = themeResult.value;
     } else {
       ctx.logger.info('no --theme provided; using built-in placeholder');
-      theme = getBundledTheme('light');
+      theme = defaultTheme();
     }
 
     const filterResult = new VisibilityFilterImpl().filter(

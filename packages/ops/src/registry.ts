@@ -6,6 +6,7 @@ import { validateOp } from './validate/op';
 import { formatOp } from './format/op';
 import { initOp } from './init/op';
 import { bindOp } from './bind/op';
+import { watchOp } from './watch/op';
 
 export const REGISTRY: Operation<unknown, unknown>[] = [
   renderOp as unknown as Operation<unknown, unknown>,
@@ -13,4 +14,5 @@ export const REGISTRY: Operation<unknown, unknown>[] = [
   formatOp as unknown as Operation<unknown, unknown>,
   initOp as unknown as Operation<unknown, unknown>,
   bindOp as unknown as Operation<unknown, unknown>,
+  watchOp as unknown as Operation<unknown, unknown>,
 ];

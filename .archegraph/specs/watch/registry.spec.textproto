@@ -1,0 +1,11 @@
+file: "packages/ops/src/registry.ts"
+doc: "Extends the REGISTRY constant to include watchOp."
+
+constants: [
+  { name: "REGISTRY"
+    change_type: MODIFIED
+    doc: "Brownfield MODIFIED: append watchOp to the array. Add import after the bindOp import; cast via `watchOp as unknown as Operation<unknown, unknown>` — same erasure pattern as the sibling entries."
+    type: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
+    uses: ["watchOp"]
+  }
+]

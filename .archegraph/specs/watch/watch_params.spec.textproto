@@ -1,0 +1,21 @@
+file: "packages/ops/src/watch/watch_params.ts"
+doc: "WatchParams + watchParamsSchema — mirrors RenderParams fields exactly."
+
+structs: [
+  { name: "WatchParams"
+    fields: [
+      { name: "diagram", type: { primitive: CHARACTER } },
+      { name: "style",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "theme",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "out",     type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "watchParamsSchema"
+    type: { named: { symbol: "z.ZodType", args: [{ named: { symbol: "WatchParams" } }] }}
+    uses: ["WatchParams"]
+  }
+]

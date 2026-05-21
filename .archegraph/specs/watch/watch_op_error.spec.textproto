@@ -1,0 +1,14 @@
+file: "packages/ops/src/watch/watch_op_error.ts"
+doc: "WatchOpError — thrown by watchOp on hard-fail stages only."
+
+structs: [
+  { name: "WatchOpError"
+    doc: "Extends Error. stage identifies which hard-fail step failed: 'initial_render' | 'setup_watch'. Render failures inside the debounce loop are soft errors (logged, not thrown)."
+    extends: [{ named: { symbol: "Error" } }]
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { unsupported: { reason: UNION_AT_TYPE_POSITION } } }
+    ]
+    typescript: {}
+  }
+]

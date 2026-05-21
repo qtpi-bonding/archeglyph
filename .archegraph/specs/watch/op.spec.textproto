@@ -1,0 +1,38 @@
+file: "packages/ops/src/watch/op.ts"
+doc: "watchOp — Operation literal wrapping the render pipeline in a file-watch loop."
+
+constants: [
+  { name: "watchOp"
+    doc:
+      "Operation literal. Delegates each render cycle to renderOp.execute().\n"
+      "Pipeline:\n"
+      "  initial_render — construct RenderParams from WatchParams fields\n"
+      "                   (diagram/style/theme/out), call renderOp.execute();\n"
+      "                   throw WatchOpError('initial_render') on failure.\n"
+      "  setup_watch    — fs.watch on the resolved diagram path (and style/theme\n"
+      "                   paths if provided); throw WatchOpError('setup_watch') if\n"
+      "                   fs.watch itself throws.\n"
+      "  debounce loop  — 100ms settle window via setTimeout; on each settled\n"
+      "                   event batch, re-run renderOp.execute() with same\n"
+      "                   RenderParams; soft errors logged via ctx.logger.error,\n"
+      "                   watchers kept alive.\n"
+      "  clean exit     — register process SIGINT handler to close all watchers\n"
+      "                   and resolve the execute() Promise.\n"
+      "format: (o) => `watched ${o.path} — ${o.cyclesCompleted} render(s) completed`\n"
+      "exitCode: always 0."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "WatchParams" } },
+      { named: { symbol: "WatchOutput" } }
+    ]}}
+    uses: [
+      "Operation",
+      "OpContext",
+      "WatchParams",
+      "WatchOutput",
+      "WatchOpError",
+      "watchParamsSchema",
+      "renderOp",
+      "RenderParams"
+    ]
+  }
+]

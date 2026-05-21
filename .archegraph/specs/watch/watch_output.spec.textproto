@@ -1,0 +1,13 @@
+file: "packages/ops/src/watch/watch_output.ts"
+doc: "WatchOutput — returned when the watch loop exits (SIGINT / process close)."
+
+structs: [
+  { name: "WatchOutput"
+    doc: "cyclesCompleted: how many render cycles completed successfully before exit. path: the input diagram path that was being watched (used in the format string)."
+    fields: [
+      { name: "cyclesCompleted", type: { primitive: INTEGER } },
+      { name: "path",            type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

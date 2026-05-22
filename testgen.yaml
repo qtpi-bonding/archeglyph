@@ -1,0 +1,6 @@
+llm:
+  command: "claude -p {prompt} --json-schema {schema} --output-format json --max-turns 50"
+
+tests:
+  skip_property_tests: false
+  language: typescript

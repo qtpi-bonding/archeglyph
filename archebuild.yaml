@@ -1,6 +1,9 @@
 server:
   db_path: "./archebuild.db"
 
+orchestrator:
+  enabled: true
+
 execution:
   max_parallelism: 5
   default_timeout_seconds: 1800
@@ -147,6 +150,9 @@ execution:
       # Hand-authored utility module (not buf-generated). Lets specs
       # reference Result/Ok/Err via FQN `archeglyph.util.Result` etc.
       "archeglyph.util":       "@archeglyph/proto/util/result"
+      # Vendored archegraph view types (see proto/archegraph/).
+      "archegraph.view":       "@archeglyph/proto/gen/archegraph/view_pb"
+      "archegraph.common":     "@archeglyph/proto/gen/archegraph/common_pb"
 
   # Refresh buf-generated TS before the build sees the source tree, so the
   # data-model types in `packages/proto/src/gen/` can never be stale w.r.t.

@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Vendored from archegraph @ crates/core/proto/common.proto (commit 42b66e2)
+// Keep in sync with upstream when upgrading archegraph.
+
+syntax = "proto3";
+package archegraph.common;
+
+// Standard Computer Science Categories for Entities
+enum NodeKind {
+  NODE_KIND_UNSPECIFIED = 0;
+  FILE = 1;
+  NAMESPACE = 2;
+  STRUCT = 3;
+  INTERFACE = 4;
+  ENUM = 5;
+  METHOD = 6;
+  FIELD = 7;
+  CONSTANT = 8;
+}
+
+enum EdgeKind {
+  EDGE_KIND_UNSPECIFIED = 0;
+  CONTAINMENT = 1;
+  DEPENDENCY = 2;
+  INVOCATION = 3;
+  DATA = 4;
+  EXECUTION = 5;
+}
+
+enum PrimitiveKind {
+  PRIMITIVE_UNSPECIFIED = 0;
+  BOOLEAN    = 1;
+  STATE      = 2;
+  ENUMERATED = 3;
+  VOID       = 4;
+  INTEGER    = 5;
+  RATIONAL   = 6;
+  SCALED     = 7;
+  REAL       = 8;
+  COMPLEX    = 9;
+  ORDINAL    = 10;
+  CHARACTER  = 11;
+  BIT        = 12;
+  OCTET      = 13;
+  DATE_TIME  = 14;
+}
+
+enum EdgeRole {
+  EDGE_ROLE_UNSPECIFIED = 0;
+  EXTENDS = 1;
+  IMPLEMENTS = 2;
+  RETURN = 3;
+  THROWS = 4;
+  OVERRIDES = 5;
+  TYPE_OF = 6;
+  ALIASES = 7;
+  TYPE_BOUND = 8;
+}
+
+message NodeMetrics {
+  optional uint32 depth = 1;
+  optional uint32 subtree_size = 2;
+  optional uint32 degree = 3;
+  optional uint32 fan_in = 4;
+  optional uint32 fan_out = 5;
+  optional uint32 community_id = 6;
+}
+
+message Community {
+  uint32 id = 1;
+  string label = 2;
+  optional uint32 parent_id = 3;
+}
+
+message EdgeMetrics {
+}
+
+message GraphMetrics {
+  map<uint32, Community> communities = 1;
+}
+
+enum ChangeType {
+  CHANGE_TYPE_UNSPECIFIED = 0;
+  UNCHANGED = 1;
+  ADDED = 2;
+  DELETED = 3;
+  MODIFIED = 4;
+}
+
+enum FieldLabel {
+  FIELD_LABEL_UNSPECIFIED = 0;
+  FIELD_LABEL_OPTIONAL = 1;
+  FIELD_LABEL_REQUIRED = 2;
+  FIELD_LABEL_REPEATED = 3;
+}
+
+message SourceLocation {
+  string file_path = 1;
+  optional uint32 start_line = 2;
+  optional uint32 end_line = 3;
+}
+
+message ValidationContext {
+  bool is_required = 1;
+  repeated Constraint constraints = 2;
+}
+
+message Constraint {
+  string type = 1;
+  string value = 2;
+  string message = 3;
+  map<string, string> metadata = 4;
+  string source = 5;
+}

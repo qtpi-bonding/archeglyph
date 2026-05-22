@@ -37,6 +37,14 @@
         "elkjs": "^0.9.3",
       },
     },
+    "packages/importer-archegraph": {
+      "name": "@archeglyph/importer-archegraph",
+      "version": "0.0.0",
+      "dependencies": {
+        "@archeglyph/proto": "*",
+        "@bufbuild/protobuf": "^2.0.0",
+      },
+    },
     "packages/ops": {
       "name": "@archeglyph/ops",
       "version": "0.0.0",
@@ -68,6 +76,8 @@
     "@archeglyph/cli": ["@archeglyph/cli@workspace:packages/cli"],
 
     "@archeglyph/core": ["@archeglyph/core@workspace:packages/core"],
+
+    "@archeglyph/importer-archegraph": ["@archeglyph/importer-archegraph@workspace:packages/importer-archegraph"],
 
     "@archeglyph/ops": ["@archeglyph/ops@workspace:packages/ops"],
 

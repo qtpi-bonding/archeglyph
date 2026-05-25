@@ -27,10 +27,6 @@ export class GitHubAuth {
     return localStorage.getItem(TOKEN_KEY) !== null;
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-
   async authenticate(): Promise<void> {
     const codeResp: Response = await fetch(DEVICE_CODE_URL, {
       method: 'POST',

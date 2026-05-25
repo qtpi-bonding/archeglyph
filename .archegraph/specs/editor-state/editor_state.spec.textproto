@@ -1,0 +1,50 @@
+file: "packages/editor/src/state/editor_state.ts"
+doc:
+  "EditorState interface — the reactive contract the canvas, inspector,\n"
+  "and toolbar consume. SolidJS-signal-backed: every accessor is a Solid\n"
+  "Accessor (() => T) that tracks when read inside a reactive context.\n"
+  "One instance per file session; dispose and recreate on file reload.\n"
+  "createEditorState() is the only factory — never construct directly."
+
+interfaces: [
+  { name: "EditorState"
+    doc:
+      "Reactive handle for one editor session. Diagram is read-only\n"
+      "(topology never changes inside the editor). Stylesheet is mutated\n"
+      "only through applyStyleEdit — no direct signal mutation from outside."
+    methods: [
+      { name: "diagram"
+        doc: "Solid Accessor. Returns the loaded Diagram proto. Call inside a reactive context to track."
+        output: { named: { symbol: "archeglyph.content.v1.Diagram" } }
+      },
+      { name: "stylesheet"
+        doc: "Solid Accessor. Returns the current Stylesheet, updated on every applyStyleEdit call."
+        output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+      },
+      { name: "canUndo"
+        doc: "Solid Accessor. True when the in-memory undo log has at least one entry."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "canRedo"
+        doc: "Solid Accessor. True when the in-memory redo log has at least one entry."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "applyStyleEdit"
+        doc:
+          "Apply a StyleEdit (APPLIED state path). Snapshots before-state for\n"
+          "the changed element IDs, writes after-states into the stylesheet\n"
+          "signal, pushes {beforeSnapshot, edit} to undo log, clears redo log."
+        inputs: [{ name: "edit", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }]
+        output: { primitive: VOID }
+      },
+      { name: "undo"
+        doc: "Restore before-snapshot from the top of the undo log. Pushes to redo log. No-op when canUndo is false."
+        output: { primitive: VOID }
+      },
+      { name: "redo"
+        doc: "Re-apply edit from the top of the redo log. Pushes back to undo log. No-op when canRedo is false."
+        output: { primitive: VOID }
+      }
+    ]
+  }
+]

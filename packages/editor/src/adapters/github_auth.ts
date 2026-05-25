@@ -26,39 +26,4 @@ export class GitHubAuth {
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }
-
-  async authenticate(): Promise<void> {
-    const codeResp: Response = await fetch(DEVICE_CODE_URL, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: CLIENT_ID, scope: 'repo' }),
-    });
-    const codeData: DeviceCodeResponse = await codeResp.json() as DeviceCodeResponse;
-    window.open(codeData.verification_uri);
-    alert(`Enter this code at GitHub: ${codeData.user_code}`);
-    const expiresAt: number = Date.now() + codeData.expires_in * 1000;
-    let pollInterval: number = codeData.interval;
-    while (Date.now() < expiresAt) {
-      await sleep(pollInterval * 1000);
-      const tokenResp: Response = await fetch(TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: CLIENT_ID,
-          device_code: codeData.device_code,
-          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-        }),
-      });
-      const tokenData: TokenResponse = await tokenResp.json() as TokenResponse;
-      if (tokenData.access_token !== undefined) {
-        localStorage.setItem(TOKEN_KEY, tokenData.access_token);
-        return;
-      } else if (tokenData.error === 'access_denied') {
-        throw new Error('GitHub authorization denied');
-      } else {
-        pollInterval = tokenData.error === 'slow_down' ? pollInterval + 5 : pollInterval;
-      }
-    }
-    throw new Error('GitHub Device Flow timed out');
-  }
 }

@@ -1,0 +1,41 @@
+file: "packages/editor/src/adapters/host_adapter.ts"
+doc: "HostAdapter contract and LoadResult data shape."
+
+structs: [
+  { name: "LoadResult"
+    doc:
+      "Return value of HostAdapter.load(). Diagram always present;\n"
+      "stylesheet absent when no style file found — caller defaults to empty."
+    fields: [
+      { name: "diagram",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+interfaces: [
+  { name: "HostAdapter"
+    doc:
+      "Load/save abstraction over a diagram+style file pair. Implementations\n"
+      "decide where files live (local FS, URL params, remote fetch). canSave\n"
+      "controls whether the editor UI offers a Save button. Architecture §4.3."
+    methods: [
+      { name: "canSave"
+        doc: "True if this adapter supports writing stylesheet changes back."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "load"
+        doc: "Fetch diagram and optionally stylesheet. stylesheet absent = undefined."
+        is_async: true
+        output: { named: { symbol: "LoadResult" } }
+      },
+      { name: "save"
+        doc: "Persist the current stylesheet. Only called when canSave() is true."
+        is_async: true
+        inputs: [{ name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }]
+        output: { primitive: VOID }
+      }
+    ]
+  }
+]

@@ -29,7 +29,8 @@
       "@archeglyph/cli/mcp_server": ["./packages/cli/src/mcp_server.ts"],
       "@archeglyph/themes": ["./packages/themes/src/index.ts"],
       "@archeglyph/core/pipeline": ["./packages/core/src/pipeline/index.ts"],
-      "@archeglyph/editor/state": ["./packages/editor/src/state/index.ts"]
+      "@archeglyph/editor/state": ["./packages/editor/src/state/index.ts"],
+      "@archeglyph/editor/adapters": ["./packages/editor/src/adapters/index.ts"]
     }
   },
   "include": ["packages/**/*.ts"]

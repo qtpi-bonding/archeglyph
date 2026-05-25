@@ -1,0 +1,17 @@
+file: "packages/core/src/pipeline/pipeline_error.ts"
+doc:
+  "Shared error carrier for pipeline stage failures. Returned as the Err\n"
+  "variant from resolvePipeline and renderPipeline — never thrown.\n"
+  "The ops boundary catches it and wraps into the op-level thrown Error."
+
+structs: [
+  { name: "PipelineError"
+    doc:
+      "stage: which step failed ('filter' / 'cascade' / 'tokens' / 'layout' / 'render').\n"
+      "cause: the original Err value from that stage (typed unknown — pass through)."
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]

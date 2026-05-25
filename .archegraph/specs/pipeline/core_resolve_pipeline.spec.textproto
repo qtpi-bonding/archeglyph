@@ -1,0 +1,28 @@
+file: "packages/core/src/pipeline/resolve_pipeline.ts"
+doc:
+  "Shared resolve pipeline: filter → cascade → resolveTokens.\n"
+  "Extracted so the editor Canvas, Inspector, and validateOp all call the\n"
+  "same code path with no drift risk. Sync — all three stages are synchronous."
+
+methods: [
+  { name: "resolvePipeline"
+    doc:
+      "Run the three resolver stages in sequence. Short-circuits on the first\n"
+      "stage Err; stage field is 'filter' / 'cascade' / 'tokens' respectively.\n"
+      "Theme is always required here — callers resolve the fallback first."
+    inputs: [
+      { name: "diagram",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }, is_optional: true },
+      { name: "theme",      type: { named: { symbol: "archeglyph.theme.v1.Theme" } } }
+    ]
+    output: { named: { symbol: "archeglyph.util.Result", args: [
+      { named: { symbol: "ResolvedDiagram" } },
+      { named: { symbol: "PipelineError" } }
+    ]}}
+    uses: [
+      "VisibilityFilterImpl", "FilterRequest",
+      "StyleCascadeImpl", "CascadeRequest",
+      "TokenResolverImpl", "ResolveTokensRequest"
+    ]
+  }
+]

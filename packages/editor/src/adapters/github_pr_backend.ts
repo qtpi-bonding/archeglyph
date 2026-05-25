@@ -54,40 +54,6 @@ export class GitHubPrBackend implements CommentBackend {
     this.pr = pr;
   }
 
-  async fetchThreads(): Promise<Array<ThreadEntry>> {
-    const parts: PrParts = parsePr(this.pr);
-    const url: string = `${GITHUB_API}/repos/${parts.owner}/${parts.repo}/pulls/${parts.number}/comments`;
-    const token: string | null = this.auth.getToken();
-    const headers: Record<string, string> = { 'Accept': 'application/vnd.github+json' };
-    if (token !== null) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    const resp: Response = await fetch(url, { headers });
-    const ghComments: GhPrComment[] = await resp.json() as GhPrComment[];
-    const threadMap: Map<string, Comment[]> = new Map<string, Comment[]>();
-    for (const ghComment of ghComments) {
-      const envelopes: Envelope[] = extractEnvelopes(ghComment.body);
-      for (const env of envelopes) {
-        if (env.schema_version !== 1 || env.kind !== 'comment') {
-          continue;
-        }
-        const comment: Comment = fromJson(CommentSchema, JSON.stringify(env.payload));
-        const existing: Comment[] | undefined = threadMap.get(env.edit_ref);
-        if (existing !== undefined) {
-          existing.push(comment);
-        } else {
-          threadMap.set(env.edit_ref, [comment]);
-        }
-      }
-    }
-    const entries: ThreadEntry[] = [];
-    for (const [editRef, comments] of threadMap.entries()) {
-      const thread: CommentThread = create(CommentThreadSchema, { comments });
-      entries.push(Object.assign(new ThreadEntry(), { editRef, thread }));
-    }
-    return entries;
-  }
-
   async postComment(editRef: string, comment: Comment): Promise<void> {
     const parts: PrParts = parsePr(this.pr);
     const commentJsonStr: string = toJson(CommentSchema, comment);

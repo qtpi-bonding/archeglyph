@@ -54,38 +54,4 @@ export class GitHubPrBackend implements CommentBackend {
     this.pr = pr;
   }
 
-  async postComment(editRef: string, comment: Comment): Promise<void> {
-    const parts: PrParts = parsePr(this.pr);
-    const commentJsonStr: string = toJson(CommentSchema, comment);
-    const commentJsonObj: unknown = JSON.parse(commentJsonStr);
-    const envelope: Envelope = { schema_version: 1, kind: 'comment', edit_ref: editRef, payload: commentJsonObj };
-    const envelopeStr: string = JSON.stringify(envelope, null, 2);
-    const mdBody: string = [
-      comment.body,
-      '',
-      '<details><summary>archeglyph metadata</summary>',
-      '',
-      '```archeglyph',
-      envelopeStr,
-      '```',
-      '',
-      '</details>',
-      '',
-      `[💬 Discuss in archeglyph](https://archeglyph.dev/edit?pr=${this.pr})`,
-    ].join('\n');
-    const url: string = `${GITHUB_API}/repos/${parts.owner}/${parts.repo}/issues/${parts.number}/comments`;
-    const token: string | null = this.auth.getToken();
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-    };
-    if (token !== null) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ body: mdBody }),
-    });
-  }
 }

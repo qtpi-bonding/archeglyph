@@ -9,12 +9,7 @@ import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { ValidatorImpl } from '@archeglyph/core/validator/validator';
 import { ValidateRequest } from '@archeglyph/core/validator/validate_request';
-import { VisibilityFilterImpl } from '@archeglyph/core/resolver/visibility_filter';
-import { StyleCascadeImpl } from '@archeglyph/core/resolver/style_cascade';
-import { TokenResolverImpl } from '@archeglyph/core/resolver/token_resolver';
-import { FilterRequest } from '@archeglyph/core/resolver/filter_request';
-import { CascadeRequest } from '@archeglyph/core/resolver/cascade_request';
-import { ResolveTokensRequest } from '@archeglyph/core/resolver/resolve_tokens_request';
+import { resolvePipeline } from '@archeglyph/core/pipeline';
 import { type ValidateParams, validateParamsSchema } from './validate_params';
 import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
@@ -66,29 +61,11 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
       theme = getBundledTheme('light');
     }
 
-    const filterResult = new VisibilityFilterImpl().filter(
-      Object.assign(new FilterRequest(), { diagram: diagramResult.value, stylesheet }),
-    );
-    if (filterResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'filter', cause: filterResult.error });
-    }
-    stagesRun.push('filter');
-
-    const cascadeResult = new StyleCascadeImpl().cascade(
-      Object.assign(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme }),
-    );
-    if (cascadeResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'cascade', cause: cascadeResult.error });
-    }
-    stagesRun.push('cascade');
-
-    const resolveResult = new TokenResolverImpl().resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens }),
-    );
+    const resolveResult = await resolvePipeline(diagramResult.value, stylesheet, theme);
     if (resolveResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'tokens', cause: resolveResult.error });
+      throw Object.assign(new ValidateOpError(), { stage: resolveResult.error.stage, cause: resolveResult.error });
     }
-    stagesRun.push('tokens');
+    stagesRun.push('resolve');
 
     const violations = validateResult.value.violations;
     const passed = violations.length === 0;

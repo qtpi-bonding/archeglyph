@@ -7,15 +7,7 @@ import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
-import { VisibilityFilterImpl } from '@archeglyph/core/resolver/visibility_filter';
-import { StyleCascadeImpl } from '@archeglyph/core/resolver/style_cascade';
-import { TokenResolverImpl } from '@archeglyph/core/resolver/token_resolver';
-import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
-import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
-import { FilterRequest } from '@archeglyph/core/resolver/filter_request';
-import { CascadeRequest } from '@archeglyph/core/resolver/cascade_request';
-import { ResolveTokensRequest } from '@archeglyph/core/resolver/resolve_tokens_request';
-import { LayoutRequest } from '@archeglyph/core/layout/layout_request';
+import { renderPipeline } from '@archeglyph/core/pipeline';
 import { type RenderParams, renderParamsSchema } from './render_params';
 import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
@@ -64,39 +56,11 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       theme = getBundledTheme('light');
     }
 
-    const filterResult = new VisibilityFilterImpl().filter(
-      Object.assign(new FilterRequest(), { diagram: diagramResult.value, stylesheet }),
-    );
-    if (filterResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'resolve', cause: filterResult.error });
+    const pipelineResult = await renderPipeline(diagramResult.value, stylesheet, theme);
+    if (pipelineResult.kind === 'err') {
+      throw Object.assign(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }
-
-    const cascadeResult = new StyleCascadeImpl().cascade(
-      Object.assign(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme }),
-    );
-    if (cascadeResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'resolve', cause: cascadeResult.error });
-    }
-
-    const resolveResult = new TokenResolverImpl().resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens }),
-    );
-    if (resolveResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'resolve', cause: resolveResult.error });
-    }
-
-    const layoutResult = await new LayoutEngineImpl().layout(
-      Object.assign(new LayoutRequest(), { diagram: resolveResult.value }),
-    );
-    if (layoutResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'layout', cause: layoutResult.error });
-    }
-
-    const renderResult = new SvgRendererImpl().render(layoutResult.value);
-    if (renderResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'render', cause: renderResult.error });
-    }
-    const svg = renderResult.value;
+    const svg = pipelineResult.value;
 
     const outPath = resolve(ctx.projectRoot, params.out ?? deriveOutPath(params.diagram));
     await writeFile(outPath, svg, 'utf8');

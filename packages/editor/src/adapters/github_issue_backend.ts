@@ -97,22 +97,6 @@ export class GitHubIssueBackend implements CommentBackend {
     this.issueNumber = Number.parseInt(parts[2], 10);
   }
 
-  async fetchThreads(): Promise<Array<ThreadEntry>> {
-    const token: string | null = this.auth.getToken();
-    const headers: Record<string, string> = token !== null
-      ? { 'Accept': 'application/vnd.github+json', 'Authorization': `Bearer ${token}` }
-      : { 'Accept': 'application/vnd.github+json' };
-    const resp: Response = await fetch(
-      `${GITHUB_API}/repos/${this.owner}/${this.repo}/issues/${this.issueNumber}/comments`,
-      { headers },
-    );
-    const items: Array<{ body: string }> = await resp.json() as Array<{ body: string }>;
-    const envelopes: CommentEnvelope[] = items
-      .map((item: { body: string }): CommentEnvelope | null => parseEnvelope(item.body))
-      .filter((env: CommentEnvelope | null): boolean => env !== null) as CommentEnvelope[];
-    return groupIntoThreads(envelopes);
-  }
-
   async postComment(editRef: string, comment: Comment): Promise<void> {
     const token: string | null = this.auth.getToken();
     const headers: Record<string, string> = token !== null

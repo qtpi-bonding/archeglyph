@@ -23,10 +23,6 @@ function sleep(ms: number): Promise<void> {
 }
 
 export class GitHubAuth {
-  isAuthenticated(): boolean {
-    return localStorage.getItem(TOKEN_KEY) !== null;
-  }
-
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }

@@ -1,0 +1,362 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import {
+  Component,
+  createMemo,
+  createResource,
+  createSignal,
+  JSX,
+  onCleanup,
+  onMount,
+  Show,
+} from 'solid-js';
+import { create } from '@bufbuild/protobuf';
+import { Diagram } from '@archeglyph/proto/gen/content_pb';
+import {
+  AnnotationEntry,
+  CanvasStyle,
+  EdgeStyleEntry,
+  GroupStyleEntry,
+  NodeStyleEntry,
+  StyleChangeType,
+  StyleEdit,
+  Stylesheet,
+  StylesheetSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { Result } from '@archeglyph/proto/util/result';
+import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
+import { EditorState } from '../state/editor_state';
+import { Vec2, ViewportState } from './viewport';
+import { DragHandler } from './drag_handler';
+import {
+  ElementKind,
+  SelectionContext,
+  SelectionState,
+  SelectedElement,
+} from './selection';
+
+export interface CanvasProps {
+  state: EditorState;
+  theme: Theme;
+}
+
+type RenderSource = { diagram: Diagram; stylesheet: Stylesheet; theme: Theme };
+
+function elementKindFromSvgId(svgId: string): ElementKind | null {
+  if (svgId.startsWith('node-')) { return ElementKind.NODE; }
+  else if (svgId.startsWith('group-')) { return ElementKind.GROUP; }
+  else if (svgId.startsWith('edge-')) { return ElementKind.EDGE; }
+  else if (svgId.startsWith('annotation-')) { return ElementKind.ANNOTATION; }
+  else { return null; }
+}
+
+function elementIdFromSvgId(svgId: string): string {
+  if (svgId.startsWith('node-')) { return svgId.slice(5); }
+  else if (svgId.startsWith('group-')) { return svgId.slice(6); }
+  else if (svgId.startsWith('edge-')) { return svgId.slice(5); }
+  else if (svgId.startsWith('annotation-')) { return svgId.slice(11); }
+  else { return svgId; }
+}
+
+function findElementTarget(target: EventTarget | null): { id: string; kind: ElementKind } | null {
+  let el: Element | null = target instanceof Element ? target : null;
+  while (el !== null) {
+    const elId: string = el.id;
+    const kind: ElementKind | null = elementKindFromSvgId(elId);
+    if (kind !== null) {
+      return { id: elementIdFromSvgId(elId), kind };
+    } else {
+      el = el.parentElement;
+    }
+  }
+  return null;
+}
+
+function applySingleEdit(base: Stylesheet, edit: StyleEdit): Stylesheet {
+  const nodeDeleteIds: Set<string> = new Set();
+  for (const ch of edit.nodeChanges) {
+    if (ch.changeType === StyleChangeType.DELETED) {
+      nodeDeleteIds.add(ch.nodeId);
+    } else {
+      // no-op
+    }
+  }
+  const nodes: { [k: string]: NodeStyleEntry } = {};
+  for (const id of Object.keys(base.nodes)) {
+    if (!nodeDeleteIds.has(id)) {
+      nodes[id] = base.nodes[id];
+    } else {
+      // no-op — entry removed by this edit
+    }
+  }
+  for (const ch of edit.nodeChanges) {
+    if (ch.changeType !== StyleChangeType.DELETED) {
+      if (ch.after !== undefined) {
+        nodes[ch.nodeId] = ch.after;
+      } else {
+        // no-op
+      }
+    } else {
+      // no-op
+    }
+  }
+
+  const edgeDeleteIds: Set<string> = new Set();
+  for (const ch of edit.edgeChanges) {
+    if (ch.changeType === StyleChangeType.DELETED) {
+      edgeDeleteIds.add(ch.edgeId);
+    } else {
+      // no-op
+    }
+  }
+  const edges: { [k: string]: EdgeStyleEntry } = {};
+  for (const id of Object.keys(base.edges)) {
+    if (!edgeDeleteIds.has(id)) {
+      edges[id] = base.edges[id];
+    } else {
+      // no-op
+    }
+  }
+  for (const ch of edit.edgeChanges) {
+    if (ch.changeType !== StyleChangeType.DELETED) {
+      if (ch.after !== undefined) {
+        edges[ch.edgeId] = ch.after;
+      } else {
+        // no-op
+      }
+    } else {
+      // no-op
+    }
+  }
+
+  const groupDeleteIds: Set<string> = new Set();
+  for (const ch of edit.groupChanges) {
+    if (ch.changeType === StyleChangeType.DELETED) {
+      groupDeleteIds.add(ch.groupId);
+    } else {
+      // no-op
+    }
+  }
+  const groups: { [k: string]: GroupStyleEntry } = {};
+  for (const id of Object.keys(base.groups)) {
+    if (!groupDeleteIds.has(id)) {
+      groups[id] = base.groups[id];
+    } else {
+      // no-op
+    }
+  }
+  for (const ch of edit.groupChanges) {
+    if (ch.changeType !== StyleChangeType.DELETED) {
+      if (ch.after !== undefined) {
+        groups[ch.groupId] = ch.after;
+      } else {
+        // no-op
+      }
+    } else {
+      // no-op
+    }
+  }
+
+  const annotationDeleteIds: Set<string> = new Set();
+  for (const ch of edit.annotationChanges) {
+    if (ch.changeType === StyleChangeType.DELETED) {
+      annotationDeleteIds.add(ch.annotationId);
+    } else {
+      // no-op
+    }
+  }
+  const annotations: { [k: string]: AnnotationEntry } = {};
+  for (const id of Object.keys(base.annotations)) {
+    if (!annotationDeleteIds.has(id)) {
+      annotations[id] = base.annotations[id];
+    } else {
+      // no-op
+    }
+  }
+  for (const ch of edit.annotationChanges) {
+    if (ch.changeType !== StyleChangeType.DELETED) {
+      if (ch.after !== undefined) {
+        annotations[ch.annotationId] = ch.after;
+      } else {
+        // no-op
+      }
+    } else {
+      // no-op
+    }
+  }
+
+  const canvas: CanvasStyle | undefined = edit.canvasAfter !== undefined ? edit.canvasAfter : base.canvas;
+  const themeRef: string | undefined = edit.themeRefAfter !== undefined ? edit.themeRefAfter : base.themeRef;
+
+  return create(StylesheetSchema, {
+    schemaVersion: base.schemaVersion,
+    themeRef,
+    canvas,
+    nodes,
+    edges,
+    groups,
+    annotations,
+    pendingEdits: base.pendingEdits,
+  });
+}
+
+function applyAllPendingEdits(stylesheet: Stylesheet): Stylesheet {
+  let result: Stylesheet = stylesheet;
+  for (const edit of stylesheet.pendingEdits) {
+    result = applySingleEdit(result, edit);
+  }
+  return result;
+}
+
+/** Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.
+ * Provides SelectionContext so Inspector/toolbar can call useSelection().
+ * Renders diagram via renderOp from @archeglyph/core. When
+ * state.stylesheet().pending_edits is non-empty, renders two SVG layers:
+ *   1. saved state (top, full opacity)
+ *   2. saved+pending merged state (bottom, reduced opacity ghost)
+ * Pointer events: pointerdown on an element → DragHandler.onPointerDown;
+ * pointerdown on empty canvas → pan start (direct ViewportState mutation);
+ * wheel → zoom (direct ViewportState mutation);
+ * click without drag → setSelected via SelectionState. */
+export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element => {
+  const viewport: ViewportState = Object.assign(new ViewportState(), { panX: 0, panY: 0, zoom: 1.0 });
+  const drag: DragHandler = Object.assign(new DragHandler(), { state: props.state, viewport });
+
+  const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
+  const selection: SelectionState = {
+    selected: getSelected,
+    setSelected: (el: SelectedElement | null): void => { setSelectedSignal(el); },
+  };
+
+  const [panX, setPanX] = createSignal<number>(0);
+  const [panY, setPanY] = createSignal<number>(0);
+  const [zoom, setZoom] = createSignal<number>(1.0);
+
+  const savedSource = createMemo((): RenderSource => ({
+    diagram: props.state.diagram(),
+    stylesheet: props.state.stylesheet(),
+    theme: props.theme,
+  }));
+
+  const [savedSvg] = createResource<string, RenderSource>(savedSource, async (src: RenderSource): Promise<string> => {
+    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme);
+    if (result.kind === 'err') { return ''; }
+    else { return result.value; }
+  });
+
+  const ghostSource = createMemo((): RenderSource | false => {
+    const stylesheet: Stylesheet = props.state.stylesheet();
+    if (stylesheet.pendingEdits.length === 0) { return false; }
+    else {
+      const merged: Stylesheet = applyAllPendingEdits(stylesheet);
+      return { diagram: props.state.diagram(), stylesheet: merged, theme: props.theme };
+    }
+  });
+
+  const [ghostSvg] = createResource<string, RenderSource>(ghostSource, async (src: RenderSource): Promise<string> => {
+    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme);
+    if (result.kind === 'err') { return ''; }
+    else { return result.value; }
+  });
+
+  const hasPending = createMemo((): boolean => props.state.stylesheet().pendingEdits.length > 0);
+
+  const transform = createMemo((): string =>
+    `translate(${panX()}px, ${panY()}px) scale(${zoom()})`
+  );
+
+  let panningFrom: Vec2 | null = null;
+  let movedDuringPointerSession: boolean = false;
+  let containerRef!: HTMLDivElement;
+
+  onMount((): void => {
+    const wheelHandler = (e: WheelEvent): void => {
+      e.preventDefault();
+      const scaleFactor: number = e.deltaY > 0 ? 0.9 : 1.1;
+      viewport.zoom = viewport.zoom * scaleFactor;
+      setZoom(viewport.zoom);
+    };
+    containerRef.addEventListener('wheel', wheelHandler, { passive: false });
+    onCleanup((): void => {
+      containerRef.removeEventListener('wheel', wheelHandler);
+    });
+  });
+
+  function onPointerDown(e: PointerEvent): void {
+    movedDuringPointerSession = false;
+    const screenPt: Vec2 = { x: e.clientX, y: e.clientY };
+    const elTarget: { id: string; kind: ElementKind } | null = findElementTarget(e.target);
+    if (elTarget !== null) {
+      drag.onPointerDown(elTarget.id, elTarget.kind, screenPt);
+    } else {
+      panningFrom = screenPt;
+    }
+  }
+
+  function onPointerMove(e: PointerEvent): void {
+    const screenPt: Vec2 = { x: e.clientX, y: e.clientY };
+    if (panningFrom !== null) {
+      movedDuringPointerSession = true;
+      const dx: number = e.clientX - panningFrom.x;
+      const dy: number = e.clientY - panningFrom.y;
+      viewport.panX = viewport.panX + dx;
+      viewport.panY = viewport.panY + dy;
+      setPanX(viewport.panX);
+      setPanY(viewport.panY);
+      panningFrom = screenPt;
+    } else if (drag.dragOffset() !== null) {
+      movedDuringPointerSession = true;
+      drag.onPointerMove(screenPt);
+    } else {
+      // no-op — no active pan or drag session
+    }
+  }
+
+  function onPointerUp(): void {
+    if (panningFrom !== null) {
+      panningFrom = null;
+    } else {
+      drag.onPointerUp();
+    }
+  }
+
+  function onClick(e: MouseEvent): void {
+    if (!movedDuringPointerSession) {
+      const elTarget: { id: string; kind: ElementKind } | null = findElementTarget(e.target);
+      if (elTarget !== null) {
+        selection.setSelected({ id: elTarget.id, kind: elTarget.kind });
+      } else {
+        selection.setSelected(null);
+      }
+    } else {
+      // no-op — pointer moved during session, not a clean click
+    }
+  }
+
+  return (
+    <SelectionContext.Provider value={selection}>
+      <div
+        ref={containerRef}
+        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onClick={onClick}
+      >
+        <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
+          <Show when={hasPending()}>
+            <div
+              style={{ position: 'absolute', top: '0', left: '0', opacity: '0.3' }}
+              innerHTML={ghostSvg() ?? ''}
+            />
+          </Show>
+          <div
+            style={{ position: 'absolute', top: '0', left: '0' }}
+            innerHTML={savedSvg() ?? ''}
+          />
+        </div>
+      </div>
+    </SelectionContext.Provider>
+  );
+};

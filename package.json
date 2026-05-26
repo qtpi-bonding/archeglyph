@@ -8,7 +8,9 @@
     "proto:gen": "buf generate",
     "proto:lint": "buf lint",
     "proto:format": "buf format -w",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:editor": "bun run --filter @archeglyph/editor build",
+    "dev:editor": "bun run --filter @archeglyph/editor dev"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^2.0.0",

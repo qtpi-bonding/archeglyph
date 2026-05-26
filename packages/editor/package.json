@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "license": "AGPL-3.0-or-later",
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "exports": {
     "./state": "./src/state/index.ts",
     "./adapters": "./src/adapters/index.ts"
@@ -12,5 +17,9 @@
     "@archeglyph/core": "*",
     "@bufbuild/protobuf": "^2.0.0",
     "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-solid": "^2.10.0"
   }
 }

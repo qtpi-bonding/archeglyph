@@ -1,0 +1,70 @@
+file: "packages/editor/src/canvas/selection.ts"
+doc:
+  "Selection state — ElementKind enum, SelectedElement type, SelectionState\n"
+  "interface, SelectionContext constant, and useSelection hook.\n"
+  "Canvas creates the context; Inspector/toolbar consume it via useSelection()."
+
+enums: [
+  { name: "ElementKind"
+    doc: "Discriminates the type of a selectable diagram element."
+    values: [
+      { name: "NODE" },
+      { name: "EDGE" },
+      { name: "GROUP" },
+      { name: "ANNOTATION" }
+    ]
+    typescript: {}
+  }
+]
+
+structs: [
+  { name: "SelectedElement"
+    doc: "Identity of the currently selected diagram element. Held by SelectionState."
+    fields: [
+      { name: "id",   type: { primitive: CHARACTER } },
+      { name: "kind", type: { named: { symbol: "ElementKind" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+interfaces: [
+  { name: "SelectionState"
+    doc:
+      "Reactive selection handle provided via SelectionContext. selected() is a\n"
+      "Solid Accessor — read inside a reactive context to track changes.\n"
+      "setSelected(null) clears the selection."
+    methods: [
+      { name: "selected"
+        doc: "Solid Accessor. Returns the selected element, or null if nothing is selected."
+        output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "SelectedElement | null" } }
+      },
+      { name: "setSelected"
+        doc: "Update the selected element. Pass null to deselect."
+        inputs: [{ name: "element", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "SelectedElement | null" } } }]
+        output: { primitive: VOID }
+      }
+    ]
+  }
+]
+
+constants: [
+  { name: "SelectionContext"
+    doc:
+      "Solid Context object. Canvas provides a SelectionState value via\n"
+      "<SelectionContext.Provider>. Consumers call useSelection() — do not\n"
+      "call useContext(SelectionContext) directly."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Context<SelectionState>" } }
+    uses: ["SelectionState"]
+  }
+]
+
+methods: [
+  { name: "useSelection"
+    doc:
+      "Hook: retrieve SelectionState from the nearest SelectionContext provider.\n"
+      "Throws if called outside a Canvas subtree."
+    output: { named: { symbol: "SelectionState" } }
+    uses: ["SelectionContext"]
+  }
+]

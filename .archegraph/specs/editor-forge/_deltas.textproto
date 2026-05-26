@@ -1,0 +1,17 @@
+node_deltas: [
+  # github_auth.ts — entire file deleted; logic absorbed into GitHubForge
+  { symbol: "packages/editor/src/adapters/github_auth.ts/GitHubAuth#"               change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_auth.ts/GitHubAuth#isAuthenticated()." change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_auth.ts/GitHubAuth#getToken()."    change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_auth.ts/GitHubAuth#authenticate()." change_type: DELETED },
+
+  # github_pr_backend.ts — replaced by git_forge_pr_backend.ts
+  { symbol: "packages/editor/src/adapters/github_pr_backend.ts/GitHubPrBackend#"               change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_pr_backend.ts/GitHubPrBackend#fetchThreads()." change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_pr_backend.ts/GitHubPrBackend#postComment()."  change_type: DELETED },
+
+  # github_issue_backend.ts — replaced by git_forge_issue_backend.ts
+  { symbol: "packages/editor/src/adapters/github_issue_backend.ts/GitHubIssueBackend#"               change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_issue_backend.ts/GitHubIssueBackend#fetchThreads()." change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/github_issue_backend.ts/GitHubIssueBackend#postComment()."  change_type: DELETED }
+]

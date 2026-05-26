@@ -1,0 +1,55 @@
+file: "packages/editor/src/adapters/github_forge.ts"
+doc: "GitHubForge — GitForge implementation for GitHub (api.github.com)."
+
+structs: [
+  { name: "GitHubForge"
+    doc:
+      "Absorbs GitHubAuth — token in localStorage, OAuth Device Flow.\n"
+      "API base: https://api.github.com. pr / issue strings: 'owner/repo/N'.\n"
+      "fetchPrComments: GET /repos/{owner}/{repo}/pulls/{n}/comments.\n"
+      "fetchIssueComments: GET /repos/{owner}/{repo}/issues/{n}/comments.\n"
+      "postPrComment / postIssueComment: POST to respective endpoints.\n"
+      "Anonymous fallback (getToken()==null): 60 req/hr, public repos only.\n"
+      "Architecture §4.5."
+    implements: [{ named: { symbol: "GitForge" } }]
+    methods: [
+      { name: "isAuthenticated"
+        output: { primitive: BOOLEAN }
+      },
+      { name: "getToken"
+        output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | null" } }
+      },
+      { name: "authenticate"
+        is_async: true
+        output: { primitive: VOID }
+      },
+      { name: "fetchPrComments"
+        is_async: true
+        inputs: [{ name: "pr", type: { primitive: CHARACTER } }]
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "RawComment" } }] } }
+      },
+      { name: "postPrComment"
+        is_async: true
+        inputs: [
+          { name: "pr",   type: { primitive: CHARACTER } },
+          { name: "body", type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "fetchIssueComments"
+        is_async: true
+        inputs: [{ name: "issue", type: { primitive: CHARACTER } }]
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "RawComment" } }] } }
+      },
+      { name: "postIssueComment"
+        is_async: true
+        inputs: [
+          { name: "issue", type: { primitive: CHARACTER } },
+          { name: "body",  type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  }
+]

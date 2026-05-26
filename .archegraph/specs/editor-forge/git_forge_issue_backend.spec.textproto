@@ -1,0 +1,31 @@
+file: "packages/editor/src/adapters/git_forge_issue_backend.ts"
+doc: "GitForgeIssueBackend — CommentBackend backed by any forge's Issue comments."
+
+structs: [
+  { name: "GitForgeIssueBackend"
+    doc:
+      "Replaces GitHubIssueBackend. Constructed with any GitForge instance and an\n"
+      "issue string ('owner/repo/42'). fetchThreads: calls forge.fetchIssueComments(issue),\n"
+      "scans for ```archeglyph envelope blocks, groups by edit_ref into ThreadEntry[].\n"
+      "postComment: calls forge.postIssueComment(issue, body) with the §13.6 envelope.\n"
+      "Same envelope logic as GitForgePrBackend. Design §13.6."
+    implements: [{ named: { symbol: "CommentBackend" } }]
+    methods: [
+      { name: "fetchThreads"
+        is_async: true
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } }
+        uses: ["GitForge"]
+      },
+      { name: "postComment"
+        is_async: true
+        inputs: [
+          { name: "editRef",  type: { primitive: CHARACTER } },
+          { name: "comment",  type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
+        ]
+        output: { primitive: VOID }
+        uses: ["GitForge"]
+      }
+    ]
+    typescript: {}
+  }
+]

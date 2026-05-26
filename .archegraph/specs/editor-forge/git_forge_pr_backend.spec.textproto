@@ -1,0 +1,32 @@
+file: "packages/editor/src/adapters/git_forge_pr_backend.ts"
+doc: "GitForgePrBackend — CommentBackend backed by any forge's PR comments."
+
+structs: [
+  { name: "GitForgePrBackend"
+    doc:
+      "Replaces GitHubPrBackend. Constructed with any GitForge instance and a\n"
+      "pr string ('owner/repo/123'). fetchThreads: calls forge.fetchPrComments(pr),\n"
+      "scans each body for ```archeglyph envelope blocks, groups by edit_ref into ThreadEntry[].\n"
+      "postComment: calls forge.postPrComment(pr, body) with the §13.6 envelope:\n"
+      "{ schema_version:1, kind:'comment', edit_ref, payload: Comment }.\n"
+      "Works for any GitForge implementation. Design §13.5–13.6."
+    implements: [{ named: { symbol: "CommentBackend" } }]
+    methods: [
+      { name: "fetchThreads"
+        is_async: true
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } }
+        uses: ["GitForge"]
+      },
+      { name: "postComment"
+        is_async: true
+        inputs: [
+          { name: "editRef",  type: { primitive: CHARACTER } },
+          { name: "comment",  type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
+        ]
+        output: { primitive: VOID }
+        uses: ["GitForge"]
+      }
+    ]
+    typescript: {}
+  }
+]

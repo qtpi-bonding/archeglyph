@@ -8,6 +8,7 @@ import {
   AnnotationStyleChangeSchema,
   StyleChangeType,
   StyleEditSchema,
+  StyleEditState,
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { EditorState } from '../state/editor_state';
@@ -63,7 +64,7 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
       changeType: StyleChangeType.ADDED,
       after: entry,
     });
-    const edit = create(StyleEditSchema, { annotationChanges: [change] });
+    const edit = create(StyleEditSchema, { annotationChanges: [change], state: StyleEditState.APPLIED });
 
     props.state.applyStyleEdit(edit);
   }

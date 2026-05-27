@@ -8,24 +8,13 @@ constants: [
   { name: "App"
     doc:
       "Root Solid component (Component<{}>). No props — bootstraps from URL params.\n"
-      "URL dispatch (§4.6):\n"
-      "  ?d=<base64>       → UrlParamAdapter + FileBackend\n"
-      "  ?fetch=<url>      → UrlParamAdapter + FileBackend\n"
-      "  ?gh=<path>        → UrlParamAdapter + FileBackend\n"
-      "  ?pr=<owner/repo/N>    → UrlParamAdapter + GitForgePrBackend(GitHubForge)\n"
-      "  ?issue=<owner/repo/N> → UrlParamAdapter + GitForgeIssueBackend(GitHubForge)\n"
-      "  (default)         → BrowserFsAdapter + FileBackend\n"
-      "On mount: adapter.load() → createEditorState(diagram, stylesheet ?? empty).\n"
+      "On mount: selectAdapters(window.location.search) → adapter.load() →\n"
+      "createEditorState(diagram, stylesheet ?? empty).\n"
       "Global undo/redo: document keydown listener — cmd-z → state.undo(),\n"
       "cmd-shift-z → state.redo(). Listener removed on cleanup.\n"
       "Layout: full-height flex column; TopBar at top; below: Canvas fills remaining\n"
       "space, right-panel divs (inspector, comments, pending) are empty placeholders."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
-    uses: [
-      "createEditorState",
-      "BrowserFsAdapter", "UrlParamAdapter",
-      "FileBackend", "GitHubForge", "GitForgePrBackend", "GitForgeIssueBackend",
-      "Canvas", "TopBar"
-    ]
+    uses: ["selectAdapters", "createEditorState", "Canvas", "TopBar"]
   }
 ]

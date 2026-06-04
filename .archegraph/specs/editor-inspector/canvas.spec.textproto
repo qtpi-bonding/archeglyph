@@ -1,0 +1,20 @@
+file: "packages/editor/src/canvas/canvas.tsx"
+doc:
+  "Brownfield delta — Canvas transitions from SelectionContext provider\n"
+  "to consumer. SelectionContext.Provider moves up to App level."
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "SelectionContext.Provider moves from Canvas to App, one level above.\n"
+      "Canvas now calls useSelection() to get the SelectionState rather than\n"
+      "creating its own [getSelected, setSelected] signal pair and\n"
+      "SelectionState object. The <SelectionContext.Provider> wrapper is\n"
+      "removed from Canvas's render output — Canvas is now a pure consumer.\n"
+      "All other Canvas behavior is unchanged: viewport state, drag handler,\n"
+      "pointer events, SVG rendering, ghost overlay, live-drag createEffect."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: ["ViewportState", "DragHandler", "useSelection"]
+  }
+]

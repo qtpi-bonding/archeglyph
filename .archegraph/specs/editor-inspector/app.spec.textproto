@@ -1,0 +1,24 @@
+file: "packages/editor/src/shell/app.tsx"
+doc:
+  "Brownfield delta on the editor-shell App. Lifts SelectionContext.Provider\n"
+  "to App level and wires in a corvu Resizable split with Inspector."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Evolved from editor-shell App. Three changes:\n"
+      "1. SelectionContext.Provider lifts to App level — App creates the\n"
+      "   selection signal pair and wraps the main layout in\n"
+      "   <SelectionContext.Provider value={{selected, setSelected}}>.\n"
+      "   This lets Inspector (a Canvas sibling) call useSelection() and see\n"
+      "   the same selection state as Canvas children.\n"
+      "2. Replaces the 3 empty <div /> placeholders with a horizontal\n"
+      "   @corvu/resizable Resizable split: left panel = Canvas (flex: 1),\n"
+      "   right panel = Inspector (initial size ~280px, min 200px).\n"
+      "   Both panels render only when state() is non-null.\n"
+      "3. Imports Inspector from ./inspector and Resizable from @corvu/resizable."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: ["selectAdapters", "createEditorState", "Canvas", "TopBar", "Inspector", "SelectionContext"]
+  }
+]

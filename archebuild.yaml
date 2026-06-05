@@ -135,7 +135,7 @@ execution:
 
   commands:
     - attempts: 4
-      command: 'opencode run "$(cat {{config_file}})" --model minimax/MiniMax-M3 --format json'
+      command: 'echo "INVOKE $(date) symbol={{symbol}}" >> /tmp/archegraph_diag.log && opencode run "$(cat {{config_file}})" --model minimax/MiniMax-M3 --format json >> /tmp/archegraph_diag.log 2>&1'
 
   # Cross-archegraph-boundary type imports. archegraph's TS codegen needs
   # to know how to spell the import for a foreign-namespace proto package

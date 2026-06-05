@@ -2,6 +2,7 @@
 
 import {
   Component,
+  createEffect,
   createMemo,
   createResource,
   createSignal,
@@ -269,6 +270,44 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   let panningFrom: Vec2 | null = null;
   let movedDuringPointerSession: boolean = false;
   let containerRef!: HTMLDivElement;
+  let svgContainerRef!: HTMLDivElement;
+  let draggedEl: SVGElement | null = null;
+  let draggedElOriginalTransform: string = '';
+
+  function svgIdPrefix(kind: ElementKind): string {
+    if (kind === ElementKind.NODE) { return 'node-'; }
+    else if (kind === ElementKind.GROUP) { return 'group-'; }
+    else if (kind === ElementKind.EDGE) { return 'edge-'; }
+    else { return 'annotation-'; }
+  }
+
+  createEffect((): void => {
+    const offset: Vec2 | null = drag.dragOffset();
+    if (offset !== null) {
+      const session = drag.activeSession();
+      if (session === null) { return; }
+      if (draggedEl === null) {
+        const svgId: string = svgIdPrefix(session.elementKind) + session.elementId;
+        draggedEl = svgContainerRef.querySelector<SVGElement>(`#${svgId}`) ?? null;
+        if (draggedEl !== null) {
+          draggedElOriginalTransform = draggedEl.getAttribute('transform') ?? '';
+        }
+      }
+      if (draggedEl !== null) {
+        draggedEl.setAttribute('transform', `${draggedElOriginalTransform} translate(${offset.x}, ${offset.y})`);
+      }
+    } else {
+      if (draggedEl !== null) {
+        if (draggedElOriginalTransform !== '') {
+          draggedEl.setAttribute('transform', draggedElOriginalTransform);
+        } else {
+          draggedEl.removeAttribute('transform');
+        }
+        draggedEl = null;
+        draggedElOriginalTransform = '';
+      }
+    }
+  });
 
   onMount((): void => {
     const wheelHandler = (e: WheelEvent): void => {
@@ -284,6 +323,8 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   });
 
   function onPointerDown(e: PointerEvent): void {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     movedDuringPointerSession = false;
     const screenPt: Vec2 = { x: e.clientX, y: e.clientY };
     const elTarget: { id: string; kind: ElementKind } | null = findElementTarget(e.target);
@@ -313,7 +354,8 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     }
   }
 
-  function onPointerUp(): void {
+  function onPointerUp(e: PointerEvent): void {
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     if (panningFrom !== null) {
       panningFrom = null;
     } else {
@@ -338,7 +380,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     <SelectionContext.Provider value={selection}>
       <div
         ref={containerRef}
-        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -352,6 +394,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
             />
           </Show>
           <div
+            ref={svgContainerRef}
             style={{ position: 'absolute', top: '0', left: '0' }}
             innerHTML={savedSvg() ?? ''}
           />

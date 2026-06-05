@@ -32,9 +32,7 @@ import { Vec2, ViewportState } from './viewport';
 import { DragHandler } from './drag_handler';
 import {
   ElementKind,
-  SelectionContext,
-  SelectionState,
-  SelectedElement,
+  useSelection,
 } from './selection';
 
 export interface CanvasProps {
@@ -211,7 +209,8 @@ function applyAllPendingEdits(stylesheet: Stylesheet): Stylesheet {
 }
 
 /** Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.
- * Provides SelectionContext so Inspector/toolbar can call useSelection().
+ * Pure consumer of SelectionContext — calls useSelection() to read/write the
+ * current selection. SelectionContext.Provider lives one level above (in App).
  * Renders diagram via renderOp from @archeglyph/core. When
  * state.stylesheet().pending_edits is non-empty, renders two SVG layers:
  *   1. saved state (top, full opacity)
@@ -224,11 +223,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   const viewport: ViewportState = Object.assign(new ViewportState(), { panX: 0, panY: 0, zoom: 1.0 });
   const drag: DragHandler = Object.assign(new DragHandler(), { state: props.state, viewport });
 
-  const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
-  const selection: SelectionState = {
-    selected: getSelected,
-    setSelected: (el: SelectedElement | null): void => { setSelectedSignal(el); },
-  };
+  const selection = useSelection();
 
   const [panX, setPanX] = createSignal<number>(0);
   const [panY, setPanY] = createSignal<number>(0);
@@ -377,29 +372,27 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }
 
   return (
-    <SelectionContext.Provider value={selection}>
-      <div
-        ref={containerRef}
-        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onClick={onClick}
-      >
-        <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
-          <Show when={hasPending()}>
-            <div
-              style={{ position: 'absolute', top: '0', left: '0', opacity: '0.3' }}
-              innerHTML={ghostSvg() ?? ''}
-            />
-          </Show>
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onClick={onClick}
+    >
+      <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
+        <Show when={hasPending()}>
           <div
-            ref={svgContainerRef}
-            style={{ position: 'absolute', top: '0', left: '0' }}
-            innerHTML={savedSvg() ?? ''}
+            style={{ position: 'absolute', top: '0', left: '0', opacity: '0.3' }}
+            innerHTML={ghostSvg() ?? ''}
           />
-        </div>
+        </Show>
+        <div
+          ref={svgContainerRef}
+          style={{ position: 'absolute', top: '0', left: '0' }}
+          innerHTML={savedSvg() ?? ''}
+        />
       </div>
-    </SelectionContext.Provider>
+    </div>
   );
 };

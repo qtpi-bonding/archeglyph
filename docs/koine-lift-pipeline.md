@@ -3,6 +3,15 @@
 **Status:** forward-looking note. Not required for v1 implementation; required before archeglyph's TS source can be lifted into Koine's Archelemma IR as a unit. Capture now so the requirement isn't lost when we get there.
 **Date:** 2026-05-02 (refreshed after Koine slices 1-7 shipped)
 
+**Shelved (2026-08-29):** this TS-lift-through-a-project-pipeline path is no longer
+the active plan. Koine is pursuing a direct `Archelemma → archeglyph.content.v1`
+importer instead — Loganita is a native protobuf-graph producer, so bouncing
+through TS lifting (and Archegraph's text-extraction machinery) to reach a
+visualization consumer is an unnecessary hop. See `koine`'s
+`docs/settled/DECISIONS-NEEDED.md` entry L-31. This doc may still become relevant
+later if lifting archeglyph's own TS source is revisited, but it's not the
+priority now.
+
 ## Context
 
 The Koine TypeScript lifter (`koine-lifter-ts`) operates on a **single file at a time**. It deliberately doesn't model the module graph — imports as statements drop to `Unsupported` (harmless metadata), and uses of imported names lift as bare-name `VarRef` / `NamedTypeRef` references that the project layer is responsible for resolving.

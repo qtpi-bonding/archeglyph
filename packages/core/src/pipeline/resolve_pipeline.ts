@@ -13,7 +13,7 @@ import { TokenResolverImpl } from '../resolver/token_resolver';
 import { VisibilityFilterImpl } from '../resolver/visibility_filter';
 import { PipelineError } from './pipeline_error';
 
-export function resolvePipeline(diagram: Diagram, stylesheet?: Stylesheet, theme: Theme): Result<ResolvedDiagram, PipelineError> {
+export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme): Result<ResolvedDiagram, PipelineError> {
   const filterResult = new VisibilityFilterImpl().filter(
     Object.assign(new FilterRequest(), { diagram, stylesheet })
   );

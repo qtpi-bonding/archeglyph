@@ -7,9 +7,6 @@ export class LoadResult {
   diagram!: Diagram;
   stylesheet?: Stylesheet;
 }
-import { LoadResult } from './host_adapter';
-import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
-
 export interface HostAdapter {
   canSave(): boolean;
   load(): Promise<LoadResult>;

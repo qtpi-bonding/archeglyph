@@ -30,7 +30,7 @@ import { EditorState } from '../state/editor_state';
 import { ElementKind } from './selection';
 import { Vec2, ViewportState } from './viewport';
 
-type DragSession = {
+export type DragSession = {
   elementId: string;
   elementKind: ElementKind;
   startCanvasPt: Vec2;
@@ -52,6 +52,10 @@ export class DragHandler {
 
   dragOffset(): Vec2 | null {
     return this._getOffset();
+  }
+
+  activeSession(): DragSession | null {
+    return this._session;
   }
 
   onPointerDown(elementId: string, elementKind: ElementKind, startPt: Vec2): void {

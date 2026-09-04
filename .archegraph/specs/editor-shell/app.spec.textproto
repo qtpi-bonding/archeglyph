@@ -1,0 +1,20 @@
+file: "packages/editor/src/shell/app.tsx"
+doc:
+  "Top-level SPA component. Reads URL params, selects HostAdapter + CommentBackend,\n"
+  "bootstraps EditorState, and mounts the two-panel layout (Canvas + toolbar).\n"
+  "No props — all configuration comes from the URL. Architecture §4.3, §4.6."
+
+constants: [
+  { name: "App"
+    doc:
+      "Root Solid component (Component<{}>). No props — bootstraps from URL params.\n"
+      "On mount: selectAdapters(window.location.search) → adapter.load() →\n"
+      "createEditorState(diagram, stylesheet ?? empty).\n"
+      "Global undo/redo: document keydown listener — cmd-z → state.undo(),\n"
+      "cmd-shift-z → state.redo(). Listener removed on cleanup.\n"
+      "Layout: full-height flex column; TopBar at top; below: Canvas fills remaining\n"
+      "space, right-panel divs (inspector, comments, pending) are empty placeholders."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: ["selectAdapters", "createEditorState", "Canvas", "TopBar"]
+  }
+]

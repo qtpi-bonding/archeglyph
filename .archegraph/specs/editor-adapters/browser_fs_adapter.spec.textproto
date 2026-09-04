@@ -1,0 +1,30 @@
+file: "packages/editor/src/adapters/browser_fs_adapter.ts"
+doc: "BrowserFsAdapter — HostAdapter via browser File System Access API."
+
+structs: [
+  { name: "BrowserFsAdapter"
+    doc:
+      "Uses window.showOpenFilePicker to let the user pick a .diag.json file.\n"
+      "Looks for a sibling .style.json (same basename, same directory) and loads\n"
+      "it if present. canSave always true — FSA grants write-back.\n"
+      "Chromium-only for write; Firefox/Safari degrade to read-only via\n"
+      "input[type=file] fallback for load, download fallback for save.\n"
+      "Architecture §4.3."
+    implements: [{ named: { symbol: "HostAdapter" } }]
+    methods: [
+      { name: "canSave"
+        output: { primitive: BOOLEAN }
+      },
+      { name: "load"
+        is_async: true
+        output: { named: { symbol: "LoadResult" } }
+      },
+      { name: "save"
+        is_async: true
+        inputs: [{ name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }]
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  }
+]

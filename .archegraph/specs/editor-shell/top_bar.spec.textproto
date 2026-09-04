@@ -1,0 +1,34 @@
+file: "packages/editor/src/shell/top_bar.tsx"
+doc:
+  "TopBar toolbar component — file name display, save indicator,\n"
+  "undo/redo controls, and add-annotation button."
+
+structs: [
+  { name: "TopBarProps"
+    doc:
+      "Props for the TopBar component. Both state and adapter are required:\n"
+      "state drives reactive undo/redo availability; adapter controls whether\n"
+      "a save action is offered (adapter.canSave()) and executes the write."
+    fields: [
+      { name: "state",   type: { named: { symbol: "EditorState" } } },
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "TopBar"
+    doc:
+      "Toolbar strip. Reads state and adapter reactively.\n"
+      "File name: extracted from adapter metadata or URL params (best-effort display).\n"
+      "Save indicator: shown only when adapter.canSave(); auto-saves on each\n"
+      "applyStyleEdit via a debounced adapter.save(state.stylesheet()) call;\n"
+      "shows 'Saved' / 'Saving…' status.\n"
+      "Undo button: disabled when !state.canUndo(); calls state.undo() on click.\n"
+      "Redo button: disabled when !state.canRedo(); calls state.redo() on click.\n"
+      "Add-annotation button: constructs a StyleEdit with a new AnnotationEntry\n"
+      "(centered in viewport, empty content) and calls state.applyStyleEdit()."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TopBarProps>" } }
+  }
+]

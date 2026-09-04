@@ -1,0 +1,40 @@
+file: "packages/ops/src/render/op.ts"
+doc:
+  "renderOp and deriveOutPath. MODIFIED: execute body now delegates the\n"
+  "pipeline stages to renderPipeline from @archeglyph/core/pipeline rather\n"
+  "than calling VisibilityFilterImpl / StyleCascadeImpl / etc. inline.\n"
+  "File loading + theme resolution remain here (ops boundary responsibility)."
+
+constants: [
+  { name: "renderOp"
+    change_type: MODIFIED
+    doc:
+      "Load diagram / stylesheet / theme from file paths, resolve theme\n"
+      "fallback with getBundledTheme('light'), then call renderPipeline with\n"
+      "the decoded proto messages. Wrap any PipelineError into RenderOpError\n"
+      "and throw (stage field passes through). Write SVG to outPath."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "RenderParams" } },
+      { named: { symbol: "RenderOutput" } }
+    ]}}
+    uses: [
+      "renderPipeline",
+      "loadDiagram", "loadStylesheet", "loadTheme",
+      "getBundledTheme",
+      "RenderOpError",
+      "RenderParams", "RenderOutput", "renderParamsSchema",
+      "Operation", "OpContext",
+      "deriveOutPath"
+    ]
+  }
+]
+
+methods: [
+  { name: "deriveOutPath"
+    doc: "Unchanged. Replace file extension with .svg; append if no extension."
+    inputs: [
+      { name: "diagramPath", type: { primitive: CHARACTER } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

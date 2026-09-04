@@ -1,0 +1,59 @@
+file: "packages/editor/src/canvas/drag_handler.ts"
+doc:
+  "DragHandler — pointer-drag lifecycle for canvas elements.\n"
+  "Drag semantics per architecture.md §4.2: live position updates at 60fps\n"
+  "during drag (via dragOffset signal), one StyleEdit committed on pointerup."
+
+structs: [
+  { name: "DragHandler"
+    doc:
+      "Constructed per Canvas instance with EditorState + ViewportState.\n"
+      "During a drag: dragOffset() holds the cumulative canvas-space delta so\n"
+      "Canvas can visually offset the element without modifying the stylesheet.\n"
+      "On pointerUp: calls editorState.applyStyleEdit() with a single StyleEdit\n"
+      "covering the full drag delta, then resets dragOffset to null.\n"
+      "DragHandler owns no Solid signals directly — consumers read dragOffset()."
+    fields: [
+      { name: "state",    type: { named: { symbol: "EditorState" } } },
+      { name: "viewport", type: { named: { symbol: "ViewportState" } } }
+    ]
+    methods: [
+      { name: "dragOffset"
+        doc:
+          "Solid Accessor. Returns the current cumulative canvas-space drag delta,\n"
+          "or null when no drag is in progress. Canvas reads this to offset the\n"
+          "active element's rendered position during drag."
+        output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Vec2 | null" } }
+      },
+      { name: "onPointerDown"
+        doc:
+          "Begin a drag session. Records elementId/kind + converts startPt to\n"
+          "canvas-space via viewport.toCanvas. Sets dragOffset to {x:0, y:0}."
+        inputs: [
+          { name: "elementId",   type: { primitive: CHARACTER } },
+          { name: "elementKind", type: { named: { symbol: "ElementKind" } } },
+          { name: "startPt",     type: { named: { symbol: "Vec2" } } }
+        ]
+        output: { primitive: VOID }
+        uses: ["ViewportState"]
+      },
+      { name: "onPointerMove"
+        doc:
+          "Update dragOffset with the new canvas-space delta from the drag start.\n"
+          "No-op if no drag session is active."
+        inputs: [{ name: "screenPt", type: { named: { symbol: "Vec2" } } }]
+        output: { primitive: VOID }
+        uses: ["ViewportState"]
+      },
+      { name: "onPointerUp"
+        doc:
+          "Commit the drag as a single StyleEdit via editorState.applyStyleEdit().\n"
+          "StyleEdit updates the relevant layout position field by the total delta.\n"
+          "Resets dragOffset to null. No-op if no drag session is active."
+        output: { primitive: VOID }
+        uses: ["EditorState"]
+      }
+    ]
+    typescript: {}
+  }
+]

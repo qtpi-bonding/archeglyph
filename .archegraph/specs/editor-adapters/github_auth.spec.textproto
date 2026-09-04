@@ -1,0 +1,31 @@
+file: "packages/editor/src/adapters/github_auth.ts"
+doc: "GitHubAuth — OAuth Device Flow authentication helper for GitHub API access."
+
+structs: [
+  { name: "GitHubAuth"
+    doc:
+      "Manages a GitHub OAuth token via Device Flow (browser-side only).\n"
+      "Token stored in localStorage under a fixed key; persists across page loads.\n"
+      "Scopes: 'repo' (covers public + private read/write). Unauthenticated callers\n"
+      "fall back to anonymous API access (60 req/hr, public repos only).\n"
+      "Call authenticate() to initiate Device Flow — it polls the GitHub token\n"
+      "endpoint until the user completes authorization at github.com/login/device,\n"
+      "then writes the token to localStorage. Architecture §4.5."
+    methods: [
+      { name: "isAuthenticated"
+        doc: "True if a token exists in localStorage."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "getToken"
+        doc: "Current token or null if not authenticated."
+        output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | null" } }
+      },
+      { name: "authenticate"
+        doc: "Initiate Device Flow. Resolves when token is stored; rejects on user denial or timeout."
+        is_async: true
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  }
+]

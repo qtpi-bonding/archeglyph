@@ -8,7 +8,8 @@
     "./resolver/*": "./src/resolver/*/index.ts",
     "./layout/*": "./src/layout/*/index.ts",
     "./renderer/*": "./src/renderer/*/index.ts",
-    "./validator/*": "./src/validator/*/index.ts"
+    "./validator/*": "./src/validator/*/index.ts",
+    "./pipeline": "./src/pipeline/index.ts"
   },
   "dependencies": {
     "@archeglyph/proto": "*",

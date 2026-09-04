@@ -1,0 +1,22 @@
+file: "packages/editor/src/state/create_editor_state.ts"
+doc:
+  "Factory for EditorState. Accepts already-decoded proto messages —\n"
+  "file I/O and proto decoding belong in the adapter layer.\n"
+  "On file reload, discard the old EditorState and call this again."
+
+methods: [
+  { name: "createEditorState"
+    doc:
+      "Construct an EditorState by closing over Solid createSignal calls\n"
+      "for diagram and stylesheet. In-memory undo/redo logs start empty.\n"
+      "Diagram signal is write-protected (no external setter exposed);\n"
+      "stylesheet signal is updated only through the returned applyStyleEdit.\n"
+      "See architecture.md §4.2 for drag-semantics: one StyleEdit per drag\n"
+      "session committed on mouseup, not per mousemove tick."
+    inputs: [
+      { name: "diagram",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { named: { symbol: "EditorState" } }
+  }
+]

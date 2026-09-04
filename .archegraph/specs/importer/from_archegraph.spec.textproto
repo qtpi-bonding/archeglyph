@@ -1,0 +1,38 @@
+file: "packages/importer-archegraph/src/from_archegraph.ts"
+doc: "Pure-function importer: Archeview → Diagram. No file I/O; all proto construction via create()."
+
+structs: [
+  { name: "ImportOptions"
+    doc: "Options controlling fromArchegraph output. includeExternal: when false (default), ViewNodes where is_external=true are excluded and any edge whose source or target was excluded is also dropped."
+    fields: [
+      { name: "includeExternal", type: { primitive: BOOLEAN }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "fromArchegraph"
+    doc:
+      "Convert an Archeview to an archeglyph Diagram.\n"
+      "Node mapping (ViewNode → Node):\n"
+      "  id           → Node.id and Graph.nodes map key\n"
+      "  display_name → Node.label as [{ locale: 'en', source: display_name }]\n"
+      "  kind_label   → Node.tags['archegraph.kind']\n"
+      "  scip_symbol  → Node.tags['archegraph.symbol'] when non-empty\n"
+      "  tags         → merged into Node.tags\n"
+      "Edge mapping (ViewEdge → Edge):\n"
+      "  id           → Edge.id and Graph.edges map key\n"
+      "  source/target → Edge.source / Edge.target\n"
+      "  kind_label   → Edge.label as [{ locale: 'en', source: kind_label }]\n"
+      "  tags         → Edge.tags\n"
+      "Diagram envelope: id from view.metadata.project_name (fallback 'imported'),\n"
+      "schema_version=1, metadata.generator='archegraph-importer-v1'.\n"
+      "options.includeExternal defaults to false — filter before mapping edges."
+    inputs: [
+      { name: "view",    type: { named: { symbol: "archegraph.view.Archeview" } } },
+      { name: "options", type: { named: { symbol: "ImportOptions" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.content.v1.Diagram" } }
+  }
+]

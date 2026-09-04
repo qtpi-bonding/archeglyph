@@ -1,0 +1,33 @@
+file: "packages/editor/src/canvas/canvas.tsx"
+doc:
+  "Canvas — the interactive SVG rendering surface. Solid component.\n"
+  "Owns viewport state, provides SelectionContext, delegates drag to DragHandler.\n"
+  "Two-pass ghost overlay for pending edits per architecture.md §4.10."
+
+structs: [
+  { name: "CanvasProps"
+    doc: "Props for the Canvas component. EditorState is the single reactive dependency."
+    fields: [
+      { name: "state", type: { named: { symbol: "EditorState" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    doc:
+      "Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.\n"
+      "Provides SelectionContext so Inspector/toolbar can call useSelection().\n"
+      "Renders diagram via renderOp from @archeglyph/core. When\n"
+      "state.stylesheet().pending_edits is non-empty, renders two SVG layers:\n"
+      "  1. saved state (top, full opacity)\n"
+      "  2. saved+pending merged state (bottom, reduced opacity ghost)\n"
+      "Pointer events: pointerdown on an element → DragHandler.onPointerDown;\n"
+      "pointerdown on empty canvas → pan start (direct ViewportState mutation);\n"
+      "wheel → zoom (direct ViewportState mutation);\n"
+      "click without drag → setSelected via SelectionState."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: ["ViewportState", "DragHandler", "SelectionContext"]
+  }
+]

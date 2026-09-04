@@ -1,0 +1,29 @@
+file: "packages/editor/src/adapters/url_param_adapter.ts"
+doc: "UrlParamAdapter — HostAdapter reading diagram/style from URL query params."
+
+structs: [
+  { name: "UrlParamAdapter"
+    doc:
+      "?d=<base64-json>: inline diagram; ?s=<base64-json>: inline style.\n"
+      "canSave=true for ?d= — re-encodes edits into ?d=&?s= via history.replaceState.\n"
+      "?fetch=<url> / ?gh=owner/repo&path=...&ref=... / ?gist=<url>: remote fetch,\n"
+      "canSave=false (read-only remote source). URL params parsed at construction.\n"
+      "Architecture §4.3, design §13.4."
+    implements: [{ named: { symbol: "HostAdapter" } }]
+    methods: [
+      { name: "canSave"
+        output: { primitive: BOOLEAN }
+      },
+      { name: "load"
+        is_async: true
+        output: { named: { symbol: "LoadResult" } }
+      },
+      { name: "save"
+        is_async: true
+        inputs: [{ name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }]
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  }
+]

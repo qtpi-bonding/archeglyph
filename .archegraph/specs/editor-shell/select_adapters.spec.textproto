@@ -1,0 +1,35 @@
+file: "packages/editor/src/shell/select_adapters.ts"
+doc:
+  "URL-param dispatch — reads window.location.search and returns the right\n"
+  "HostAdapter + CommentBackend pair for the current session.\n"
+  "Extracted from App to keep the component body clean and this logic testable."
+
+structs: [
+  { name: "AdapterPair"
+    doc: "Return value of selectAdapters. Both fields are instantiated and ready to use."
+    fields: [
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } },
+      { name: "backend", type: { named: { symbol: "CommentBackend" } } }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "selectAdapters"
+    doc:
+      "Inspect URL search params and construct the appropriate adapter pair.\n"
+      "Dispatch:\n"
+      "  ?pr=<owner/repo/N>    → UrlParamAdapter + GitForgePrBackend(new GitHubForge())\n"
+      "  ?issue=<owner/repo/N> → UrlParamAdapter + GitForgeIssueBackend(new GitHubForge())\n"
+      "  ?fetch=<url>, ?gh=, ?d=, ?s= → UrlParamAdapter + FileBackend\n"
+      "  (default)             → BrowserFsAdapter + FileBackend\n"
+      "FileBackend for URL-param cases receives no-op getter/setter (read-only;\n"
+      "comments persist in the URL-encoded style for those adapters)."
+    inputs: [
+      { name: "params", type: { named: { symbol: "URLSearchParams" } } }
+    ]
+    output: { named: { symbol: "AdapterPair" } }
+    uses: ["BrowserFsAdapter", "UrlParamAdapter", "FileBackend", "GitHubForge", "GitForgePrBackend", "GitForgeIssueBackend"]
+  }
+]

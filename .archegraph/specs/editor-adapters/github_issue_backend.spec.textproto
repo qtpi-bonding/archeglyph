@@ -1,0 +1,30 @@
+file: "packages/editor/src/adapters/github_issue_backend.ts"
+doc: "GitHubIssueBackend — CommentBackend backed by GitHub Issue comments."
+
+structs: [
+  { name: "GitHubIssueBackend"
+    doc:
+      "Same shape as GitHubPrBackend but attached to a GitHub Issue.\n"
+      "Constructed with a GitHubAuth instance and an issue string ('owner/repo/42').\n"
+      "Uses GET/POST /repos/{owner}/{repo}/issues/{n}/comments endpoint.\n"
+      "Same ```archeglyph envelope parsing/posting as GitHubPrBackend. Design §13.6."
+    implements: [{ named: { symbol: "CommentBackend" } }]
+    methods: [
+      { name: "fetchThreads"
+        is_async: true
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } }
+        uses: ["GitHubAuth"]
+      },
+      { name: "postComment"
+        is_async: true
+        inputs: [
+          { name: "editRef",  type: { primitive: CHARACTER } },
+          { name: "comment",  type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
+        ]
+        output: { primitive: VOID }
+        uses: ["GitHubAuth"]
+      }
+    ]
+    typescript: {}
+  }
+]

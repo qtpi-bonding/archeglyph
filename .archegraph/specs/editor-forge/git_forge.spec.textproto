@@ -1,0 +1,65 @@
+file: "packages/editor/src/adapters/git_forge.ts"
+doc: "GitForge interface and RawComment data type."
+
+structs: [
+  { name: "RawComment"
+    doc:
+      "A raw comment from the forge API — forge-agnostic shape before envelope\n"
+      "parsing. Backends scan body for ```archeglyph blocks."
+    fields: [
+      { name: "id",     type: { primitive: CHARACTER } },
+      { name: "body",   type: { primitive: CHARACTER } },
+      { name: "author", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+interfaces: [
+  { name: "GitForge"
+    doc:
+      "Auth + raw HTTP operations for a git hosting platform (GitHub, Forgejo,\n"
+      "GitLab, etc.). Implementations differ only in auth flow and API base URL.\n"
+      "fetchPrComments / postPrComment operate on PR comment endpoints;\n"
+      "fetchIssueComments / postIssueComment on Issue comment endpoints.\n"
+      "Backends own envelope parsing; GitForge only does raw fetch + auth."
+    methods: [
+      { name: "isAuthenticated"
+        output: { primitive: BOOLEAN }
+      },
+      { name: "getToken"
+        output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | null" } }
+      },
+      { name: "authenticate"
+        is_async: true
+        output: { primitive: VOID }
+      },
+      { name: "fetchPrComments"
+        is_async: true
+        inputs: [{ name: "pr", type: { primitive: CHARACTER } }]
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "RawComment" } }] } }
+      },
+      { name: "postPrComment"
+        is_async: true
+        inputs: [
+          { name: "pr",   type: { primitive: CHARACTER } },
+          { name: "body", type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "fetchIssueComments"
+        is_async: true
+        inputs: [{ name: "issue", type: { primitive: CHARACTER } }]
+        output: { named: { symbol: "Array", args: [{ named: { symbol: "RawComment" } }] } }
+      },
+      { name: "postIssueComment"
+        is_async: true
+        inputs: [
+          { name: "issue", type: { primitive: CHARACTER } },
+          { name: "body",  type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      }
+    ]
+  }
+]

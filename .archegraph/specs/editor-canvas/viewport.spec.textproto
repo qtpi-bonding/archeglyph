@@ -1,0 +1,41 @@
+file: "packages/editor/src/canvas/viewport.ts"
+doc: "Viewport state — pan/zoom + screen↔canvas coordinate transforms."
+
+structs: [
+  { name: "Vec2"
+    doc: "Immutable 2D coordinate pair used for pointer positions and canvas offsets."
+    fields: [
+      { name: "x", type: { primitive: REAL } },
+      { name: "y", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "ViewportState"
+    doc:
+      "Mutable viewport: pan offset (panX, panY in screen pixels) + zoom scale (1.0 = 100%).\n"
+      "Fields are mutated directly by Canvas on pointer/wheel events — NOT via applyStyleEdit.\n"
+      "toCanvas/toScreen are the only public methods; all other mutations happen in-place."
+    fields: [
+      { name: "panX", type: { primitive: REAL } },
+      { name: "panY", type: { primitive: REAL } },
+      { name: "zoom", type: { primitive: REAL } }
+    ]
+    methods: [
+      { name: "toCanvas"
+        doc:
+          "Convert a screen-space point to canvas-space.\n"
+          "Formula: { x: (screenPt.x - panX) / zoom, y: (screenPt.y - panY) / zoom }"
+        inputs: [{ name: "screenPt", type: { named: { symbol: "Vec2" } } }]
+        output: { named: { symbol: "Vec2" } }
+      },
+      { name: "toScreen"
+        doc:
+          "Convert a canvas-space point to screen-space. Inverse of toCanvas.\n"
+          "Formula: { x: canvasPt.x * zoom + panX, y: canvasPt.y * zoom + panY }"
+        inputs: [{ name: "canvasPt", type: { named: { symbol: "Vec2" } } }]
+        output: { named: { symbol: "Vec2" } }
+      }
+    ]
+    typescript: {}
+  }
+]

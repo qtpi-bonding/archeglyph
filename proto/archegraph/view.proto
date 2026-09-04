@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Vendored from archegraph @ crates/core/proto/view.proto (commit 42b66e2)
+// Stripped: buf/validate annotations, node_data.proto import, proto_data field.
+// Keep in sync with upstream when upgrading archegraph.
+
+syntax = "proto3";
+package archegraph.view;
+
+import "archegraph/common.proto";
+
+message Archeview {
+  uint32 schema_version = 1;
+  map<string, ViewNode> nodes = 2;
+  map<string, ViewEdge> edges = 3;
+  ViewMetadata metadata = 4;
+  reserved 5;
+  reserved "communities";
+  archegraph.common.GraphMetrics metrics = 6;
+}
+
+message ViewMetadata {
+  string project_name = 1;
+  int64 timestamp = 2;
+  string aperture_root = 3;
+  uint32 node_count = 4;
+}
+
+message ViewNode {
+  string id = 1;
+  archegraph.common.NodeKind kind = 2;
+  string kind_label = 3;
+  string display_name = 4;
+  bool is_external = 5;
+  bool is_synthetic = 6;
+  bool is_deprecated = 7;
+  bool has_error = 8;
+  reserved 9, 10;
+  reserved "file_path", "start_line";
+  string scip_symbol = 11;
+  archegraph.common.NodeMetrics metrics = 13;
+  optional archegraph.common.ChangeType change_type = 18;
+  map<string, string> tags = 15;
+  optional archegraph.common.FieldLabel field_label = 16;
+  optional archegraph.common.ValidationContext validation = 17;
+  archegraph.common.SourceLocation proto_location = 20;
+  archegraph.common.SourceLocation implement_location = 21;
+  optional string uuid = 22;
+  // field 23 (proto_data / NodeProtoData) omitted — not needed for import mapping.
+}
+
+message ViewEdge {
+  string source = 1;
+  string target = 2;
+  archegraph.common.EdgeKind kind = 3;
+  string kind_label = 4;
+  bool is_dynamic = 5;
+  archegraph.common.EdgeRole role = 6;
+  uint32 position = 7;
+  bool is_cross_language = 8;
+  string id = 9;
+  map<string, string> tags = 10;
+  archegraph.common.EdgeMetrics metrics = 11;
+  optional archegraph.common.ChangeType change_type = 12;
+}
+
+message ViewGraphDelta {
+  uint32 schema_version = 1;
+  string base_commit = 9;
+  string target_commit = 2;
+  repeated ViewNodeDelta node_deltas = 3;
+  repeated ViewEdgeDelta edge_deltas = 4;
+}
+
+message ViewNodeDelta {
+  string node_id = 1;
+  archegraph.common.ChangeType change_type = 2;
+  optional ViewNode before = 3;
+  optional ViewNode after = 4;
+  optional string description = 5;
+}
+
+message ViewEdgeDelta {
+  string source = 1;
+  string target = 2;
+  archegraph.common.EdgeKind edge_kind = 3;
+  archegraph.common.ChangeType change_type = 4;
+  optional ViewEdge before = 5;
+  optional ViewEdge after = 6;
+  optional string description = 7;
+}

@@ -1,0 +1,30 @@
+file: "packages/ops/src/validate/op.ts"
+doc:
+  "validateOp. MODIFIED: execute body now delegates filter → cascade → tokens\n"
+  "to resolvePipeline from @archeglyph/core/pipeline rather than calling\n"
+  "VisibilityFilterImpl / StyleCascadeImpl / TokenResolverImpl inline.\n"
+  "Load + ValidatorImpl invocation remain here (ops boundary responsibility)."
+
+constants: [
+  { name: "validateOp"
+    change_type: MODIFIED
+    doc:
+      "Load diagram / stylesheet / theme, run ValidatorImpl.validate first\n"
+      "(structural check before resolve), then call resolvePipeline with decoded\n"
+      "messages. Wrap any PipelineError into ValidateOpError and throw.\n"
+      "Assemble ValidateOutput from violations + stagesRun."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "ValidateParams" } },
+      { named: { symbol: "ValidateOutput" } }
+    ]}}
+    uses: [
+      "resolvePipeline",
+      "loadDiagram", "loadStylesheet", "loadTheme",
+      "getBundledTheme",
+      "ValidatorImpl", "ValidateRequest",
+      "ValidateOpError",
+      "ValidateParams", "ValidateOutput", "validateParamsSchema",
+      "Operation", "OpContext"
+    ]
+  }
+]

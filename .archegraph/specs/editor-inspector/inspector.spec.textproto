@@ -1,0 +1,39 @@
+file: "packages/editor/src/shell/inspector.tsx"
+doc:
+  "Right-panel component showing the selected element's stylesheet properties.\n"
+  "Reads from SelectionContext provided by App (one level above Canvas in the tree)\n"
+  "and writes via EditorState.applyStyleEdit(). No external UI library — plain\n"
+  "inline-styled elements only. Architecture §4.3."
+
+structs: [
+  { name: "InspectorProps"
+    doc:
+      "Props for Inspector. state is the single reactive data source —\n"
+      "provides stylesheet() reads and applyStyleEdit() writes."
+    fields: [
+      { name: "state", type: { named: { symbol: "EditorState" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Inspector"
+    doc:
+      "Right-panel Solid component. Reads selection via useSelection() —\n"
+      "SelectionContext is provided by App, so Inspector and Canvas children\n"
+      "share the same selection signal.\n"
+      "When nothing is selected: renders a muted placeholder.\n"
+      "When a node is selected: shows read-only id, then editable\n"
+      "position.x / position.y / size.w / size.h from NodeStyleEntry.layout.\n"
+      "On any field change: builds a StyleEdit with NodeStyleChange\n"
+      "(changeType=MODIFIED, kinds=[LAYOUT]) and calls props.state.applyStyleEdit().\n"
+      "When a group is selected: shows read-only id, editable position.x / position.y\n"
+      "from GroupStyleEntry.layout.\n"
+      "When an edge is selected: shows read-only id only — edges have no layout entry.\n"
+      "Numeric inputs use plain <input type='number'>; styling matches the existing\n"
+      "editor aesthetic (inline styles, plain grays, no framework CSS)."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<InspectorProps>" } }
+    uses: ["useSelection", "applyStyleEdit"]
+  }
+]

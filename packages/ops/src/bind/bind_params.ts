@@ -10,10 +10,12 @@ export class BindParams {
   component!: string;
 }
 
-export const bindParamsSchema: z.ZodType<BindParams> = z.object({
+const rawBindParamsSchema = z.object({
   diagram: z.string(),
   style: z.string().optional(),
   where: z.string(),
   elementType: z.enum(['node', 'edge', 'group']).default('node'),
   component: z.string(),
 });
+
+export const bindParamsSchema: z.ZodType<BindParams, z.ZodTypeDef, z.input<typeof rawBindParamsSchema>> = rawBindParamsSchema;

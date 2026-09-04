@@ -13,6 +13,7 @@
   "dependencies": {
     "@archeglyph/proto": "*",
     "@bufbuild/protobuf": "^2.0.0",
-    "elkjs": "^0.9.3"
+    "elkjs": "^0.9.3",
+    "web-worker": "^1.5.0"
   }
 }

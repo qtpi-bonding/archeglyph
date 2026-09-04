@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import ELK from 'elkjs/lib/elk.bundled.js';
+import ELK from 'elkjs';
+import { createRequire } from 'node:module';
 import { create } from '@bufbuild/protobuf';
 import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { EdgeSection } from '../edge_section';
@@ -17,7 +18,14 @@ export interface LayoutAdapter {
   runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
-const elk = new ELK();
+// elkjs's default in-process "fake worker" fallback (elk-worker.min.js, GWT-compiled)
+// does not evaluate correctly under Bun's CJS interop — it comes back with an empty
+// module and never settles. Route through a real worker thread via the `web-worker`
+// package instead, per elkjs's documented Node worker path.
+const require = createRequire(import.meta.url);
+const elk = new ELK({
+  workerUrl: require.resolve('elkjs/lib/elk-worker.min.js'),
+});
 
 const DEFAULT_WIDTH = 120;
 const DEFAULT_HEIGHT = 40;

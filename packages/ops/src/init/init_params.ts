@@ -6,6 +6,8 @@ export class InitParams {
   name!: string;
 }
 
-export const initParamsSchema: z.ZodType<InitParams> = z.object({
+const rawInitParamsSchema = z.object({
   name: z.string().default('diagram'),
 });
+
+export const initParamsSchema: z.ZodType<InitParams, z.ZodTypeDef, z.input<typeof rawInitParamsSchema>> = rawInitParamsSchema;

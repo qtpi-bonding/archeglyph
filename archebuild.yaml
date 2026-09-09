@@ -134,8 +134,20 @@ execution:
         intact.
 
   commands:
+    # gait-agent as the per-node worker: --gait-dir is gait's own workspace
+    # (session history/undo), separate from the codebase per gait-agent skill's
+    # rule. --codebase {{working_dir}} points it at THIS node's own worktree,
+    # substituted by archegraph at exec time. --auto-approve plus the --allow
+    # patterns below is "permissive" per the user's request. --inference
+    # gpt-luna pins the model explicitly (also the gait workspace's configured
+    # default). No git flags/commands passed to gait — archegraph's own
+    # git.commit_template does the per-node commit after this command exits;
+    # gait's job is file edits only, matching gait-agent's own "the
+    # orchestrator commits" rule. UNVALIDATED against a real archegraph
+    # per-node build as of authoring — sanity-check with a single-node build
+    # (or --render-prompts dry run) before trusting this on a full run.
     - attempts: 4
-      command: 'opencode run "$(cat {{config_file}})" --model minimax/MiniMax-M3 --format json </dev/null'
+      command: 'gait --gait-dir $HOME/Documents/gait-trace --codebase {{working_dir}} --auto-approve --allow "read:*" --allow "write:*" --allow "apply_patch:*" --allow "shell:*" --allow "glob:*" --allow "grep:*" --allow "ls:*" --inference gpt-luna "$(cat {{config_file}})"'
 
   # Cross-archegraph-boundary type imports. archegraph's TS codegen needs
   # to know how to spell the import for a foreign-namespace proto package

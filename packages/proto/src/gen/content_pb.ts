@@ -4,15 +4,15 @@
 // @generated from file content.proto (package archeglyph.content.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file content.proto.
  */
 export const file_content: GenFile = /*@__PURE__*/
-  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpQDCgVHcmFwaBI2CgVub2RlcxgBIAMoCzInLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5Ob2Rlc0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkSOAoGZ3JvdXBzGAMgAygLMiguYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkdyb3Vwc0VudHJ5GkkKCk5vZGVzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGU6AjgBGkkKCkVkZ2VzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2U6AjgBGksKC0dyb3Vwc0VudHJ5EgsKA2tleRgBIAEoCRIrCgV2YWx1ZRgCIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cDoCOAEi1AEKBE5vZGUSCgoCaWQYASABKAkSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhkKDHBhcmVudF9ncm91cBgDIAEoCUgAiAEBEjMKBHRhZ3MYBCADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuTm9kZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDwoNX3BhcmVudF9ncm91cCLZAQoERWRnZRIKCgJpZBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjIKBWxhYmVsGAQgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIPCgdvcmRpbmFsGAUgASgNEjMKBHRhZ3MYBiADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEi1gEKBUdyb3VwEgoKAmlkGAEgASgJEjIKBWxhYmVsGAIgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIZCgxwYXJlbnRfZ3JvdXAYAyABKAlIAIgBARI0CgR0YWdzGAQgAygLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIPCg1fcGFyZW50X2dyb3VwIi4KDExvY2FsaXphdGlvbhIOCgZsb2NhbGUYASABKAkSDgoGc291cmNlGAIgASgJYgZwcm90bzM");
+  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpQDCgVHcmFwaBI2CgVub2RlcxgBIAMoCzInLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5Ob2Rlc0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkSOAoGZ3JvdXBzGAMgAygLMiguYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkdyb3Vwc0VudHJ5GkkKCk5vZGVzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGU6AjgBGkkKCkVkZ2VzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2U6AjgBGksKC0dyb3Vwc0VudHJ5EgsKA2tleRgBIAEoCRIrCgV2YWx1ZRgCIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cDoCOAEi1AEKBE5vZGUSCgoCaWQYASABKAkSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhkKDHBhcmVudF9ncm91cBgDIAEoCUgAiAEBEjMKBHRhZ3MYBCADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuTm9kZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDwoNX3BhcmVudF9ncm91cCLZAQoERWRnZRIKCgJpZBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjIKBWxhYmVsGAQgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIPCgdvcmRpbmFsGAUgASgNEjMKBHRhZ3MYBiADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEi1gEKBUdyb3VwEgoKAmlkGAEgASgJEjIKBWxhYmVsGAIgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIZCgxwYXJlbnRfZ3JvdXAYAyABKAlIAIgBARI0CgR0YWdzGAQgAygLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIPCg1fcGFyZW50X2dyb3VwIrMBCgVEZWx0YRIWCg5zY2hlbWFfdmVyc2lvbhgBIAEoDRIQCghiYXNlX3JlZhgCIAEoCRISCgp0YXJnZXRfcmVmGAMgASgJEjUKC25vZGVfZGVsdGFzGAQgAygLMiAuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVEZWx0YRI1CgtlZGdlX2RlbHRhcxgFIAMoCzIgLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlRGVsdGEi9gEKCU5vZGVEZWx0YRIPCgdub2RlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5Ob2RlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24i9gEKCUVkZ2VEZWx0YRIPCgdlZGdlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2VIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24iLgoMTG9jYWxpemF0aW9uEg4KBmxvY2FsZRgBIAEoCRIOCgZzb3VyY2UYAiABKAkqXgoKQ2hhbmdlVHlwZRIbChdDSEFOR0VfVFlQRV9VTlNQRUNJRklFRBAAEg0KCVVOQ0hBTkdFRBABEgkKBUFEREVEEAISCwoHREVMRVRFRBADEgwKCE1PRElGSUVEEARiBnByb3RvMw");
 
 /**
  * Diagram is the file-level artifact: a Graph + presentation envelope metadata.
@@ -288,6 +288,129 @@ export const GroupSchema: GenMessage<Group> = /*@__PURE__*/
   messageDesc(file_content, 5);
 
 /**
+ * @generated from message archeglyph.content.v1.Delta
+ */
+export type Delta = Message<"archeglyph.content.v1.Delta"> & {
+  /**
+   * @generated from field: uint32 schema_version = 1;
+   */
+  schemaVersion: number;
+
+  /**
+   * Opaque provenance labels for the two states being compared: a git SHA
+   * when the Delta came from archegraph, a diagram id or file path for a
+   * hand-authored diff, or blank if the caller has nothing better. No
+   * semantics are enforced on the value.
+   *
+   * @generated from field: string base_ref = 2;
+   */
+  baseRef: string;
+
+  /**
+   * @generated from field: string target_ref = 3;
+   */
+  targetRef: string;
+
+  /**
+   * @generated from field: repeated archeglyph.content.v1.NodeDelta node_deltas = 4;
+   */
+  nodeDeltas: NodeDelta[];
+
+  /**
+   * @generated from field: repeated archeglyph.content.v1.EdgeDelta edge_deltas = 5;
+   */
+  edgeDeltas: EdgeDelta[];
+};
+
+/**
+ * Describes the message archeglyph.content.v1.Delta.
+ * Use `create(DeltaSchema)` to create a new message.
+ */
+export const DeltaSchema: GenMessage<Delta> = /*@__PURE__*/
+  messageDesc(file_content, 6);
+
+/**
+ * @generated from message archeglyph.content.v1.NodeDelta
+ */
+export type NodeDelta = Message<"archeglyph.content.v1.NodeDelta"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: archeglyph.content.v1.ChangeType change_type = 2;
+   */
+  changeType: ChangeType;
+
+  /**
+   * @generated from field: optional archeglyph.content.v1.Node before = 3;
+   */
+  before?: Node | undefined;
+
+  /**
+   * @generated from field: optional archeglyph.content.v1.Node after = 4;
+   */
+  after?: Node | undefined;
+
+  /**
+   * Free-text rationale, carried over from archegraph's ViewNodeDelta.description
+   * when imported (Path A); blank for archeglyph's own diff() (Path B), which has
+   * no source of rationale text to draw from.
+   *
+   * @generated from field: optional string description = 5;
+   */
+  description?: string | undefined;
+};
+
+/**
+ * Describes the message archeglyph.content.v1.NodeDelta.
+ * Use `create(NodeDeltaSchema)` to create a new message.
+ */
+export const NodeDeltaSchema: GenMessage<NodeDelta> = /*@__PURE__*/
+  messageDesc(file_content, 7);
+
+/**
+ * @generated from message archeglyph.content.v1.EdgeDelta
+ */
+export type EdgeDelta = Message<"archeglyph.content.v1.EdgeDelta"> & {
+  /**
+   * Matches Edge.id (archeglyph's own stable edge key), not archegraph's
+   * (source, target, edge_kind) triple.
+   *
+   * @generated from field: string edge_id = 1;
+   */
+  edgeId: string;
+
+  /**
+   * @generated from field: archeglyph.content.v1.ChangeType change_type = 2;
+   */
+  changeType: ChangeType;
+
+  /**
+   * @generated from field: optional archeglyph.content.v1.Edge before = 3;
+   */
+  before?: Edge | undefined;
+
+  /**
+   * @generated from field: optional archeglyph.content.v1.Edge after = 4;
+   */
+  after?: Edge | undefined;
+
+  /**
+   * @generated from field: optional string description = 5;
+   */
+  description?: string | undefined;
+};
+
+/**
+ * Describes the message archeglyph.content.v1.EdgeDelta.
+ * Use `create(EdgeDeltaSchema)` to create a new message.
+ */
+export const EdgeDeltaSchema: GenMessage<EdgeDelta> = /*@__PURE__*/
+  messageDesc(file_content, 8);
+
+/**
  * One locale's version of a text. Markdown source with KaTeX-style math.
  * Used as `repeated Localization` wherever localizable text is needed
  * (Node/Edge/Group `label`, Diagram `title`, AnnotationEntry `content`).
@@ -330,5 +453,41 @@ export type Localization = Message<"archeglyph.content.v1.Localization"> & {
  * Use `create(LocalizationSchema)` to create a new message.
  */
 export const LocalizationSchema: GenMessage<Localization> = /*@__PURE__*/
-  messageDesc(file_content, 6);
+  messageDesc(file_content, 9);
+
+/**
+ * @generated from enum archeglyph.content.v1.ChangeType
+ */
+export enum ChangeType {
+  /**
+   * @generated from enum value: CHANGE_TYPE_UNSPECIFIED = 0;
+   */
+  CHANGE_TYPE_UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: UNCHANGED = 1;
+   */
+  UNCHANGED = 1,
+
+  /**
+   * @generated from enum value: ADDED = 2;
+   */
+  ADDED = 2,
+
+  /**
+   * @generated from enum value: DELETED = 3;
+   */
+  DELETED = 3,
+
+  /**
+   * @generated from enum value: MODIFIED = 4;
+   */
+  MODIFIED = 4,
+}
+
+/**
+ * Describes the enum archeglyph.content.v1.ChangeType.
+ */
+export const ChangeTypeSchema: GenEnum<ChangeType> = /*@__PURE__*/
+  enumDesc(file_content, 0);
 

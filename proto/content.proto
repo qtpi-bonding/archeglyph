@@ -116,6 +116,55 @@ message Group {
 }
 
 // ============================================================================
+// 2b. DELTA (diff between two Diagram states — always computed, never
+//     hand-authored; see docs/superpowers/specs/2026-09-07-delta-diff-design.md)
+// ============================================================================
+
+enum ChangeType {
+  CHANGE_TYPE_UNSPECIFIED = 0;
+  UNCHANGED = 1;
+  ADDED = 2;
+  DELETED = 3;
+  MODIFIED = 4;
+}
+
+message Delta {
+  uint32 schema_version = 1;
+
+  // Opaque provenance labels for the two states being compared: a git SHA
+  // when the Delta came from archegraph, a diagram id or file path for a
+  // hand-authored diff, or blank if the caller has nothing better. No
+  // semantics are enforced on the value.
+  string base_ref = 2;
+  string target_ref = 3;
+
+  repeated NodeDelta node_deltas = 4;
+  repeated EdgeDelta edge_deltas = 5;
+}
+
+message NodeDelta {
+  string node_id = 1;
+  ChangeType change_type = 2;
+  optional Node before = 3;
+  optional Node after = 4;
+
+  // Free-text rationale, carried over from archegraph's ViewNodeDelta.description
+  // when imported (Path A); blank for archeglyph's own diff() (Path B), which has
+  // no source of rationale text to draw from.
+  optional string description = 5;
+}
+
+message EdgeDelta {
+  // Matches Edge.id (archeglyph's own stable edge key), not archegraph's
+  // (source, target, edge_kind) triple.
+  string edge_id = 1;
+  ChangeType change_type = 2;
+  optional Edge before = 3;
+  optional Edge after = 4;
+  optional string description = 5;
+}
+
+// ============================================================================
 // 3. LOCALIZATION (one locale's text content)
 // ============================================================================
 

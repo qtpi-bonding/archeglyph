@@ -1,0 +1,44 @@
+file: "packages/core/src/diff/diff.ts"
+doc: "Pure-function diagram diff: (Diagram, Diagram) -> Delta. No file I/O; all proto construction via create()."
+
+structs: [
+  { name: "DiffOptions"
+    doc: "Options controlling diff() output. includeUnchanged: when true, entities with identical content in base and target get an explicit UNCHANGED entry (before and after both set to the same content). Default false omits them, matching archegraph's own diff convention (no entry = no change)."
+    fields: [
+      { name: "includeUnchanged", type: { primitive: BOOLEAN }, is_optional: true }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "diff"
+    doc:
+      "Compare two Diagrams and produce a Delta describing what changed.\n"
+      "Compares Graph.nodes and Graph.edges independently, keyed by their map key\n"
+      "(Node.id / Edge.id per content.proto). Groups are out of scope for this\n"
+      "function — no group comparison at all.\n"
+      "Per entity, independently for nodes and edges:\n"
+      "  present in target only    -> ADDED (after set, before unset)\n"
+      "  present in base only      -> DELETED (before set, after unset)\n"
+      "  present in both, differs  -> MODIFIED (both before/after set). Content\n"
+      "    equality via @bufbuild/protobuf's equals(NodeSchema|EdgeSchema, a, b) —\n"
+      "    not a hand-rolled field comparison.\n"
+      "  present in both, identical -> no entry, unless options.includeUnchanged\n"
+      "    is true, in which case emit UNCHANGED (before and after both set, same\n"
+      "    content).\n"
+      "description on NodeDelta/EdgeDelta is always left unset here — diff() has\n"
+      "no rationale source. Only the separate deltaFromArchegraph (importer\n"
+      "pillar, not this spec) populates it, from archegraph's\n"
+      "ViewNodeDelta/ViewEdgeDelta.description.\n"
+      "Delta.base_ref <- base.id, Delta.target_ref <- target.id (diff() has no\n"
+      "external version-control ref to draw from). Delta.schema_version = 1."
+    inputs: [
+      { name: "base",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "target",  type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "options", type: { named: { symbol: "DiffOptions" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.content.v1.Delta" } }
+    uses: ["archeglyph.content.v1.NodeDelta", "archeglyph.content.v1.EdgeDelta", "archeglyph.content.v1.ChangeType"]
+  }
+]

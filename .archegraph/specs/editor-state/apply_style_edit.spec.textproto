@@ -1,0 +1,91 @@
+# New pillar file, wave 1 of docs/implementation-order.md ("editor-state Δ").
+# Extracts the pure Stylesheet-mutation logic that today lives inline in
+# create_editor_state.ts AND is duplicated verbatim (as applySingleEdit) in
+# packages/editor/src/canvas/canvas.tsx for the ghost-overlay preview
+# (docs/editor-ui-review.md §5.8 — "one source of truth" fix). Both call
+# sites now import applyStyleEditToStylesheet from this file; canvas.tsx's
+# copy is deleted as part of this same delta (see canvas_apply_style_edit
+# in this directory).
+#
+# The four field categories (nodes, edges, groups, annotations) on
+# Stylesheet are handled by copy-pasted delete-then-apply blocks today —
+# one generic applyMapChanges<C, V> replaces all four. Emit EXACTLY:
+#
+#   export function applyMapChanges<C, V>(
+#     current: { [key: string]: V },
+#     changes: C[],
+#     getId: (change: C) => string,
+#     getChangeType: (change: C) => StyleChangeType,
+#     getAfter: (change: C) => V | undefined,
+#   ): { [key: string]: V } {
+#     const deleteIds = new Set<string>();
+#     for (const change of changes) {
+#       if (getChangeType(change) === StyleChangeType.DELETED) {
+#         deleteIds.add(getId(change));
+#       }
+#     }
+#     const result: { [key: string]: V } = {};
+#     for (const id of Object.keys(current)) {
+#       if (!deleteIds.has(id)) {
+#         result[id] = current[id];
+#       }
+#     }
+#     for (const change of changes) {
+#       if (getChangeType(change) !== StyleChangeType.DELETED) {
+#         const after = getAfter(change);
+#         if (after !== undefined) {
+#           result[getId(change)] = after;
+#         }
+#       }
+#     }
+#     return result;
+#   }
+#
+# applyStyleEditToStylesheet is the existing function of the same name in
+# create_editor_state.ts today, MOVED here verbatim except its four
+# duplicated blocks are replaced by four applyMapChanges calls, one per
+# field:
+#
+#   nodes:       applyMapChanges(current.nodes, edit.nodeChanges,
+#                  c => c.nodeId, c => c.changeType, c => c.after)
+#   edges:       applyMapChanges(current.edges, edit.edgeChanges,
+#                  c => c.edgeId, c => c.changeType, c => c.after)
+#   groups:      applyMapChanges(current.groups, edit.groupChanges,
+#                  c => c.groupId, c => c.changeType, c => c.after)
+#   annotations: applyMapChanges(current.annotations, edit.annotationChanges,
+#                  c => c.annotationId, c => c.changeType, c => c.after)
+#
+# canvasAfter/themeRefAfter override logic is unchanged from today
+# (`edit.canvasAfter !== undefined ? edit.canvasAfter : current.canvas`,
+# same for themeRef). pendingEdits passes through unchanged
+# (`current.pendingEdits`) — this function only applies ONE edit; the
+# undo/redo log (undo_log.ts, sibling file) is what manages pendingEdits
+# history across edits.
+
+file: "packages/editor/src/state/apply_style_edit.ts"
+doc: "Single source of truth for (Stylesheet, StyleEdit) -> Stylesheet — used by createEditorState (commit path) and canvas.tsx (ghost-preview path)."
+
+methods: [
+  { name: "applyMapChanges"
+    doc: "Generic delete-then-apply over one Stylesheet map field. See file doc for the exact required signature and body — this replaces four copy-pasted blocks with one generic."
+    type_params: [{ name: "C" }, { name: "V" }]
+    inputs: [
+      { name: "current", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{ [key: string]: V }" } } },
+      { name: "changes", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "C[]" } } },
+      { name: "getId", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(change: C) => string" } } },
+      { name: "getChangeType", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(change: C) => StyleChangeType" } } },
+      { name: "getAfter", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(change: C) => V | undefined" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{ [key: string]: V }" } }
+    uses: ["archeglyph.style.v1.StyleChangeType"]
+  },
+  { name: "applyStyleEditToStylesheet"
+    doc: "Moved verbatim from create_editor_state.ts, four duplicated blocks replaced by applyMapChanges calls per file doc. Behavior is byte-for-byte identical to today's function of the same name."
+    inputs: [
+      { name: "current", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "edit",    type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+    uses: ["applyMapChanges"]
+  }
+]

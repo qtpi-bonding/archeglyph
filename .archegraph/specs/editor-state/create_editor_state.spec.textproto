@@ -1,22 +1,59 @@
+# MODIFIED (wave 1 "editor-state Δ"): BeforeSnapshot, UndoEntry,
+# captureSnapshot, restoreFromSnapshot, and applyStyleEditToStylesheet are
+# DELETED from this file — they now live in the sibling apply_style_edit.ts
+# and undo_log.ts (see _deltas.textproto in this directory), imported here
+# instead. createEditorState's own body changes:
+#
+# - applyStyleEdit(edit, coalesceKey?) now calls undo_log.ts's
+#   pushUndoEntry(getUndoLog(), { beforeSnapshot, edit, tsMs: Date.now(),
+#   coalesceKey }, Date.now(), COALESCE_WINDOW_MS) instead of a bare
+#   `.concat([entry])`. A module-level `const COALESCE_WINDOW_MS = 500;` is
+#   the coalescing window (matches the ~800ms debounce already used for
+#   autosave in top_bar.tsx, kept slightly shorter so a coalesced undo entry
+#   still feels like "one edit" rather than merging unrelated edits).
+# - Two new signals: `const [getVersion, setVersion] = createSignal<number>(0);`
+#   and `const [getDirty, setDirty] = createSignal<boolean>(false);`.
+#   applyStyleEdit, undo, and redo each call `setVersion(v => v + 1)` and
+#   `setDirty(true)` after their existing state-mutating work (same place
+#   `setStylesheet(...)` is already called).
+# - Returned object gains `dirty: getDirty` and `version: getVersion`.
+# - `undo`/`redo` bodies are otherwise unchanged (still use
+#   captureSnapshot/restoreFromSnapshot, now imported rather than local).
+
 file: "packages/editor/src/state/create_editor_state.ts"
 doc:
   "Factory for EditorState. Accepts already-decoded proto messages —\n"
   "file I/O and proto decoding belong in the adapter layer.\n"
   "On file reload, discard the old EditorState and call this again."
 
+constants: [
+  { name: "COALESCE_WINDOW_MS"
+    doc: "Undo-entry coalescing window in ms, passed to undo_log.ts's pushUndoEntry. See file doc."
+    type: { primitive: INTEGER }
+    value: "500"
+  }
+]
+
 methods: [
   { name: "createEditorState"
+    change_type: MODIFIED
     doc:
       "Construct an EditorState by closing over Solid createSignal calls\n"
-      "for diagram and stylesheet. In-memory undo/redo logs start empty.\n"
-      "Diagram signal is write-protected (no external setter exposed);\n"
-      "stylesheet signal is updated only through the returned applyStyleEdit.\n"
-      "See architecture.md §4.2 for drag-semantics: one StyleEdit per drag\n"
-      "session committed on mouseup, not per mousemove tick."
+      "for diagram, stylesheet, version and dirty. In-memory undo/redo logs\n"
+      "start empty. Diagram signal is write-protected (no external setter\n"
+      "exposed); stylesheet signal is updated only through the returned\n"
+      "applyStyleEdit. applyStyleEdit/undo/redo each bump version and set\n"
+      "dirty=true (see file doc for exact call sites). See architecture.md\n"
+      "§4.2 for drag-semantics: one StyleEdit per drag session committed on\n"
+      "mouseup, not per mousemove tick."
     inputs: [
       { name: "diagram",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
       { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
     ]
     output: { named: { symbol: "EditorState" } }
+    uses: [
+      "applyStyleEditToStylesheet", "captureSnapshot", "restoreFromSnapshot",
+      "pushUndoEntry", "COALESCE_WINDOW_MS"
+    ]
   }
 ]

@@ -1,0 +1,111 @@
+# New pillar file, wave 1 of docs/implementation-order.md ("editor-state Δ").
+# Extracts BeforeSnapshot, UndoEntry, captureSnapshot and restoreFromSnapshot
+# — moved verbatim from create_editor_state.ts today — plus two additions:
+#
+# 1. BeforeSnapshot gains a `pendingEditsBefore: StyleEdit[]` field, captured
+#    as `current.pendingEdits` at snapshot time and restored verbatim by
+#    restoreFromSnapshot (`pendingEdits: snapshot.pendingEditsBefore` instead
+#    of today's `pendingEdits: current.pendingEdits`, which uses the WRONG
+#    Stylesheet's value on undo). Fixes docs/editor-ui-review.md §5.9: today
+#    accepting/rejecting a pending edit can't be undone because the snapshot
+#    never captured what pendingEdits looked like before.
+#
+# 2. UndoEntry gains an optional `coalesceKey?: string` field, and a new
+#    exported pushUndoEntry() function implements coalescing: consecutive
+#    applyStyleEdit calls with the SAME non-undefined coalesceKey, pushed
+#    within coalesceWindowMs of each other, replace the log's last entry
+#    (keeping ITS beforeSnapshot, since that's the true pre-gesture state)
+#    instead of appending a new one. This is what lets the inspector commit
+#    one undo entry per "typing session" instead of one per keystroke
+#    (docs/editor-ui-review.md §2.5) — the inspector itself (a later wave)
+#    is what will pass a stable coalesceKey per field per typing session;
+#    this file only implements the coalescing primitive.
+#
+# Emit pushUndoEntry EXACTLY:
+#
+#   export function pushUndoEntry(
+#     log: UndoEntry[],
+#     entry: UndoEntry,
+#     nowMs: number,
+#     coalesceWindowMs: number,
+#   ): UndoEntry[] {
+#     const last = log.length > 0 ? log[log.length - 1] : undefined;
+#     if (
+#       last !== undefined &&
+#       entry.coalesceKey !== undefined &&
+#       last.coalesceKey === entry.coalesceKey &&
+#       nowMs - last.tsMs <= coalesceWindowMs
+#     ) {
+#       const merged: UndoEntry = { ...entry, beforeSnapshot: last.beforeSnapshot };
+#       return [...log.slice(0, -1), merged];
+#     }
+#     return [...log, entry];
+#   }
+#
+# UndoEntry therefore also needs a `tsMs: number` field (the entry's own
+# push timestamp, `Date.now()` at the call site in create_editor_state.ts —
+# NOT modeled as a method call in this spec, just a field the caller fills).
+#
+# captureSnapshot / restoreFromSnapshot bodies are otherwise UNCHANGED from
+# create_editor_state.ts today (moved verbatim) except for the
+# pendingEditsBefore addition described above.
+
+file: "packages/editor/src/state/undo_log.ts"
+doc: "Undo/redo log primitives: BeforeSnapshot, UndoEntry, capture/restore, and coalescing."
+
+structs: [
+  { name: "BeforeSnapshot"
+    doc: "Per-edit before-state, keyed only to the ids the edit touches. See captureSnapshot."
+    fields: [
+      { name: "nodes",            type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Option<NodeStyleEntry>>" } } },
+      { name: "edges",            type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Option<EdgeStyleEntry>>" } } },
+      { name: "groups",           type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Option<GroupStyleEntry>>" } } },
+      { name: "annotations",      type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Option<AnnotationEntry>>" } } },
+      { name: "canvasTouched",    type: { primitive: BOOLEAN } },
+      { name: "canvasBefore",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Option<CanvasStyle>" } } },
+      { name: "themeRefTouched",  type: { primitive: BOOLEAN } },
+      { name: "themeRefBefore",   type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Option<string>" } } },
+      { name: "pendingEditsBefore", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "archeglyph.style.v1.StyleEdit[]" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "UndoEntry"
+    doc: "One undo-log entry: what to restore, and (for redo) the edit that produced this entry."
+    fields: [
+      { name: "beforeSnapshot", type: { named: { symbol: "BeforeSnapshot" } } },
+      { name: "edit",           type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+      { name: "tsMs",           type: { primitive: REAL } },
+      { name: "coalesceKey",    type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "captureSnapshot"
+    doc: "Moved verbatim from create_editor_state.ts, plus pendingEditsBefore: current.pendingEdits (see file doc)."
+    inputs: [
+      { name: "current", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "edit",    type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }
+    ]
+    output: { named: { symbol: "BeforeSnapshot" } }
+  },
+  { name: "restoreFromSnapshot"
+    doc: "Moved verbatim from create_editor_state.ts, except pendingEdits: snapshot.pendingEditsBefore (see file doc — this is the actual bug fix)."
+    inputs: [
+      { name: "current",  type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "snapshot", type: { named: { symbol: "BeforeSnapshot" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+  },
+  { name: "pushUndoEntry"
+    doc: "Coalescing push. See file doc for the exact required body."
+    inputs: [
+      { name: "log",              type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "UndoEntry[]" } } },
+      { name: "entry",            type: { named: { symbol: "UndoEntry" } } },
+      { name: "nowMs",            type: { primitive: REAL } },
+      { name: "coalesceWindowMs", type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "UndoEntry[]" } }
+  }
+]

@@ -8,6 +8,7 @@ doc:
 
 interfaces: [
   { name: "EditorState"
+    change_type: MODIFIED
     doc:
       "Reactive handle for one editor session. Diagram is read-only\n"
       "(topology never changes inside the editor). Stylesheet is mutated\n"
@@ -29,20 +30,45 @@ interfaces: [
         doc: "Solid Accessor. True when the in-memory redo log has at least one entry."
         output: { primitive: BOOLEAN }
       },
+      { name: "dirty"
+        doc:
+          "Solid Accessor, ADDED (wave 1 editor-state Δ). True once any\n"
+          "applyStyleEdit/undo/redo has run this session. No reset hook yet —\n"
+          "a future save-controller pillar (docs/implementation-order.md wave 2\n"
+          "'save_controller') will need a way to mark clean after a successful\n"
+          "save; out of scope here."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "version"
+        doc:
+          "Solid Accessor, ADDED (wave 1 editor-state Δ). Monotonic counter,\n"
+          "incremented once per applyStyleEdit/undo/redo call. Lets consumers\n"
+          "(e.g. a future Scene memo) depend on 'the stylesheet changed' without\n"
+          "depending on the Stylesheet value itself."
+        output: { primitive: INTEGER }
+      },
       { name: "applyStyleEdit"
         doc:
-          "Apply a StyleEdit (APPLIED state path). Snapshots before-state for\n"
-          "the changed element IDs, writes after-states into the stylesheet\n"
-          "signal, pushes {beforeSnapshot, edit} to undo log, clears redo log."
-        inputs: [{ name: "edit", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }]
+          "MODIFIED: second param `coalesceKey?: string` added. Apply a\n"
+          "StyleEdit (APPLIED state path). Snapshots before-state for the\n"
+          "changed element IDs, writes after-states into the stylesheet\n"
+          "signal, pushes {beforeSnapshot, edit, tsMs, coalesceKey} to the undo\n"
+          "log via undo_log.ts's pushUndoEntry (coalesces into the previous\n"
+          "entry when coalesceKey matches and the coalesce window hasn't\n"
+          "elapsed), clears redo log. Bumps dirty/version."
+        change_type: MODIFIED
+        inputs: [
+          { name: "edit", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+          { name: "coalesceKey", type: { primitive: CHARACTER }, is_optional: true }
+        ]
         output: { primitive: VOID }
       },
       { name: "undo"
-        doc: "Restore before-snapshot from the top of the undo log. Pushes to redo log. No-op when canUndo is false."
+        doc: "Restore before-snapshot from the top of the undo log. Pushes to redo log. No-op when canUndo is false. Bumps version."
         output: { primitive: VOID }
       },
       { name: "redo"
-        doc: "Re-apply edit from the top of the redo log. Pushes back to undo log. No-op when canRedo is false."
+        doc: "Re-apply edit from the top of the redo log. Pushes back to undo log. No-op when canRedo is false. Bumps version."
         output: { primitive: VOID }
       }
     ]

@@ -13,7 +13,7 @@ export function add(a: Vec2, b: Vec2): Vec2 {
   throw new Error('not implemented');
 }
 export function distance(a: Vec2, b: Vec2): number {
-  throw new Error('not implemented');
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 export interface Vec2 {
   x: number;

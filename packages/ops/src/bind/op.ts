@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { access, readFile, writeFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { create } from '@bufbuild/protobuf';
 import { loadDiagram, loadStylesheet } from '@archeglyph/core/loaders';
 import {
@@ -16,6 +16,7 @@ import { type BindParams, bindParamsSchema } from './bind_params';
 import { BindOutput } from './bind_output';
 import { BindOpError } from './bind_op_error';
 import { parsePredicate } from './predicate';
+import { deriveDefaultStylePath } from '../style_path';
 
 export const bindOp: Operation<BindParams, BindOutput> = {
   name: 'bind',
@@ -34,13 +35,9 @@ export const bindOp: Operation<BindParams, BindOutput> = {
     }
     const diagram = diagramResult.value;
 
-    const diagBase = basename(diagramPath);
-    const dotIdx = diagBase.indexOf('.');
-    const stem = dotIdx >= 0 ? diagBase.slice(0, dotIdx) : diagBase;
-    const defaultStylePath = join(dirname(diagramPath), stem + '.style.json');
     const stylePath = params.style !== undefined
       ? resolve(ctx.projectRoot, params.style)
-      : defaultStylePath;
+      : deriveDefaultStylePath(diagramPath);
 
     let styleExists: boolean;
     try {
@@ -61,7 +58,7 @@ export const bindOp: Operation<BindParams, BindOutput> = {
       }
       stylesheet = styleResult.value;
     } else {
-      stylesheet = create(StylesheetSchema, {});
+      stylesheet = create(StylesheetSchema, { schemaVersion: 1 });
     }
 
     let predicate;

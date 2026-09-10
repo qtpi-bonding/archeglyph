@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
@@ -13,6 +13,7 @@ import { resolvePipeline } from '@archeglyph/core/pipeline';
 import { type ValidateParams, validateParamsSchema } from './validate_params';
 import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
+import { deriveDefaultStylePath } from '../style_path';
 
 export const validateOp: Operation<ValidateParams, ValidateOutput> = {
   name: 'validate',
@@ -38,9 +39,17 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     }
     stagesRun.push('validate');
 
+    const stylePath = params.style !== undefined
+      ? resolve(ctx.projectRoot, params.style)
+      : deriveDefaultStylePath(resolve(ctx.projectRoot, params.diagram));
+    let styleExists = params.style !== undefined;
+    if (!styleExists) {
+      styleExists = await access(stylePath).then(() => true, () => false);
+    }
+
     let stylesheet: Stylesheet | undefined;
-    if (params.style !== undefined) {
-      const styleText = await readFile(resolve(ctx.projectRoot, params.style), 'utf8');
+    if (styleExists) {
+      const styleText = await readFile(stylePath, 'utf8');
       const styleResult = await loadStylesheet(styleText);
       if (styleResult.kind === 'err') {
         throw Object.assign(new ValidateOpError(), { stage: 'load', cause: styleResult.error });

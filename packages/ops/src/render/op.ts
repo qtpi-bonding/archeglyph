@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { extname, basename, dirname, join, resolve } from 'node:path';
 import { getBundledTheme } from '@archeglyph/themes';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
@@ -11,6 +11,7 @@ import { renderPipeline } from '@archeglyph/core/pipeline';
 import { type RenderParams, renderParamsSchema } from './render_params';
 import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
+import { deriveDefaultStylePath } from '../style_path';
 
 export function deriveOutPath(diagramPath: string): string {
   const ext = extname(diagramPath);
@@ -33,9 +34,17 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       throw Object.assign(new RenderOpError(), { stage: 'load', cause: diagramResult.error });
     }
 
+    const stylePath = params.style !== undefined
+      ? resolve(ctx.projectRoot, params.style)
+      : deriveDefaultStylePath(resolve(ctx.projectRoot, params.diagram));
+    let styleExists = params.style !== undefined;
+    if (!styleExists) {
+      styleExists = await access(stylePath).then(() => true, () => false);
+    }
+
     let stylesheet: Stylesheet | undefined;
-    if (params.style !== undefined) {
-      const styleText = await readFile(resolve(ctx.projectRoot, params.style), 'utf8');
+    if (styleExists) {
+      const styleText = await readFile(stylePath, 'utf8');
       const styleResult = await loadStylesheet(styleText);
       if (styleResult.kind === 'err') {
         throw Object.assign(new RenderOpError(), { stage: 'load', cause: styleResult.error });

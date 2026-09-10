@@ -13,7 +13,7 @@ export interface Bounds {
   maxY: number;
 }
 export function boundsContains(b: Bounds, p: Vec2): boolean {
-  throw new Error('not implemented');
+  return p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY;
 }
 export function boundsUnion(a: Bounds, b: Bounds): Bounds {
   throw new Error('not implemented');

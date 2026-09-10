@@ -160,20 +160,23 @@ export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSna
     pendingEditsBefore: current.pendingEdits,
   };
 }
-export function pushUndoEntry(log: UndoEntry[], entry: UndoEntry, nowMs: number, coalesceWindowMs: number): UndoEntry[] {
-  const previous: UndoEntry | undefined = log[log.length - 1];
-  if (previous !== undefined && entry.coalesceKey !== undefined &&
-      previous.coalesceKey === entry.coalesceKey &&
-      nowMs - previous.tsMs <= coalesceWindowMs) {
-    const merged: UndoEntry = {
-      beforeSnapshot: previous.beforeSnapshot,
-      edit: entry.edit,
-      tsMs: nowMs,
-      coalesceKey: entry.coalesceKey,
-    };
-    return log.slice(0, -1).concat([merged]);
+export function pushUndoEntry(
+  log: UndoEntry[],
+  entry: UndoEntry,
+  nowMs: number,
+  coalesceWindowMs: number,
+): UndoEntry[] {
+  const last = log.length > 0 ? log[log.length - 1] : undefined;
+  if (
+    last !== undefined &&
+    entry.coalesceKey !== undefined &&
+    last.coalesceKey === entry.coalesceKey &&
+    nowMs - last.tsMs <= coalesceWindowMs
+  ) {
+    const merged: UndoEntry = { ...entry, beforeSnapshot: last.beforeSnapshot };
+    return [...log.slice(0, -1), merged];
   }
-  return log.concat([entry]);
+  return [...log, entry];
 }
 export interface BeforeSnapshot {
   nodes: Map<string, Option<NodeStyleEntry>>;

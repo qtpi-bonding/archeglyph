@@ -1,0 +1,31 @@
+# New pillar file, wave 1 ("geometry ✎"). Point-to-polyline distance —
+# needed for edge hit-testing (docs/editor-ui-review.md §5.6: an edge's
+# only hit target today is its stroke width, ~1-2px; a future scene/
+# hit_test module (wave 3) will hit-test edges by distance-to-polyline
+# instead of relying on DOM hit-testing). Also usable directly by
+# edge_router (wave 2) for routing sanity checks.
+
+file: "packages/core/src/geometry/polyline/impl.ts"
+doc: "Point-to-polyline distance."
+
+methods: [
+  { name: "distanceToSegment"
+    doc: "Shortest distance from point p to the line SEGMENT a-b (not the infinite line). Degenerate case a === b: returns distance(p, a)."
+    inputs: [
+      { name: "p", type: { named: { symbol: "Vec2" } } },
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: REAL }
+    uses: ["Vec2"]
+  },
+  { name: "distanceToPolyline"
+    doc: "Minimum distanceToSegment(p, points[i], points[i+1]) over every consecutive pair. Empty or single-point polyline: returns Infinity (nothing to hit-test against)."
+    inputs: [
+      { name: "p",      type: { named: { symbol: "Vec2" } } },
+      { name: "points", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Vec2[]" } } }
+    ]
+    output: { primitive: REAL }
+    uses: ["distanceToSegment"]
+  }
+]

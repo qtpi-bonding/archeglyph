@@ -1,0 +1,99 @@
+# New pillar, wave 1 of docs/implementation-order.md ("geometry ✎", the
+# "missing primitive"). Plain {x,y} value type + pure vector math, used
+# everywhere geometry is manipulated in-memory: layout, edge_router (wave
+# 2), the editor's scene/hit-test/viewport-math (wave 3+). The proto Vec2
+# (archeglyph.style.v1.Vec2, a real message with create(Vec2Schema,...))
+# stays the WIRE type — this plain type is what all pure math operates on,
+# converted at the boundary via vec2FromProto/vec2ToProto. Today there are
+# already two ad-hoc copies of exactly this {x,y} shape (the proto message
+# and editor/canvas/viewport.ts's own local `interface Vec2`) with every
+# consumer re-deriving math inline — this file is the one place that math
+# lives from now on. viewport.ts's own duplicate is NOT touched by this
+# spec (no consumers yet, per wave 1's own exit criterion) — a later wave's
+# ui_state/viewport_math pillar switches it over.
+#
+# Emit Vec2 as a plain interface: `export interface Vec2 { x: number; y: number; }`
+# All functions are pure, no proto imports except in the two conversion
+# functions at the bottom of the file.
+
+file: "packages/core/src/geometry/vec2/impl.ts"
+doc: "Plain {x,y} vector value type and pure vector math. The one place vector arithmetic lives."
+
+structs: [
+  { name: "Vec2"
+    doc: "Plain value type. NOT the proto Vec2 message — see vec2FromProto/vec2ToProto for the boundary conversion."
+    fields: [
+      { name: "x", type: { primitive: REAL } },
+      { name: "y", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "add"
+    doc: "Component-wise sum."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "sub"
+    doc: "Component-wise difference (a - b)."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "scale"
+    doc: "Multiply both components by a scalar."
+    inputs: [
+      { name: "v", type: { named: { symbol: "Vec2" } } },
+      { name: "s", type: { primitive: REAL } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "length"
+    doc: "Euclidean length (Math.hypot(v.x, v.y))."
+    inputs: [{ name: "v", type: { named: { symbol: "Vec2" } } }]
+    output: { primitive: REAL }
+  },
+  { name: "distance"
+    doc: "Euclidean distance between two points (length(sub(a, b)))."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: REAL }
+  },
+  { name: "normalize"
+    doc: "Unit vector in v's direction. Returns { x: 0, y: 0 } for a zero-length input (avoid divide-by-zero, not an error)."
+    inputs: [{ name: "v", type: { named: { symbol: "Vec2" } } }]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "dot"
+    doc: "Dot product a.x*b.x + a.y*b.y."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: REAL }
+  },
+  { name: "angle"
+    doc: "Angle of v from the positive x-axis, in radians, via Math.atan2(v.y, v.x). Range (-PI, PI]."
+    inputs: [{ name: "v", type: { named: { symbol: "Vec2" } } }]
+    output: { primitive: REAL }
+  },
+  { name: "vec2FromProto"
+    doc: "Boundary conversion: archeglyph.style.v1.Vec2 (proto message) -> plain Vec2."
+    inputs: [{ name: "v", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "vec2ToProto"
+    doc: "Boundary conversion: plain Vec2 -> archeglyph.style.v1.Vec2 (proto message), via create(Vec2Schema, { x: v.x, y: v.y })."
+    inputs: [{ name: "v", type: { named: { symbol: "Vec2" } } }]
+    output: { named: { symbol: "archeglyph.style.v1.Vec2" } }
+  }
+]

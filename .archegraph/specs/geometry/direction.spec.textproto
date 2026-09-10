@@ -1,0 +1,36 @@
+# New pillar file, wave 1 ("geometry ✎"). Angle-between and cone tests —
+# needed by a future ui_state/navigation module (wave 2's "hex-direction
+# nearest neighbour", docs/implementation-order.md §11.2) to answer
+# "which selected-adjacent element is most 'north' of the current one."
+
+file: "packages/core/src/geometry/direction/impl.ts"
+doc: "Angle-between two vectors and cone-membership tests."
+
+methods: [
+  { name: "angleBetween"
+    doc: "Signed angle FROM a TO b, in radians, range (-PI, PI]. atan2(b.y, b.x) - atan2(a.y, a.x), normalized into range."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Vec2" } } },
+      { name: "b", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: REAL }
+    uses: ["Vec2"]
+  },
+  { name: "isWithinCone"
+    doc:
+      "True if `target` lies within a cone of half-angle halfAngleRad centered\n"
+      "on `direction`, as seen from `origin`. Used to answer 'is this\n"
+      "candidate roughly north/east/south/west of the current element' for\n"
+      "ring/hex navigation — direction is one of the four cardinal unit\n"
+      "vectors, target is a candidate element's centre, origin is the current\n"
+      "element's centre."
+    inputs: [
+      { name: "origin",       type: { named: { symbol: "Vec2" } } },
+      { name: "direction",    type: { named: { symbol: "Vec2" } } },
+      { name: "target",       type: { named: { symbol: "Vec2" } } },
+      { name: "halfAngleRad", type: { primitive: REAL } }
+    ]
+    output: { primitive: BOOLEAN }
+    uses: ["Vec2", "angleBetween", "sub"]
+  }
+]

@@ -1,0 +1,78 @@
+# New pillar file, wave 1 ("geometry ✎"). Axis-aligned bounding box, used by
+# the future scene/hit-test (wave 3) for selection boxes, marquee
+# selection, and fit-to-view, and by edge_router (wave 2) for rect-to-rect
+# routing and attach-hint projection.
+#
+# Represent as { minX, minY, maxX, maxY } (not { x, y, width, height }) —
+# union/intersects are simpler as min/max comparisons, and a min/max box
+# can never have a negative width/height by construction.
+
+file: "packages/core/src/geometry/bounds/impl.ts"
+doc: "Axis-aligned bounding box type and pure ops: construction, union, containment, intersection, centre, edge projection."
+
+structs: [
+  { name: "Bounds"
+    doc: "Axis-aligned box. Invariant: minX <= maxX, minY <= maxY (enforced by fromRect/fromPoints, not by this type itself)."
+    fields: [
+      { name: "minX", type: { primitive: REAL } },
+      { name: "minY", type: { primitive: REAL } },
+      { name: "maxX", type: { primitive: REAL } },
+      { name: "maxY", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "boundsFromRect"
+    doc: "Construct from a position + size (the shape every LaidOut* node/group/annotation carries). Normalizes negative width/height so the invariant holds."
+    inputs: [
+      { name: "position", type: { named: { symbol: "Vec2" } } },
+      { name: "size",     type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Bounds" } }
+  },
+  { name: "boundsUnion"
+    doc: "Smallest Bounds containing both inputs."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Bounds" } } },
+      { name: "b", type: { named: { symbol: "Bounds" } } }
+    ]
+    output: { named: { symbol: "Bounds" } }
+  },
+  { name: "boundsContains"
+    doc: "True if point p lies within b, inclusive of the boundary."
+    inputs: [
+      { name: "b", type: { named: { symbol: "Bounds" } } },
+      { name: "p", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: BOOLEAN }
+  },
+  { name: "boundsIntersects"
+    doc: "True if the two boxes overlap (touching edges count as intersecting)."
+    inputs: [
+      { name: "a", type: { named: { symbol: "Bounds" } } },
+      { name: "b", type: { named: { symbol: "Bounds" } } }
+    ]
+    output: { primitive: BOOLEAN }
+  },
+  { name: "boundsCentre"
+    doc: "Midpoint of the box."
+    inputs: [{ name: "b", type: { named: { symbol: "Bounds" } } }]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "boundsProjectToEdge"
+    doc:
+      "Project a ray from the box's centre toward `toward` and return where it\n"
+      "crosses the box's own boundary — the attach-hint projection edge_router\n"
+      "(wave 2) needs to turn a rough direction into a concrete point on a\n"
+      "node's outline. If `toward` equals the centre (zero-length direction),\n"
+      "return the centre itself rather than dividing by zero."
+    inputs: [
+      { name: "b",      type: { named: { symbol: "Bounds" } } },
+      { name: "toward", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+    uses: ["Vec2"]
+  }
+]

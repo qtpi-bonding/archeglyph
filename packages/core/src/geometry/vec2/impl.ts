@@ -26,7 +26,7 @@ export function sub(a: Vec2, b: Vec2): Vec2 {
   throw new Error('not implemented');
 }
 export function angle(v: Vec2): number {
-  throw new Error('not implemented');
+  return Math.atan2(v.y, v.x);
 }
 export function normalize(v: Vec2): Vec2 {
   throw new Error('not implemented');

@@ -11,6 +11,7 @@ import {
   NodeStyleEntry,
   StyleChangeType,
   StyleEdit,
+  StyleEditState,
   Stylesheet,
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
@@ -31,6 +32,8 @@ type BeforeSnapshot = {
 type UndoEntry = {
   beforeSnapshot: BeforeSnapshot;
   edit: StyleEdit;
+  tsMs: number;
+  coalesceKey?: string;
 };
 
 function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
@@ -332,18 +335,37 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   const [getStylesheet, setStylesheet] = createSignal<Stylesheet>(stylesheet);
   const [getUndoLog, setUndoLog] = createSignal<UndoEntry[]>([]);
   const [getRedoLog, setRedoLog] = createSignal<UndoEntry[]>([]);
+  const [getDirty, setDirty] = createSignal<boolean>(false);
+  const [getVersion, setVersion] = createSignal<number>(0);
+  const coalesceWindowMs: number = 500;
 
-  const applyStyleEdit = (edit: StyleEdit): void => {
+  const applyStyleEdit = (edit: StyleEdit, coalesceKey?: string): void => {
+    if (edit.state !== StyleEditState.APPLIED) {
+      return;
+    }
     const current: Stylesheet = getStylesheet();
     const beforeSnapshot: BeforeSnapshot = captureSnapshot(current, edit);
     const updated: Stylesheet = applyStyleEditToStylesheet(current, edit);
     setStylesheet(updated);
-    const entry: UndoEntry = { beforeSnapshot, edit };
-    setUndoLog(getUndoLog().concat([entry]));
+    const nowMs: number = Date.now();
+    const entry: UndoEntry = { beforeSnapshot, edit, tsMs: nowMs, coalesceKey };
+    const log: UndoEntry[] = getUndoLog();
+    const previous: UndoEntry | undefined = log[log.length - 1];
+    if (coalesceKey !== undefined && previous !== undefined &&
+        previous.coalesceKey === coalesceKey && nowMs - previous.tsMs <= coalesceWindowMs) {
+      const merged: UndoEntry = { beforeSnapshot: previous.beforeSnapshot, edit, tsMs: nowMs, coalesceKey };
+      setUndoLog(log.slice(0, -1).concat([merged]));
+    } else {
+      setUndoLog(log.concat([entry]));
+    }
     setRedoLog([]);
+    setDirty(true);
+    setVersion(getVersion() + 1);
   };
 
   const undo = (): void => {
+    setDirty(true);
+    setVersion(getVersion() + 1);
     const undoLog: UndoEntry[] = getUndoLog();
     if (undoLog.length === 0) {
       // no-op — canUndo is false
@@ -359,6 +381,8 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   };
 
   const redo = (): void => {
+    setDirty(true);
+    setVersion(getVersion() + 1);
     const redoLog: UndoEntry[] = getRedoLog();
     if (redoLog.length === 0) {
       // no-op — canRedo is false
@@ -368,7 +392,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
       const beforeSnapshot: BeforeSnapshot = captureSnapshot(current, entry.edit);
       const updated: Stylesheet = applyStyleEditToStylesheet(current, entry.edit);
       setStylesheet(updated);
-      const newUndoEntry: UndoEntry = { beforeSnapshot, edit: entry.edit };
+      const newUndoEntry: UndoEntry = { beforeSnapshot, edit: entry.edit, tsMs: Date.now(), coalesceKey: entry.coalesceKey };
       setUndoLog(getUndoLog().concat([newUndoEntry]));
       const lastIdx: number = redoLog.length - 1;
       setRedoLog(redoLog.filter((e: UndoEntry, i: number): boolean => i < lastIdx));
@@ -383,5 +407,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     applyStyleEdit,
     undo,
     redo,
+    dirty: getDirty,
+    version: getVersion,
   };
 }

@@ -30,6 +30,7 @@ import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
+import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import { EditorState } from '../state/editor_state';
 import { Vec2, ViewportState } from './viewport';
 import { DragHandler } from './drag_handler';
@@ -75,138 +76,10 @@ function findElementTarget(target: EventTarget | null): { id: string; kind: Elem
   return null;
 }
 
-function applySingleEdit(base: Stylesheet, edit: StyleEdit): Stylesheet {
-  const nodeDeleteIds: Set<string> = new Set();
-  for (const ch of edit.nodeChanges) {
-    if (ch.changeType === StyleChangeType.DELETED) {
-      nodeDeleteIds.add(ch.nodeId);
-    } else {
-      // no-op
-    }
-  }
-  const nodes: { [k: string]: NodeStyleEntry } = {};
-  for (const id of Object.keys(base.nodes)) {
-    if (!nodeDeleteIds.has(id)) {
-      nodes[id] = base.nodes[id];
-    } else {
-      // no-op — entry removed by this edit
-    }
-  }
-  for (const ch of edit.nodeChanges) {
-    if (ch.changeType !== StyleChangeType.DELETED) {
-      if (ch.after !== undefined) {
-        nodes[ch.nodeId] = ch.after;
-      } else {
-        // no-op
-      }
-    } else {
-      // no-op
-    }
-  }
-
-  const edgeDeleteIds: Set<string> = new Set();
-  for (const ch of edit.edgeChanges) {
-    if (ch.changeType === StyleChangeType.DELETED) {
-      edgeDeleteIds.add(ch.edgeId);
-    } else {
-      // no-op
-    }
-  }
-  const edges: { [k: string]: EdgeStyleEntry } = {};
-  for (const id of Object.keys(base.edges)) {
-    if (!edgeDeleteIds.has(id)) {
-      edges[id] = base.edges[id];
-    } else {
-      // no-op
-    }
-  }
-  for (const ch of edit.edgeChanges) {
-    if (ch.changeType !== StyleChangeType.DELETED) {
-      if (ch.after !== undefined) {
-        edges[ch.edgeId] = ch.after;
-      } else {
-        // no-op
-      }
-    } else {
-      // no-op
-    }
-  }
-
-  const groupDeleteIds: Set<string> = new Set();
-  for (const ch of edit.groupChanges) {
-    if (ch.changeType === StyleChangeType.DELETED) {
-      groupDeleteIds.add(ch.groupId);
-    } else {
-      // no-op
-    }
-  }
-  const groups: { [k: string]: GroupStyleEntry } = {};
-  for (const id of Object.keys(base.groups)) {
-    if (!groupDeleteIds.has(id)) {
-      groups[id] = base.groups[id];
-    } else {
-      // no-op
-    }
-  }
-  for (const ch of edit.groupChanges) {
-    if (ch.changeType !== StyleChangeType.DELETED) {
-      if (ch.after !== undefined) {
-        groups[ch.groupId] = ch.after;
-      } else {
-        // no-op
-      }
-    } else {
-      // no-op
-    }
-  }
-
-  const annotationDeleteIds: Set<string> = new Set();
-  for (const ch of edit.annotationChanges) {
-    if (ch.changeType === StyleChangeType.DELETED) {
-      annotationDeleteIds.add(ch.annotationId);
-    } else {
-      // no-op
-    }
-  }
-  const annotations: { [k: string]: AnnotationEntry } = {};
-  for (const id of Object.keys(base.annotations)) {
-    if (!annotationDeleteIds.has(id)) {
-      annotations[id] = base.annotations[id];
-    } else {
-      // no-op
-    }
-  }
-  for (const ch of edit.annotationChanges) {
-    if (ch.changeType !== StyleChangeType.DELETED) {
-      if (ch.after !== undefined) {
-        annotations[ch.annotationId] = ch.after;
-      } else {
-        // no-op
-      }
-    } else {
-      // no-op
-    }
-  }
-
-  const canvas: CanvasStyle | undefined = edit.canvasAfter !== undefined ? edit.canvasAfter : base.canvas;
-  const themeRef: string | undefined = edit.themeRefAfter !== undefined ? edit.themeRefAfter : base.themeRef;
-
-  return create(StylesheetSchema, {
-    schemaVersion: base.schemaVersion,
-    themeRef,
-    canvas,
-    nodes,
-    edges,
-    groups,
-    annotations,
-    pendingEdits: base.pendingEdits,
-  });
-}
-
 function applyAllPendingEdits(stylesheet: Stylesheet): Stylesheet {
   let result: Stylesheet = stylesheet;
   for (const edit of stylesheet.pendingEdits) {
-    result = applySingleEdit(result, edit);
+    result = applyStyleEditToStylesheet(result, edit);
   }
   return result;
 }

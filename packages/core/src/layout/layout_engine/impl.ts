@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { EdgeSection } from '../edge_section';
-import { ElkAdapterImpl, LayoutAdapter } from '../layout_adapter';
+import { LayoutAdapter } from '../layout_adapter';
 import { LaidOutDiagram } from '../laid_out_diagram';
 import { LayoutError } from '../layout_error';
 import { LayoutRequest } from '../layout_request';
@@ -11,18 +11,18 @@ export interface LayoutEngine {
   layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
+/** Coordinates layout adapters and applies resolved geometry overrides. */
 export class LayoutEngineImpl implements LayoutEngine {
-  private readonly adapter: LayoutAdapter;
-
-  constructor() {
-    this.adapter = new ElkAdapterImpl();
-  }
+  constructor(private readonly adapter: LayoutAdapter) {}
 
   async layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>> {
     const result = await this.adapter.runLayout(request.diagram);
     if (result.kind === 'err') {
       return result;
     }
+
+    // The adapter supplies computed geometry, while explicitly resolved layout
+    // values remain authoritative when present.
     const laid = result.value;
     const resolvedNodeById = new Map(request.diagram.nodes.map(n => [n.id, n]));
     const resolvedGroupById = new Map(request.diagram.groups.map(g => [g.id, g]));

@@ -8,6 +8,9 @@ import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { renderPipeline } from '@archeglyph/core/pipeline';
+import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
+import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
+import { createNodeElk } from '@archeglyph/core/layout/elk_host_node';
 import { type RenderParams, renderParamsSchema } from './render_params';
 import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
@@ -65,7 +68,8 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       theme = getBundledTheme('light');
     }
 
-    const pipelineResult = await renderPipeline(diagramResult.value, stylesheet, theme);
+    const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
+    const pipelineResult = await renderPipeline(diagramResult.value, stylesheet, theme, layoutEngine);
     if (pipelineResult.kind === 'err') {
       throw Object.assign(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }

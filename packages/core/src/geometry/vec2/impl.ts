@@ -4,10 +4,10 @@
 import { create } from '@bufbuild/protobuf';
 import { type Vec2 as ProtoVec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 
-export function vec2fromProto(v: ProtoVec2): Vec2 {
+export function vec2FromProto(v: ProtoVec2): Vec2 {
   return { x: v.x, y: v.y };
 }
-export function vec2toProto(v: Vec2): ProtoVec2 {
+export function vec2ToProto(v: Vec2): ProtoVec2 {
   return create(Vec2Schema, { x: v.x, y: v.y });
 }
 export function length(v: Vec2): number {

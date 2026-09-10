@@ -3,8 +3,12 @@
 import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { fromJson, toJson } from '@archeglyph/proto/util/json';
-import { HostAdapter } from './host_adapter';
-import { LoadResult } from './host_adapter';
+import { Err, Ok, Result } from '@archeglyph/proto/util/result';
+import { AdapterError, HostAdapter, LoadResult } from './host_adapter';
+
+function toAdapterError(e: unknown): AdapterError {
+  return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
+}
 
 function buildRemoteUrl(params: URLSearchParams): string | null {
   const fetchParam: string | null = params.get('fetch');
@@ -43,47 +47,56 @@ export class UrlParamAdapter implements HostAdapter {
     return this.inlineDiagramB64 !== null;
   }
 
-  async load(): Promise<LoadResult> {
-    const b64: string | null = this.inlineDiagramB64;
-    if (b64 !== null) {
-      const diagJson: string = atob(b64);
-      const diagram: Diagram = fromJson(DiagramSchema, diagJson);
-      this.loadedDiagram = diagram;
-      const stylesheetB64: string | null = this.inlineStyleB64;
-      if (stylesheetB64 !== null) {
-        const stylesheetJson: string = atob(stylesheetB64);
-        const stylesheet: Stylesheet = fromJson(StylesheetSchema, stylesheetJson);
-        return Object.assign(new LoadResult(), { diagram, stylesheet });
+  async load(): Promise<Result<LoadResult, AdapterError>> {
+    try {
+      const b64: string | null = this.inlineDiagramB64;
+      if (b64 !== null) {
+        const diagJson: string = atob(b64);
+        const diagram: Diagram = fromJson(DiagramSchema, diagJson);
+        this.loadedDiagram = diagram;
+        const stylesheetB64: string | null = this.inlineStyleB64;
+        if (stylesheetB64 !== null) {
+          const stylesheetJson: string = atob(stylesheetB64);
+          const stylesheet: Stylesheet = fromJson(StylesheetSchema, stylesheetJson);
+          return Ok(Object.assign(new LoadResult(), { diagram, stylesheet }));
+        } else {
+          return Ok(Object.assign(new LoadResult(), { diagram }));
+        }
       } else {
-        return Object.assign(new LoadResult(), { diagram });
+        const url: string = this.remoteUrl ?? '';
+        const response: Response = await fetch(url);
+        const diagJson: string = await response.text();
+        const diagram: Diagram = fromJson(DiagramSchema, diagJson);
+        this.loadedDiagram = diagram;
+        return Ok(Object.assign(new LoadResult(), { diagram }));
       }
-    } else {
-      const url: string = this.remoteUrl ?? '';
-      const response: Response = await fetch(url);
-      const diagJson: string = await response.text();
-      const diagram: Diagram = fromJson(DiagramSchema, diagJson);
-      this.loadedDiagram = diagram;
-      return Object.assign(new LoadResult(), { diagram });
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 
-  async save(stylesheet: Stylesheet): Promise<void> {
-    // Remote diagrams are deliberately read-only.  `loadedDiagram` is also
-    // populated for remote loads, so checking it alone would accidentally
-    // allow a caller to mutate the URL despite canSave() being false.
-    if (!this.canSave()) {
-      return;
-    }
-    const diagram: Diagram | null = this.loadedDiagram;
-    if (diagram !== null) {
-      const diagJson: string = toJson(DiagramSchema, diagram);
-      const stylesheetJson: string = toJson(StylesheetSchema, stylesheet);
-      const diagB64: string = btoa(diagJson);
-      const styleB64: string = btoa(stylesheetJson);
-      const url: URL = new URL(window.location.href);
-      url.searchParams.set('d', diagB64);
-      url.searchParams.set('s', styleB64);
-      history.replaceState(null, '', url.toString());
+  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
+    try {
+      // Remote diagrams are deliberately read-only.  `loadedDiagram` is also
+      // populated for remote loads, so checking it alone would accidentally
+      // allow a caller to mutate the URL despite canSave() being false.
+      if (!this.canSave()) {
+        return Ok(undefined);
+      }
+      const diagram: Diagram | null = this.loadedDiagram;
+      if (diagram !== null) {
+        const diagJson: string = toJson(DiagramSchema, diagram);
+        const stylesheetJson: string = toJson(StylesheetSchema, stylesheet);
+        const diagB64: string = btoa(diagJson);
+        const styleB64: string = btoa(stylesheetJson);
+        const url: URL = new URL(window.location.href);
+        url.searchParams.set('d', diagB64);
+        url.searchParams.set('s', styleB64);
+        history.replaceState(null, '', url.toString());
+      }
+      return Ok(undefined);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 }

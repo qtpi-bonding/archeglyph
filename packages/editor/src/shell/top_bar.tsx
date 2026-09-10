@@ -19,7 +19,7 @@ export interface TopBarProps {
   adapter: HostAdapter;
 }
 
-type SaveStatus = 'saved' | 'saving';
+type SaveStatus = 'saved' | 'saving' | 'error';
 
 export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element => {
   const params: URLSearchParams = new URLSearchParams(window.location.search);
@@ -37,8 +37,13 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
     setSaveStatus('saving');
     saveTimer = setTimeout((): void => {
       saveTimer = null;
-      props.adapter.save(stylesheet).then((): void => {
-        setSaveStatus('saved');
+      props.adapter.save(stylesheet).then((result): void => {
+        if (result.kind === 'err') {
+          console.error(`archeglyph: failed to save: ${result.error.message}`);
+          setSaveStatus('error');
+        } else {
+          setSaveStatus('saved');
+        }
       });
     }, 800);
   });
@@ -73,8 +78,8 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
     <div style={{ display: 'flex', 'align-items': 'center', padding: '0 8px', height: '40px', background: '#f5f5f5', 'border-bottom': '1px solid #ddd' }}>
       <span style={{ flex: '1', 'font-size': '14px' }}>{fileName}</span>
       <Show when={props.adapter.canSave()}>
-        <span style={{ 'margin-right': '8px', 'font-size': '12px', color: '#888' }}>
-          {saveStatus() === 'saving' ? 'Saving…' : saveStatus() === 'saved' ? 'Saved' : ''}
+        <span style={{ 'margin-right': '8px', 'font-size': '12px', color: saveStatus() === 'error' ? '#c00' : '#888' }}>
+          {saveStatus() === 'saving' ? 'Saving…' : saveStatus() === 'saved' ? 'Saved' : saveStatus() === 'error' ? 'Save failed' : ''}
         </span>
       </Show>
       <button disabled={!props.state.canUndo()} onClick={onUndo}>Undo</button>

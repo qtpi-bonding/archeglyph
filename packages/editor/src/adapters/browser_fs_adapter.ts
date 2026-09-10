@@ -1,34 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { HostAdapter, LoadResult } from './host_adapter';
+import { AdapterError, HostAdapter, LoadResult } from './host_adapter';
 import { type Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { type Diagram } from '@archeglyph/proto/gen/content_pb';
-import { type Result } from '@archeglyph/proto/util/result';
+import { Err, Ok, type Result } from '@archeglyph/proto/util/result';
 import { loadDiagram, loadStylesheet, type LoadError } from '@archeglyph/core/loaders';
 import { toJson } from '@archeglyph/proto/util/json';
+
+function toAdapterError(e: unknown): AdapterError {
+  return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
+}
 
 export class BrowserFsAdapter implements HostAdapter {
   private diagHandle: FileSystemFileHandle | null = null;
   private styleHandle: FileSystemFileHandle | null = null;
 
   canSave(): boolean {
-    return this.styleHandle !== null;
+    return this.styleHandle !== null || this.diagHandle !== null;
   }
 
-  async load(): Promise<LoadResult> {
-    if ('showOpenFilePicker' in window) {
-      return this.loadViaFsa();
-    } else {
-      return this.loadViaInput();
+  async load(): Promise<Result<LoadResult, AdapterError>> {
+    try {
+      const result: LoadResult = 'showOpenFilePicker' in window
+        ? await this.loadViaFsa()
+        : await this.loadViaInput();
+      return Ok(result);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 
-  async save(stylesheet: Stylesheet): Promise<void> {
-    const text: string = toJson(StylesheetSchema, stylesheet);
-    if ('showSaveFilePicker' in window) {
-      await this.saveViaFsa(text);
-    } else {
-      this.saveViaDownload(text);
+  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
+    try {
+      const text: string = toJson(StylesheetSchema, stylesheet);
+      if ('showSaveFilePicker' in window) {
+        await this.saveViaFsa(text);
+      } else {
+        this.saveViaDownload(text);
+      }
+      return Ok(undefined);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 

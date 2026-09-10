@@ -12,6 +12,8 @@ import {
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { CommentBackend, ThreadEntry } from './comment_backend';
+import { AdapterError } from './host_adapter';
+import { Ok, Result } from '@archeglyph/proto/util/result';
 
 export class FileBackend implements CommentBackend {
   private readonly getStylesheet: Accessor<Stylesheet>;
@@ -22,7 +24,7 @@ export class FileBackend implements CommentBackend {
     this.setStylesheet = setStylesheet;
   }
 
-  async fetchThreads(): Promise<Array<ThreadEntry>> {
+  async fetchThreads(): Promise<Result<Array<ThreadEntry>, AdapterError>> {
     const stylesheet: Stylesheet = this.getStylesheet();
     const entries: ThreadEntry[] = [];
     for (const edit of stylesheet.pendingEdits) {
@@ -30,10 +32,10 @@ export class FileBackend implements CommentBackend {
         entries.push(Object.assign(new ThreadEntry(), { editRef: edit.id, thread: edit.thread }));
       }
     }
-    return entries;
+    return Ok(entries);
   }
 
-  async postComment(editRef: string, comment: Comment): Promise<void> {
+  async postComment(editRef: string, comment: Comment): Promise<Result<void, AdapterError>> {
     const stylesheet: Stylesheet = this.getStylesheet();
     const updatedEdits: StyleEdit[] = [];
     for (const edit of stylesheet.pendingEdits) {
@@ -78,5 +80,6 @@ export class FileBackend implements CommentBackend {
       pendingEdits: updatedEdits,
     });
     this.setStylesheet(updated);
+    return Ok(undefined);
   }
 }

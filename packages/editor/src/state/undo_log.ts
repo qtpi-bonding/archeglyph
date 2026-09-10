@@ -4,7 +4,16 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   throw new Error('not implemented');
 }
 import { BeforeSnapshot } from './undo_log';
-import { StyleEdit } from '@archeglyph/proto/gen/style_pb';
+import {
+  AnnotationEntry,
+  CanvasStyle,
+  EdgeStyleEntry,
+  GroupStyleEntry,
+  NodeStyleEntry,
+  StyleEdit,
+  Stylesheet,
+} from '@archeglyph/proto/gen/style_pb';
+import { Option } from '@archeglyph/proto/util/result';
 
 export interface UndoEntry {
   beforeSnapshot: BeforeSnapshot;
@@ -13,7 +22,50 @@ export interface UndoEntry {
   coalesceKey?: string;
 }
 export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
-  throw new Error('not implemented');
+  const nodes: Map<string, Option<NodeStyleEntry>> = new Map();
+  for (const change of edit.nodeChanges) {
+    const value: NodeStyleEntry | undefined = current.nodes[change.nodeId];
+    nodes.set(change.nodeId, value !== undefined ? value : null);
+  }
+
+  const edges: Map<string, Option<EdgeStyleEntry>> = new Map();
+  for (const change of edit.edgeChanges) {
+    const value: EdgeStyleEntry | undefined = current.edges[change.edgeId];
+    edges.set(change.edgeId, value !== undefined ? value : null);
+  }
+
+  const groups: Map<string, Option<GroupStyleEntry>> = new Map();
+  for (const change of edit.groupChanges) {
+    const value: GroupStyleEntry | undefined = current.groups[change.groupId];
+    groups.set(change.groupId, value !== undefined ? value : null);
+  }
+
+  const annotations: Map<string, Option<AnnotationEntry>> = new Map();
+  for (const change of edit.annotationChanges) {
+    const value: AnnotationEntry | undefined = current.annotations[change.annotationId];
+    annotations.set(change.annotationId, value !== undefined ? value : null);
+  }
+
+  const canvasTouched: boolean = edit.canvasAfter !== undefined;
+  const canvasBefore: Option<CanvasStyle> = canvasTouched
+    ? (current.canvas !== undefined ? current.canvas : null)
+    : null;
+  const themeRefTouched: boolean = edit.themeRefAfter !== undefined;
+  const themeRefBefore: Option<string> = themeRefTouched
+    ? (current.themeRef !== undefined ? current.themeRef : null)
+    : null;
+
+  return {
+    nodes,
+    edges,
+    groups,
+    annotations,
+    canvasTouched,
+    canvasBefore,
+    themeRefTouched,
+    themeRefBefore,
+    pendingEditsBefore: current.pendingEdits,
+  };
 }
 export function pushUndoEntry(log: UndoEntry[], entry: UndoEntry, nowMs: number, coalesceWindowMs: number): UndoEntry[] {
   throw new Error('not implemented');
@@ -27,5 +79,5 @@ export interface BeforeSnapshot {
   canvasBefore: Option<CanvasStyle>;
   themeRefTouched: boolean;
   themeRefBefore: Option<string>;
-  pendingEditsBefore: archeglyph.style.v1.StyleEdit[];
+  pendingEditsBefore: StyleEdit[];
 }

@@ -42,20 +42,22 @@ execution:
       so individual decl docs don't need to restate them):
 
       Style + layout:
-      - Follow `docs/style-guide.md` exactly. It's the single source of truth for
-        archeglyph TS conventions AND the Koine lift rules (this code must round-trip
-        cleanly through `koine-lifter-ts` into the Archelemma IR — most "weird"
-        constraints come from there). Particularly relevant sections:
-        - §2 Approved patterns (canonical TS forms — write code in these shapes).
-        - §3.3 Option<T> / Result<T, E> canonical shapes — import from
-          `@archeglyph/proto/util/result`. Never invent your own Result variants.
-        - §3.5–3.6 named imports / exports only, no re-exports.
-        - §3.7 boundary code rules (where throwing IS allowed — ops only).
-        - §4 Conventions Koine doesn't enforce but archeglyph commits to.
-        - §6 Cascading-loss patterns — avoid bodies that are mostly `await` chains
-          (per §6, those become Unsupported in the IR). Restructure as adapter
-          calls + sync helpers when possible.
-        - §7 Forbidden patterns (mutation through aliased refs, etc.).
+      - Follow `docs/style-guide.md` exactly. Its mechanical rules (§2) are derived
+        from what archegraph extracts and verifies; its house style (§3) is short.
+        Particularly relevant:
+        - §2.2–2.3: annotate every parameter, return type and field; never put an
+          inline union (`T | null`), intersection, or `any`/`unknown` in a signature
+          or field — use the named aliases `Option<T>` / `Result<T, E>` from
+          `@archeglyph/proto/util/result`, or a named alias declared once.
+        - §2.4: no getters/setters, no function overloads, named imports/exports
+          only (barrel re-exports are fine).
+        - §1.5 / §3.2: `Result<T, E>` in pure logic; `try/catch` and `instanceof`
+          only inside one named boundary function per interop surface (ELK, FSA,
+          fetch, JSON.parse), which returns a Result.
+        - §3.3: proto messages via `create(Schema, { ...existing, field })` (spread is
+          fine); archebuild classes via `Object.assign(new Xxx(), {...})`.
+        - Spread, destructuring, default params, per-method generics, `extends Error`
+          are all allowed — do not write around them.
       - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
       - For services: write a class `<Interface>Impl implements <Interface>`.
         Import the interface and request/response types from `./schema_gen`.

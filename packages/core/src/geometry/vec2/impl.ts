@@ -7,7 +7,7 @@ export function vec2toProto(v: Vec2): Vec2 {
   throw new Error('not implemented');
 }
 export function length(v: Vec2): number {
-  throw new Error('not implemented');
+  return Math.hypot(v.x, v.y);
 }
 export function add(a: Vec2, b: Vec2): Vec2 {
   throw new Error('not implemented');

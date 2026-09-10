@@ -23,7 +23,10 @@ export function dot(a: Vec2, b: Vec2): number {
   throw new Error('not implemented');
 }
 export function sub(a: Vec2, b: Vec2): Vec2 {
-  throw new Error('not implemented');
+  return {
+    x: a.x - b.x,
+    y: a.y - b.y,
+  };
 }
 export function angle(v: Vec2): number {
   throw new Error('not implemented');

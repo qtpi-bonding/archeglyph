@@ -20,7 +20,7 @@ export interface Vec2 {
   y: number;
 }
 export function dot(a: Vec2, b: Vec2): number {
-  throw new Error('not implemented');
+  return a.x * b.x + a.y * b.y;
 }
 export function sub(a: Vec2, b: Vec2): Vec2 {
   throw new Error('not implemented');

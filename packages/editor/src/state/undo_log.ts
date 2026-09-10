@@ -15,8 +15,23 @@ export interface UndoEntry {
 export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
   throw new Error('not implemented');
 }
-export function pushUndoEntry(log: UndoEntry[], entry: UndoEntry, nowMs: number, coalesceWindowMs: number): UndoEntry[] {
-  throw new Error('not implemented');
+export function pushUndoEntry(
+  log: UndoEntry[],
+  entry: UndoEntry,
+  nowMs: number,
+  coalesceWindowMs: number,
+): UndoEntry[] {
+  const last = log.length > 0 ? log[log.length - 1] : undefined;
+  if (
+    last !== undefined &&
+    entry.coalesceKey !== undefined &&
+    last.coalesceKey === entry.coalesceKey &&
+    nowMs - last.tsMs <= coalesceWindowMs
+  ) {
+    const merged: UndoEntry = { ...entry, beforeSnapshot: last.beforeSnapshot };
+    return [...log.slice(0, -1), merged];
+  }
+  return [...log, entry];
 }
 export interface BeforeSnapshot {
   nodes: Map<string, Option<NodeStyleEntry>>;

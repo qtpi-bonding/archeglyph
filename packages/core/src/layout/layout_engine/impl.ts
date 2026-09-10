@@ -11,6 +11,7 @@ export interface LayoutEngine {
   layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
+/** Coordinates layout adapters and applies resolved geometry overrides. */
 export class LayoutEngineImpl implements LayoutEngine {
   private readonly adapter: LayoutAdapter;
 
@@ -24,10 +25,8 @@ export class LayoutEngineImpl implements LayoutEngine {
       return result;
     }
 
-    // ELK supplies the computed geometry, while explicitly resolved layout
-    // values are authoritative when present.  Keep this merge here rather
-    // than in the adapter so adapters remain concerned only with producing a
-    // laid-out diagram.
+    // The adapter supplies computed geometry, while explicitly resolved layout
+    // values remain authoritative when present.
     const laid = result.value;
     const resolvedNodeById = new Map(request.diagram.nodes.map(n => [n.id, n]));
     const resolvedGroupById = new Map(request.diagram.groups.map(g => [g.id, g]));

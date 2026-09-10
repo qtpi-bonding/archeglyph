@@ -26,7 +26,10 @@ export function boundsUnion(a: Bounds, b: Bounds): Bounds {
   throw new Error('not implemented');
 }
 export function boundsCentre(b: Bounds): Vec2 {
-  throw new Error('not implemented');
+  return {
+    x: (b.minX + b.maxX) / 2,
+    y: (b.minY + b.maxY) / 2,
+  };
 }
 export function boundsProjectToEdge(b: Bounds, toward: Vec2): Vec2 {
   throw new Error('not implemented');

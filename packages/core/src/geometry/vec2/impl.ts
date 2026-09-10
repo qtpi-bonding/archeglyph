@@ -32,7 +32,11 @@ export function angle(v: Vec2): number {
   throw new Error('not implemented');
 }
 export function normalize(v: Vec2): Vec2 {
-  throw new Error('not implemented');
+  const magnitude = Math.hypot(v.x, v.y);
+  if (magnitude === 0) {
+    return { x: 0, y: 0 };
+  }
+  return { x: v.x / magnitude, y: v.y / magnitude };
 }
 export function scale(v: Vec2, s: number): Vec2 {
   throw new Error('not implemented');

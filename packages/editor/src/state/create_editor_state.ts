@@ -18,6 +18,9 @@ import {
 import { Option } from '@archeglyph/proto/util/result';
 import { EditorState } from './editor_state';
 
+/** Undo-entry coalescing window in ms, passed to undo_log.ts's pushUndoEntry. See file doc. */
+const COALESCE_WINDOW_MS: number = 500;
+
 type BeforeSnapshot = {
   nodes: Map<string, Option<NodeStyleEntry>>;
   edges: Map<string, Option<EdgeStyleEntry>>;

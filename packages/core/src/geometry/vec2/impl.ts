@@ -10,7 +10,10 @@ export function length(v: Vec2): number {
   return Math.hypot(v.x, v.y);
 }
 export function add(a: Vec2, b: Vec2): Vec2 {
-  throw new Error('not implemented');
+  return {
+    x: a.x + b.x,
+    y: a.y + b.y,
+  };
 }
 export function distance(a: Vec2, b: Vec2): number {
   throw new Error('not implemented');

@@ -23,6 +23,11 @@ export class LayoutEngineImpl implements LayoutEngine {
     if (result.kind === 'err') {
       return result;
     }
+
+    // ELK supplies the computed geometry, while explicitly resolved layout
+    // values are authoritative when present.  Keep this merge here rather
+    // than in the adapter so adapters remain concerned only with producing a
+    // laid-out diagram.
     const laid = result.value;
     const resolvedNodeById = new Map(request.diagram.nodes.map(n => [n.id, n]));
     const resolvedGroupById = new Map(request.diagram.groups.map(g => [g.id, g]));

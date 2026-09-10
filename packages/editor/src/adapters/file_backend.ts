@@ -40,7 +40,7 @@ export class FileBackend implements CommentBackend {
       if (edit.id === editRef) {
         const prior: Comment[] = edit.thread !== undefined ? edit.thread.comments : [];
         const updatedThread: CommentThread = create(CommentThreadSchema, {
-          comments: prior.concat([comment]),
+          comments: [...prior, comment],
           resolved: edit.thread !== undefined ? edit.thread.resolved : false,
           resolvedBy: edit.thread !== undefined ? edit.thread.resolvedBy : undefined,
           resolvedAtMs: edit.thread !== undefined ? edit.thread.resolvedAtMs : undefined,

@@ -68,6 +68,12 @@ export class UrlParamAdapter implements HostAdapter {
   }
 
   async save(stylesheet: Stylesheet): Promise<void> {
+    // Remote diagrams are deliberately read-only.  `loadedDiagram` is also
+    // populated for remote loads, so checking it alone would accidentally
+    // allow a caller to mutate the URL despite canSave() being false.
+    if (!this.canSave()) {
+      return;
+    }
     const diagram: Diagram | null = this.loadedDiagram;
     if (diagram !== null) {
       const diagJson: string = toJson(DiagramSchema, diagram);

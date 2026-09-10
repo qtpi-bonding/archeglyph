@@ -4,7 +4,14 @@ export function boundsIntersects(a: Bounds, b: Bounds): boolean {
   throw new Error('not implemented');
 }
 export function boundsFromRect(position: Vec2, size: Vec2): Bounds {
-  throw new Error('not implemented');
+  const endX = position.x + size.x;
+  const endY = position.y + size.y;
+  return {
+    minX: Math.min(position.x, endX),
+    minY: Math.min(position.y, endY),
+    maxX: Math.max(position.x, endX),
+    maxY: Math.max(position.y, endY),
+  };
 }
 export interface Bounds {
   minX: number;

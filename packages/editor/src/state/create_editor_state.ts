@@ -43,7 +43,6 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   };
 
   const undo = (): void => {
-    markChanged();
     const undoLog: UndoEntry[] = getUndoLog();
     if (undoLog.length === 0) {
       return;
@@ -54,10 +53,10 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     setStylesheet(restored);
     setUndoLog(undoLog.slice(0, -1));
     setRedoLog(getRedoLog().concat([entry]));
+    markChanged();
   };
 
   const redo = (): void => {
-    markChanged();
     const redoLog: UndoEntry[] = getRedoLog();
     if (redoLog.length === 0) {
       return;
@@ -76,6 +75,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     setStylesheet(updated);
     setUndoLog(getUndoLog().concat([newEntry]));
     setRedoLog(redoLog.slice(0, -1));
+    markChanged();
   };
 
   return {

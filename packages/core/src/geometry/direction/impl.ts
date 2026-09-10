@@ -4,5 +4,12 @@ export function isWithinCone(origin: Vec2, direction: Vec2, target: Vec2, halfAn
   throw new Error('not implemented');
 }
 export function angleBetween(a: Vec2, b: Vec2): number {
-  throw new Error('not implemented');
+  let angle = Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x);
+  while (angle <= -Math.PI) {
+    angle += 2 * Math.PI;
+  }
+  while (angle > Math.PI) {
+    angle -= 2 * Math.PI;
+  }
+  return angle;
 }

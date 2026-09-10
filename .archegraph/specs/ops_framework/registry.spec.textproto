@@ -26,6 +26,19 @@ methods: [
   #   import { renderOp } from './render';
   #   export const REGISTRY: Operation<unknown, unknown>[] = [renderOp, ...];
   { name: "REGISTRY"
+    doc:
+      "REGISTRY: the array. Spec models it as a zero-input function returning\n"
+      "Operation<any, any>[] so the contract has a node; emit as `export const`,\n"
+      "not a function.\n"
+      "\n"
+      "TypeScript code (write exactly):\n"
+      "  import type { Operation } from './op';\n"
+      "\n"
+      "  export const REGISTRY: Operation<unknown, unknown>[] = [];\n"
+      "\n"
+      "When ops are added in future pillars, the lines look like:\n"
+      "  import { renderOp } from './render';\n"
+      "  export const REGISTRY: Operation<unknown, unknown>[] = [renderOp, ...];"
     inputs: []
     output: { unsupported: { reason: UNION_AT_TYPE_POSITION } }
     uses: ["Operation"]

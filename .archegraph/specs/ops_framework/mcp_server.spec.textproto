@@ -31,6 +31,19 @@ methods: [
   # No MCP SDK imports in the stub body. The dep is pinned in package.json so
   # the future implementation has type-checked access immediately.
   { name: "runMcpServer"
+    doc:
+      "runMcpServer: stub entry for the mcp subcommand.\n"
+      "\n"
+      "TypeScript signature:\n"
+      "  export async function runMcpServer(ctx: OpContext): Promise<void>\n"
+      "\n"
+      "Stub implementation:\n"
+      "  ctx.logger.error('mcp subcommand is not yet implemented in v1');\n"
+      "  ctx.logger.error('this is a stub; full MCP server lands after op_render');\n"
+      "  process.exit(1);\n"
+      "\n"
+      "No MCP SDK imports in the stub body. The dep is pinned in package.json so\n"
+      "the future implementation has type-checked access immediately."
     is_async: true
     inputs: [
       { name: "ctx", type: { named: { symbol: "OpContext" } } }

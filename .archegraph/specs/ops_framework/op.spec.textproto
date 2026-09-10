@@ -191,6 +191,21 @@ structs: [
       { name: "logger",      type: { named: { symbol: "Logger" } } }
     ]
     typescript: {}
+  },
+  { name: "OpErrorCause"
+    doc:
+      "Type alias for the `cause` field every `<Op>OpError` class carries. "
+      "Every `*OpError` in this codebase currently spells this field as bare "
+      "`unknown` — a TS-primitive type with no named symbol, so archegraph's "
+      "structural diff can never see or verify it (docs/relaxing-koine-"
+      "constraints.md §3.7). Giving it a name doesn't change what's actually "
+      "assignable (still effectively anything: Error instances from catch "
+      "blocks, this codebase's plain non-Error `*Error` data classes like "
+      "LoadError/ResolveError/PipelineError, or undefined) — the only change "
+      "is that `<Op>OpError#cause` now has a real Dependency edge to point "
+      "at. Emit exactly: `export type OpErrorCause = unknown;`."
+    aliased: { primitive: PRIMITIVE_UNSPECIFIED }
+    typescript: {}
   }
 ]
 

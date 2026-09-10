@@ -1,0 +1,15 @@
+# These 6 structs' only change is their `cause` field's TYPE annotation
+# (unknown -> OpErrorCause) — field name/count is unchanged, so archegraph's
+# structural diff doesn't see it (same class of gap as the layout pillar's
+# constructor-injection delta: see docs/feedback in the archegraph repo).
+# Force MODIFIED explicitly; if that alone isn't enough, these should still
+# get swept in once OpErrorCause (their new dependency) actually exists in
+# gcode, per the dependency-cascade behavior observed on the layout build.
+node_deltas: [
+  { symbol: "packages/ops/src/bind/bind_op_error.ts/BindOpError#" change_type: MODIFIED },
+  { symbol: "packages/ops/src/format/format_op_error.ts/FormatOpError#" change_type: MODIFIED },
+  { symbol: "packages/ops/src/init/init_op_error.ts/InitOpError#" change_type: MODIFIED },
+  { symbol: "packages/ops/src/render/render_op_error.ts/RenderOpError#" change_type: MODIFIED },
+  { symbol: "packages/ops/src/validate/validate_op_error.ts/ValidateOpError#" change_type: MODIFIED },
+  { symbol: "packages/ops/src/watch/watch_op_error.ts/WatchOpError#" change_type: MODIFIED }
+]

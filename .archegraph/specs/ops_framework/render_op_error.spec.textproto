@@ -1,0 +1,19 @@
+# Cross-pillar delta — see bind_op_error.spec.textproto in this same directory
+# for the full rationale (ops_framework delta, docs/relaxing-koine-constraints.md §3.7).
+# NOTE: unlike its siblings, the current RenderOpError does NOT extend Error
+# (a pre-existing inconsistency in this file, not introduced or fixed here —
+# out of scope for this delta). Preserve that as-is: no `extends:` on this decl.
+
+file: "packages/ops/src/render/render_op_error.ts"
+doc: "RenderOpError: boundary error class thrown from renderOp.execute."
+
+structs: [
+  { name: "RenderOpError"
+    change_type: MODIFIED
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { named: { symbol: "OpErrorCause" } } }
+    ]
+    typescript: {}
+  }
+]

@@ -1,0 +1,17 @@
+# Cross-pillar delta — see bind_op_error.spec.textproto in this same directory
+# for the full rationale (ops_framework delta, docs/relaxing-koine-constraints.md §3.7).
+
+file: "packages/ops/src/watch/watch_op_error.ts"
+doc: "WatchOpError: boundary Error class thrown from watchOp.execute."
+
+structs: [
+  { name: "WatchOpError"
+    change_type: MODIFIED
+    extends: [{ named: { symbol: "Error" } }]
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { named: { symbol: "OpErrorCause" } } }
+    ]
+    typescript: {}
+  }
+]

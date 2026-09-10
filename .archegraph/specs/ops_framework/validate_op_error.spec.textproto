@@ -1,0 +1,17 @@
+# Cross-pillar delta — see bind_op_error.spec.textproto in this same directory
+# for the full rationale (ops_framework delta, docs/relaxing-koine-constraints.md §3.7).
+
+file: "packages/ops/src/validate/validate_op_error.ts"
+doc: "ValidateOpError: boundary Error class thrown from validateOp.execute."
+
+structs: [
+  { name: "ValidateOpError"
+    change_type: MODIFIED
+    extends: [{ named: { symbol: "Error" } }]
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { named: { symbol: "OpErrorCause" } } }
+    ]
+    typescript: {}
+  }
+]

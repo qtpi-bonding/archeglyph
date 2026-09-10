@@ -1,0 +1,21 @@
+# Cross-pillar delta (same pattern as pipeline/ops_render_op.spec.textproto):
+# restores the `cause` field's Dependency edge per the ops_framework delta
+# (docs/relaxing-koine-constraints.md §3.7). Only `cause`'s type changes —
+# `stage` and the extends-Error shape are unchanged from bind's own spec at
+# .archegraph/specs/bind/bind_op_error.spec.textproto (left as-is; historical
+# pillar, not touched per CLAUDE.md's co-evolution policy).
+
+file: "packages/ops/src/bind/bind_op_error.ts"
+doc: "BindOpError: boundary Error class thrown from bindOp.execute."
+
+structs: [
+  { name: "BindOpError"
+    change_type: MODIFIED
+    extends: [{ named: { symbol: "Error" } }]
+    fields: [
+      { name: "stage", type: { primitive: CHARACTER } },
+      { name: "cause", type: { named: { symbol: "OpErrorCause" } } }
+    ]
+    typescript: {}
+  }
+]

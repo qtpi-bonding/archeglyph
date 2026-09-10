@@ -1,0 +1,16 @@
+# New pillar file, wave 1 of docs/implementation-order.md ("layout Δ: host ELK").
+# Browser/editor-side counterpart to elk_host_node. No worker thread, no
+# node:module — import the browser-bundled build directly:
+#   import ELK from 'elkjs/lib/elk.bundled.js';
+#   return new ELK();
+# Only packages/editor imports this file; CLI ops never do.
+
+file: "packages/core/src/layout/elk_host_browser/impl.ts"
+doc: "Browser/editor-side ELK constructor — bundled build, no worker thread, no node:module import."
+
+methods: [
+  { name: "createBrowserElk"
+    doc: "Returns a fresh ELK instance built from elkjs's bundled browser build (import ELK from 'elkjs/lib/elk.bundled.js'). Callers: packages/editor only."
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ELK" } }
+  }
+]

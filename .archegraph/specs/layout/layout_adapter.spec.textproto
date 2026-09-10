@@ -7,10 +7,26 @@
 # applied here. ElkAdapterImpl produces positions purely from the algorithm's
 # output. LayoutEngineImpl applies overrides on top of this result.
 #
-# Implementation notes for ElkAdapterImpl:
+# MODIFIED (host-injected ELK, wave 1 of docs/implementation-order.md):
+# ElkAdapterImpl's constructor now takes `elk: ELK` (the type from the
+# `elkjs` package's default export) as a required param, stored as
+# `private readonly elk`. Remove the module-level `const elk = new ELK(...)`
+# singleton AND the `import { createRequire } from 'node:module'` /
+# `import ELK from 'elkjs'` construction logic entirely — this file must not
+# decide which ELK execution strategy (Node worker vs. browser-bundled) to
+# use; that choice is the caller's, via the sibling elk_host_node /
+# elk_host_browser factories. Use `this.elk.layout(...)` wherever the old
+# module-level `elk` was used. `import ELK from 'elkjs'` stays as a
+# type-only-ish import (needed for the `elk: ELK` field type).
 #
-# Import: `import ELK from 'elkjs/lib/elk.bundled.js'`
-# Construct once: `const elk = new ELK()`
+# Also replace every `any`-typed local (elkGraph, elkNode, elk edge/section
+# objects) with elkjs's own exported types: `ElkNode`, `ElkExtendedEdge`,
+# `ElkEdgeSection` (from 'elkjs/lib/elk-api', or import from the main
+# 'elkjs' module if it re-exports them — check elkjs's own .d.ts). Keep
+# type assertions only where ElkShape's optional x/y/width/height genuinely
+# need a fallback (e.g. `elkNode.x ?? 0`), same as today.
+#
+# Implementation notes for ElkAdapterImpl (unchanged from before):
 #
 # Building the elkjs input:
 # - Root ELKNode: id="root", layoutOptions: { "org.eclipse.elk.algorithm":
@@ -37,16 +53,20 @@
 #   position from annotation.layout?.position ?? { x: 0, y: 0 }.
 # - Build LaidOutNode/LaidOutEdge/LaidOutGroup/LaidOutAnnotation/LaidOutDiagram
 #   with all fields supplied at construction time (see archebuild.yaml rule).
-#   NOTE: accessing elkjs result properties requires type assertions (e.g.
-#   `(elkNode as any).x`) — this is unavoidable at the elkjs boundary and
-#   acceptable here. Keep all type assertions confined to this file.
 
 file: "packages/core/src/layout/layout_adapter/impl.ts"
-doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back."
+doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back. ELK instance is host-injected (see elk_host_node / elk_host_browser); this file has no node:module or environment-specific import."
 
 structs: [
   { name: "ElkAdapterImpl"
+    change_type: MODIFIED
     implements: [{ named: { symbol: "LayoutAdapter" } }]
+    fields: [
+      { name: "elk"
+        doc: "Host-injected ELK instance (from elk_host_node or elk_host_browser). Set via a real constructor param — `constructor(private readonly elk: ELK) {}` — NOT the Object.assign data-class convention; this is a service class with a real dependency-injected constructor."
+        type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ELK" } }
+      }
+    ]
     methods: [
       { name: "runLayout"
         is_async: true

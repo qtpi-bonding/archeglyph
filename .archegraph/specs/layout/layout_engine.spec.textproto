@@ -15,15 +15,32 @@
 #   (startPoint=waypoints[0], endPoint=waypoints[last], bendPoints=middle).
 # - Annotations: already explicitly positioned by ElkAdapter; no override step.
 #
-# The LayoutEngineImpl holds a LayoutAdapter instance (ElkAdapterImpl, constructed
-# internally). There is no external injection in v1 — the adapter is an implementation detail.
+# MODIFIED (host-injected ELK, wave 1 of docs/implementation-order.md):
+# LayoutEngineImpl's constructor now takes a required `adapter: LayoutAdapter`
+# param, stored as `private readonly adapter` (same field name/usage as
+# today — only how it's populated changes). Remove the no-arg constructor
+# that internally did `this.adapter = new ElkAdapterImpl()`; the adapter
+# (and therefore which ELK host it wraps — Node worker vs. browser-bundled)
+# is now the caller's decision. The `layout()` method body is unchanged.
+# Callers (renderPipeline, and anywhere else that did `new LayoutEngineImpl()`)
+# now construct the adapter themselves, e.g.
+# `new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()))` on the CLI side
+# or `new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()))` in the
+# editor — that wiring lives in each caller's own file, not here.
 
 file: "packages/core/src/layout/layout_engine/impl.ts"
-doc: "Layout orchestrator — runs elkjs via ElkAdapter then applies style position overrides."
+doc: "Layout orchestrator — runs elkjs via a host-injected LayoutAdapter then applies style position overrides."
 
 structs: [
   { name: "LayoutEngineImpl"
+    change_type: MODIFIED
     implements: [{ named: { symbol: "LayoutEngine" } }]
+    fields: [
+      { name: "adapter"
+        doc: "Host-injected LayoutAdapter, e.g. `new ElkAdapterImpl(createNodeElk())` on the CLI side or `new ElkAdapterImpl(createBrowserElk())` in the editor. Set via a real constructor param — `constructor(private readonly adapter: LayoutAdapter) {}` — replacing the old no-arg constructor that built `new ElkAdapterImpl()` internally. NOT the Object.assign data-class convention; this is a service class with a real dependency-injected constructor."
+        type: { named: { symbol: "LayoutAdapter" } }
+      }
+    ]
     methods: [
       { name: "layout"
         is_async: true

@@ -1,0 +1,27 @@
+# New pillar file, wave 1 of docs/implementation-order.md ("layout Δ: host ELK").
+# The ONLY file in this pillar allowed to import 'node:module' — that's the
+# whole point of splitting it out of layout_adapter/impl.ts, which must stay
+# bundleable for the browser (packages/editor). Only CLI-side ops (render,
+# validate, watch) import this file; packages/editor never does.
+#
+# elkjs's default in-process "fake worker" fallback (elk-worker.min.js,
+# GWT-compiled) does not evaluate correctly under Bun's CJS interop — it
+# comes back with an empty module and never settles. Route through a real
+# worker thread via elkjs's documented Node worker path instead:
+#   import ELK from 'elkjs';
+#   import { createRequire } from 'node:module';
+#   const require = createRequire(import.meta.url);
+#   return new ELK({ workerUrl: require.resolve('elkjs/lib/elk-worker.min.js') });
+# This is exactly what layout_adapter/impl.ts used to do at module scope —
+# moved here verbatim, just wrapped in a function instead of a module-level
+# singleton, so each caller can construct its own instance.
+
+file: "packages/core/src/layout/elk_host_node/impl.ts"
+doc: "Node/CLI-side ELK constructor — the only file in the layout pillar that may import node:module."
+
+methods: [
+  { name: "createNodeElk"
+    doc: "Returns a fresh ELK instance configured with the Node worker-thread path (see file doc for why). Callers: CLI ops that construct ElkAdapterImpl."
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ELK" } }
+  }
+]

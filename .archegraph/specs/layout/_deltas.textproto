@@ -1,0 +1,8 @@
+# LayoutEngineImpl's constructor body changes (host-injected adapter instead of
+# `new ElkAdapterImpl()` inline) without any field/method signature change, so
+# the structural diff sees it as identical to gcode and would otherwise skip
+# scheduling it. Force MODIFIED explicitly so the build agent revisits the
+# constructor body per layout_engine.spec.textproto's doc.
+node_deltas: [
+  { symbol: "packages/core/src/layout/layout_engine/impl.ts/LayoutEngineImpl#" change_type: MODIFIED }
+]

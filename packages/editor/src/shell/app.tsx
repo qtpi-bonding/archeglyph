@@ -6,7 +6,8 @@ import { create } from '@bufbuild/protobuf';
 import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
-import { LoadResult } from '../adapters/host_adapter';
+import { AdapterError, LoadResult } from '../adapters/host_adapter';
+import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
 import { Canvas } from '../canvas/canvas';
@@ -29,9 +30,13 @@ export const App: Component<{}> = (): JSX.Element => {
     setSelected: (el: SelectedElement | null): void => { setSelectedSignal(el); },
   };
 
-  function loadFrom(result: LoadResult): void {
-    const stylesheet: Stylesheet = result.stylesheet ?? create(StylesheetSchema, {});
-    setState(createEditorState(result.diagram, stylesheet));
+  function loadFrom(result: Result<LoadResult, AdapterError>): void {
+    if (result.kind === 'err') {
+      console.error(`archeglyph: failed to load diagram: ${result.error.message}`);
+      return;
+    }
+    const stylesheet: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, {});
+    setState(createEditorState(result.value.diagram, stylesheet));
   }
 
   function onOpen(): void {

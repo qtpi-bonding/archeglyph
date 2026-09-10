@@ -2,13 +2,17 @@
 
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { Result } from '@archeglyph/proto/util/result';
 
 export class LoadResult {
   diagram!: Diagram;
   stylesheet?: Stylesheet;
 }
+export class AdapterError {
+  message!: string;
+}
 export interface HostAdapter {
   canSave(): boolean;
-  load(): Promise<LoadResult>;
-  save(stylesheet: Stylesheet): Promise<void>;
+  load(): Promise<Result<LoadResult, AdapterError>>;
+  save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>>;
 }

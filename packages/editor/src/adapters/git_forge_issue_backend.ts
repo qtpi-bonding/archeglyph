@@ -4,6 +4,8 @@ import { create } from '@bufbuild/protobuf';
 import { Comment, CommentSchema, CommentThread, CommentThreadSchema } from '@archeglyph/proto/gen/style_pb';
 import { fromJson, toJson } from '@archeglyph/proto/util/json';
 import { CommentBackend, ThreadEntry } from './comment_backend';
+import { AdapterError } from './host_adapter';
+import { Ok, Result } from '@archeglyph/proto/util/result';
 import { GitForge, RawComment } from './git_forge';
 
 interface Envelope {
@@ -37,7 +39,7 @@ export class GitForgeIssueBackend implements CommentBackend {
     this.issue = issue;
   }
 
-  async fetchThreads(): Promise<Array<ThreadEntry>> {
+  async fetchThreads(): Promise<Result<Array<ThreadEntry>, AdapterError>> {
     const rawComments: Array<RawComment> = await this.forge.fetchIssueComments(this.issue);
     const threadMap: Map<string, Comment[]> = new Map<string, Comment[]>();
     for (const rawComment of rawComments) {
@@ -60,10 +62,10 @@ export class GitForgeIssueBackend implements CommentBackend {
       const thread: CommentThread = create(CommentThreadSchema, { comments });
       entries.push(Object.assign(new ThreadEntry(), { editRef, thread }));
     }
-    return entries;
+    return Ok(entries);
   }
 
-  async postComment(editRef: string, comment: Comment): Promise<void> {
+  async postComment(editRef: string, comment: Comment): Promise<Result<void, AdapterError>> {
     const commentJsonStr: string = toJson(CommentSchema, comment);
     const commentJsonObj: unknown = JSON.parse(commentJsonStr);
     const envelope: Envelope = { schema_version: 1, kind: 'comment', edit_ref: editRef, payload: commentJsonObj };
@@ -82,5 +84,6 @@ export class GitForgeIssueBackend implements CommentBackend {
       `[💬 Discuss in archeglyph](https://archeglyph.dev/edit?issue=${this.issue})`,
     ].join('\n');
     await this.forge.postIssueComment(this.issue, mdBody);
+    return Ok(undefined);
   }
 }

@@ -1,34 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { HostAdapter, LoadResult } from './host_adapter';
+import { AdapterError, HostAdapter, LoadResult } from './host_adapter';
 import { type Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { type Diagram } from '@archeglyph/proto/gen/content_pb';
-import { type Result } from '@archeglyph/proto/util/result';
+import { Err, Ok, type Result } from '@archeglyph/proto/util/result';
 import { loadDiagram, loadStylesheet, type LoadError } from '@archeglyph/core/loaders';
 import { toJson } from '@archeglyph/proto/util/json';
+
+function toAdapterError(e: unknown): AdapterError {
+  return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
+}
 
 export class BrowserFsAdapter implements HostAdapter {
   private diagHandle: FileSystemFileHandle | null = null;
   private styleHandle: FileSystemFileHandle | null = null;
 
   canSave(): boolean {
-    return true;
+    return this.styleHandle !== null || this.diagHandle !== null;
   }
 
-  async load(): Promise<LoadResult> {
-    if ('showOpenFilePicker' in window) {
-      return this.loadViaFsa();
-    } else {
-      return this.loadViaInput();
+  async load(): Promise<Result<LoadResult, AdapterError>> {
+    try {
+      const result: LoadResult = 'showOpenFilePicker' in window
+        ? await this.loadViaFsa()
+        : await this.loadViaInput();
+      return Ok(result);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 
-  async save(stylesheet: Stylesheet): Promise<void> {
-    const text: string = toJson(StylesheetSchema, stylesheet);
-    if ('showSaveFilePicker' in window) {
-      await this.saveViaFsa(text);
-    } else {
-      this.saveViaDownload(text);
+  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
+    try {
+      const text: string = toJson(StylesheetSchema, stylesheet);
+      if ('showSaveFilePicker' in window) {
+        await this.saveViaFsa(text);
+      } else {
+        this.saveViaDownload(text);
+      }
+      return Ok(undefined);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
     }
   }
 
@@ -40,17 +52,17 @@ export class BrowserFsAdapter implements HostAdapter {
     const diagHandle: FileSystemFileHandle | null = handles.find(
       (h: FileSystemFileHandle): boolean => h.name.endsWith('.diag.json'),
     ) ?? null;
-    const styleHandle: FileSystemFileHandle | null = handles.find(
-      (h: FileSystemFileHandle): boolean => h.name.endsWith('.style.json'),
-    ) ?? null;
     if (diagHandle !== null) {
-      this.diagHandle = diagHandle;
-      this.styleHandle = styleHandle;
+      const styleHandle: FileSystemFileHandle | null = handles.find(
+        (h: FileSystemFileHandle): boolean => h.name === styleNameForDiagram(diagHandle.name),
+      ) ?? null;
       const diagFile: File = await diagHandle.getFile();
       const diagText: string = await diagFile.text();
       const diagResult: Result<Diagram, LoadError> = await loadDiagram(diagText);
       if (diagResult.kind !== 'err') {
         const stylesheet: Stylesheet | undefined = await this.loadOptionalHandle(styleHandle);
+        this.diagHandle = diagHandle;
+        this.styleHandle = styleHandle;
         return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet });
       } else {
         throw new Error(diagResult.error.message);
@@ -82,10 +94,10 @@ export class BrowserFsAdapter implements HostAdapter {
     const diagFile: File | null = files.find(
       (f: File): boolean => f.name.endsWith('.diag.json'),
     ) ?? null;
-    const styleFile: File | null = files.find(
-      (f: File): boolean => f.name.endsWith('.style.json'),
-    ) ?? null;
     if (diagFile !== null) {
+      const styleFile: File | null = files.find(
+        (f: File): boolean => f.name === styleNameForDiagram(diagFile.name),
+      ) ?? null;
       const diagText: string = await diagFile.text();
       const diagResult: Result<Diagram, LoadError> = await loadDiagram(diagText);
       if (diagResult.kind !== 'err') {
@@ -106,10 +118,15 @@ export class BrowserFsAdapter implements HostAdapter {
           suggestedName: this.computeStyleName(),
           types: [{ description: 'Style files', accept: { 'application/json': ['.json'] } }],
         });
-    this.styleHandle = handle;
     const writable: FileSystemWritableFileStream = await handle.createWritable();
-    await writable.write(text);
-    await writable.close();
+    try {
+      await writable.write(text);
+      await writable.close();
+      this.styleHandle = handle;
+    } catch (error) {
+      await writable.abort();
+      throw error;
+    }
   }
 
   private saveViaDownload(text: string): void {
@@ -144,6 +161,14 @@ async function loadOptionalFile(file: File | null): Promise<Stylesheet | undefin
   } else {
     return undefined;
   }
+}
+
+function styleNameForDiagram(diagName: string): string {
+  const suffix: string = '.diag.json';
+  const baseName: string = diagName.endsWith(suffix)
+    ? diagName.slice(0, diagName.length - suffix.length)
+    : diagName;
+  return `${baseName}.style.json`;
 }
 
 function pickFilesViaInput(): Promise<File[]> {

@@ -13,6 +13,8 @@ export interface OpContext {
   logger: Logger;
 }
 
+export type OpErrorCause = unknown;
+
 export interface Operation<P, O> {
   name: string;
   description: string;

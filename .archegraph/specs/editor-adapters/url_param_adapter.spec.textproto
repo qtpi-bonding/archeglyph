@@ -1,8 +1,15 @@
+# MODIFIED (wave 1 "editor-adapters Δ"). load() and save() wrap their existing
+# bodies in one top-level try/catch and return Result instead of a bare value
+# (load) or throwing implicitly on a malformed fetch/JSON (both). canSave()
+# is unchanged — it's already handle-aware (`this.inlineDiagramB64 !== null`),
+# not the unconditional-true bug browser_fs_adapter had.
+
 file: "packages/editor/src/adapters/url_param_adapter.ts"
 doc: "UrlParamAdapter — HostAdapter reading diagram/style from URL query params."
 
 structs: [
   { name: "UrlParamAdapter"
+    change_type: MODIFIED
     doc:
       "?d=<base64-json>: inline diagram; ?s=<base64-json>: inline style.\n"
       "canSave=true for ?d= — re-encodes edits into ?d=&?s= via history.replaceState.\n"
@@ -15,13 +22,21 @@ structs: [
         output: { primitive: BOOLEAN }
       },
       { name: "load"
+        doc: "Wrap the existing inline-base64/remote-fetch body in try/catch; return Result."
         is_async: true
-        output: { named: { symbol: "LoadResult" } }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LoadResult" } },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       },
       { name: "save"
+        doc: "Wrap the existing history.replaceState body in try/catch; return Result."
         is_async: true
         inputs: [{ name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }]
-        output: { primitive: VOID }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: VOID },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       }
     ]
     typescript: {}

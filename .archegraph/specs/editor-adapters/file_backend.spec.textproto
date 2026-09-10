@@ -1,20 +1,31 @@
+# MODIFIED (wave 1 "editor-adapters Δ"): both methods now return
+# Promise<Result<T, AdapterError>> per the updated CommentBackend interface.
+# FileBackend's bodies are pure in-memory Stylesheet manipulation and never
+# actually fail, so both methods just wrap their existing return value in
+# Ok(...) — no behavior change, no try/catch needed (nothing here can throw).
+
 file: "packages/editor/src/adapters/file_backend.ts"
 doc: "FileBackend — CommentBackend backed by Stylesheet.pending_edits[].thread."
 
 structs: [
   { name: "FileBackend"
+    change_type: MODIFIED
     doc:
       "Reads and writes comment threads directly from the in-memory stylesheet.\n"
       "Constructed with a SolidJS Accessor<Stylesheet> and Setter<Stylesheet>\n"
       "(the EditorState stylesheet getter and an updater callback). fetchThreads\n"
       "walks pending_edits and collects entries whose thread is non-empty.\n"
       "postComment splices into the matching thread (or creates one) and calls\n"
-      "the setter so the signal updates. No network calls. Architecture §4.4."
+      "the setter so the signal updates. No network calls, so always resolves\n"
+      "Ok(...). Architecture §4.4."
     implements: [{ named: { symbol: "CommentBackend" } }]
     methods: [
       { name: "fetchThreads"
         is_async: true
-        output: { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       },
       { name: "postComment"
         is_async: true
@@ -22,7 +33,10 @@ structs: [
           { name: "editRef",  type: { primitive: CHARACTER } },
           { name: "comment",  type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
         ]
-        output: { primitive: VOID }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: VOID },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       }
     ]
     typescript: {}

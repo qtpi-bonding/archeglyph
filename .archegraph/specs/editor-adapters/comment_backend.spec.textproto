@@ -1,3 +1,7 @@
+# MODIFIED (wave 1 "editor-adapters Δ"): both methods return
+# Promise<Result<T, AdapterError>> instead of a bare Promise<T>, matching
+# HostAdapter's boundary-method convention (see host_adapter.spec.textproto).
+
 file: "packages/editor/src/adapters/comment_backend.ts"
 doc: "CommentBackend contract and ThreadEntry helper type."
 
@@ -18,14 +22,18 @@ interfaces: [
   { name: "CommentBackend"
     doc:
       "Persistence for comment threads. Each thread is anchored to a StyleEdit\n"
-      "by editRef (the StyleEdit id). Async interface; FileBackend resolves\n"
-      "synchronously internally. GitHub backends use the §13.6 archeglyph\n"
-      "code-fence envelope. Architecture §4.4."
+      "by editRef (the StyleEdit id). Boundary interface: implementations never\n"
+      "throw — FileBackend resolves synchronously internally so its Result is\n"
+      "always Ok; the future git-forge backends wrap real network calls and can\n"
+      "genuinely Err. Architecture §4.4."
     methods: [
       { name: "fetchThreads"
         doc: "Load all threads across all edits. One ThreadEntry per StyleEdit that has comments."
         is_async: true
-        output: { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "Array", args: [{ named: { symbol: "ThreadEntry" } }] } },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       },
       { name: "postComment"
         doc: "Append a Comment to the thread for editRef. Creates the thread entry if absent."
@@ -34,7 +42,10 @@ interfaces: [
           { name: "editRef",  type: { primitive: CHARACTER } },
           { name: "comment",  type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
         ]
-        output: { primitive: VOID }
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: VOID },
+          { named: { symbol: "AdapterError" } }
+        ]}}
       }
     ]
   }

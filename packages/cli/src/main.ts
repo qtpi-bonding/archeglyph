@@ -11,6 +11,33 @@ function formatZodError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+// `cause` on an OpError is either a thrown Error or a core Result's error value
+// (e.g. LoadError = { message: string }, per @archeglyph/core/loaders) — both
+// shapes carry the real text on `.message`, so check that before falling back
+// to String(), which would otherwise stringify a plain object to '[object Object]'.
+function messageOf(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'object' && value !== null && 'message' in value) {
+    return String((value as { message: unknown }).message);
+  }
+  return String(value);
+}
+
+// Op-boundary errors (<Op>OpError) are archebuild-generated definite-assignment
+// classes: `Object.assign(new XOpError(), { stage, cause })` never sets `.message`,
+// so `err.message` is always '' even on classes that `extends Error`. Format from
+// `stage`/`cause` directly instead of trusting `.message`.
+function formatOpError(err: unknown): string {
+  if (typeof err === 'object' && err !== null && 'stage' in err) {
+    const errObj = err as { stage: unknown; cause?: unknown };
+    const stage = String(errObj.stage);
+    const cause = errObj.cause;
+    const causeText = messageOf(cause);
+    return causeText !== undefined ? `${stage}: ${causeText}` : stage;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function run(argv: string[]): Promise<void> {
   if (argv.length === 0 || argv[0] === '--help' || argv[0] === '-h' || argv[0] === 'help') {
     process.stdout.write(formatRootHelp(REGISTRY));
@@ -58,7 +85,7 @@ export async function run(argv: string[]): Promise<void> {
     const code = await dispatchCli(op, params, ctx);
     process.exit(code);
   } catch (err: unknown) {
-    ctx.logger.error(err instanceof Error ? err.message : String(err));
+    ctx.logger.error(formatOpError(err));
     process.exit(1);
   }
 }

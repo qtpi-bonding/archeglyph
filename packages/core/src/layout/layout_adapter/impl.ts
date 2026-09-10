@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import ELK from 'elkjs';
+import type { ELK } from 'elkjs';
 import { create } from '@bufbuild/protobuf';
 import { type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { EdgeSection } from '../edge_section';
@@ -21,20 +21,21 @@ const DEFAULT_WIDTH = 120;
 const DEFAULT_HEIGHT = 40;
 
 interface ElkPoint {
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
 }
 
 interface ElkSection {
-  startPoint?: ElkPoint;
+  id: string;
+  startPoint: ElkPoint;
   bendPoints?: ElkPoint[];
-  endPoint?: ElkPoint;
+  endPoint: ElkPoint;
 }
 
 interface ElkEdge {
   id: string;
-  sources?: string[];
-  targets?: string[];
+  sources: string[];
+  targets: string[];
   sections?: ElkSection[];
 }
 

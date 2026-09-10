@@ -27,6 +27,9 @@ import {
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { Result } from '@archeglyph/proto/util/result';
 import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
+import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
+import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
+import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 import { EditorState } from '../state/editor_state';
 import { Vec2, ViewportState } from './viewport';
 import { DragHandler } from './drag_handler';
@@ -219,6 +222,9 @@ function applyAllPendingEdits(stylesheet: Stylesheet): Stylesheet {
  * pointerdown on empty canvas → pan start (direct ViewportState mutation);
  * wheel → zoom (direct ViewportState mutation);
  * click without drag → setSelected via SelectionState. */
+
+const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
+
 export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element => {
   const viewport: ViewportState = Object.assign(new ViewportState(), { panX: 0, panY: 0, zoom: 1.0 });
   const drag: DragHandler = Object.assign(new DragHandler(), { state: props.state, viewport });
@@ -236,7 +242,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }));
 
   const [savedSvg] = createResource<string, RenderSource>(savedSource, async (src: RenderSource): Promise<string> => {
-    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme);
+    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
     if (result.kind === 'err') { return ''; }
     else { return result.value; }
   });
@@ -251,7 +257,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   });
 
   const [ghostSvg] = createResource<string, RenderSource>(ghostSource, async (src: RenderSource): Promise<string> => {
-    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme);
+    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
     if (result.kind === 'err') { return ''; }
     else { return result.value; }
   });

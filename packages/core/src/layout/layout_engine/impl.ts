@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { EdgeSection } from '../edge_section';
-import { ElkAdapterImpl, LayoutAdapter } from '../layout_adapter';
+import { LayoutAdapter } from '../layout_adapter';
 import { LaidOutDiagram } from '../laid_out_diagram';
 import { LayoutError } from '../layout_error';
 import { LayoutRequest } from '../layout_request';
@@ -13,11 +13,7 @@ export interface LayoutEngine {
 
 /** Coordinates layout adapters and applies resolved geometry overrides. */
 export class LayoutEngineImpl implements LayoutEngine {
-  private readonly adapter: LayoutAdapter;
-
-  constructor() {
-    this.adapter = new ElkAdapterImpl();
-  }
+  constructor(private readonly adapter: LayoutAdapter) {}
 
   async layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>> {
     const result = await this.adapter.runLayout(request.diagram);

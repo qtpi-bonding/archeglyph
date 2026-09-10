@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import ELK from 'elkjs';
-import { createRequire } from 'node:module';
 import { create } from '@bufbuild/protobuf';
-import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { EdgeSection } from '../edge_section';
 import { LaidOutAnnotation } from '../laid_out_annotation';
 import { LaidOutDiagram } from '../laid_out_diagram';
@@ -18,27 +17,61 @@ export interface LayoutAdapter {
   runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
-// elkjs's default in-process "fake worker" fallback (elk-worker.min.js, GWT-compiled)
-// does not evaluate correctly under Bun's CJS interop — it comes back with an empty
-// module and never settles. Route through a real worker thread via the `web-worker`
-// package instead, per elkjs's documented Node worker path.
-const require = createRequire(import.meta.url);
-const elk = new ELK({
-  workerUrl: require.resolve('elkjs/lib/elk-worker.min.js'),
-});
-
 const DEFAULT_WIDTH = 120;
 const DEFAULT_HEIGHT = 40;
 
-function vec2(x: number, y: number) {
+interface ElkPoint {
+  x?: number;
+  y?: number;
+}
+
+interface ElkSection {
+  startPoint?: ElkPoint;
+  bendPoints?: ElkPoint[];
+  endPoint?: ElkPoint;
+}
+
+interface ElkEdge {
+  id: string;
+  sources?: string[];
+  targets?: string[];
+  sections?: ElkSection[];
+}
+
+interface ElkNode {
+  id: string;
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  children?: ElkNode[];
+  edges?: ElkEdge[];
+}
+
+interface ElkGraph extends ElkNode {
+  layoutOptions: Record<string, string>;
+  children: ElkNode[];
+  edges: ElkEdge[];
+}
+
+interface NodePosition {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function vec2(x: number, y: number): Vec2 {
   return create(Vec2Schema, { x, y });
 }
 
 export class ElkAdapterImpl implements LayoutAdapter {
+  constructor(private readonly elk: ELK) {}
+
   async runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>> {
     try {
       // Build ELK compound nodes for non-superNode groups; leaf nodes for superNodes
-      const groupElkNodes: Record<string, any> = {};
+      const groupElkNodes: Record<string, ElkNode> = {};
       for (const group of diagram.groups) {
         groupElkNodes[group.id] = group.isSuperNode
           ? {
@@ -55,7 +88,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
             };
       }
 
-      const rootChildren: any[] = [];
+      const rootChildren: ElkNode[] = [];
 
       for (const group of diagram.groups) {
         const elkGroup = groupElkNodes[group.id];
@@ -89,7 +122,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
       }
 
-      const elkGraph = {
+      const elkGraph: ElkGraph = {
         id: 'root',
         layoutOptions: { 'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered' },
         children: rootChildren,
@@ -100,12 +133,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
         })),
       };
 
-      const result = await elk.layout(elkGraph);
+      const result = await this.elk.layout(elkGraph);
 
-      const nodePositions: Record<string, { x: number; y: number; w: number; h: number }> = {};
-      const edgeSectionsRaw: Record<string, any[]> = {};
+      const nodePositions: Record<string, NodePosition> = {};
+      const edgeSectionsRaw: Record<string, ElkSection[]> = {};
 
-      function walkElkNode(elkNode: any): void {
+      function walkElkNode(elkNode: ElkNode): void {
         if (elkNode.id !== 'root') {
           nodePositions[elkNode.id] = {
             x: elkNode.x ?? 0,
@@ -114,11 +147,11 @@ export class ElkAdapterImpl implements LayoutAdapter {
             h: elkNode.height ?? DEFAULT_HEIGHT,
           };
         }
-        const elkEdges: any[] = elkNode.edges ?? [];
+        const elkEdges: ElkEdge[] = elkNode.edges ?? [];
         for (const edge of elkEdges) {
           edgeSectionsRaw[edge.id] = edge.sections ?? [];
         }
-        const elkChildren: any[] = elkNode.children ?? [];
+        const elkChildren: ElkNode[] = elkNode.children ?? [];
         for (const child of elkChildren) {
           walkElkNode(child);
         }
@@ -141,12 +174,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
       });
 
       const edges = diagram.edges.map(edge => {
-        const rawSections: any[] = edgeSectionsRaw[edge.id] ?? [];
+        const rawSections: ElkSection[] = edgeSectionsRaw[edge.id] ?? [];
         const sections = rawSections.map(s =>
           Object.assign(new EdgeSection(), {
-            startPoint: vec2((s.startPoint as any)?.x ?? 0, (s.startPoint as any)?.y ?? 0),
-            bendPoints: ((s.bendPoints as any[]) ?? []).map((bp: any) => vec2(bp.x ?? 0, bp.y ?? 0)),
-            endPoint: vec2((s.endPoint as any)?.x ?? 0, (s.endPoint as any)?.y ?? 0),
+            startPoint: vec2(s.startPoint?.x ?? 0, s.startPoint?.y ?? 0),
+            bendPoints: (s.bendPoints ?? []).map(bp => vec2(bp.x ?? 0, bp.y ?? 0)),
+            endPoint: vec2(s.endPoint?.x ?? 0, s.endPoint?.y ?? 0),
           })
         );
         return Object.assign(new LaidOutEdge(), {

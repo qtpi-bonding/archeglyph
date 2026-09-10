@@ -42,5 +42,8 @@ export function normalize(v: Vec2): Vec2 {
   return { x: v.x / magnitude, y: v.y / magnitude };
 }
 export function scale(v: Vec2, s: number): Vec2 {
-  throw new Error('not implemented');
+  return {
+    x: v.x * s,
+    y: v.y * s,
+  };
 }

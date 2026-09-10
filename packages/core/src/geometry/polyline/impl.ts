@@ -18,5 +18,16 @@ export function distanceToSegment(p: Vec2, a: Vec2, b: Vec2): number {
   return Math.hypot(p.x - closestX, p.y - closestY);
 }
 export function distanceToPolyline(p: Vec2, points: Vec2[]): number {
-  throw new Error('not implemented');
+  let minimumDistance: number = Infinity;
+
+  for (let i: number = 0; i < points.length - 1; i += 1) {
+    const segmentDistance: number = distanceToSegment(
+      p,
+      points[i],
+      points[i + 1],
+    );
+    minimumDistance = Math.min(minimumDistance, segmentDistance);
+  }
+
+  return minimumDistance;
 }

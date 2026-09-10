@@ -12,3 +12,6 @@ export interface HostAdapter {
   load(): Promise<LoadResult>;
   save(stylesheet: Stylesheet): Promise<void>;
 }
+export class AdapterError {
+  message!: string;
+}

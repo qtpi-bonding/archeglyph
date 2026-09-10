@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import ELK from 'elkjs';
-import { createRequire } from 'node:module';
 import { create } from '@bufbuild/protobuf';
 import { type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { EdgeSection } from '../edge_section';
@@ -17,15 +16,6 @@ import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 export interface LayoutAdapter {
   runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
-
-// elkjs's default in-process "fake worker" fallback (elk-worker.min.js, GWT-compiled)
-// does not evaluate correctly under Bun's CJS interop — it comes back with an empty
-// module and never settles. Route through a real worker thread via the `web-worker`
-// package instead, per elkjs's documented Node worker path.
-const require = createRequire(import.meta.url);
-const elk = new ELK({
-  workerUrl: require.resolve('elkjs/lib/elk-worker.min.js'),
-});
 
 const DEFAULT_WIDTH = 120;
 const DEFAULT_HEIGHT = 40;
@@ -76,6 +66,8 @@ function vec2(x: number, y: number): Vec2 {
 }
 
 export class ElkAdapterImpl implements LayoutAdapter {
+  constructor(private readonly elk: ELK) {}
+
   async runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>> {
     try {
       // Build ELK compound nodes for non-superNode groups; leaf nodes for superNodes
@@ -141,7 +133,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         })),
       };
 
-      const result = await elk.layout(elkGraph);
+      const result = await this.elk.layout(elkGraph);
 
       const nodePositions: Record<string, NodePosition> = {};
       const edgeSectionsRaw: Record<string, ElkSection[]> = {};

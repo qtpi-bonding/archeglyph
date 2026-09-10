@@ -42,5 +42,23 @@ export function boundsCentre(b: Bounds): Vec2 {
   };
 }
 export function boundsProjectToEdge(b: Bounds, toward: Vec2): Vec2 {
-  throw new Error('not implemented');
+  const centreX = (b.minX + b.maxX) / 2;
+  const centreY = (b.minY + b.maxY) / 2;
+  const dx = toward.x - centreX;
+  const dy = toward.y - centreY;
+
+  if (dx === 0 && dy === 0) {
+    return { x: centreX, y: centreY };
+  }
+
+  const halfWidth = (b.maxX - b.minX) / 2;
+  const halfHeight = (b.maxY - b.minY) / 2;
+  const xScale = dx === 0 ? Infinity : halfWidth / Math.abs(dx);
+  const yScale = dy === 0 ? Infinity : halfHeight / Math.abs(dy);
+  const scale = Math.min(xScale, yScale);
+
+  return {
+    x: centreX + dx * scale,
+    y: centreY + dy * scale,
+  };
 }

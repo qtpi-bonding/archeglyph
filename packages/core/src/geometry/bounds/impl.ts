@@ -23,7 +23,12 @@ export function boundsContains(b: Bounds, p: Vec2): boolean {
   throw new Error('not implemented');
 }
 export function boundsUnion(a: Bounds, b: Bounds): Bounds {
-  throw new Error('not implemented');
+  return {
+    minX: Math.min(a.minX, b.minX),
+    minY: Math.min(a.minY, b.minY),
+    maxX: Math.max(a.maxX, b.maxX),
+    maxY: Math.max(a.maxY, b.maxY),
+  };
 }
 export function boundsCentre(b: Bounds): Vec2 {
   throw new Error('not implemented');

@@ -1,0 +1,130 @@
+# New pillar file, wave 2 ("editor-ui-state ✎: viewport_math with
+# container rect"). Pure screen<->diagram conversion, cursor-anchored zoom,
+# and fit-to-view — replaces canvas/viewport.ts's ViewportState.toCanvas/
+# toScreen, which both ignore the canvas container's own offset
+# (docs/editor-ui-review.md §2.16 — drag DELTAS cancel the error so it's
+# invisible today, but any absolute conversion, like this pillar's own
+# zoomAboutPoint, needs the real container rect) and don't support
+# cursor-anchored zoom at all (§2.8 — today's zoom multiplies around
+# transform-origin 0,0 with no compensating pan, so the diagram flies away
+# from the cursor).
+#
+# ContainerRect is the canvas element's own getBoundingClientRect() —
+# just the four numbers this module needs, not the DOM type itself (no DOM
+# dependency in this pure-math file).
+#
+# screenToDiagram / diagramToScreen: EXACT required bodies —
+#
+#   export function screenToDiagram(viewport: Viewport, containerRect: ContainerRect, screenPt: Vec2): Vec2 {
+#     const localX = screenPt.x - containerRect.left;
+#     const localY = screenPt.y - containerRect.top;
+#     return { x: (localX - viewport.panX) / viewport.zoom, y: (localY - viewport.panY) / viewport.zoom };
+#   }
+#
+#   export function diagramToScreen(viewport: Viewport, containerRect: ContainerRect, diagramPt: Vec2): Vec2 {
+#     return {
+#       x: diagramPt.x * viewport.zoom + viewport.panX + containerRect.left,
+#       y: diagramPt.y * viewport.zoom + viewport.panY + containerRect.top,
+#     };
+#   }
+#
+# zoomAboutPoint: multiply zoom by `factor`, clamped to [minZoom, maxZoom],
+# then solve for the new pan that keeps the point CURRENTLY under
+# `screenPt` fixed on screen (the point's diagram-space location is
+# unchanged by the zoom). EXACT required body:
+#
+#   export function zoomAboutPoint(viewport: Viewport, screenPt: Vec2, containerRect: ContainerRect, factor: number, minZoom: number, maxZoom: number): Viewport {
+#     const newZoom = Math.min(maxZoom, Math.max(minZoom, viewport.zoom * factor));
+#     const localX = screenPt.x - containerRect.left;
+#     const localY = screenPt.y - containerRect.top;
+#     const scaleRatio = newZoom / viewport.zoom;
+#     return {
+#       zoom: newZoom,
+#       panX: localX - (localX - viewport.panX) * scaleRatio,
+#       panY: localY - (localY - viewport.panY) * scaleRatio,
+#     };
+#   }
+#
+# fitBoundsToRect: compute the zoom/pan that centers `bounds` in
+# `containerRect` with `padding` pixels of margin on every side, choosing
+# the SMALLER of the two axis-fit ratios (so the whole content fits without
+# distortion). Degenerate zero-size bounds (contentWidth or contentHeight
+# <= 0 — e.g. a single point, or an empty diagram): fall back to zoom=1
+# rather than dividing by zero. EXACT required body:
+#
+#   export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, padding: number): Viewport {
+#     const contentWidth = bounds.maxX - bounds.minX;
+#     const contentHeight = bounds.maxY - bounds.minY;
+#     const availWidth = containerRect.width - padding * 2;
+#     const availHeight = containerRect.height - padding * 2;
+#     const zoom = contentWidth <= 0 || contentHeight <= 0
+#       ? 1
+#       : Math.min(availWidth / contentWidth, availHeight / contentHeight);
+#     const centre = boundsCentre(bounds);
+#     return {
+#       zoom,
+#       panX: containerRect.width / 2 - centre.x * zoom,
+#       panY: containerRect.height / 2 - centre.y * zoom,
+#     };
+#   }
+#
+# `boundsCentre` comes from @archeglyph/core/geometry/bounds (wave 1,
+# already merged) — this is an EDITOR-package file consuming a CORE-package
+# pure function, same cross-package pattern already used elsewhere
+# (e.g. editor's canvas.tsx already imports from @archeglyph/core/layout/*).
+
+file: "packages/editor/src/ui_state/viewport_math.ts"
+doc: "Pure viewport math: screen<->diagram conversion (container-rect-aware), cursor-anchored zoom, fit-to-view."
+
+structs: [
+  { name: "ContainerRect"
+    doc: "The subset of DOMRect this module needs. Construct from canvasEl.getBoundingClientRect() at the call site."
+    fields: [
+      { name: "left",   type: { primitive: REAL } },
+      { name: "top",    type: { primitive: REAL } },
+      { name: "width",  type: { primitive: REAL } },
+      { name: "height", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "screenToDiagram"
+    inputs: [
+      { name: "viewport",      type: { named: { symbol: "Viewport" } } },
+      { name: "containerRect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "screenPt",      type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+    uses: ["Viewport", "Vec2"]
+  },
+  { name: "diagramToScreen"
+    inputs: [
+      { name: "viewport",      type: { named: { symbol: "Viewport" } } },
+      { name: "containerRect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "diagramPt",     type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "zoomAboutPoint"
+    inputs: [
+      { name: "viewport",      type: { named: { symbol: "Viewport" } } },
+      { name: "screenPt",      type: { named: { symbol: "Vec2" } } },
+      { name: "containerRect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "factor",        type: { primitive: REAL } },
+      { name: "minZoom",       type: { primitive: REAL } },
+      { name: "maxZoom",       type: { primitive: REAL } }
+    ]
+    output: { named: { symbol: "Viewport" } }
+  },
+  { name: "fitBoundsToRect"
+    inputs: [
+      { name: "bounds",        type: { named: { symbol: "Bounds" } } },
+      { name: "containerRect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "padding",       type: { primitive: REAL } }
+    ]
+    output: { named: { symbol: "Viewport" } }
+    uses: ["Bounds", "boundsCentre"]
+  }
+]

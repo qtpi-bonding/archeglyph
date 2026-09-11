@@ -20,8 +20,12 @@ export function measureLabel(text: string, font: string, size: number): Vec2 {
     longestLineLength = Math.max(longestLineLength, line.length);
   }
 
+  const width: number =
+    longestLineLength * MONOSPACE_ADVANCE_WIDTH_RATIO * size;
+  const height: number = lines.length * LINE_HEIGHT_RATIO * size;
+
   return {
-    x: longestLineLength * MONOSPACE_ADVANCE_WIDTH_RATIO * size,
-    y: lines.length * LINE_HEIGHT_RATIO * size,
+    x: width,
+    y: height,
   };
 }

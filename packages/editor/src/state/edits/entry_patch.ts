@@ -96,6 +96,18 @@ export interface GroupEntryPatch {
 }
 
 import { EdgeRouting } from '@archeglyph/proto/gen/style_pb';
+<<<<<<< HEAD
+=======
+import {
+  EdgeLayoutSchema,
+  EdgeStyleEntry,
+  EdgeStyleEntrySchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { Glyph1D } from '@archeglyph/proto/gen/style_pb';
+import { Typography } from '@archeglyph/proto/gen/style_pb';
+import { Vec2 } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
+>>>>>>> 9b35f4867f41af76015876ec62ee77704b991594
 
 export interface EdgeEntryPatch {
   routing?: EdgeRouting;
@@ -116,7 +128,29 @@ export interface NodeEntryPatch {
 }
 
 export function patchEdgeEntry(existing: EdgeStyleEntry | undefined, patch: EdgeEntryPatch): EdgeStyleEntry {
-  throw new Error('not implemented');
+  const hasLayoutPatch: boolean =
+    patch.routing !== undefined || patch.waypoints !== undefined;
+  if (!hasLayoutPatch) {
+    return create(EdgeStyleEntrySchema, {
+      ...existing,
+      connection: patch.connection ?? existing?.connection,
+      typography: patch.typography ?? existing?.typography,
+      component: patch.component ?? existing?.component,
+    });
+  }
+
+  const layout = create(EdgeLayoutSchema, {
+    ...existing?.layout,
+    routing: patch.routing ?? existing?.layout?.routing,
+    waypoints: patch.waypoints ?? existing?.layout?.waypoints ?? [],
+  });
+  return create(EdgeStyleEntrySchema, {
+    ...existing,
+    layout,
+    connection: patch.connection ?? existing?.connection,
+    typography: patch.typography ?? existing?.typography,
+    component: patch.component ?? existing?.component,
+  });
 }
 export function patchGroupEntry(existing: GroupStyleEntry | undefined, patch: GroupEntryPatch): GroupStyleEntry {
   throw new Error('not implemented');

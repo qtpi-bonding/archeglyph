@@ -61,6 +61,7 @@ export class DragHandler {
     this._setOffset({ x: 0, y: 0 });
   }
 
+<<<<<<< HEAD
   onPointerMove(screenPt: Vec2): void {
     const session: Option<DragSession> = this._session;
     if (session === null) {
@@ -84,6 +85,8 @@ export class DragHandler {
     this._session = null;
     this._setOffset(null);
   }
+=======
+>>>>>>> 9ed1d105356cf621b53a6b2bb2166a3473c1f1e7
 }
 
 function buildDragEdit(

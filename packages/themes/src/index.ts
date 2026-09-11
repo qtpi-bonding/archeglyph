@@ -53,7 +53,7 @@ export function darkTheme(): Theme {
           family: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif',
         }),
         mono: create(FontSpecSchema, {
-          family: 'ui-monospace, Menlo, Consolas, Liberation Mono, monospace',
+          family: "'Noto Sans Mono', ui-monospace, Menlo, Consolas, Liberation Mono, monospace",
         }),
       },
       sizes: {
@@ -92,7 +92,7 @@ export function lightTheme(): Theme {
     },
     fonts: {
       body: create(FontSpecSchema, { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }),
-      mono: create(FontSpecSchema, { family: "ui-monospace, Menlo, 'Cascadia Code', Consolas, monospace" }),
+      mono: create(FontSpecSchema, { family: "'Noto Sans Mono', ui-monospace, Menlo, 'Cascadia Code', Consolas, monospace" }),
     },
     sizes: {
       stroke_thin: 1,

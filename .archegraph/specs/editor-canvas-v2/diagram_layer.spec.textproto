@@ -1,0 +1,54 @@
+# New pillar, wave 3. The bottom-most visible layer: core's own SVG.
+#
+# This is the load-bearing half of the approved drawing model. The editor
+# does NOT re-implement rendering — it injects the exact string
+# packages/core's SvgRenderer produced, which is the same string
+# `archeglyph render` writes to a file. That is why the editor and the CLI
+# cannot drift (finding §5.7: the editor currently renders with an empty
+# theme and disagrees with the CLI).
+#
+# The string is NEVER mutated. Today's canvas.tsx does the opposite — it
+# querySelector's the dragged element out of the injected markup and
+# rewrites its transform attribute (canvas.tsx ~line 160), which is both
+# finding §2.15 (querySelector('#' + id) throws on ids containing
+# CSS-special characters) and the reason the drag preview and the diagram
+# disagree by the viewBox origin (§5.4). Here, moving elements are dimmed
+# by a CSS class and REDRAWN by overlay_layer instead.
+
+file: "packages/editor/src/canvas/diagram_layer.tsx"
+doc: "Injects the scene's rendered SVG verbatim and dims the elements a gesture is currently moving."
+
+structs: [
+  { name: "DiagramLayerProps"
+    doc: "`dimmed` is the element keys currently being previewed elsewhere; empty for the resting canvas."
+    fields: [
+      { name: "svg",    type: { primitive: CHARACTER } },
+      { name: "dimmed", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "DiagramLayer"
+    doc:
+      "Solid component. innerHTML={props.svg} on a plain <g>-wrapping host\n"
+      "element, and nothing else writes to that subtree.\n"
+      "\n"
+      "Dimming: set a data attribute or class on the HOST from props.dimmed\n"
+      "and let ONE CSS rule do the work, e.g. a rule matching\n"
+      "[data-element-id='<id>'] inside a dimmed host. The renderer emits\n"
+      "data-element-id and data-kind on every element group (wave 2\n"
+      "renderer Δ, merged) precisely so this is a selector question rather\n"
+      "than a DOM-surgery question. Escape ids when building a selector, or\n"
+      "avoid selectors entirely by toggling a class on matched children\n"
+      "found via querySelectorAll('[data-element-id]') and comparing the\n"
+      "attribute value in JS — the latter has no escaping hazard at all and\n"
+      "is preferred.\n"
+      "\n"
+      "Do not parse, rewrite, or re-order the injected markup for any other\n"
+      "reason."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<DiagramLayerProps>" } }
+    uses: ["DiagramLayerProps", "ElementRef", "elementKey"]
+  }
+]

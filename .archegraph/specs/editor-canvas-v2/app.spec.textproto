@@ -1,0 +1,66 @@
+# New pillar, wave 3. Minimal shell wiring — NOT the wave 6 shell rewrite.
+# app.tsx is already described by two legacy spec dirs (editor-shell and
+# editor-inspector); neither is evolved here, per the co-evolution rule
+# about historical pillars. This spec covers only what the canvas rewrite
+# forces: constructing the two new stores and handing them down.
+#
+# Three things change and nothing else:
+#   1. App owns UiState and Scene, built once per loaded document, and
+#      passes them to Canvas (which no longer takes EditorState).
+#   2. The theme stops being `create(ThemeSchema, {})`. That empty theme is
+#      finding §5.7 — the editor renders with no styling at all and
+#      disagrees with the CLI. It becomes the bundled blueprint theme,
+#      which is the whole point of the themes-blueprint pillar (D12b).
+#   3. A temporary bridge keeps the existing Inspector working.
+#
+# DELIBERATE TEMPORARY STATE, disclosed: SelectionContext and
+# canvas/selection.ts survive this pillar. inspector.tsx consumes both
+# (useSelection, and the numeric ElementKind enum), and migrating it to
+# ElementRef belongs with the inspector v2 rewrite in wave 5 rather than
+# being smuggled in here. So App keeps the provider and syncs UiState ->
+# SelectionContext one-way with a small effect. Two selection stores exist
+# for two waves; the canvas one is authoritative and the bridge is
+# one-way, so they cannot disagree. The bridge and selection.ts both die
+# in wave 5.
+
+file: "packages/editor/src/shell/app.tsx"
+doc: "Root shell: adapters, document state, and now the UiState + Scene stores."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Additions to the existing component, which is otherwise unchanged:\n"
+      "\n"
+      "Theme: replace the empty `create(ThemeSchema, {})` with\n"
+      "getBundledTheme('blueprint') from @archeglyph/themes. Add the\n"
+      "workspace dependency to packages/editor/package.json if it is not\n"
+      "already there. This is what makes the canvas and `archeglyph render`\n"
+      "agree, and what makes the approved visual direction actually appear.\n"
+      "\n"
+      "Stores: one createUiState() for the session. A Scene built from the\n"
+      "loaded EditorState via createScene(state, () => theme, layoutEngine),\n"
+      "where layoutEngine is the browser one — LayoutEngineImpl over\n"
+      "ElkAdapterImpl over createBrowserElk(), constructed once at module\n"
+      "scope exactly as canvas.tsx does today, NOT per render. Both are\n"
+      "created only once a document has loaded, since createScene needs a\n"
+      "real EditorState.\n"
+      "\n"
+      "Canvas now receives scene, ui, diagram, stylesheet, theme and\n"
+      "layoutEngine instead of state and theme.\n"
+      "\n"
+      "Bridge: a createEffect mirroring the first entry of\n"
+      "ui.selection() into the existing SelectionState.setSelected, mapping\n"
+      "the string kind to the numeric ElementKind the current Inspector\n"
+      "expects, and null when the selection is empty. One-way only — the\n"
+      "Inspector must never write back into UiState.\n"
+      "\n"
+      "Leave the load/open/keyboard-undo logic, the Resizable layout, and\n"
+      "TopBar exactly as they are; they belong to other waves."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: [
+      "Canvas", "Scene", "UiState", "createScene", "createUiState",
+      "getBundledTheme", "LayoutEngineImpl", "ElkAdapterImpl", "createBrowserElk"
+    ]
+  }
+]

@@ -1,0 +1,90 @@
+# New pillar, wave 3 — the canvas rewrite row of docs/implementation-order.md.
+# canvas.tsx currently does six jobs: renders, owns viewport state twice
+# (a mutable object AND three signals — finding §2.17), parses SVG ids to
+# work out what was clicked (§2.15), mutates injected markup to fake a drag
+# preview (§5.4), routes pointer events, and commits edits. It becomes
+# composition only.
+#
+# WAVE BOUNDARY, deliberate: this pillar does NOT add drag-to-move. Wave 3's
+# exit criterion in docs/editor-ui-review.md §9 is "clicking selects visibly
+# and moves nothing" — selection, hover, pan, zoom and fit, with the move
+# gesture landing in wave 4's editor-gestures pillar. The inline pointer
+# handlers here are the minimum to hit that criterion and are replaced
+# wholesale by pointer_router next wave. Resist growing a gesture state
+# machine in this file.
+#
+# What that buys: §2.1 (a plain click commits a position edit and teleports
+# the node to 0,0) is fixed by DELETION — no click path writes to
+# DocumentState at all in this wave.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The canvas: one <svg>, one pan/zoom <g>, three layers. Composition only — no state of its own beyond the in-flight pan."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc:
+      "Takes the two stores rather than raw document state: geometry is\n"
+      "read from `scene`, all transient UI from `ui`. EditorState is no\n"
+      "longer a prop — this wave's canvas never writes to the document."
+    fields: [
+      { name: "scene",        type: { named: { symbol: "Scene" } } },
+      { name: "ui",           type: { named: { symbol: "UiState" } } },
+      { name: "diagram",      type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",   type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "theme",        type: { named: { symbol: "archeglyph.theme.v1.Theme" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Solid component. Structure: a sized container div holding ONE <svg>\n"
+      "that fills it, containing one <g> carrying the pan/zoom transform,\n"
+      "containing GhostLayer, DiagramLayer and OverlayLayer in that order.\n"
+      "One coordinate system for all three — that is what removes the\n"
+      "preview/diagram offset disagreement of §5.4.\n"
+      "\n"
+      "Container rect: keep a ContainerRect in a signal, seeded on mount\n"
+      "from getBoundingClientRect and refreshed by a ResizeObserver. Every\n"
+      "screen<->diagram conversion goes through ui_state's viewport_math\n"
+      "with that rect — never clientX/clientY straight into diagram space,\n"
+      "which is finding §2.16.\n"
+      "\n"
+      "Pointer, in exactly this order on pointerdown:\n"
+      "  1. screenToDiagram the point;\n"
+      "  2. hitTestPoint with a tolerance of about 6 screen px / zoom;\n"
+      "  3. hit and select tool -> set selection (shift/meta -> toggle via\n"
+      "     ui_state's selection_ops, otherwise replace); no hit -> clear;\n"
+      "  4. no hit, or hand tool, or middle button -> start a pan.\n"
+      "Pan updates ui.setViewport by delta; there is no separate mutable\n"
+      "viewport object (§2.17). pointermove with no pan active updates\n"
+      "ui.setHover from the same hit test.\n"
+      "\n"
+      "Wheel: non-passive listener, preventDefault, zoomAboutPoint at the\n"
+      "cursor, clamped to roughly 0.1..8. ctrlKey/pinch also zooms; a plain\n"
+      "two-finger scroll pans by the wheel delta instead of zooming, so the\n"
+      "trackpad stops being hijacked (§2.8).\n"
+      "\n"
+      "Fit on first geometry: when scene.geometry() becomes available for\n"
+      "the first time and the container has a non-zero size, fitBoundsToRect\n"
+      "over contentBounds. Once only — do not refit on later edits or the\n"
+      "view will jump under the user.\n"
+      "\n"
+      "Errors: when scene.error() is set, keep rendering the last geometry\n"
+      "and show a dismissible banner over it. Never blank the canvas (§2.9).\n"
+      "\n"
+      "cursorFor drives the container's CSS cursor."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: [
+      "CanvasProps", "Scene", "UiState", "SceneGeometry",
+      "DiagramLayer", "GhostLayer", "OverlayLayer", "cursorFor",
+      "hitTestPoint", "screenToDiagram", "zoomAboutPoint", "fitBoundsToRect",
+      "replaceSelection", "toggleSelection", "clearSelection"
+    ]
+  }
+]

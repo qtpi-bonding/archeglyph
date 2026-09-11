@@ -1,0 +1,69 @@
+# New pillar, wave 3. Everything the EDITOR draws, as opposed to
+# everything the renderer draws. Selection outlines, the eight handles,
+# the hover outline, the marquee rectangle, and the live shapes during a
+# gesture.
+#
+# This is the other half of the approved drawing model: diagram_layer
+# shows core's untouched output and dims what is moving; overlay_layer
+# repaints what is moving, on top, from a ScenePreview. So the picture at
+# rest is always the genuine renderer output and only in-flight frames are
+# editor-drawn.
+#
+# Fixes finding §2.4 (zero selection feedback on the canvas) and the
+# selection half of §2.6.
+#
+# Everything is drawn in DIAGRAM coordinates inside the shared pan/zoom
+# <g>, so no manual screen conversion. The one exception is stroke widths
+# and handle sizes, which divide by zoom so they stay a constant apparent
+# size — that is why zoom is a prop.
+
+file: "packages/editor/src/canvas/overlay_layer.tsx"
+doc: "Selection outlines, resize handles, hover, marquee and gesture preview — the editor's own chrome over the diagram."
+
+structs: [
+  { name: "OverlayLayerProps"
+    doc:
+      "`preview` and `marquee` are both absent on the resting canvas.\n"
+      "preview is supplied by wave 4's gesture layer; wave 3 always passes\n"
+      "undefined, and the overlay must render correctly that way."
+    fields: [
+      { name: "geometry",  type: { named: { symbol: "SceneGeometry" } } },
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "hover",     type: { named: { symbol: "ElementRef" } }, is_optional: true },
+      { name: "zoom",      type: { primitive: REAL } },
+      { name: "preview",   type: { named: { symbol: "ScenePreview" } }, is_optional: true },
+      { name: "marquee",   type: { named: { symbol: "Bounds" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "OverlayLayer"
+    doc:
+      "Solid component returning an SVG <g>. Paint order, bottom to top:\n"
+      "hover outline, selection outlines, preview shapes and re-routed\n"
+      "preview edges, resize handles, marquee.\n"
+      "\n"
+      "Bounds come from props.geometry — look each selected/hovered ref up\n"
+      "in geometry.byKey and skip refs that are not there (a selection can\n"
+      "outlive the element it names between a document edit and the next\n"
+      "scene). Selected EDGES have no rect; outline them by stroking their\n"
+      "polyline from geometry.edgePolylines instead, which is the half of\n"
+      "§5.6 the hit test cannot fix on its own.\n"
+      "\n"
+      "Handles: only when exactly one element is selected and it has a rect\n"
+      "(no handles on edges, none on a multi-selection). Positions come\n"
+      "from hit_test's handlePositions so the drawn handle and the hit\n"
+      "target cannot disagree. They are inert in this wave — wave 5 wires\n"
+      "the resize gesture — but they are drawn now because the overlay owns\n"
+      "drawing and adding them later would mean reopening this file.\n"
+      "\n"
+      "Constant apparent size: divide every stroke-width and handle side by\n"
+      "props.zoom. Colours come from CSS custom properties (--ag-blue for\n"
+      "selection, --ag-teal for hover, per docs/design/editor-tokens.css and\n"
+      "decision D12) — do not hard-code hex values here."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<OverlayLayerProps>" } }
+    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "Bounds", "elementKey", "handlePositions"]
+  }
+]

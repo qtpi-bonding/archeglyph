@@ -1,0 +1,55 @@
+# New pillar, wave 3. Extracted, unchanged in behaviour, from the current
+# canvas.tsx (its second createResource + the applyAllPendingEdits helper).
+# Own file because it is a display-only concern with its own async source,
+# and mixing it into canvas.tsx is part of why that file does six jobs.
+#
+# Deliberately does NOT use Scene. A Scene carries a bounds index, a hit
+# index and a preview surface; the ghost is never hit-tested, never
+# selected and never dragged, so all of that would be dead weight. It runs
+# its own layout+render and keeps only the string.
+#
+# It only runs when pendingEdits is non-empty, so the extra ELK pass costs
+# nothing on the common path.
+
+file: "packages/editor/src/canvas/ghost_layer.tsx"
+doc: "Faint preview of what the diagram would look like with all pending AI edits applied."
+
+structs: [
+  { name: "GhostLayerProps"
+    doc: "Everything needed to render the merged picture. Separate diagram/stylesheet rather than an EditorState so the ghost can never accidentally write."
+    fields: [
+      { name: "diagram",      type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",   type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "theme",        type: { named: { symbol: "archeglyph.theme.v1.Theme" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "applyAllPendingEdits"
+    doc:
+      "Fold every entry in stylesheet.pendingEdits over the stylesheet with\n"
+      "applyStyleEditToStylesheet, in list order. Moved here verbatim from\n"
+      "canvas.tsx, which is losing its copy.\n"
+      "Pure: returns a new Stylesheet, never mutates the input."
+    inputs: [ { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } } ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+    uses: ["archeglyph.style.v1.Stylesheet", "applyStyleEditToStylesheet"]
+  }
+]
+
+constants: [
+  { name: "GhostLayer"
+    doc:
+      "Solid component. Renders nothing at all when pendingEdits is empty —\n"
+      "no resource, no layout run. Otherwise a createResource over\n"
+      "applyAllPendingEdits -> layoutPipeline -> SvgRendererImpl().render(),\n"
+      "injected at reduced opacity beneath the diagram layer.\n"
+      "A failed layout or render renders nothing rather than an error: the\n"
+      "ghost is advisory, and the real picture above it is still correct."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<GhostLayerProps>" } }
+    uses: ["GhostLayerProps", "applyAllPendingEdits", "layoutPipeline", "SvgRendererImpl"]
+  }
+]

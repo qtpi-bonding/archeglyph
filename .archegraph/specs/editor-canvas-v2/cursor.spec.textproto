@@ -1,0 +1,34 @@
+# New pillar, wave 3 of docs/implementation-order.md (the canvas-rewrite row).
+# Fresh pillar per decision D5 — the legacy .archegraph/specs/editor-canvas/
+# specs describe the pre-rewrite files and are not evolved in place.
+#
+# Pure lookup, its own file because it is the one place that answers "what
+# should the pointer look like right now". Finding §2.13: there is no
+# cursor, hover, or grabbable feedback anywhere in the editor today.
+
+file: "packages/editor/src/canvas/cursor.ts"
+doc: "Pure (tool, hover, handle) -> CSS cursor string. No DOM, no state."
+
+methods: [
+  { name: "cursorFor"
+    doc:
+      "Resolution order, most specific first: a resize handle wins (its\n"
+      "diagonal/orthogonal resize cursor by compass point — 'nwse-resize'\n"
+      "for nw/se, 'nesw-resize' for ne/sw, 'ns-resize' for n/s,\n"
+      "'ew-resize' for e/w); then the hand tool ('grabbing' while panning,\n"
+      "'grab' otherwise); then the annotation tool ('crosshair'); then\n"
+      "hovering an element with the select tool ('move', since the select\n"
+      "tool's drag action is move); otherwise 'default'.\n"
+      "\n"
+      "`panning` is passed rather than inferred so the same call renders a\n"
+      "space-bar-held temporary pan the same way as the hand tool."
+    inputs: [
+      { name: "tool",     type: { named: { symbol: "Tool" } } },
+      { name: "hovering", type: { primitive: BOOLEAN } },
+      { name: "panning",  type: { primitive: BOOLEAN } },
+      { name: "handle",   type: { named: { symbol: "Handle" } }, is_optional: true }
+    ]
+    output: { primitive: CHARACTER }
+    uses: ["Tool", "Handle"]
+  }
+]

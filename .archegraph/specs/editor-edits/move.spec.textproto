@@ -1,0 +1,73 @@
+# Wave 3. The builder wave 4's move gesture commits through, and the one
+# place pin-on-touch (D1/D8) actually happens.
+#
+# Pinning is not a separate flag. A node with no NodeLayout.position is laid
+# out by ELK; a node with one is not. So writing a position IS pinning it,
+# and dragging a node is what pins it. Wave 5's `layout` Δ reads the same
+# field to decide whether it can skip ELK entirely.
+#
+# Positions written here are PARENT-RELATIVE, matching design.md §5.3 and
+# what layout_engine expects on the way back in. A gesture works in canvas
+# coordinates, so the caller subtracts the parent group's absolute position
+# before calling — the Scene's bounds index has it.
+
+file: "packages/editor/src/state/edits/move.ts"
+doc: "Position edits for nodes, groups and annotations — the commit path for a drag, and where pin-on-touch happens."
+
+methods: [
+  { name: "moveNodeEdit"
+    doc: "Single node. Preserves size, rotation and every visual field on the existing entry."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit"]
+  },
+  { name: "moveElementsEdit"
+    doc:
+      "Multi-select drag: one edit covering every moved element, so undo\n"
+      "takes the whole gesture back rather than one element at a time.\n"
+      "\n"
+      "Edges are not movable and are skipped if present — an edge's route is\n"
+      "a consequence of its endpoints, and manual waypoints are wave 5's\n"
+      "resize/route work, not a drag."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "moves", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementMove" } }] } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "patchGroupEntry", "patchAnnotationEntry", "nodeChange", "groupChange", "annotationChange", "styleEdit"]
+  },
+  { name: "moveGroupEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "groupId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchGroupEntry", "groupChange", "styleEdit"]
+  },
+  { name: "moveAnnotationEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "annotationId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit"]
+  }
+]
+
+structs: [
+  { name: "ElementMove"
+    doc: "One element's new parent-relative position. `kind` matches ElementRef's discriminant so the gesture layer can pass its own selection through with no translation."
+    fields: [
+      { name: "kind", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'node' | 'group' | 'annotation'" } } },
+      { name: "id", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

@@ -1,0 +1,78 @@
+# Wave 3. Assembles the StyleEdit envelope so the seven intent builders can
+# each be about one thing.
+#
+# StyleEdit.id is documented in proto/style.proto as a sha256 prefix over
+# canonical contents. Nothing here computes it: the browser's only sha256 is
+# async (crypto.subtle), and making every builder async to stamp a field that
+# nothing in waves 3-6 reads would be a poor trade. APPLIED edits are folded
+# into the stylesheet immediately and never looked up by id. PENDING edits are
+# the ones that need a stable identity, and they arrive in wave 7 with the
+# pending panel; that is where the hash belongs. Until then id is left empty
+# rather than filled with something that looks like a hash and is not.
+
+file: "packages/editor/src/state/edits/edit_builder.ts"
+doc: "Assembles a StyleEdit envelope from one or more element changes."
+
+methods: [
+  { name: "styleEdit"
+    doc:
+      "Builds an APPLIED edit carrying `parts`, stamped with Date.now().\n"
+      "Author is 'user:local' — the editor has no identity yet, and the\n"
+      "importer and MCP paths set their own.\n"
+      "\n"
+      "Absent change lists stay absent rather than becoming empty arrays, so\n"
+      "an edit reads as what it touched."
+    inputs: [
+      { name: "parts", type: { named: { symbol: "EditParts" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["archeglyph.style.v1.StyleEditState"]
+  },
+  { name: "nodeChange"
+    doc: "One NodeStyleChange. change_type MODIFIED covers both first write and update — a style entry is a presentation overlay, so ADDED versus MODIFIED is not a distinction the stylesheet keeps. DELETED (used by layout_command) drops the entry entirely and is spelled with an absent `after`."
+    inputs: [
+      { name: "nodeId", type: { primitive: CHARACTER } },
+      { name: "after", type: { named: { symbol: "archeglyph.style.v1.NodeStyleEntry" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.NodeStyleChange" } }
+    uses: ["archeglyph.style.v1.StyleChangeType"]
+  },
+  { name: "edgeChange"
+    inputs: [
+      { name: "edgeId", type: { primitive: CHARACTER } },
+      { name: "after", type: { named: { symbol: "archeglyph.style.v1.EdgeStyleEntry" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.EdgeStyleChange" } }
+    uses: ["archeglyph.style.v1.StyleChangeType"]
+  },
+  { name: "groupChange"
+    inputs: [
+      { name: "groupId", type: { primitive: CHARACTER } },
+      { name: "after", type: { named: { symbol: "archeglyph.style.v1.GroupStyleEntry" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.GroupStyleChange" } }
+    uses: ["archeglyph.style.v1.StyleChangeType"]
+  },
+  { name: "annotationChange"
+    inputs: [
+      { name: "annotationId", type: { primitive: CHARACTER } },
+      { name: "after", type: { named: { symbol: "archeglyph.style.v1.AnnotationEntry" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.AnnotationStyleChange" } }
+    uses: ["archeglyph.style.v1.StyleChangeType"]
+  }
+]
+
+structs: [
+  { name: "EditParts"
+    doc: "The four parallel change lists plus an optional description for the undo log and the pending panel."
+    fields: [
+      { name: "nodeChanges", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.NodeStyleChange" } }] } }, is_optional: true },
+      { name: "edgeChanges", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.EdgeStyleChange" } }] } }, is_optional: true },
+      { name: "groupChanges", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.GroupStyleChange" } }] } }, is_optional: true },
+      { name: "annotationChanges", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.AnnotationStyleChange" } }] } }, is_optional: true },
+      { name: "description", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

@@ -1,0 +1,57 @@
+# Wave 3, ahead of its UI. A pending edit is a StyleEdit sitting in
+# Stylesheet.pending_edits with state PENDING — a proposal that renders as a
+# ghost (ghost_layer already draws them) and is not part of the document
+# until someone accepts it. That is the AI/MCP propose flow from design.md
+# §10.
+#
+# Only the list operations live here. The panel with Accept and Reject is
+# wave 7. These are built now because ghost_layer and the MCP surface both
+# already produce pending edits and neither has a supported way to resolve
+# one.
+#
+# Deliberate asymmetry: acceptPendingEdit returns the edit to APPLY, not a
+# new stylesheet, because applying it has to go through the same
+# applyStyleEdit path as any other edit or it will not land in the undo log.
+# The caller applies it and then drops it from the list.
+
+file: "packages/editor/src/state/edits/pending.ts"
+doc: "Add, accept and reject pending edits — the proposal list behind the ghost layer."
+
+methods: [
+  { name: "proposePendingEdit"
+    doc: "Appends `proposal` to pending_edits with state PENDING, stamping the author. Returns the whole new Stylesheet rather than a StyleEdit: the pending list is not itself an undoable document change."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "proposal", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+      { name: "author", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+    uses: ["archeglyph.style.v1.StyleEditState"]
+  },
+  { name: "findPendingEdit"
+    doc: "By id. Returns undefined when the list has moved on under a stale panel."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "editId", type: { primitive: CHARACTER } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["archeglyph.style.v1.StyleEdit"]
+  },
+  { name: "acceptPendingEdit"
+    doc: "The edit to apply, restamped APPLIED — NOT a new stylesheet. Accepting has to travel the normal applyStyleEdit path so it lands in the undo log like anything else; a pending edit the user accepted and cannot undo would be the worst of both designs."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "editId", type: { primitive: CHARACTER } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["archeglyph.style.v1.StyleEdit", "findPendingEdit", "archeglyph.style.v1.StyleEditState"]
+  },
+  { name: "removePendingEdit"
+    doc: "Drops one edit from the list by id. Called after accepting (once applied) and on reject. Reject keeps no record — a rejected proposal is not history the document should carry."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "editId", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+  }
+]

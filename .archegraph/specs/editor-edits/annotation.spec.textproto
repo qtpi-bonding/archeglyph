@@ -1,0 +1,61 @@
+# Wave 3. Annotations are the one element type the editor owns outright —
+# they are authored here, never imported, and they are the only thing Delete
+# really deletes (D3). Wave 6's annotation tool and inline text editor commit
+# through these.
+#
+# Unlike the other builders, these can ADD and DELETE, because an annotation
+# has no existence outside the stylesheet. Every other builder only ever
+# writes a presentation overlay onto an element the diagram already declares.
+
+file: "packages/editor/src/state/edits/annotation.ts"
+doc: "Create, edit, anchor and delete annotations — the only elements the editor owns outright."
+
+methods: [
+  { name: "addAnnotationEdit"
+    doc: "New annotation at `position` with `text`. The id must be supplied by the caller rather than generated here so the gesture layer can select the annotation it just created without re-reading the stylesheet to find out what it was called."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "id", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "text", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit", "localized"]
+  },
+  { name: "setAnnotationTextEdit"
+    doc: "Replaces the text of the canonical locale entry, leaving other locales alone. The inline editor coalesces keystrokes through EditorState's coalesceKey, so this stays a plain whole-value write."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "id", type: { primitive: CHARACTER } },
+      { name: "text", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit", "localized"]
+  },
+  { name: "setAnnotationAnchorEdit"
+    doc: "Points the annotation at a graph element, or detaches it when `anchor` is absent. The renderer draws the callout line; nothing here computes geometry."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "id", type: { primitive: CHARACTER } },
+      { name: "anchor", type: { named: { symbol: "archeglyph.style.v1.AnnotationAnchor" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit"]
+  },
+  { name: "deleteAnnotationEdit"
+    doc: "Real removal, not hiding. Undo restores it from the undo log's before-snapshot."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "id", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["annotationChange", "styleEdit"]
+  },
+  { name: "localized"
+    doc: "One Localization list holding `text` under the canonical locale. File-local helper; 'en' until the editor grows a locale setting, which is a v2 question."
+    inputs: [
+      { name: "text", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.content.v1.Localization" } }] } }
+  }
+]

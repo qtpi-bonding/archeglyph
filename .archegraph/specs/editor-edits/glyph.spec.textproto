@@ -1,0 +1,100 @@
+# Wave 3. Everything the inspector changes that is not position or size:
+# colours, strokes, fonts, component bindings, group render mode.
+#
+# These are the builders inspector v2 (wave 5) calls on blur or Enter. They
+# are separated from move and resize because their undo behaviour differs —
+# a drag coalesces into one undo entry, a field edit is one entry per commit
+# — and because they are the only builders a non-gesture surface (the MCP
+# propose path, wave 7) will also use.
+
+file: "packages/editor/src/state/edits/glyph.ts"
+doc: "Visual style edits — shape, line, typography, component binding and group render mode."
+
+methods: [
+  { name: "setNodeGlyphEdit"
+    doc: "Any combination of shape, typography and component on one node. Absent fields are left alone, so the inspector can commit a single field without reading back the rest."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeId", type: { primitive: CHARACTER } },
+      { name: "patch", type: { named: { symbol: "NodeGlyphPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit"]
+  },
+  { name: "setNodesGlyphEdit"
+    doc: "The same patch across a multi-selection, as one undoable edit. This is what makes 'select five nodes, set them all blue' one action."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeIds", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } },
+      { name: "patch", type: { named: { symbol: "NodeGlyphPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit"]
+  },
+  { name: "setEdgeGlyphEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "edgeId", type: { primitive: CHARACTER } },
+      { name: "patch", type: { named: { symbol: "EdgeGlyphPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchEdgeEntry", "edgeChange", "styleEdit"]
+  },
+  { name: "setGroupGlyphEdit"
+    doc: "Includes render_mode, which is the group's own answer to visibility: BOUNDED, EXPANDED (no box drawn) or CONTRACTED (children hidden behind a super-node)."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "groupId", type: { primitive: CHARACTER } },
+      { name: "patch", type: { named: { symbol: "GroupGlyphPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchGroupEntry", "groupChange", "styleEdit"]
+  },
+  { name: "setAnnotationGlyphEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "annotationId", type: { primitive: CHARACTER } },
+      { name: "patch", type: { named: { symbol: "AnnotationGlyphPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit"]
+  }
+]
+
+structs: [
+  { name: "NodeGlyphPatch"
+    fields: [
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "EdgeGlyphPatch"
+    fields: [
+      { name: "connection", type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "GroupGlyphPatch"
+    fields: [
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "renderMode", type: { named: { symbol: "archeglyph.style.v1.GroupRenderMode" } }, is_optional: true },
+      { name: "labelPosition", type: { named: { symbol: "archeglyph.style.v1.GroupLabelPosition" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "AnnotationGlyphPatch"
+    fields: [
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "callout", type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

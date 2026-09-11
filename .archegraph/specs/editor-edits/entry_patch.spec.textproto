@@ -1,0 +1,118 @@
+# Wave 3. Every builder in this pillar has the same first problem: a
+# StyleEdit change carries a WHOLE entry, not a field, so writing one field
+# means rebuilding the entry around it. Get that wrong and moving a node
+# silently drops its component binding and typography.
+#
+# That merge already exists — three times, as private helpers inside
+# shell/inspector.tsx (buildNodeEntry, buildGroupEntry, applyNodeEdit). They
+# are unreachable from the gesture layer without importing a UI component,
+# and inspector v2 deletes the file they live in. This is where they live
+# now; inspector v2 calls these instead.
+
+# `existing` is a required `T | undefined` rather than an optional param:
+# TypeScript forbids a required parameter after an optional one, and callers
+# always have the value to hand (`stylesheet.nodes[id]`, which is genuinely
+# undefined the first time an element is touched).
+
+file: "packages/editor/src/state/edits/entry_patch.ts"
+doc: "Merge a partial change into an existing style entry, preserving every field the caller did not name."
+
+methods: [
+  { name: "patchNodeEntry"
+    doc:
+      "Returns a NodeStyleEntry that is `existing` with the set fields of\n"
+      "`patch` written over it. An absent `existing` means the element has no\n"
+      "style entry yet, which is the normal case the first time anything is\n"
+      "touched — treat it as empty, not as an error.\n"
+      "\n"
+      "`layout` merges FIELD-WISE, not wholesale: a caller patching position\n"
+      "must not clear size or rotation. That is the specific bug this exists\n"
+      "to prevent."
+    inputs: [
+      { name: "existing", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "NodeStyleEntry | undefined" } } },
+      { name: "patch", type: { named: { symbol: "NodeEntryPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.NodeStyleEntry" } }
+    uses: ["archeglyph.style.v1.NodeStyleEntry"]
+  },
+  { name: "patchEdgeEntry"
+    inputs: [
+      { name: "existing", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "EdgeStyleEntry | undefined" } } },
+      { name: "patch", type: { named: { symbol: "EdgeEntryPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.EdgeStyleEntry" } }
+    uses: ["archeglyph.style.v1.EdgeStyleEntry"]
+  },
+  { name: "patchGroupEntry"
+    inputs: [
+      { name: "existing", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "GroupStyleEntry | undefined" } } },
+      { name: "patch", type: { named: { symbol: "GroupEntryPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.GroupStyleEntry" } }
+    uses: ["archeglyph.style.v1.GroupStyleEntry"]
+  },
+  { name: "patchAnnotationEntry"
+    doc: "AnnotationEntry carries its own `id`, unlike the other three. The id comes from the patch and is always written."
+    inputs: [
+      { name: "existing", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "AnnotationEntry | undefined" } } },
+      { name: "patch", type: { named: { symbol: "AnnotationEntryPatch" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.AnnotationEntry" } }
+    uses: ["archeglyph.style.v1.AnnotationEntry"]
+  }
+]
+
+structs: [
+  { name: "NodeEntryPatch"
+    doc: "Every field optional; an absent field means 'leave whatever is there'. Layout fields are named individually so a move cannot clear a size."
+    fields: [
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "rotation", type: { primitive: REAL }, is_optional: true },
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "visibility", type: { named: { symbol: "archeglyph.style.v1.NodeVisibility" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "EdgeEntryPatch"
+    doc: "No visibility field — edges have none in the schema; their rendering follows their endpoints (design.md §2.8)."
+    fields: [
+      { name: "routing", type: { named: { symbol: "archeglyph.style.v1.EdgeRouting" } }, is_optional: true },
+      { name: "waypoints", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.Vec2" } }] } }, is_optional: true },
+      { name: "connection", type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "GroupEntryPatch"
+    fields: [
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "padding", type: { primitive: REAL }, is_optional: true },
+      { name: "renderMode", type: { named: { symbol: "archeglyph.style.v1.GroupRenderMode" } }, is_optional: true },
+      { name: "labelPosition", type: { named: { symbol: "archeglyph.style.v1.GroupLabelPosition" } }, is_optional: true },
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "AnnotationEntryPatch"
+    fields: [
+      { name: "id", type: { primitive: CHARACTER } },
+      { name: "content", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.content.v1.Localization" } }] } }, is_optional: true },
+      { name: "anchor", type: { named: { symbol: "archeglyph.style.v1.AnnotationAnchor" } }, is_optional: true },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },
+      { name: "rotation", type: { primitive: REAL }, is_optional: true },
+      { name: "shape", type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }, is_optional: true },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } }, is_optional: true },
+      { name: "callout", type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }, is_optional: true },
+      { name: "component", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

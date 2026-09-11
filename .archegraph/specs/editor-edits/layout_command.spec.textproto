@@ -1,0 +1,54 @@
+# Wave 3. The commands that operate on pinning itself rather than on one
+# element: Pin all, Unpin all, Auto-layout.
+#
+# Because a pin IS a written NodeLayout.position (see move), these are all
+# the same two operations: copy the Scene's computed positions into the
+# stylesheet, or remove them. That is why they need a LaidOutDiagram and the
+# other builders do not — pinning everything means writing down where ELK
+# just put it.
+#
+# Wave 5's `layout` Δ is the other half: once every node is pinned it skips
+# ELK entirely, which is what makes a pinned diagram stable.
+
+file: "packages/editor/src/state/edits/layout_command.ts"
+doc: "Pin all, unpin all and auto-layout — the commands that operate on pinning rather than on one element."
+
+methods: [
+  { name: "pinAllEdit"
+    doc:
+      "Writes every laid-out node's and group's current position into the\n"
+      "stylesheet, freezing the diagram exactly as it looks.\n"
+      "\n"
+      "Positions come out of LaidOutDiagram canvas-absolute and go into the\n"
+      "stylesheet parent-relative, so a child's position has its parent\n"
+      "group's subtracted. Getting this backwards is the §5.1 bug in reverse\n"
+      "and would throw every grouped node out by its group's offset.\n"
+      "\n"
+      "Already-pinned elements are rewritten with the same value rather than\n"
+      "skipped: the result should be one edit that makes the whole diagram\n"
+      "pinned, whatever it was before."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
+  },
+  { name: "unpinAllEdit"
+    doc: "Clears every NodeLayout/GroupLayout position, handing the diagram back to ELK. Keeps the rest of each entry — unpinning must not reset anyone's colours."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
+  },
+  { name: "unpinElementsEdit"
+    doc: "Same, for a selection — 'let ELK decide where these go again'."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "refs", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementMove" } }] } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
+  }
+]

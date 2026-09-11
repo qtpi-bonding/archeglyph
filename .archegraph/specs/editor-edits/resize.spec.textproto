@@ -1,0 +1,57 @@
+# Wave 3. Wave 5's resize gesture commits through this; the handles are
+# already drawn by overlay_layer and inert until then.
+#
+# A resize writes BOTH position and size, because seven of the eight handles
+# move the origin as well as the extent — dragging the top-left corner is a
+# move and a resize at once. Writing size alone would make the box grow
+# downward from a fixed top-left no matter which handle was used.
+#
+# Writing NodeLayout.size also pins the size, which otherwise falls out of
+# the label's measured text (docs/design.md, font_metrics). That is the
+# intended meaning of a manual resize and the reason the field is optional.
+
+file: "packages/editor/src/state/edits/resize.ts"
+doc: "Size edits for nodes, groups and annotations — commit path for the resize handles."
+
+methods: [
+  { name: "resizeNodeEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit"]
+  },
+  { name: "resizeGroupEdit"
+    doc: "A group's size is normally ELK's, computed from its children. An explicit size overrides that and does NOT reflow the children."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "groupId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchGroupEntry", "groupChange", "styleEdit"]
+  },
+  { name: "resizeAnnotationEdit"
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "annotationId", type: { primitive: CHARACTER } },
+      { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size", type: { named: { symbol: "archeglyph.style.v1.Vec2" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchAnnotationEntry", "annotationChange", "styleEdit"]
+  },
+  { name: "clearNodeSizeEdit"
+    doc: "Hands a node's size back to the label measurement. The undo of a resize is the previous size; this is the separate 'stop overriding' command."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeId", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["nodeChange", "styleEdit"]
+  }
+]

@@ -1,0 +1,43 @@
+# Wave 3. Hiding is presentation, never content — the node stays in the
+# diagram file and comes back. This is what D3 means by "Delete is
+# annotations-only": the only thing the editor can truly remove is an
+# annotation, because annotations are the only elements it owns.
+#
+# Nodes are the only element type with a visibility field. Edges have none
+# by design (design.md §2.8 — an edge with a hidden endpoint disappears on
+# its own), and groups use render_mode instead, which is a different
+# question and lives in glyph.
+
+file: "packages/editor/src/state/edits/visibility.ts"
+doc: "Hide and show nodes — presentation-only, and the nearest thing the editor has to delete."
+
+methods: [
+  { name: "setNodeHiddenEdit"
+    doc: "Sets NODE_VISIBILITY_HIDDEN or UNSPECIFIED. UNSPECIFIED rather than a 'visible' variant because the schema has no such variant — absent means visible."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeId", type: { primitive: CHARACTER } },
+      { name: "hidden", type: { primitive: BOOLEAN } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit", "archeglyph.style.v1.NodeVisibility"]
+  },
+  { name: "setNodesHiddenEdit"
+    doc: "Same, over a selection, as one undoable edit."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "nodeIds", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } },
+      { name: "hidden", type: { primitive: BOOLEAN } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit", "archeglyph.style.v1.NodeVisibility"]
+  },
+  { name: "showAllEdit"
+    doc: "Clears every NODE_VISIBILITY_HIDDEN in the stylesheet. Hidden nodes are invisible by definition, so without this a user who hides something and forgets has no way back to it."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "nodeChange", "styleEdit", "archeglyph.style.v1.NodeVisibility"]
+  }
+]

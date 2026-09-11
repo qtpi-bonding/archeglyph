@@ -5,7 +5,10 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Viewport } from './ui_state';
 
 export function diagramToScreen(viewport: Viewport, containerRect: ContainerRect, diagramPt: Vec2): Vec2 {
-  throw new Error('not implemented');
+  return {
+    x: diagramPt.x * viewport.zoom + viewport.panX + containerRect.left,
+    y: diagramPt.y * viewport.zoom + viewport.panY + containerRect.top,
+  };
 }
 export interface ContainerRect {
   left: number;

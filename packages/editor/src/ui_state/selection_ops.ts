@@ -7,7 +7,7 @@ export function addAllSelection(current: ElementRef[], refs: ElementRef[]): Elem
   throw new Error('not implemented');
 }
 export function clearSelection(): ElementRef[] {
-  throw new Error('not implemented');
+  return [];
 }
 export function selectInRect(candidates: { ref: ElementRef; bounds: Bounds }[], marquee: Bounds): ElementRef[] {
   throw new Error('not implemented');

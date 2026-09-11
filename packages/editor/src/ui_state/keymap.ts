@@ -29,5 +29,20 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 's', meta: true }, command: 'save' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
-  throw new Error('not implemented');
+  for (const entry of KEYMAP) {
+    const { chord } = entry;
+    const chordUsesMeta = chord.meta === true;
+    const eventUsesMeta = event.metaKey || event.ctrlKey;
+    const chordUsesShift = chord.shift === true;
+
+    if (
+      chord.key === event.key &&
+      chordUsesMeta === eventUsesMeta &&
+      chordUsesShift === event.shiftKey
+    ) {
+      return entry.command;
+    }
+  }
+
+  return undefined;
 }

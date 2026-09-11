@@ -2,6 +2,7 @@
 
 import { Handle } from './hit_test';
 import { Vec2 } from '../vec2';
+import { distance } from '@archeglyph/core/geometry/vec2';
 
 export interface HandlePoint {
   handle: Handle;
@@ -27,5 +28,16 @@ export function handlePositions(bounds: Bounds): Array<HandlePoint> {
 }
 export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 export function hitTestHandle(bounds: Bounds, point: Vec2, radius: number): Handle | undefined {
-  throw new Error('not implemented');
+  let nearest: Handle | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const handlePoint of handlePositions(bounds)) {
+    const handleDistance = distance(handlePoint.point, point);
+    if (handleDistance <= radius && handleDistance < nearestDistance) {
+      nearest = handlePoint.handle;
+      nearestDistance = handleDistance;
+    }
+  }
+
+  return nearest;
 }

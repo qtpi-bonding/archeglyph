@@ -10,5 +10,5 @@ export function removePendingEdit(stylesheet: Stylesheet, editId: string): Style
   throw new Error('not implemented');
 }
 export function findPendingEdit(stylesheet: Stylesheet, editId: string): StyleEdit | undefined {
-  throw new Error('not implemented');
+  return stylesheet.pendingEdits.find((edit) => edit.id === editId);
 }

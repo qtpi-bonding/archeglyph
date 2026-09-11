@@ -1,0 +1,37 @@
+# theme_defaults pillar (wave 2, docs/implementation-order.md; decisions D12b
+# and the "theme_defaults" note in docs/editor-ui-review.md §10). Adds the
+# document-level canvas style to the resolved diagram so layout can read its
+# spacing hints and the renderer can paint its background. Each downstream
+# stage reads only its own slice; nothing rewrites it after the resolver.
+
+file: "packages/core/src/resolver/resolved_diagram/impl.ts"
+doc: "Cascaded diagram with per-element glyphs plus the resolved document-level canvas style. Output of StyleCascade and TokenResolver."
+
+structs: [
+  { name: "ResolvedDiagram"
+    change_type: MODIFIED
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "nodes",
+        type: { named: { symbol: "ResolvedNode" } },
+        is_repeated: true },
+      { name: "edges",
+        type: { named: { symbol: "ResolvedEdge" } },
+        is_repeated: true },
+      { name: "groups",
+        type: { named: { symbol: "ResolvedGroup" } },
+        is_repeated: true },
+      { name: "annotations",
+        type: { named: { symbol: "ResolvedAnnotation" } },
+        is_repeated: true },
+      { name: "canvas"
+        doc:
+          "Always populated by StyleCascade: the stylesheet's CanvasStyle "
+          "(or an empty one) with background defaulted to the '$colors.background' "
+          "token ref when unset. Token refs are still unresolved here; "
+          "TokenResolver substitutes them like any other string field."
+        type: { named: { symbol: "archeglyph.style.v1.CanvasStyle" } } }
+    ]
+  }
+]

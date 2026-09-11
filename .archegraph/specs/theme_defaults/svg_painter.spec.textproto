@@ -1,0 +1,18 @@
+file: "packages/core/src/renderer/svg_painter/impl.ts"
+doc: "Pure SVG string helpers. Adds backgroundRect beside viewBox."
+
+methods: [
+  { name: "backgroundRect"
+    doc:
+      "Return a <rect> covering the diagram's viewBox extents (same numbers "
+      "viewBox() computes — share the extent computation rather than duplicating "
+      "it), filled with the canvas background colour, or '' when "
+      "diagram.canvas.background has no colour value or the value is still an "
+      "unresolved '$' token ref. Rounded to 2dp like everything else here."
+    inputs: [
+      { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }
+    ]
+    output: { primitive: CHARACTER }
+    uses: ["viewBox"]
+  }
+]

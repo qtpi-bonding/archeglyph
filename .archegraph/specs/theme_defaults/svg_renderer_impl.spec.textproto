@@ -1,0 +1,29 @@
+file: "packages/core/src/renderer/svg_renderer/impl.ts"
+doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string. Now paints the canvas background as the first child."
+
+structs: [
+  { name: "SvgRendererImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "SvgRenderer" } }]
+    methods: [
+      { name: "render"
+        change_type: MODIFIED
+        doc:
+          "Only change: emit backgroundRect(diagram) immediately after <defs> and "
+          "before groups, so it sits under everything. '' from backgroundRect means "
+          "no rect (transparent), which keeps existing goldens for stylesheets/themes "
+          "without a background byte-identical. No theme or stylesheet access here — "
+          "the colour arrives already resolved on diagram.canvas."
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "LaidOutDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: CHARACTER },
+          { named: { symbol: "RenderError" } }
+        ]}}
+        uses: ["backgroundRect"]
+      }
+    ]
+  }
+]

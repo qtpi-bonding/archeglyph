@@ -1,0 +1,35 @@
+file: "packages/core/src/layout/layout_adapter/impl.ts"
+doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back. Now honours CanvasStyle spacing hints and carries canvas through to LaidOutDiagram."
+
+structs: [
+  { name: "ElkAdapterImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "LayoutAdapter" } }]
+    methods: [
+      { name: "runLayout"
+        change_type: MODIFIED
+        is_async: true
+        doc:
+          "Two changes; everything else preserved.\n"
+          "1. Read diagram.canvas hints into the root ELK layoutOptions when set: "
+          "node_spacing → 'org.eclipse.elk.spacing.nodeNode', edge_spacing → "
+          "'org.eclipse.elk.spacing.edgeNode', margin → 'org.eclipse.elk.padding' "
+          "(ELK padding string form). Unset hints → leave ELK defaults.\n"
+          "2. Set LaidOutDiagram.canvas = diagram.canvas (same object; no copy "
+          "needed, nothing downstream mutates it)."
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: [
+          "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
+          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection"
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,41 @@
+# theme_defaults: two additions to the cascade, both "make a theme show up
+# without a hand-written stylesheet". The theme schema still has no default_*
+# fields (design.md §4.3); the default is a code convention, matching the
+# implicit 'glyph' name `archeglyph bind` already uses.
+
+file: "packages/core/src/resolver/style_cascade/impl.ts"
+doc: "In-memory StyleCascade implementation. Pure logic, sync, Result-returning. Applies the implicit 'glyph' theme component and populates ResolvedDiagram.canvas."
+
+structs: [
+  { name: "StyleCascadeImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "StyleCascade" } }]
+    methods: [
+      { name: "cascade"
+        change_type: MODIFIED
+        doc:
+          "Two changes to the existing cascade; everything else is preserved.\n"
+          "1. Implicit default component: when an element's style entry has no "
+          "component (or no entry at all), look up the theme component named "
+          "'glyph' for that element type (node_components, edge_components, "
+          "group_components, annotation_components) and cascade it exactly as "
+          "a named component would be. Absent 'glyph' component → no theme layer, "
+          "as today. An explicitly named component that does not exist is still "
+          "an Err — only the unnamed case gets the default.\n"
+          "2. Populate ResolvedDiagram.canvas: copy stylesheet.canvas (or a fresh "
+          "CanvasStyle when the stylesheet has none); if background is unset, set "
+          "it to a Color whose value is the literal token ref '$colors.background'. "
+          "Do not resolve tokens here."
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "CascadeRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+        uses: ["ResolvedNode", "ResolvedEdge", "ResolvedGroup", "ResolvedAnnotation", "ResolvedDiagram"]
+      }
+    ]
+  }
+]

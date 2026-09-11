@@ -1,0 +1,28 @@
+file: "packages/core/src/resolver/token_resolver/impl.ts"
+doc: "In-memory TokenResolver implementation. Pure logic, sync, Result-returning. Now also resolves token refs inside ResolvedDiagram.canvas."
+
+structs: [
+  { name: "TokenResolverImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "TokenResolver" } }]
+    methods: [
+      { name: "resolveTokens"
+        change_type: MODIFIED
+        doc:
+          "Only change: the generic string-field walker must also visit "
+          "ResolvedDiagram.canvas (CanvasStyle.background is a Color whose value "
+          "may be '$colors.background'). Same unresolved-ref passthrough rule as "
+          "every other field. Everything else preserved."
+        inputs: [
+          { name: "request",
+            type: { named: { symbol: "ResolveTokensRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+        uses: ["ResolvedDiagram"]
+      }
+    ]
+  }
+]

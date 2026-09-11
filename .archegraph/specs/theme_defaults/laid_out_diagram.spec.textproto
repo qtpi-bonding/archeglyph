@@ -1,0 +1,27 @@
+file: "packages/core/src/layout/laid_out_diagram/impl.ts"
+doc: "Fully positioned diagram plus the resolved canvas style. Complete input for the renderer — no further style or theme lookups needed."
+
+structs: [
+  { name: "LaidOutDiagram"
+    change_type: MODIFIED
+    fields: [
+      { name: "id",
+        type: { primitive: CHARACTER } },
+      { name: "nodes",
+        type: { named: { symbol: "LaidOutNode" } },
+        is_repeated: true },
+      { name: "edges",
+        type: { named: { symbol: "LaidOutEdge" } },
+        is_repeated: true },
+      { name: "groups",
+        type: { named: { symbol: "LaidOutGroup" } },
+        is_repeated: true },
+      { name: "annotations",
+        type: { named: { symbol: "LaidOutAnnotation" } },
+        is_repeated: true },
+      { name: "canvas"
+        doc: "Copied verbatim from ResolvedDiagram.canvas by the layout adapter. Tokens already resolved. The renderer reads only background from it."
+        type: { named: { symbol: "archeglyph.style.v1.CanvasStyle" } } }
+    ]
+  }
+]

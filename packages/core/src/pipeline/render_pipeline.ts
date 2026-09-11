@@ -12,16 +12,9 @@ import { PipelineError } from './pipeline_error';
 import { resolvePipeline } from './resolve_pipeline';
 
 export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme, layoutEngine: LayoutEngine): Promise<Result<string, PipelineError>> {
-  const resolveResult = resolvePipeline(diagram, stylesheet, theme);
-  if (resolveResult.kind === 'err') {
-    return Err(resolveResult.error);
-  }
-
-  const layoutResult = await layoutEngine.layout(
-    Object.assign(new LayoutRequest(), { diagram: resolveResult.value })
-  );
+  const layoutResult = await layoutPipeline(diagram, stylesheet, theme, layoutEngine);
   if (layoutResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'layout' }));
+    return Err(layoutResult.error);
   }
 
   const renderResult = new SvgRendererImpl().render(layoutResult.value);

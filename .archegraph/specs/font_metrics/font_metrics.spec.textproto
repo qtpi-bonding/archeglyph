@@ -1,0 +1,60 @@
+# New pillar, wave 2 of docs/implementation-order.md ("text/font_metrics").
+# Deterministic label measurement, replacing DOM measurement (which the CLI
+# render path can't do at all — no DOM — and which the editor would need a
+# hidden canvas/span hack for). Consumed by the layout adapter (node
+# sizing), the future scene's bounds index, and the renderer.
+#
+# Design choice made here (not left to the build agent): "per-font
+# advance-width table" degenerates to a SINGLE ratio for a monospace font
+# — every glyph in Noto Sans Mono has the same advance width by
+# definition, so a real per-character table would just be that one number
+# repeated. Fabricating per-character kerning data for a font we don't
+# have real metrics for would be worse than being honest that this is a
+# uniform-width approximation. 0.6 (character width as a fraction of
+# font-size) is the standard published advance-width ratio for monospace
+# faces in the Noto family. If/when a proportional font needs support,
+# that's a real per-character table and a different function — not this
+# one, and not blocking this pillar's exit criterion of "a Noto Sans Mono
+# consumer can size a label without touching the DOM."
+#
+# measureLabel returns a Vec2 (width, height) in the SAME units font `size`
+# is given in (matches Typography.size's convention elsewhere in the
+# schema — points/px, not em). Height uses a fixed 1.2 line-height ratio
+# (a common, unremarkable default; not font-specific data).
+
+file: "packages/core/src/text/font_metrics/impl.ts"
+doc: "Deterministic label measurement for Noto Sans Mono. No DOM dependency."
+
+constants: [
+  { name: "MONOSPACE_ADVANCE_WIDTH_RATIO"
+    doc: "Character advance width as a fraction of font size, for Noto Sans Mono (and any other monospace face until a real per-font table exists)."
+    type: { primitive: REAL }
+    value: "0.6"
+  },
+  { name: "LINE_HEIGHT_RATIO"
+    doc: "Line height as a fraction of font size. Not font-specific; a common typographic default."
+    type: { primitive: REAL }
+    value: "1.2"
+  }
+]
+
+methods: [
+  { name: "measureLabel"
+    doc:
+      "width = text.length * MONOSPACE_ADVANCE_WIDTH_RATIO * size;\n"
+      "height = size * LINE_HEIGHT_RATIO. `font` is accepted for a future\n"
+      "per-font table but unused today (every supported font is this same\n"
+      "monospace ratio) — do not branch on it, just accept the param so the\n"
+      "call sites (layout adapter, scene, renderer) don't need to change\n"
+      "signature later. Multi-line text (`text` containing '\\n'): width is\n"
+      "the longest line's width, height is LINE_HEIGHT_RATIO * size *\n"
+      "(number of lines)."
+    inputs: [
+      { name: "text", type: { primitive: CHARACTER } },
+      { name: "font", type: { primitive: CHARACTER } },
+      { name: "size", type: { primitive: REAL } }
+    ]
+    output: { named: { symbol: "Vec2" } }
+    uses: ["Vec2", "MONOSPACE_ADVANCE_WIDTH_RATIO", "LINE_HEIGHT_RATIO"]
+  }
+]

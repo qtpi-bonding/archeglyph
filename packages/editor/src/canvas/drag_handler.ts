@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { createSignal } from 'solid-js';
-import type { Accessor } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
 import {
   AnnotationEntry,
@@ -28,55 +26,13 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { EditorState } from '../state/editor_state';
 import { ElementKind } from './selection';
-import { Vec2, ViewportState } from './viewport';
+import { Vec2 } from './viewport';
 
 export type DragSession = {
   elementId: string;
   elementKind: ElementKind;
   startCanvasPt: Vec2;
 };
-
-export class DragHandler {
-  state!: EditorState;
-  viewport!: ViewportState;
-
-  private _session: DragSession | null = null;
-  private readonly _getOffset: Accessor<Vec2 | null>;
-  private readonly _setOffset: (v: Vec2 | null) => void;
-
-  constructor() {
-    const [get, set] = createSignal<Vec2 | null>(null);
-    this._getOffset = get;
-    this._setOffset = set as (v: Vec2 | null) => void;
-  }
-
-  dragOffset(): Vec2 | null {
-    return this._getOffset();
-  }
-
-  activeSession(): DragSession | null {
-    return this._session;
-  }
-
-  onPointerDown(elementId: string, elementKind: ElementKind, startPt: Vec2): void {
-    const startCanvasPt: Vec2 = this.viewport.toCanvas(startPt);
-    this._session = { elementId, elementKind, startCanvasPt };
-    this._setOffset({ x: 0, y: 0 });
-  }
-
-  onPointerUp(): void {
-    const session: DragSession | null = this._session;
-    if (session === null) {
-      // no-op
-    } else {
-      const offset: Vec2 = this._getOffset() ?? { x: 0, y: 0 };
-      const edit: StyleEdit = buildDragEdit(this.state, session.elementId, session.elementKind, offset);
-      this.state.applyStyleEdit(edit);
-      this._session = null;
-      this._setOffset(null);
-    }
-  }
-}
 
 function buildDragEdit(
   state: EditorState,

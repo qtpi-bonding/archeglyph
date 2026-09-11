@@ -10,12 +10,32 @@ export function nextInDocumentOrder(elements: NavigableElement[], current?: Elem
   throw new Error('not implemented');
 }
 export function nearestInDirection(elements: NavigableElement[], from: NavigableElement, direction: Vec2, halfAngleRad: number): ElementRef | undefined {
-  throw new Error('not implemented');
+  let nearest: NavigableElement | undefined;
+  let nearestDistance = Infinity;
+
+  for (const element of elements) {
+    if (element.ref.id === from.ref.id && element.ref.kind === from.ref.kind) {
+      continue;
+    }
+    if (!isWithinCone(from.centre, direction, element.centre, halfAngleRad)) {
+      continue;
+    }
+
+    const candidateDistance = distance(from.centre, element.centre);
+    if (candidateDistance < nearestDistance) {
+      nearest = element;
+      nearestDistance = candidateDistance;
+    }
+  }
+
+  return nearest?.ref;
 }
 import { ElementRef } from './ui_state';
-import { Vec2 } from '../vec2';
+import { isWithinCone } from '@archeglyph/core/geometry/direction';
+import { distance, Vec2 } from '@archeglyph/core/geometry/vec2';
 
 export interface NavigableElement {
   ref: ElementRef;
   centre: Vec2;
 }
+

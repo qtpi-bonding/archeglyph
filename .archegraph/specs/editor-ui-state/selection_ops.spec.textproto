@@ -1,0 +1,51 @@
+# New pillar file, wave 2 ("editor-ui-state ✎"). Pure selection-array
+# transforms — no Solid, no signals, just ElementRef[] -> ElementRef[].
+# Keymap/gesture handlers (later waves) call these and pass the result to
+# UiState.setSelection.
+
+file: "packages/editor/src/ui_state/selection_ops.ts"
+doc: "Pure ElementRef[] transforms: replace, toggle, add-all, clear, select-in-rect."
+
+methods: [
+  { name: "replaceSelection"
+    doc: "A plain click: selection becomes exactly [ref]."
+    inputs: [{ name: "ref", type: { named: { symbol: "ElementRef" } } }]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } }
+    uses: ["ElementRef"]
+  },
+  { name: "toggleSelection"
+    doc: "Shift-click: if ref (matched by id AND kind) is already in current, remove it; otherwise append it."
+    inputs: [
+      { name: "current", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } } },
+      { name: "ref",     type: { named: { symbol: "ElementRef" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } }
+  },
+  { name: "addAllSelection"
+    doc: "Cmd/Ctrl+A or marquee-add: union of current and refs, de-duplicated by (id, kind), current's own order preserved followed by newly-added refs in their given order."
+    inputs: [
+      { name: "current", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } } },
+      { name: "refs",    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } }
+  },
+  { name: "clearSelection"
+    doc: "Escape or click-on-empty-canvas. Emit exactly: export function clearSelection(): ElementRef[] { return []; }"
+    inputs: []
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } }
+  },
+  { name: "selectInRect"
+    doc:
+      "Marquee selection. `candidates` pairs each ElementRef with its\n"
+      "Bounds (from a future Scene's bounds index, wave 3 — this function\n"
+      "itself has no Scene dependency, just takes Bounds directly). Returns\n"
+      "every candidate whose Bounds intersects `marquee`\n"
+      "(geometry/bounds.ts's boundsIntersects, wave 1, already merged)."
+    inputs: [
+      { name: "candidates", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{ ref: ElementRef; bounds: Bounds }[]" } } },
+      { name: "marquee",    type: { named: { symbol: "Bounds" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef[]" } }
+    uses: ["ElementRef", "Bounds", "boundsIntersects"]
+  }
+]

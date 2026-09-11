@@ -1,0 +1,91 @@
+# New pillar file, wave 2 ("editor-ui-state ✎: keymap (ring, Tab, Escape,
+# modes)"). Declarative chord -> command-id table, replacing app.tsx's
+# current two-shortcut inline keydown handler
+# (docs/editor-ui-review.md §2.7: "app.tsx:52-60 is the complete keyboard
+# surface... metaKey only — no ctrlKey fallback... no preventDefault...
+# undoes the DOCUMENT instead of the field" when focus is in an input).
+# This pillar only builds the declarative table + chord resolver; wiring
+# it into app.tsx (with the isEditableTarget guard, actual command
+# dispatch, preventDefault) is a later wave's gestures/keyboard_handler
+# pillar (docs/implementation-order.md wave 4) — this is the data, not the
+# event listener.
+#
+# CommandId values chosen to cover wave 2's own D6 decision ("ring on 's'")
+# plus the baseline §2.7 flagged as entirely missing. Commands with no
+# implementation yet (e.g. "delete") are still valid table entries —
+# resolveChord() just maps a KeyboardEvent-shaped input to a CommandId or
+# undefined; execution is the caller's problem in every case, in every wave.
+
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative keyboard chord -> command-id table, platform-aware (meta OR ctrl)."
+
+structs: [
+  { name: "CommandId"
+    doc:
+      "Emit exactly: export type CommandId = 'undo' | 'redo' | 'delete' |\n"
+      "'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |\n"
+      "'nudge-right' | 'ring-next' | 'ring-prev' | 'save';"
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'save'" } }
+    typescript: {}
+  },
+  { name: "Chord"
+    doc: "One key combination. meta means 'meta on Mac, ctrl elsewhere' — see resolveChord's platform handling, not two separate fields."
+    fields: [
+      { name: "key",   type: { primitive: CHARACTER } },
+      { name: "meta",  type: { primitive: BOOLEAN }, is_optional: true },
+      { name: "shift", type: { primitive: BOOLEAN }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "KeymapEntry"
+    fields: [
+      { name: "chord",   type: { named: { symbol: "Chord" } } },
+      { name: "command", type: { named: { symbol: "CommandId" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    doc:
+      "The full table. Emit exactly this list of {chord, command} pairs\n"
+      "(key names match KeyboardEvent.key verbatim, e.g. 'ArrowUp' not\n"
+      "'up'):\n"
+      "  { key: 'z', meta: true } -> undo\n"
+      "  { key: 'z', meta: true, shift: true } -> redo\n"
+      "  { key: 'Backspace' } -> delete\n"
+      "  { key: 'Delete' } -> delete\n"
+      "  { key: 'Escape' } -> escape\n"
+      "  { key: 'a', meta: true } -> select-all\n"
+      "  { key: 'ArrowUp' } -> nudge-up\n"
+      "  { key: 'ArrowDown' } -> nudge-down\n"
+      "  { key: 'ArrowLeft' } -> nudge-left\n"
+      "  { key: 'ArrowRight' } -> nudge-right\n"
+      "  { key: 's' } -> ring-next\n"
+      "  { key: 's', shift: true } -> ring-prev\n"
+      "  { key: 's', meta: true } -> save"
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeymapEntry[]" } }
+    uses: ["KeymapEntry"]
+  }
+]
+
+methods: [
+  { name: "resolveChord"
+    doc:
+      "Match a real key event (shaped as { key: string; metaKey: boolean;\n"
+      "ctrlKey: boolean; shiftKey: boolean } — a structural subset of\n"
+      "KeyboardEvent, not the DOM type itself, so this stays testable\n"
+      "without a DOM) against KEYMAP. A chord's `meta: true` matches when\n"
+      "EITHER metaKey OR ctrlKey is true on the event (the cross-platform\n"
+      "fallback docs/editor-ui-review.md §2.7 flagged as entirely missing);\n"
+      "`meta` absent/false requires BOTH metaKey and ctrlKey to be false.\n"
+      "Same exact-match logic for `shift`. Returns the first matching\n"
+      "entry's command, or undefined."
+    inputs: [
+      { name: "event", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{ key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "CommandId | undefined" } }
+    uses: ["KEYMAP"]
+  }
+]

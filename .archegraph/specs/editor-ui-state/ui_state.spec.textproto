@@ -1,0 +1,77 @@
+# New pillar, wave 2 of docs/implementation-order.md ("editor-ui-state ✎").
+# One store for transient UI state (selection, hover, tool, viewport) —
+# the "3. UiState" box in docs/editor-ui-review.md §7's three-store
+# architecture. Signal-backed, the only mutable UI object. This pillar
+# does NOT yet replace canvas/selection.ts or canvas/viewport.ts (no
+# consumers wired up — that's wave 3's canvas rewrite); it's the new
+# primitive, built standalone first, same pattern as wave 1's geometry.
+#
+# ElementRef replaces canvas/selection.ts's SelectedElement — same shape,
+# `kind` as a string-literal union instead of a numeric enum (plain data,
+# easy to serialize/compare/log, and matches svg_renderer's new
+# data-kind="node"|"edge"|"group"|"annotation" attribute values verbatim,
+# wave 2 renderer Δ, already merged).
+#
+# `selection` is an ARRAY (multi-select) from day one, per
+# docs/editor-ui-review.md §2.6: "Widen SelectionState to selected():
+# SelectedElement[] now, before more code depends on the singular shape."
+
+file: "packages/editor/src/ui_state/ui_state.ts"
+doc: "The one mutable UI-state store: selection, hover, tool, viewport."
+
+structs: [
+  { name: "ElementRef"
+    doc: "Identifies one diagram element. Matches svg_renderer's data-kind attribute values."
+    fields: [
+      { name: "id",   type: { primitive: CHARACTER } },
+      { name: "kind", doc: "Emit exactly: 'node' | 'edge' | 'group' | 'annotation'", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'node' | 'edge' | 'group' | 'annotation'" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "Tool"
+    doc: "Emit exactly: export type Tool = 'select' | 'hand' | 'annotation';"
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'select' | 'hand' | 'annotation'" } }
+    typescript: {}
+  },
+  { name: "Viewport"
+    doc: "Pan/zoom state. panX/panY are in SCREEN pixels (added after scaling), matching canvas/viewport.ts's existing ViewportState convention."
+    fields: [
+      { name: "panX", type: { primitive: REAL } },
+      { name: "panY", type: { primitive: REAL } },
+      { name: "zoom", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "UiState"
+    doc:
+      "Handle returned by createUiState(). Each field pair is a Solid\n"
+      "Accessor + Setter (import { Accessor, Setter } from 'solid-js'),\n"
+      "same shape as save_controller.ts's SaveController fields (wave 2,\n"
+      "already merged) — a plain object of signal accessors/setters, not a\n"
+      "class."
+    fields: [
+      { name: "selection",    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<ElementRef[]>" } } },
+      { name: "setSelection", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<ElementRef[]>" } } },
+      { name: "hover",        type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<ElementRef | undefined>" } } },
+      { name: "setHover",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<ElementRef | undefined>" } } },
+      { name: "tool",         type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<Tool>" } } },
+      { name: "setTool",      type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<Tool>" } } },
+      { name: "viewport",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<Viewport>" } } },
+      { name: "setViewport",  type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<Viewport>" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "createUiState"
+    doc:
+      "Factory. Defaults: selection=[], hover=undefined, tool='select',\n"
+      "viewport={panX:0,panY:0,zoom:1}. Plain createSignal calls per field,\n"
+      "same style as create_editor_state.ts (wave 1, already merged) —\n"
+      "no class, no constructor."
+    inputs: []
+    output: { named: { symbol: "UiState" } }
+    uses: ["ElementRef", "Tool", "Viewport"]
+  }
+]

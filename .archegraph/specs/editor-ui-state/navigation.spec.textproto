@@ -1,0 +1,87 @@
+# New pillar file, wave 2 ("editor-ui-state ✎: navigation (next/prev, hex
+# neighbour, follow-edge, enter/leave group)"). Pure position-based
+# navigation, built on geometry's direction module (angleBetween,
+# isWithinCone — wave 1, already merged) for the directional ("ring")
+# queries. Takes plain position data, not a Scene — this pillar has no
+# Scene dependency (Scene doesn't exist until wave 3); a NavigableElement
+# is just {ref, centre}, populated from whatever bounds source is
+# available at the call site.
+#
+# Scope cut, disclosed: "enter/leave group" (traversing into/out of a
+# group's children) needs a containment index — which group contains
+# which children — that only a Scene (wave 3) can cheaply provide. NOT
+# implemented in this pillar; a later wave adds it once Scene exists.
+# followEdge below covers the "follow-edge" half of this delta's module-
+# plan line only.
+
+file: "packages/editor/src/ui_state/navigation.ts"
+doc: "Pure position-based navigation: document order, directional (ring) neighbour, follow-edge."
+
+structs: [
+  { name: "NavigableElement"
+    doc: "One candidate for navigation: its identity and its centre point. Populated from a Scene's bounds index once one exists (wave 3); today, callers build this list themselves from whatever position data they have."
+    fields: [
+      { name: "ref",    type: { named: { symbol: "ElementRef" } } },
+      { name: "centre", type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "nextInDocumentOrder"
+    doc:
+      "`elements` assumed pre-sorted in document order (caller's\n"
+      "responsibility — same id-sort convention svg_renderer already uses).\n"
+      "Returns the element after `current` (by matching id+kind), wrapping\n"
+      "to the first when `current` is the last or undefined. Empty\n"
+      "`elements` -> undefined."
+    inputs: [
+      { name: "elements", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "NavigableElement[]" } } },
+      { name: "current",  type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef | undefined" } }
+    uses: ["NavigableElement", "ElementRef"]
+  },
+  { name: "prevInDocumentOrder"
+    doc: "Same as nextInDocumentOrder but the element before `current`, wrapping to the last."
+    inputs: [
+      { name: "elements", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "NavigableElement[]" } } },
+      { name: "current",  type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef | undefined" } }
+  },
+  { name: "nearestInDirection"
+    doc:
+      "The 'ring' / hex-neighbour query: among `elements` (excluding\n"
+      "`from` itself, matched by id+kind), find the one whose centre is\n"
+      "within a cone of half-angle `halfAngleRad` of `direction` (as seen\n"
+      "from `from`.centre) AND closest by Euclidean distance\n"
+      "(geometry/vec2's distance, wave 1, already merged) among those that\n"
+      "qualify. No qualifying candidate -> undefined. Use\n"
+      "geometry/direction's isWithinCone for the cone test."
+    inputs: [
+      { name: "elements",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "NavigableElement[]" } } },
+      { name: "from",         type: { named: { symbol: "NavigableElement" } } },
+      { name: "direction",    type: { named: { symbol: "Vec2" } } },
+      { name: "halfAngleRad", type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef | undefined" } }
+    uses: ["NavigableElement", "Vec2", "isWithinCone", "distance"]
+  },
+  { name: "followEdge"
+    doc:
+      "Given the diagram's edges (id/source/target id triples) and the\n"
+      "current node id, return the ids reachable by one edge hop:\n"
+      "direction='forward' -> edges whose source === fromId, collecting\n"
+      "target; direction='backward' -> edges whose target === fromId,\n"
+      "collecting source. Order: input edges' own order. No graph\n"
+      "traversal beyond one hop — that's what 'follow' means here."
+    inputs: [
+      { name: "edges",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{ id: string; source: string; target: string }[]" } } },
+      { name: "fromId",    type: { primitive: CHARACTER } },
+      { name: "direction", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'forward' | 'backward'" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "string[]" } }
+  }
+]

@@ -12,6 +12,7 @@ import { LaidOutNode } from '../laid_out_node';
 import { LayoutError } from '../layout_error';
 import { ResolvedDiagram } from '../../resolver/resolved_diagram';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
+import { measureLabel } from '../../text/font_metrics';
 
 export interface LayoutAdapter {
   runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>>;
@@ -106,7 +107,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       }
 
       for (const node of diagram.nodes) {
-        const elkNode = {
+        const elkNode: ElkNode = {
           id: node.id,
           width: node.layout?.size?.x ?? DEFAULT_WIDTH,
           height: node.layout?.size?.y ?? DEFAULT_HEIGHT,
@@ -150,7 +151,15 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
         const elkEdges: ElkEdge[] = elkNode.edges ?? [];
         for (const edge of elkEdges) {
-          edgeSectionsRaw[edge.id] = edge.sections ?? [];
+          // Depending on the ELK configuration an edge may be exposed both
+          // on the graph that owns it and on a containing graph.  Keep a
+          // useful section list if one has already been collected rather
+          // than allowing a later, empty representation to erase it.
+          const sections: ElkSection[] = edge.sections ?? [];
+          const existingSections: ElkSection[] | undefined = edgeSectionsRaw[edge.id];
+          if (sections.length > 0 || existingSections === undefined) {
+            edgeSectionsRaw[edge.id] = sections;
+          }
         }
         const elkChildren: ElkNode[] = elkNode.children ?? [];
         for (const child of elkChildren) {
@@ -212,16 +221,28 @@ export class ElkAdapterImpl implements LayoutAdapter {
       });
 
       // Annotations bypass ELK — always explicitly positioned
-      const annotations = diagram.annotations.map(ann =>
-        Object.assign(new LaidOutAnnotation(), {
+      const annotations = diagram.annotations.map(ann => {
+        const font: string = ann.typography.font ?? '';
+        const fontSize: number = ann.typography.size ?? 16;
+        let measuredWidth: number = 0;
+        let measuredHeight: number = 0;
+        for (const localizedContent of ann.content) {
+          const measured = measureLabel(localizedContent.source, font, fontSize);
+          measuredWidth = Math.max(measuredWidth, measured.x);
+          measuredHeight = Math.max(measuredHeight, measured.y);
+        }
+        const size: Vec2 = ann.layout?.size ?? vec2(measuredWidth, measuredHeight);
+        return Object.assign(new LaidOutAnnotation(), {
           id: ann.id,
           position: ann.layout?.position ?? vec2(0, 0),
+          size,
           shape: ann.shape,
           typography: ann.typography,
           callout: ann.callout,
           layout: ann.layout,
-        })
-      );
+          content: ann.content,
+        });
+      });
 
       return Ok(Object.assign(new LaidOutDiagram(), {
         id: diagram.id,

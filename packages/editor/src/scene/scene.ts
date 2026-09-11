@@ -4,7 +4,6 @@ import { boundsFromRect, boundsUnion, Bounds } from '@archeglyph/core/geometry/b
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { elementKey } from './element_key';
-import { ElementBounds } from './scene';
 import { ElementRef } from '../ui_state/ui_state';
 
 export interface SceneGeometry {
@@ -59,8 +58,6 @@ export interface SceneError {
   stage: string;
   message: string;
 }
-import { ElementRef } from '../ui_state/ui_state';
-
 export interface ElementBounds {
   ref: ElementRef;
   bounds: Bounds;

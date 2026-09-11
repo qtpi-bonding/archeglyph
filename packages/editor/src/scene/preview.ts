@@ -143,7 +143,11 @@ export function previewResize(geometry: SceneGeometry, intent: ResizeIntent): Sc
   }
 
   const next = resizeBounds(target.bounds, intent.handle, intent.delta);
-  const moved = new Map<string, Bounds>([[targetKey, next]]);
+  // Resizing is deliberately single-element: unlike previewMove, a group
+  // resize changes only the group's container and leaves its members where
+  // they are.
+  const moved = new Map<string, Bounds>();
+  moved.set(targetKey, next);
   return {
     bounds: [{ ...target, bounds: next }],
     edges: previewEdges(geometry, moved),

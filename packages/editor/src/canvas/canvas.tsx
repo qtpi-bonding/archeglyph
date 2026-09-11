@@ -4,10 +4,26 @@ import { Component, createMemo, JSX, onCleanup, onMount } from 'solid-js';
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
+<<<<<<< HEAD
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import { Scene } from '../scene/scene';
 import { ElementRef, UiState } from '../ui_state/ui_state';
 import { ElementKind } from './selection';
+=======
+import { Result } from '@archeglyph/proto/util/result';
+import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
+import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
+import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
+import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
+import { GhostLayer } from './ghost_layer';
+import { EditorState } from '../state/editor_state';
+import { Vec2, ViewportState } from './viewport';
+import { DragHandler } from './drag_handler';
+import {
+  ElementKind,
+  useSelection,
+} from './selection';
+>>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
 
 export interface CanvasProps {
   diagram: Diagram;
@@ -50,6 +66,7 @@ function findElementTarget(target: EventTarget | null): ElementTarget | undefine
   return undefined;
 }
 
+<<<<<<< HEAD
 function toElementRef(target: ElementTarget): ElementRef {
   const kind = target.kind === ElementKind.NODE ? 'node'
     : target.kind === ElementKind.GROUP ? 'group'
@@ -65,6 +82,52 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     return `translate(${viewport.panX}px, ${viewport.panY}px) scale(${viewport.zoom})`;
   });
 
+=======
+/** Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.
+ * Pure consumer of SelectionContext — calls useSelection() to read/write the
+ * current selection. SelectionContext.Provider lives one level above (in App).
+ * Renders diagram via renderOp from @archeglyph/core. When
+ * state.stylesheet().pending_edits is non-empty, renders two SVG layers:
+ *   1. saved state (top, full opacity)
+ *   2. saved+pending merged state (bottom, reduced opacity ghost)
+ * Pointer events: pointerdown on an element → DragHandler.onPointerDown;
+ * pointerdown on empty canvas → pan start (direct ViewportState mutation);
+ * wheel → zoom (direct ViewportState mutation);
+ * click without drag → setSelected via SelectionState. */
+
+const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
+
+export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element => {
+  const viewport: ViewportState = Object.assign(new ViewportState(), { panX: 0, panY: 0, zoom: 1.0 });
+  const drag: DragHandler = Object.assign(new DragHandler(), { state: props.state, viewport });
+
+  const selection = useSelection();
+
+  const [panX, setPanX] = createSignal<number>(0);
+  const [panY, setPanY] = createSignal<number>(0);
+  const [zoom, setZoom] = createSignal<number>(1.0);
+
+  const savedSource = createMemo((): RenderSource => ({
+    diagram: props.state.diagram(),
+    stylesheet: props.state.stylesheet(),
+    theme: props.theme,
+  }));
+
+  const [savedSvg] = createResource<string, RenderSource>(savedSource, async (src: RenderSource): Promise<string> => {
+    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
+    if (result.kind === 'err') { return ''; }
+    else { return result.value; }
+  });
+
+  const hasPending = createMemo((): boolean => props.state.stylesheet().pendingEdits.length > 0);
+
+  const transform = createMemo((): string =>
+    `translate(${panX()}px, ${panY()}px) scale(${zoom()})`
+  );
+
+  let panningFrom: Vec2 | null = null;
+  let movedDuringPointerSession: boolean = false;
+>>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
   let containerRef!: HTMLDivElement;
   let panningFrom: Point | undefined;
   let movedDuringPointerSession: boolean = false;
@@ -127,6 +190,17 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       onClick={onClick}
     >
       <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
+<<<<<<< HEAD
+=======
+        <Show when={hasPending()}>
+          <GhostLayer
+            diagram={props.state.diagram()}
+            stylesheet={props.state.stylesheet()}
+            theme={props.theme}
+            layoutEngine={layoutEngine}
+          />
+        </Show>
+>>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
         <div
           style={{ position: 'absolute', top: '0', left: '0' }}
           innerHTML={props.scene.geometry()?.svg ?? ''}

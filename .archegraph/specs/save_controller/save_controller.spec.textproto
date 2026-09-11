@@ -1,0 +1,104 @@
+# New pillar, wave 2 of docs/implementation-order.md ("shell save_controller
+# — only needs the adapters"). Standalone, UI-free module: dirty tracking,
+# debounced autosave gated on the adapter actually having something to
+# save to, explicit immediate save, and error state. Built on
+# editor-state's dirty()/version() (wave 1) and editor-adapters'
+# Result-returning HostAdapter (wave 1) — both already merged.
+#
+# This is the module that top_bar.tsx's ad-hoc autosave createEffect
+# should eventually delegate to (wave 6's shell v2), but wiring it into
+# top_bar.tsx is explicitly NOT this delta — "no UI" per the module plan.
+# top_bar.tsx already has its own working (if duplicated) autosave logic
+# from the editor-adapters Δ; leave it alone here.
+#
+# Own dedicated spec directory (not editor-shell) so a plan/build here
+# never touches top_bar.tsx/app.tsx/select_adapters.ts, whose existing
+# specs in .archegraph/specs/editor-shell/ predate this session's
+# editor-adapters Δ hand-touchups and would show spurious drift, same
+# class of risk as the pipeline_split delta hit against ops_render_op.
+#
+# Emit SaveStatus and SaveController EXACTLY:
+#
+#   export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+#
+#   export interface SaveController {
+#     status: Accessor<SaveStatus>;
+#     errorMessage: Accessor<string | undefined>;
+#     saveNow(): Promise<void>;
+#     dispose(): void;
+#   }
+#
+# createSaveController behavior:
+# - Debounced autosave: a Solid createEffect reads state.version() (so it
+#   re-runs on every applyStyleEdit/undo/redo) and, on a change, clears any
+#   pending timer and starts a new setTimeout(debounceMs) that calls the
+#   internal save routine. SKIP the very first effect run (mount) —
+#   otherwise loading a file immediately triggers a save attempt with
+#   nothing having changed. Use the same
+#   `let isFirstRun = true; if (isFirstRun) { isFirstRun = false; return; }`
+#   pattern top_bar.tsx already uses for exactly this reason.
+# - The debounce ONLY arms when adapter.canSave() is true at the time
+#   version() changes — an adapter with no save target yet (e.g.
+#   BrowserFsAdapter before any file handle exists) should not spin up a
+#   silent no-op timer.
+# - The internal save routine: re-checks adapter.canSave() (it may have
+#   changed since the timer was armed — e.g. a save target became
+#   available then unavailable, though today's adapters don't retract
+#   canSave once true), sets status to 'saving', calls
+#   `await adapter.save(state.stylesheet())`, and on the Result: 'err' ->
+#   errorMessage = result.error.message, status = 'error'; success ->
+#   errorMessage = undefined, status = 'saved'.
+# - saveNow(): clears any pending debounce timer, then runs the internal
+#   save routine immediately (used for an explicit Cmd+S, a later wave).
+# - dispose(): clears any pending debounce timer. No onCleanup() call
+#   inside createSaveController itself — the CALLER (a Solid component)
+#   owns the component lifecycle and should call dispose() from its own
+#   onCleanup; createSaveController is plain, not itself a Solid primitive
+#   bound to a specific owner.
+#
+# Both HostAdapter (editor-adapters pillar) and EditorState (editor-state
+# pillar) are consumed by symbol, cross-pillar, same pattern as
+# edge_router consuming geometry.
+
+file: "packages/editor/src/shell/save_controller.ts"
+doc: "Standalone debounced-autosave + explicit-save controller. No UI; a future shell pillar wires this into the toolbar's save status."
+
+structs: [
+  { name: "SaveStatus"
+    doc: "Emit exactly: export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';"
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'idle' | 'saving' | 'saved' | 'error'" } }
+    typescript: {}
+  },
+  { name: "SaveController"
+    doc: "Handle returned by createSaveController. See file doc for exact shape."
+    fields: [
+      { name: "status",       type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<SaveStatus>" } } },
+      { name: "errorMessage", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<string | undefined>" } } }
+    ]
+    methods: [
+      { name: "saveNow"
+        doc: "Clear any pending debounce, run the save routine immediately."
+        is_async: true
+        output: { primitive: VOID }
+      },
+      { name: "dispose"
+        doc: "Clear any pending debounce timer. Caller's responsibility to invoke from its own onCleanup."
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "createSaveController"
+    doc: "Factory. See file doc for the exact required debounce/first-run/error-handling behavior."
+    inputs: [
+      { name: "adapter",     type: { named: { symbol: "HostAdapter" } } },
+      { name: "state",       type: { named: { symbol: "EditorState" } } },
+      { name: "debounceMs",  type: { primitive: INTEGER } }
+    ]
+    output: { named: { symbol: "SaveController" } }
+    uses: ["HostAdapter", "EditorState", "SaveStatus"]
+  }
+]

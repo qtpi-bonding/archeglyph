@@ -5,8 +5,8 @@ import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 import { type StyleEdit, type Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
-import { patchAnnotationEntry } from './entry_patch';
-import { annotationChange, styleEdit } from './edit_builder';
+import { patchAnnotationEntry, patchNodeEntry } from './entry_patch';
+import { annotationChange, nodeChange, styleEdit } from './edit_builder';
 
 export interface NodeGlyphPatch {
   shape?: Glyph2D;
@@ -55,7 +55,14 @@ export interface GroupGlyphPatch {
   labelPosition?: GroupLabelPosition;
 }
 export function setNodesGlyphEdit(stylesheet: Stylesheet, nodeIds: Array<string>, patch: NodeGlyphPatch): StyleEdit {
-  throw new Error('not implemented');
+  const nodeChanges = nodeIds.map((nodeId) =>
+    nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch)),
+  );
+
+  return styleEdit({
+    nodeChanges,
+    description: 'Set glyph on selected nodes',
+  });
 }
 export function setNodeGlyphEdit(stylesheet: Stylesheet, nodeId: string, patch: NodeGlyphPatch): StyleEdit {
   throw new Error('not implemented');

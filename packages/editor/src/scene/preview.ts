@@ -8,6 +8,7 @@ import type { LaidOutEdge } from '@archeglyph/core/layout/laid_out_edge';
 import type { ElementRef } from '../ui_state/ui_state';
 import type { SceneGeometry, ElementBounds } from './scene';
 import type { Handle } from './hit_test';
+import { elementKey } from './element_key';
 
 export interface PreviewEdge {
   id: string;
@@ -72,10 +73,6 @@ function shifted(bounds: Bounds, delta: Vec2): Bounds {
   };
 }
 
-function key(ref: ElementRef): string {
-  return `${ref.kind}:${ref.id}`;
-}
-
 function endpointBounds(
   geometry: SceneGeometry,
   id: string,
@@ -112,22 +109,23 @@ function previewEdges(
 }
 
 export function previewMove(geometry: SceneGeometry, intent: MoveIntent): ScenePreview {
-  const requested = new Set(intent.refs.map(key));
+  const requested = new Set(intent.refs.map(elementKey));
   const moved = new Map<string, Bounds>();
   const bounds: Array<ElementBounds> = [];
 
   for (const element of geometry.index) {
     let parent = element.parentGroup;
-    let isMoved = requested.has(key(element.ref));
+    let isMoved = requested.has(elementKey(element.ref));
     const visited = new Set<string>();
     while (!isMoved && parent !== undefined && !visited.has(parent)) {
       visited.add(parent);
-      isMoved = requested.has(parent);
-      parent = geometry.byKey[parent]?.parentGroup;
+      const parentKey = elementKey({ kind: 'group', id: parent });
+      isMoved = requested.has(parentKey);
+      parent = geometry.byKey[parentKey]?.parentGroup;
     }
     if (isMoved) {
       const next = shifted(element.bounds, intent.delta);
-      moved.set(key(element.ref), next);
+      moved.set(elementKey(element.ref), next);
       bounds.push({ ...element, bounds: next });
     }
   }
@@ -136,7 +134,7 @@ export function previewMove(geometry: SceneGeometry, intent: MoveIntent): SceneP
 }
 
 export function previewResize(geometry: SceneGeometry, intent: ResizeIntent): ScenePreview {
-  const targetKey = key(intent.ref);
+  const targetKey = elementKey(intent.ref);
   const target = geometry.byKey[targetKey];
   if (target === undefined) {
     return { bounds: [], edges: [] };

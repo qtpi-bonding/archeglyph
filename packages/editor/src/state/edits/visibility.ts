@@ -9,7 +9,15 @@ export function showAllEdit(stylesheet: Stylesheet): StyleEdit {
   return setNodesHiddenEdit(stylesheet, Object.keys(stylesheet.nodes), false);
 }
 export function setNodeHiddenEdit(stylesheet: Stylesheet, nodeId: string, hidden: boolean): StyleEdit {
-  return setNodesHiddenEdit(stylesheet, [nodeId], hidden);
+  const visibility = hidden ? NodeVisibility.HIDDEN : NodeVisibility.UNSPECIFIED;
+  const nodeChanges = [
+    nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], { visibility })),
+  ];
+
+  return styleEdit({
+    nodeChanges,
+    description: hidden ? 'Hide selected nodes' : 'Show selected nodes',
+  });
 }
 export function setNodesHiddenEdit(stylesheet: Stylesheet, nodeIds: Array<string>, hidden: boolean): StyleEdit {
   const visibility = hidden ? NodeVisibility.HIDDEN : NodeVisibility.UNSPECIFIED;

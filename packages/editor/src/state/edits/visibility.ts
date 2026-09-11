@@ -6,7 +6,11 @@ import { patchNodeEntry } from './entry_patch';
 import { nodeChange, styleEdit } from './edit_builder';
 
 export function showAllEdit(stylesheet: Stylesheet): StyleEdit {
-  return setNodesHiddenEdit(stylesheet, Object.keys(stylesheet.nodes), false);
+  const hiddenNodeIds = Object.keys(stylesheet.nodes).filter(
+    (nodeId) => stylesheet.nodes[nodeId]?.visibility === NodeVisibility.HIDDEN,
+  );
+
+  return setNodesHiddenEdit(stylesheet, hiddenNodeIds, false);
 }
 export function setNodeHiddenEdit(stylesheet: Stylesheet, nodeId: string, hidden: boolean): StyleEdit {
   return setNodesHiddenEdit(stylesheet, [nodeId], hidden);

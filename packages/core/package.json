@@ -8,6 +8,7 @@
     "./resolver/*": "./src/resolver/*/index.ts",
     "./layout/*": "./src/layout/*/index.ts",
     "./geometry/*": "./src/geometry/*/index.ts",
+    "./text/*": "./src/text/*/index.ts",
     "./renderer/*": "./src/renderer/*/index.ts",
     "./validator/*": "./src/validator/*/index.ts",
     "./pipeline": "./src/pipeline/index.ts"

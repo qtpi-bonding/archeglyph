@@ -2,13 +2,49 @@
 
 import { Handle } from './hit_test';
 import { Vec2 } from '../vec2';
+import { boundsContains } from '@archeglyph/core/geometry/bounds';
+import { distanceToPolyline } from '@archeglyph/core/geometry/polyline';
+import { ElementRef } from '../ui_state/ui_state';
+import { SceneGeometry } from './scene';
 
 export interface HandlePoint {
   handle: Handle;
   point: Vec2;
 }
 export function hitTestPoint(geometry: SceneGeometry, point: Vec2, edgeTolerance: number): ElementRef | undefined {
-  throw new Error('not implemented');
+  // Keep this order independent of the renderer's paint order.  In
+  // particular, nodes deliberately win over edges, while groups are tested
+  // last so that their children remain selectable.
+  const rectKinds: Array<'annotation' | 'node'> = ['annotation', 'node'];
+
+  for (const kind of rectKinds) {
+    for (let i = geometry.index.length - 1; i >= 0; i -= 1) {
+      const entry = geometry.index[i];
+      if (entry.ref.kind === kind && boundsContains(entry.bounds, point)) {
+        return entry.ref;
+      }
+    }
+  }
+
+  for (let i = geometry.diagram.edges.length - 1; i >= 0; i -= 1) {
+    const id = geometry.diagram.edges[i].id;
+    const points = geometry.edgePolylines[id];
+    if (points === undefined) {
+      continue;
+    }
+    if (distanceToPolyline(point, points) <= edgeTolerance) {
+      return { id, kind: 'edge' };
+    }
+  }
+
+  for (let i = geometry.index.length - 1; i >= 0; i -= 1) {
+    const entry = geometry.index[i];
+    if (entry.ref.kind === 'group' && boundsContains(entry.bounds, point)) {
+      return entry.ref;
+    }
+  }
+
+  return undefined;
 }
 export function handlePositions(bounds: Bounds): Array<HandlePoint> {
   throw new Error('not implemented');

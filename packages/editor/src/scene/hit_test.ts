@@ -11,7 +11,19 @@ export function hitTestPoint(geometry: SceneGeometry, point: Vec2, edgeTolerance
   throw new Error('not implemented');
 }
 export function handlePositions(bounds: Bounds): Array<HandlePoint> {
-  throw new Error('not implemented');
+  const midX = (bounds.minX + bounds.maxX) / 2;
+  const midY = (bounds.minY + bounds.maxY) / 2;
+
+  return [
+    { handle: 'nw', point: { x: bounds.minX, y: bounds.minY } },
+    { handle: 'n', point: { x: midX, y: bounds.minY } },
+    { handle: 'ne', point: { x: bounds.maxX, y: bounds.minY } },
+    { handle: 'e', point: { x: bounds.maxX, y: midY } },
+    { handle: 'se', point: { x: bounds.maxX, y: bounds.maxY } },
+    { handle: 's', point: { x: midX, y: bounds.maxY } },
+    { handle: 'sw', point: { x: bounds.minX, y: bounds.maxY } },
+    { handle: 'w', point: { x: bounds.minX, y: midY } },
+  ];
 }
 export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 export function hitTestHandle(bounds: Bounds, point: Vec2, radius: number): Handle | undefined {

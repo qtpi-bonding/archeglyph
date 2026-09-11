@@ -53,6 +53,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const value: string | undefined = geometry()?.diagram.canvas?.background?.value;
     return value === undefined || value === '' ? 'var(--ag-bg, #0f1a2b)' : value;
   });
+  // The D12 drafting grid: dots on the intersections, faint lines between.
+  // Tied to the viewport so it pans and zooms with the diagram rather than
+  // floating over it — a grid that does not track the content reads as
+  // wallpaper instead of graph paper.
+  const gridSize = createMemo((): number => 24 * props.ui.viewport().zoom);
+  const gridPosition = createMemo((): string => {
+    const viewport = props.ui.viewport();
+    return `${viewport.panX}px ${viewport.panY}px`;
+  });
   const hovering = createMemo((): boolean => props.ui.hover() !== undefined);
   const cursor = createMemo((): string => cursorFor(props.ui.tool(), hovering(), panning()));
   const transform = createMemo((): string => {
@@ -168,7 +177,14 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: background(), 'touch-action': 'none', cursor: cursor() }}
+      style={{
+        position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
+        'background-color': background(),
+        'background-image': 'var(--ag-grid)',
+        'background-size': `${gridSize()}px ${gridSize()}px`,
+        'background-position': gridPosition(),
+        'touch-action': 'none', cursor: cursor(),
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

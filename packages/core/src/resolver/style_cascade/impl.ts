@@ -250,6 +250,7 @@ export class StyleCascadeImpl implements StyleCascade {
         typography,
         callout,
         layout: entry.layout,
+        content: entry.content,
       });
       result.annotations.push(resolved);
     }

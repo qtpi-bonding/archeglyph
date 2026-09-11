@@ -3,13 +3,30 @@
 
 import { create } from '@bufbuild/protobuf';
 import { type Localization, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
-import { type AnnotationAnchor, type StyleEdit, type Stylesheet, type Vec2 } from '@archeglyph/proto/gen/style_pb';
+import { AnnotationEntrySchema, type AnnotationAnchor, type StyleEdit, type Stylesheet, type Vec2 } from '@archeglyph/proto/gen/style_pb';
 
 import { patchAnnotationEntry } from './entry_patch';
 import { annotationChange, styleEdit } from './edit_builder';
 
 export function setAnnotationAnchorEdit(stylesheet: Stylesheet, id: string, anchor?: AnnotationAnchor): StyleEdit {
-  throw new Error('not implemented');
+  const existing = stylesheet.annotations[id];
+  const patched = patchAnnotationEntry(existing, { id, ...(anchor === undefined ? {} : { anchor }) });
+  const after = anchor === undefined
+    ? create(AnnotationEntrySchema, { ...patched, anchor: undefined })
+    : patched;
+  const change = annotationChange(
+    id,
+    after,
+  );
+
+  // An absent optional proto field is distinct from leaving the field
+  // untouched.  Record the explicit clear on the change so applying the edit
+  // can detach an annotation that was previously anchored.
+  if (anchor === undefined) {
+    change.unsetPaths.push('anchor');
+  }
+
+  return styleEdit({ annotationChanges: [change] });
 }
 export function setAnnotationTextEdit(stylesheet: Stylesheet, id: string, text: string): StyleEdit {
   const existing = stylesheet.annotations[id];

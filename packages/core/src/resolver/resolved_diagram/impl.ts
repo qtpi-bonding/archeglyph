@@ -4,9 +4,11 @@ import { ResolvedAnnotation } from '../resolved_annotation';
 import { ResolvedEdge } from '../resolved_edge';
 import { ResolvedGroup } from '../resolved_group';
 import { ResolvedNode } from '../resolved_node';
+import { CanvasStyle } from '@archeglyph/proto/gen/style_pb';
 
 export class ResolvedDiagram {
   id!: string;
+  canvas!: CanvasStyle;
   nodes: ResolvedNode[] = [];
   edges: ResolvedEdge[] = [];
   groups: ResolvedGroup[] = [];

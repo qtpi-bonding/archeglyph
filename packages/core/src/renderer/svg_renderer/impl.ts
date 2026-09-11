@@ -9,7 +9,7 @@ import { type LaidOutEdge } from '../../layout/laid_out_edge';
 import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
 import { RenderError } from '../render_error';
-import { arrowMarkers, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
+import { arrowMarkers, backgroundRect, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
 
 function markerId(variant: ArrowheadVariant): string {
   switch (variant) {
@@ -129,7 +129,7 @@ export class SvgRendererImpl implements SvgRenderer {
       annotationsSvg += `<g id="annotation-${ann.id}" data-element-id="${ann.id}" data-kind="annotation">${shape}${labelSvg}</g>`;
     }
 
-    const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${svgWidth}" height="${svgHeight}">${defs}${groupsSvg}${nodesSvg}${edgesSvg}${annotationsSvg}</svg>`;
+    const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${svgWidth}" height="${svgHeight}">${defs}${backgroundRect(diagram)}${groupsSvg}${nodesSvg}${edgesSvg}${annotationsSvg}</svg>`;
 
     return Ok(svg);
   }

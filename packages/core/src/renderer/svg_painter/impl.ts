@@ -116,6 +116,15 @@ export function viewBox(diagram: LaidOutDiagram): string {
   return `${r(minX - pad)} ${r(minY - pad)} ${r(maxX - minX + 2 * pad)} ${r(maxY - minY + 2 * pad)}`;
 }
 
+export function backgroundRect(diagram: LaidOutDiagram): string {
+  const background = diagram.canvas?.background;
+  if (background === undefined || background.value === '' || background.value.startsWith('$')) {
+    return '';
+  }
+  const parts: string[] = viewBox(diagram).split(' ');
+  return `<rect x="${parts[0]}" y="${parts[1]}" width="${parts[2]}" height="${parts[3]}" fill="${escapeXml(background.value)}"/>`;
+}
+
 export function arrowMarkers(variants: ArrowheadVariant[]): string {
   const renderable: ArrowheadVariant[] = [...new Set(variants)].filter((v: ArrowheadVariant): boolean => v !== ArrowheadVariant.ARROWHEAD_NONE);
   if (renderable.length === 0) { return ''; }

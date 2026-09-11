@@ -5,9 +5,11 @@ import { LaidOutAnnotation } from '../laid_out_annotation';
 import { LaidOutEdge } from '../laid_out_edge';
 import { LaidOutGroup } from '../laid_out_group';
 import { LaidOutNode } from '../laid_out_node';
+import { CanvasStyle } from '@archeglyph/proto/gen/style_pb';
 
 export class LaidOutDiagram {
   id!: string;
+  canvas!: CanvasStyle;
   nodes: LaidOutNode[] = [];
   edges: LaidOutEdge[] = [];
   groups: LaidOutGroup[] = [];

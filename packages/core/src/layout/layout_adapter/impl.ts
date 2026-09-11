@@ -124,9 +124,23 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
       }
 
+      const layoutOptions: Record<string, string> = {
+        'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
+      };
+      if (diagram.canvas?.nodeSpacing !== undefined) {
+        layoutOptions['org.eclipse.elk.spacing.nodeNode'] = String(diagram.canvas.nodeSpacing);
+      }
+      if (diagram.canvas?.edgeSpacing !== undefined) {
+        layoutOptions['org.eclipse.elk.spacing.edgeNode'] = String(diagram.canvas.edgeSpacing);
+      }
+      if (diagram.canvas?.margin !== undefined) {
+        const margin: string = String(diagram.canvas.margin);
+        layoutOptions['org.eclipse.elk.padding'] = `[top=${margin},left=${margin},bottom=${margin},right=${margin}]`;
+      }
+
       const elkGraph: ElkGraph = {
         id: 'root',
-        layoutOptions: { 'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered' },
+        layoutOptions,
         children: rootChildren,
         edges: diagram.edges.map(edge => ({
           id: edge.id,
@@ -246,6 +260,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       return Ok(Object.assign(new LaidOutDiagram(), {
         id: diagram.id,
+        canvas: diagram.canvas,
         nodes,
         edges,
         groups,

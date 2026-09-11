@@ -13,7 +13,9 @@ export function zoomAboutPoint(viewport: Viewport, screenPt: Vec2, containerRect
   throw new Error('not implemented');
 }
 export function screenToDiagram(viewport: Viewport, containerRect: ContainerRect, screenPt: Vec2): Vec2 {
-  throw new Error('not implemented');
+  const localX = screenPt.x - containerRect.left;
+  const localY = screenPt.y - containerRect.top;
+  return { x: (localX - viewport.panX) / viewport.zoom, y: (localY - viewport.panY) / viewport.zoom };
 }
 export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, padding: number): Viewport {
   throw new Error('not implemented');

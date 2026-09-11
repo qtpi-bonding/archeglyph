@@ -10,7 +10,15 @@ export interface ContainerRect {
   height: number;
 }
 export function zoomAboutPoint(viewport: Viewport, screenPt: Vec2, containerRect: ContainerRect, factor: number, minZoom: number, maxZoom: number): Viewport {
-  throw new Error('not implemented');
+  const newZoom = Math.min(maxZoom, Math.max(minZoom, viewport.zoom * factor));
+  const localX = screenPt.x - containerRect.left;
+  const localY = screenPt.y - containerRect.top;
+  const scaleRatio = newZoom / viewport.zoom;
+  return {
+    zoom: newZoom,
+    panX: localX - (localX - viewport.panX) * scaleRatio,
+    panY: localY - (localY - viewport.panY) * scaleRatio,
+  };
 }
 export function screenToDiagram(viewport: Viewport, containerRect: ContainerRect, screenPt: Vec2): Vec2 {
   const localX = screenPt.x - containerRect.left;

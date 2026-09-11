@@ -64,18 +64,6 @@ export class DragHandler {
     this._setOffset({ x: 0, y: 0 });
   }
 
-  onPointerUp(): void {
-    const session: DragSession | null = this._session;
-    if (session === null) {
-      // no-op
-    } else {
-      const offset: Vec2 = this._getOffset() ?? { x: 0, y: 0 };
-      const edit: StyleEdit = buildDragEdit(this.state, session.elementId, session.elementKind, offset);
-      this.state.applyStyleEdit(edit);
-      this._session = null;
-      this._setOffset(null);
-    }
-  }
 }
 
 function buildDragEdit(

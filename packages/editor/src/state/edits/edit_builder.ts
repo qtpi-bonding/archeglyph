@@ -2,11 +2,17 @@
 
 import { create } from '@bufbuild/protobuf';
 import {
+<<<<<<< HEAD
   EdgeStyleChange,
   EdgeStyleChangeSchema,
   EdgeStyleEntry,
   StyleChangeType,
   StyleEdit,
+=======
+  StyleEdit,
+  StyleEditSchema,
+  StyleEditState,
+>>>>>>> 1f88fcd65eae7b960808294cf9fdd99ab4b2bf5b
 } from '@archeglyph/proto/gen/style_pb';
 
 export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleChange {
@@ -17,7 +23,11 @@ export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleCha
   });
 }
 export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleChange {
-  throw new Error('not implemented');
+  return create(NodeStyleChangeSchema, {
+    nodeId,
+    changeType: StyleChangeType.MODIFIED,
+    ...(after === undefined ? {} : { after }),
+  });
 }
 export function annotationChange(annotationId: string, after?: AnnotationEntry): AnnotationStyleChange {
   throw new Error('not implemented');
@@ -28,6 +38,10 @@ export function groupChange(groupId: string, after?: GroupStyleEntry): GroupStyl
 import { AnnotationStyleChange } from '@archeglyph/proto/gen/style_pb';
 import { GroupStyleChange } from '@archeglyph/proto/gen/style_pb';
 import { NodeStyleChange } from '@archeglyph/proto/gen/style_pb';
+import { NodeStyleChangeSchema } from '@archeglyph/proto/gen/style_pb';
+import { NodeStyleEntry } from '@archeglyph/proto/gen/style_pb';
+import { StyleChangeType } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
 
 export interface EditParts {
   nodeChanges?: Array<NodeStyleChange>;
@@ -37,5 +51,15 @@ export interface EditParts {
   description?: string;
 }
 export function styleEdit(parts: EditParts): StyleEdit {
-  throw new Error('not implemented');
+  return create(StyleEditSchema, {
+    schemaVersion: 1,
+    ...(parts.nodeChanges === undefined ? {} : { nodeChanges: parts.nodeChanges }),
+    ...(parts.edgeChanges === undefined ? {} : { edgeChanges: parts.edgeChanges }),
+    ...(parts.groupChanges === undefined ? {} : { groupChanges: parts.groupChanges }),
+    ...(parts.annotationChanges === undefined ? {} : { annotationChanges: parts.annotationChanges }),
+    author: 'user:local',
+    description: parts.description,
+    timestampMs: BigInt(Date.now()),
+    state: StyleEditState.APPLIED,
+  });
 }

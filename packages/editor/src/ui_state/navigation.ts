@@ -4,7 +4,18 @@ export function followEdge(edges: { id: string; source: string; target: string }
   throw new Error('not implemented');
 }
 export function prevInDocumentOrder(elements: NavigableElement[], current?: ElementRef): ElementRef | undefined {
-  throw new Error('not implemented');
+  if (elements.length === 0) {
+    return undefined;
+  }
+
+  const currentIndex = current === undefined
+    ? -1
+    : elements.findIndex((element) => (
+      element.ref.id === current.id && element.ref.kind === current.kind
+    ));
+  const previousIndex = currentIndex <= 0 ? elements.length - 1 : currentIndex - 1;
+
+  return elements[previousIndex].ref;
 }
 export function nextInDocumentOrder(elements: NavigableElement[], current?: ElementRef): ElementRef | undefined {
   throw new Error('not implemented');

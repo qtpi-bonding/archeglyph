@@ -1,29 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Component, createMemo, JSX, onCleanup, onMount } from 'solid-js';
+import { Component, createEffect, createMemo, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
-<<<<<<< HEAD
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
-import { Scene } from '../scene/scene';
+import { Bounds } from '@archeglyph/core/geometry/bounds';
+import { Vec2 } from '@archeglyph/core/geometry/vec2';
+import { Scene, SceneGeometry } from '../scene/scene';
+import { hitTestPoint } from '../scene/hit_test';
 import { ElementRef, UiState } from '../ui_state/ui_state';
-import { ElementKind } from './selection';
-=======
-import { Result } from '@archeglyph/proto/util/result';
-import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
-import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
-import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
-import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
+import { clearSelection, replaceSelection, toggleSelection } from '../ui_state/selection_ops';
+import { ContainerRect, fitBoundsToRect, screenToDiagram, zoomAboutPoint } from '../ui_state/viewport_math';
+import { cursorFor } from './cursor';
+import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
-import { EditorState } from '../state/editor_state';
-import { Vec2, ViewportState } from './viewport';
-import { DragHandler } from './drag_handler';
-import {
-  ElementKind,
-  useSelection,
-} from './selection';
->>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
+import { OverlayLayer } from './overlay_layer';
+
+type Point = { x: number; y: number };
+type CanvasWheelEvent = PointerEvent | WheelEvent;
 
 export interface CanvasProps {
   diagram: Diagram;
@@ -34,178 +29,159 @@ export interface CanvasProps {
   ui: UiState;
 }
 
-type ElementTarget = { id: string; kind: ElementKind };
-
-type Point = { x: number; y: number };
-
-function elementKindFromSvgId(svgId: string): ElementKind | undefined {
-  if (svgId.startsWith('node-')) { return ElementKind.NODE; }
-  if (svgId.startsWith('group-')) { return ElementKind.GROUP; }
-  if (svgId.startsWith('edge-')) { return ElementKind.EDGE; }
-  if (svgId.startsWith('annotation-')) { return ElementKind.ANNOTATION; }
-  return undefined;
+function pointFromEvent(event: CanvasWheelEvent): Vec2 {
+  return { x: event.clientX, y: event.clientY };
 }
 
-function elementIdFromSvgId(svgId: string): string {
-  if (svgId.startsWith('node-')) { return svgId.slice(5); }
-  if (svgId.startsWith('group-')) { return svgId.slice(6); }
-  if (svgId.startsWith('edge-')) { return svgId.slice(5); }
-  if (svgId.startsWith('annotation-')) { return svgId.slice(11); }
-  return svgId;
-}
-
-function findElementTarget(target: EventTarget | null): ElementTarget | undefined {
-  let element: Element | null = target instanceof Element ? target : null;
-  while (element !== null) {
-    const kind: ElementKind | undefined = elementKindFromSvgId(element.id);
-    if (kind !== undefined) {
-      return { id: elementIdFromSvgId(element.id), kind };
-    }
-    element = element.parentElement;
-  }
-  return undefined;
-}
-
-<<<<<<< HEAD
-function toElementRef(target: ElementTarget): ElementRef {
-  const kind = target.kind === ElementKind.NODE ? 'node'
-    : target.kind === ElementKind.GROUP ? 'group'
-    : target.kind === ElementKind.EDGE ? 'edge'
-    : 'annotation';
-  return { id: target.id, kind };
-}
-
-/** Canvas view. Geometry comes from scene; transient interaction state comes from ui. */
+/** The single SVG scene and its navigation and selection gestures. */
 export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element => {
+  const [containerRect, setContainerRect] = createSignal<ContainerRect>({
+    left: 0, top: 0, width: 0, height: 0,
+  });
+  const [panning, setPanning] = createSignal<boolean>(false);
+  const [errorVisible, setErrorVisible] = createSignal<boolean>(false);
+  const [fitDone, setFitDone] = createSignal<boolean>(false);
+  const [pointerOrigin, setPointerOrigin] = createSignal<Point | undefined>(undefined);
+  let containerRef!: HTMLDivElement;
+  let pointerId: number | undefined;
+
+  const geometry = createMemo((): SceneGeometry | undefined => props.scene.geometry());
+  const hovering = createMemo((): boolean => props.ui.hover() !== undefined);
+  const cursor = createMemo((): string => cursorFor(props.ui.tool(), hovering(), panning()));
   const transform = createMemo((): string => {
     const viewport = props.ui.viewport();
-    return `translate(${viewport.panX}px, ${viewport.panY}px) scale(${viewport.zoom})`;
+    return `translate(${viewport.panX} ${viewport.panY}) scale(${viewport.zoom})`;
   });
 
-=======
-/** Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.
- * Pure consumer of SelectionContext — calls useSelection() to read/write the
- * current selection. SelectionContext.Provider lives one level above (in App).
- * Renders diagram via renderOp from @archeglyph/core. When
- * state.stylesheet().pending_edits is non-empty, renders two SVG layers:
- *   1. saved state (top, full opacity)
- *   2. saved+pending merged state (bottom, reduced opacity ghost)
- * Pointer events: pointerdown on an element → DragHandler.onPointerDown;
- * pointerdown on empty canvas → pan start (direct ViewportState mutation);
- * wheel → zoom (direct ViewportState mutation);
- * click without drag → setSelected via SelectionState. */
+  function refreshRect(): void {
+    const rect: DOMRect = containerRef.getBoundingClientRect();
+    setContainerRect({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+  }
 
-const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
+  function hitAt(event: PointerEvent): ElementRef | undefined {
+    const currentGeometry: SceneGeometry | undefined = geometry();
+    if (currentGeometry === undefined) { return undefined; }
+    const diagramPoint: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), pointFromEvent(event));
+    return hitTestPoint(currentGeometry, diagramPoint, 6 / props.ui.viewport().zoom);
+  }
 
-export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element => {
-  const viewport: ViewportState = Object.assign(new ViewportState(), { panX: 0, panY: 0, zoom: 1.0 });
-  const drag: DragHandler = Object.assign(new DragHandler(), { state: props.state, viewport });
-
-  const selection = useSelection();
-
-  const [panX, setPanX] = createSignal<number>(0);
-  const [panY, setPanY] = createSignal<number>(0);
-  const [zoom, setZoom] = createSignal<number>(1.0);
-
-  const savedSource = createMemo((): RenderSource => ({
-    diagram: props.state.diagram(),
-    stylesheet: props.state.stylesheet(),
-    theme: props.theme,
-  }));
-
-  const [savedSvg] = createResource<string, RenderSource>(savedSource, async (src: RenderSource): Promise<string> => {
-    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
-    if (result.kind === 'err') { return ''; }
-    else { return result.value; }
-  });
-
-  const hasPending = createMemo((): boolean => props.state.stylesheet().pendingEdits.length > 0);
-
-  const transform = createMemo((): string =>
-    `translate(${panX()}px, ${panY()}px) scale(${zoom()})`
-  );
-
-  let panningFrom: Vec2 | null = null;
-  let movedDuringPointerSession: boolean = false;
->>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
-  let containerRef!: HTMLDivElement;
-  let panningFrom: Point | undefined;
-  let movedDuringPointerSession: boolean = false;
-
-  onMount((): void => {
-    const wheelHandler = (event: WheelEvent): void => {
-      event.preventDefault();
-      const viewport = props.ui.viewport();
-      const scaleFactor: number = event.deltaY > 0 ? 0.9 : 1.1;
-      props.ui.setViewport({ ...viewport, zoom: viewport.zoom * scaleFactor });
-    };
-    containerRef.addEventListener('wheel', wheelHandler, { passive: false });
-    onCleanup((): void => containerRef.removeEventListener('wheel', wheelHandler));
-  });
+  function updateSelection(hit: ElementRef | undefined, event: PointerEvent): void {
+    if (hit === undefined) {
+      props.ui.setSelection(clearSelection());
+    } else if (event.shiftKey || event.metaKey) {
+      props.ui.setSelection(toggleSelection(props.ui.selection(), hit));
+    } else {
+      props.ui.setSelection(replaceSelection(hit));
+    }
+  }
 
   function onPointerDown(event: PointerEvent): void {
     event.preventDefault();
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    movedDuringPointerSession = false;
-    const target: ElementTarget | undefined = findElementTarget(event.target);
-    if (target === undefined) {
-      panningFrom = { x: event.clientX, y: event.clientY };
-    } else {
-      props.ui.setSelection([toElementRef(target)]);
+    containerRef.setPointerCapture(event.pointerId);
+    pointerId = event.pointerId;
+    const hit: ElementRef | undefined = hitAt(event);
+    const hand = props.ui.tool() === 'hand';
+    if (!hand && event.button !== 1) { updateSelection(hit, event); }
+    if (hit === undefined || hand || event.button === 1) {
+      setPanning(true);
+      setPointerOrigin({ x: event.clientX, y: event.clientY });
     }
   }
 
   function onPointerMove(event: PointerEvent): void {
-    if (panningFrom === undefined) { return; }
-    movedDuringPointerSession = true;
-    const dx: number = event.clientX - panningFrom.x;
-    const dy: number = event.clientY - panningFrom.y;
-    const viewport = props.ui.viewport();
-    props.ui.setViewport({ ...viewport, panX: viewport.panX + dx, panY: viewport.panY + dy });
-    panningFrom = { x: event.clientX, y: event.clientY };
+    if (panning()) {
+      const origin: Point | undefined = pointerOrigin();
+      if (origin === undefined) { return; }
+      const viewport = props.ui.viewport();
+      props.ui.setViewport({
+        ...viewport,
+        panX: viewport.panX + event.clientX - origin.x,
+        panY: viewport.panY + event.clientY - origin.y,
+      });
+      setPointerOrigin({ x: event.clientX, y: event.clientY });
+      return;
+    }
+
+    const hit: ElementRef | undefined = hitAt(event);
+    props.ui.setHover(hit);
   }
 
   function onPointerUp(event: PointerEvent): void {
-    (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
-    panningFrom = undefined;
+    if (pointerId === event.pointerId) {
+      containerRef.releasePointerCapture(event.pointerId);
+      pointerId = undefined;
+    }
+    setPanning(false);
+    setPointerOrigin(undefined);
   }
 
-  function onClick(event: MouseEvent): void {
-    if (movedDuringPointerSession) { return; }
-    const target: ElementTarget | undefined = findElementTarget(event.target);
-    if (target === undefined) {
-      props.ui.setSelection([]);
-    } else {
-      props.ui.setSelection([toElementRef(target)]);
+  function onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const viewport = props.ui.viewport();
+    // A horizontal component is the reliable signal available on WheelEvent
+    // for a two-finger scroll.  Keep the ordinary vertical wheel gesture as
+    // zoom, while preserving trackpad scrolling when it supplies both axes.
+    const trackpadScroll: boolean = !event.ctrlKey && (
+      event.deltaX !== 0 || event.deltaMode !== WheelEvent.DOM_DELTA_LINE || !Number.isInteger(event.deltaY)
+    );
+    if (trackpadScroll) {
+      props.ui.setViewport({ ...viewport, panX: viewport.panX - event.deltaX, panY: viewport.panY - event.deltaY });
+      return;
     }
+    const factor: number = Math.exp(-event.deltaY * 0.01);
+    props.ui.setViewport(zoomAboutPoint(viewport, pointFromEvent(event), containerRect(), factor, 0.1, 8));
   }
+
+  onMount((): void => {
+    refreshRect();
+    const observer: ResizeObserver = new ResizeObserver(refreshRect);
+    observer.observe(containerRef);
+    containerRef.addEventListener('wheel', onWheel, { passive: false });
+    onCleanup((): void => {
+      observer.disconnect();
+      containerRef.removeEventListener('wheel', onWheel);
+    });
+  });
+
+  createEffect((): void => {
+    const sceneError = props.scene.error();
+    if (sceneError !== undefined) { setErrorVisible(true); }
+  });
+
+  createEffect((): void => {
+    const currentGeometry: SceneGeometry | undefined = geometry();
+    const rect: ContainerRect = containerRect();
+    if (!fitDone() && currentGeometry !== undefined && rect.width > 0 && rect.height > 0) {
+      const bounds: Bounds = currentGeometry.contentBounds;
+      props.ui.setViewport(fitBoundsToRect(bounds, rect, 24));
+      setFitDone(true);
+    }
+  });
 
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none' }}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none', cursor: cursor() }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onClick={onClick}
+      onPointerCancel={onPointerUp}
     >
-      <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
-<<<<<<< HEAD
-=======
-        <Show when={hasPending()}>
-          <GhostLayer
-            diagram={props.state.diagram()}
-            stylesheet={props.state.stylesheet()}
-            theme={props.theme}
-            layoutEngine={layoutEngine}
-          />
-        </Show>
->>>>>>> f315f777602c6017a56e60ecefddf18d8502e0a4
-        <div
-          style={{ position: 'absolute', top: '0', left: '0' }}
-          innerHTML={props.scene.geometry()?.svg ?? ''}
-        />
-      </div>
+      <svg width="100%" height="100%" style={{ display: 'block' }}>
+        <g transform={transform()}>
+          <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} theme={props.theme} layoutEngine={props.layoutEngine} />
+          <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={[]} />
+          <Show when={geometry() !== undefined}>
+            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} />
+          </Show>
+        </g>
+      </svg>
+      <Show when={errorVisible() && props.scene.error() !== undefined}>
+        <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', padding: '8px 12px', background: 'var(--ag-error, #fee)', color: 'var(--ag-error-text, #600)', 'z-index': '2' }}>
+          <span>{props.scene.error()!.message}</span>
+          <button aria-label="Dismiss error" onClick={(): void => setErrorVisible(false)} style={{ float: 'right' }}>×</button>
+        </div>
+      </Show>
     </div>
   );
 };

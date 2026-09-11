@@ -85,8 +85,8 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
 
   return (
     <Show when={svg()}>
-      <div
-        style={{ position: 'absolute', top: '0', left: '0', opacity: '0.3' }}
+      <g
+        opacity="0.3"
         innerHTML={svg() ?? ''}
       />
     </Show>

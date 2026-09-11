@@ -1,0 +1,69 @@
+# Wave 2 of docs/implementation-order.md ("pipeline Δ: layoutPipeline
+# split"). Splits the resolve+layout portion of renderPipeline into its own
+# exported layoutPipeline function, returning the LaidOutDiagram instead of
+# discarding it into an SVG string. This is the prerequisite
+# docs/editor-ui-review.md §5.5 calls out: "Laid-out geometry never reaches
+# the editor — the shared prerequisite" for the selection box, drag origin,
+# fit-to-view, etc. that wave 3's scene pillar will need. This delta only
+# does the split + re-composition; wiring canvas.tsx to actually CONSUME
+# layoutPipeline's LaidOutDiagram output is wave 3's scene pillar, not
+# here — renderPipeline's own external signature/behavior is unchanged.
+#
+# Also picks up docs/relaxing-koine-constraints.md §3.8 ("async can be
+# honest"): renderPipeline is a plain two-await async function now
+# (resolvePipeline is sync, layoutPipeline awaits layoutEngine.layout, the
+# renderer call is sync) — no need to artificially concentrate awaits.
+
+file: "packages/core/src/pipeline/render_pipeline.ts"
+doc:
+  "Shared render pipeline, now split into layoutPipeline (resolve + layout,\n"
+  "used by both renderPipeline and the future editor scene) and\n"
+  "renderPipeline (layoutPipeline + render to SVG string). Extracted so the\n"
+  "editor Canvas and PendingOverlay call the same code path as renderOp,\n"
+  "eliminating drift."
+
+methods: [
+  { name: "layoutPipeline"
+    doc:
+      "Resolve + layout only, no render step. Calls resolvePipeline, then\n"
+      "layoutEngine.layout(). Returns Err with stage 'layout' for a layout\n"
+      "failure (resolve failures propagate their stage names from\n"
+      "resolvePipeline unchanged)."
+    is_async: true
+    inputs: [
+      { name: "diagram",      type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",   type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }, is_optional: true },
+      { name: "theme",        type: { named: { symbol: "archeglyph.theme.v1.Theme" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } }
+    ]
+    output: { named: { symbol: "archeglyph.util.Result", args: [
+      { named: { symbol: "LaidOutDiagram" } },
+      { named: { symbol: "PipelineError" } }
+    ]}}
+    uses: ["resolvePipeline", "LayoutRequest"]
+  },
+  { name: "renderPipeline"
+    change_type: MODIFIED
+    doc:
+      "MODIFIED: body now calls layoutPipeline instead of inlining\n"
+      "resolvePipeline + layoutEngine.layout() itself, then renders the\n"
+      "result. Returns Err with stage 'render' for a render failure; layout/\n"
+      "resolve failures propagate unchanged from layoutPipeline. External\n"
+      "signature is UNCHANGED from today (same 4 params, same\n"
+      "Result<string, PipelineError> return) — this is a pure internal\n"
+      "refactor, not a breaking change for existing callers (ops/render/op.ts,\n"
+      "editor/canvas/canvas.tsx)."
+    is_async: true
+    inputs: [
+      { name: "diagram",      type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",   type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }, is_optional: true },
+      { name: "theme",        type: { named: { symbol: "archeglyph.theme.v1.Theme" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } }
+    ]
+    output: { named: { symbol: "archeglyph.util.Result", args: [
+      { primitive: CHARACTER },
+      { named: { symbol: "PipelineError" } }
+    ]}}
+    uses: ["layoutPipeline", "SvgRendererImpl"]
+  }
+]

@@ -7,7 +7,7 @@ import { LaidOutDiagram } from '../laid_out_diagram';
 import { LayoutError } from '../layout_error';
 import { LayoutRequest } from '../layout_request';
 import { Ok, Result } from '@archeglyph/proto/util/result';
-import { Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
 
 export interface LayoutEngine {
@@ -35,16 +35,23 @@ export class LayoutEngineImpl implements LayoutEngine {
     const resolvedNodeById = new Map(request.diagram.nodes.map(n => [n.id, n]));
     const resolvedGroupById = new Map(request.diagram.groups.map(g => [g.id, g]));
     const resolvedEdgeById = new Map(request.diagram.edges.map(e => [e.id, e]));
+    const groupById = new Map(laid.groups.map(g => [g.id, g]));
     for (const node of laid.nodes) {
-      const resolvedNode = resolvedNodeById.get(node.id);
-      if (resolvedNode?.layout?.position != null) {
-        node.position = resolvedNode.layout.position;
+      const overridePos = resolvedNodeById.get(node.id)?.layout?.position;
+      if (overridePos != null) {
+        const parent = node.parentGroup !== undefined ? groupById.get(node.parentGroup) : undefined;
+        node.position = parent !== undefined
+          ? create(Vec2Schema, { x: parent.position.x + overridePos.x, y: parent.position.y + overridePos.y })
+          : overridePos;
       }
     }
     for (const group of laid.groups) {
-      const resolvedGroup = resolvedGroupById.get(group.id);
-      if (resolvedGroup?.layout?.position != null) {
-        group.position = resolvedGroup.layout.position;
+      const overridePos = resolvedGroupById.get(group.id)?.layout?.position;
+      if (overridePos != null) {
+        const parent = group.parentGroup !== undefined ? groupById.get(group.parentGroup) : undefined;
+        group.position = parent !== undefined
+          ? create(Vec2Schema, { x: parent.position.x + overridePos.x, y: parent.position.y + overridePos.y })
+          : overridePos;
       }
     }
     for (const edge of laid.edges) {
@@ -62,41 +69,40 @@ export class LayoutEngineImpl implements LayoutEngine {
 
   /** Converts ELK's parent-relative node and group positions to diagram coordinates. */
   private absolutizePositions(laid: LaidOutDiagram): void {
-    const groupsById = new Map(laid.groups.map(group => [group.id, group]));
-    const absoluteGroupPositions = new Map<string, Vec2>();
+    const groupById = new Map(laid.groups.map(g => [g.id, g]));
 
-    const absoluteGroupPosition = (group: LaidOutGroup): Vec2 => {
-      const existing = absoluteGroupPositions.get(group.id);
-      if (existing !== undefined) {
-        return existing;
+    function depthOf(group: LaidOutGroup): number {
+      let depth = 0;
+      let current: LaidOutGroup | undefined = group;
+      while (current?.parentGroup !== undefined) {
+        current = groupById.get(current.parentGroup);
+        depth += 1;
       }
-
-      const parent = group.parentGroup === undefined
-        ? undefined
-        : groupsById.get(group.parentGroup);
-      const parentPosition = parent === undefined
-        ? create(Vec2Schema, { x: 0, y: 0 })
-        : absoluteGroupPosition(parent);
-      const position = create(Vec2Schema, {
-        x: group.position.x + parentPosition.x,
-        y: group.position.y + parentPosition.y,
-      });
-      absoluteGroupPositions.set(group.id, position);
-      return position;
-    };
-
-    for (const group of laid.groups) {
-      group.position = absoluteGroupPosition(group);
+      return depth;
     }
+
+    const orderedGroups = laid.groups.slice().sort((a, b) => depthOf(a) - depthOf(b));
+
+    for (const group of orderedGroups) {
+      if (group.parentGroup !== undefined) {
+        const parent = groupById.get(group.parentGroup);
+        if (parent !== undefined) {
+          group.position = create(Vec2Schema, {
+            x: group.position.x + parent.position.x,
+            y: group.position.y + parent.position.y,
+          });
+        }
+      }
+    }
+
     for (const node of laid.nodes) {
       const parent = node.parentGroup === undefined
         ? undefined
-        : groupsById.get(node.parentGroup);
+        : groupById.get(node.parentGroup);
       if (parent !== undefined) {
-        const parentPosition = absoluteGroupPosition(parent);
         node.position = create(Vec2Schema, {
-          x: node.position.x + parentPosition.x,
-          y: node.position.y + parentPosition.y,
+          x: node.position.x + parent.position.x,
+          y: node.position.y + parent.position.y,
         });
       }
     }

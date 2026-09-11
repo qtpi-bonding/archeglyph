@@ -57,6 +57,12 @@ import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { NodeVisibility } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 import { Vec2 } from '@archeglyph/proto/gen/style_pb';
+import {
+  GroupLayoutSchema,
+  GroupStyleEntry,
+  GroupStyleEntrySchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
 
 export interface NodeEntryPatch {
   position?: Vec2;
@@ -71,5 +77,28 @@ export function patchEdgeEntry(existing: EdgeStyleEntry | undefined, patch: Edge
   throw new Error('not implemented');
 }
 export function patchGroupEntry(existing: GroupStyleEntry | undefined, patch: GroupEntryPatch): GroupStyleEntry {
-  throw new Error('not implemented');
+  const hasLayoutPatch: boolean =
+    patch.position !== undefined ||
+    patch.size !== undefined ||
+    patch.padding !== undefined ||
+    patch.renderMode !== undefined ||
+    patch.labelPosition !== undefined;
+  const layout = hasLayoutPatch
+    ? create(GroupLayoutSchema, {
+        ...(existing?.layout ?? {}),
+        position: patch.position ?? existing?.layout?.position,
+        size: patch.size ?? existing?.layout?.size,
+        padding: patch.padding ?? existing?.layout?.padding,
+        renderMode: patch.renderMode ?? existing?.layout?.renderMode,
+        labelPosition: patch.labelPosition ?? existing?.layout?.labelPosition,
+      })
+    : existing?.layout;
+
+  return create(GroupStyleEntrySchema, {
+    ...(existing ?? {}),
+    layout,
+    shape: patch.shape ?? existing?.shape,
+    typography: patch.typography ?? existing?.typography,
+    component: patch.component ?? existing?.component,
+  });
 }

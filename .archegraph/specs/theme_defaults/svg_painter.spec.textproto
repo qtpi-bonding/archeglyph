@@ -4,15 +4,20 @@ doc: "Pure SVG string helpers. Adds backgroundRect beside viewBox."
 methods: [
   { name: "backgroundRect"
     doc:
-      "Return a <rect> covering the diagram's viewBox extents (same numbers "
-      "viewBox() computes — share the extent computation rather than duplicating "
-      "it), filled with the canvas background colour, or '' when "
-      "diagram.canvas.background has no colour value or the value is still an "
-      "unresolved '$' token ref. Rounded to 2dp like everything else here."
+      "Return a <rect> covering the diagram's extents, filled with the canvas "
+      "background colour, or '' when diagram.canvas.background has no colour "
+      "value or the value is still an unresolved '$' token ref. Rounded to 2dp "
+      "like everything else here. Grandfathered post-build: the impl factored "
+      "viewBox()'s bounds math out into a private viewBoxExtents() helper that "
+      "both viewBox() and backgroundRect() call, rather than backgroundRect() "
+      "calling viewBox() and reparsing its formatted string — a better reading "
+      "of the original doc field's 'share the extent computation' than a literal "
+      "uses: [\"viewBox\"] implied. Mirror this shape in any future decl that "
+      "needs the same extents."
     inputs: [
       { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }
     ]
     output: { primitive: CHARACTER }
-    uses: ["viewBox"]
+    uses: ["viewBoxExtents"]
   }
 ]

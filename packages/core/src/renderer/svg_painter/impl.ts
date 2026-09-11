@@ -90,8 +90,8 @@ export function viewBox(diagram: LaidOutDiagram): string {
   for (const ann of diagram.annotations) {
     minX = Math.min(minX, ann.position.x);
     minY = Math.min(minY, ann.position.y);
-    maxX = Math.max(maxX, ann.position.x);
-    maxY = Math.max(maxY, ann.position.y);
+    maxX = Math.max(maxX, ann.position.x + ann.size.x);
+    maxY = Math.max(maxY, ann.position.y + ann.size.y);
   }
   for (const edge of diagram.edges) {
     for (const section of edge.sections) {

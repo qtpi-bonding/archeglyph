@@ -30,7 +30,7 @@ import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
-import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
+import { applyAllPendingEdits } from './ghost_layer';
 import { EditorState } from '../state/editor_state';
 import { Vec2, ViewportState } from './viewport';
 import { DragHandler } from './drag_handler';
@@ -74,14 +74,6 @@ function findElementTarget(target: EventTarget | null): { id: string; kind: Elem
     }
   }
   return null;
-}
-
-function applyAllPendingEdits(stylesheet: Stylesheet): Stylesheet {
-  let result: Stylesheet = stylesheet;
-  for (const edit of stylesheet.pendingEdits) {
-    result = applyStyleEditToStylesheet(result, edit);
-  }
-  return result;
 }
 
 /** Solid component (Component<CanvasProps>). Creates ViewportState + DragHandler per mount.

@@ -5,8 +5,8 @@ import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 import { type StyleEdit, type Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
-import { patchAnnotationEntry, patchGroupEntry, patchNodeEntry } from './entry_patch';
-import { annotationChange, groupChange, nodeChange, styleEdit } from './edit_builder';
+import { patchAnnotationEntry, patchEdgeEntry, patchGroupEntry, patchNodeEntry } from './entry_patch';
+import { annotationChange, edgeChange, groupChange, nodeChange, styleEdit } from './edit_builder';
 
 export interface NodeGlyphPatch {
   shape?: Glyph2D;
@@ -74,5 +74,11 @@ export function setNodeGlyphEdit(stylesheet: Stylesheet, nodeId: string, patch: 
   throw new Error('not implemented');
 }
 export function setEdgeGlyphEdit(stylesheet: Stylesheet, edgeId: string, patch: EdgeGlyphPatch): StyleEdit {
-  throw new Error('not implemented');
+  const existing = stylesheet.edges[edgeId];
+  return styleEdit({
+    edgeChanges: [
+      edgeChange(edgeId, patchEdgeEntry(existing, patch)),
+    ],
+    description: 'Set glyph on edge',
+  });
 }

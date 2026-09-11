@@ -4,6 +4,7 @@
 import { create } from '@bufbuild/protobuf';
 import {
   StyleEdit,
+<<<<<<< HEAD
   StyleEditSchema,
   StyleEditState,
   Stylesheet,
@@ -11,6 +12,10 @@ import {
   StylesheetSchema,
 =======
 >>>>>>> 339fc02e26c01060752a173e06dc2f8a143d9151
+=======
+  Stylesheet,
+  StylesheetSchema,
+>>>>>>> 883a9dc6e733854a84ac2414049f0ad4261993d6
 } from '@archeglyph/proto/gen/style_pb';
 
 export function acceptPendingEdit(stylesheet: Stylesheet, editId: string): StyleEdit | undefined {
@@ -37,7 +42,16 @@ export function proposePendingEdit(stylesheet: Stylesheet, proposal: StyleEdit, 
   });
 }
 export function removePendingEdit(stylesheet: Stylesheet, editId: string): Stylesheet {
-  throw new Error('not implemented');
+  return create(StylesheetSchema, {
+    schemaVersion: stylesheet.schemaVersion,
+    themeRef: stylesheet.themeRef,
+    canvas: stylesheet.canvas,
+    nodes: stylesheet.nodes,
+    edges: stylesheet.edges,
+    groups: stylesheet.groups,
+    annotations: stylesheet.annotations,
+    pendingEdits: stylesheet.pendingEdits.filter((edit: StyleEdit) => edit.id !== editId),
+  });
 }
 export function findPendingEdit(stylesheet: Stylesheet, editId: string): StyleEdit | undefined {
   return stylesheet.pendingEdits.find((edit) => edit.id === editId);

@@ -1,0 +1,94 @@
+# New pillar file, wave 2 of docs/implementation-order.md ("layout ✎
+# edge_router"). Pure rect-to-rect routing, built on the geometry pillar
+# (packages/core/src/geometry) that landed in wave 1. Needed by the future
+# PIN layout mode (wave 5: once nodes are pinned, ELK stops running, so
+# something else has to compute edge paths) but has no other dependency —
+# safe to build standalone against fixtures now.
+#
+# Attach-hint semantics come straight from style.proto's EdgeLayout doc:
+# "Optional attachment hints. Coordinates are element-local normalized:
+# (0, 0) is element center, (1, 0) is right of bbox, (0, -1) is top. The
+# point is projected onto the element's actual outline at render time...
+# Unset on either side -> layout decides for that endpoint." "Layout
+# decides" here means: aim at the OTHER endpoint's centre and project that
+# ray onto this element's own Bounds via the geometry pillar's
+# boundsProjectToEdge — i.e. the default routing is a direct line between
+# the connected elements' actual centres, clipped to each box's edge.
+#
+# resolveAttachPoint converts a normalized attach hint (or its absence)
+# into an absolute point on `bounds`'s boundary:
+#
+#   export function resolveAttachPoint(bounds: Bounds, towardCentre: Vec2, attachHint?: Vec2): Vec2 {
+#     const centre = boundsCentre(bounds);
+#     if (attachHint === undefined) {
+#       return boundsProjectToEdge(bounds, towardCentre);
+#     }
+#     const halfWidth = (bounds.maxX - bounds.minX) / 2;
+#     const halfHeight = (bounds.maxY - bounds.minY) / 2;
+#     const toward: Vec2 = {
+#       x: centre.x + attachHint.x * halfWidth,
+#       y: centre.y + attachHint.y * halfHeight,
+#     };
+#     return boundsProjectToEdge(bounds, toward);
+#   }
+#
+# routeStraight returns exactly [start, end] — the two attach points,
+# resolved via resolveAttachPoint aimed at each other's Bounds centre when
+# no hint is given.
+#
+# routeOrthogonal returns [start, end] when start and end already share an
+# x or y coordinate (no bend needed — comparing with === after resolving
+# through the same math would essentially never be exactly equal for real
+# float inputs, so in practice this almost always returns three points, but
+# keep the two-point short-circuit for the exact-equality case since it's a
+# legitimate degenerate output shape); otherwise [start, bend, end] with ONE
+# bend point — horizontal-then-vertical when the horizontal distance
+# (|end.x - start.x|) is >= the vertical distance, vertical-then-horizontal
+# otherwise:
+#
+#   const bend: Vec2 = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
+#     ? { x: end.x, y: start.y }
+#     : { x: start.x, y: end.y };
+#
+# This is intentionally a single-bend router, not full obstacle-avoiding
+# orthogonal routing — matches wave 2's scope ("straight + orthogonal
+# rect-to-rect routing with attach-hint projection; pure; unit-tested
+# against fixtures"), not ELK-grade routing.
+
+file: "packages/core/src/layout/edge_router/impl.ts"
+doc: "Pure rect-to-rect edge routing: attach-point resolution, straight routing, single-bend orthogonal routing."
+
+methods: [
+  { name: "resolveAttachPoint"
+    doc: "Normalized attach hint (or its absence) -> absolute point on bounds's boundary. See file doc for the exact required body."
+    inputs: [
+      { name: "bounds",       type: { named: { symbol: "Bounds" } } },
+      { name: "towardCentre", type: { named: { symbol: "Vec2" } } },
+      { name: "attachHint",   type: { named: { symbol: "Vec2" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "Vec2" } }
+    uses: ["Bounds", "Vec2", "boundsCentre", "boundsProjectToEdge"]
+  },
+  { name: "routeStraight"
+    doc: "[start, end] via resolveAttachPoint on each side, each aimed at the other box's centre when its own attach hint is absent."
+    inputs: [
+      { name: "sourceBounds", type: { named: { symbol: "Bounds" } } },
+      { name: "targetBounds", type: { named: { symbol: "Bounds" } } },
+      { name: "sourceAttach", type: { named: { symbol: "Vec2" } }, is_optional: true },
+      { name: "targetAttach", type: { named: { symbol: "Vec2" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Vec2[]" } }
+    uses: ["Bounds", "Vec2", "resolveAttachPoint", "boundsCentre"]
+  },
+  { name: "routeOrthogonal"
+    doc: "[start, end] or [start, bend, end] with one bend point. See file doc for the exact bend-direction rule and the degenerate two-point case."
+    inputs: [
+      { name: "sourceBounds", type: { named: { symbol: "Bounds" } } },
+      { name: "targetBounds", type: { named: { symbol: "Bounds" } } },
+      { name: "sourceAttach", type: { named: { symbol: "Vec2" } }, is_optional: true },
+      { name: "targetAttach", type: { named: { symbol: "Vec2" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Vec2[]" } }
+    uses: ["Bounds", "Vec2", "resolveAttachPoint", "boundsCentre"]
+  }
+]

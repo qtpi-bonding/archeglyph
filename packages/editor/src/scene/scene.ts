@@ -2,6 +2,12 @@
 
 import { boundsFromRect, boundsUnion, Bounds } from '@archeglyph/core/geometry/bounds';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
+import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
+import { layoutPipeline } from '@archeglyph/core/pipeline';
+import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
+import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { Err, Ok, Result } from '@archeglyph/proto/util/result';
+import { Accessor, createEffect, createResource, createSignal } from 'solid-js';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { elementKey } from './element_key';
 import { ElementRef } from '../ui_state/ui_state';
@@ -64,7 +70,51 @@ export interface ElementBounds {
   parentGroup?: string;
 }
 export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEngine: LayoutEngine): Scene {
-  throw new Error('not implemented');
+  type SceneSource = { version: number; theme: Theme };
+  type SceneResult = Result<SceneGeometry, SceneError>;
+
+  const [snapshot] = createResource<SceneSource, SceneResult>(
+    () => ({ version: state.version(), theme: theme() }),
+    async (source: SceneSource): Promise<SceneResult> => {
+      const layoutResult = await layoutPipeline(
+        state.diagram(),
+        state.stylesheet(),
+        source.theme,
+        layoutEngine,
+      );
+      if (layoutResult.kind === 'err') {
+        return Err({
+          stage: layoutResult.error.stage,
+          message: layoutResult.error.stage,
+        });
+      }
+
+      const renderResult = new SvgRendererImpl().render(layoutResult.value);
+      if (renderResult.kind === 'err') {
+        return Err({ stage: 'render', message: renderResult.error.message });
+      }
+
+      return Ok(buildSceneGeometry(layoutResult.value, renderResult.value));
+    },
+  );
+
+  const [geometry, setGeometry] = createSignal<SceneGeometry | undefined>(undefined);
+  const [sceneError, setSceneError] = createSignal<SceneError | undefined>(undefined);
+
+  createEffect(() => {
+    const result = snapshot();
+    if (result === undefined) {
+      return;
+    }
+    if (result.kind === 'ok') {
+      setGeometry(result.value);
+      setSceneError(undefined);
+    } else {
+      setSceneError(result.error);
+    }
+  });
+
+  return { geometry, error: sceneError, loading: snapshot.loading };
 }
 export interface Scene {
   geometry: Accessor<SceneGeometry | undefined>;

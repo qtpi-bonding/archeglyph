@@ -24,5 +24,17 @@ export function resolveAttachPoint(bounds: Bounds, towardCentre: Vec2, attachHin
   return boundsProjectToEdge(bounds, toward);
 }
 export function routeOrthogonal(sourceBounds: Bounds, targetBounds: Bounds, sourceAttach?: Vec2, targetAttach?: Vec2): Vec2[] {
-  throw new Error('not implemented');
+  const sourceCentre = boundsCentre(sourceBounds);
+  const targetCentre = boundsCentre(targetBounds);
+  const start = resolveAttachPoint(sourceBounds, targetCentre, sourceAttach);
+  const end = resolveAttachPoint(targetBounds, sourceCentre, targetAttach);
+
+  if (start.x === end.x || start.y === end.y) {
+    return [start, end];
+  }
+
+  const bend: Vec2 = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
+    ? { x: end.x, y: start.y }
+    : { x: start.x, y: end.y };
+  return [start, bend, end];
 }

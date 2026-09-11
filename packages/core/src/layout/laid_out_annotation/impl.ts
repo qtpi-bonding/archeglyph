@@ -6,12 +6,15 @@ import { Glyph1D } from '@archeglyph/proto/gen/style_pb';
 import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 import { Vec2 } from '@archeglyph/proto/gen/style_pb';
+import { Localization } from '@archeglyph/proto/gen/content_pb';
 
 export class LaidOutAnnotation {
   id!: string;
   position!: Vec2;
+  size!: Vec2;
   shape!: Glyph2D;
   typography!: Typography;
   callout?: Glyph1D;
   layout?: AnnotationLayout;
+  content: Localization[] = [];
 }

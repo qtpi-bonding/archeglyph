@@ -54,10 +54,6 @@ export class DragHandler {
     return this._getOffset();
   }
 
-  activeSession(): DragSession | null {
-    return this._session;
-  }
-
   onPointerDown(elementId: string, elementKind: ElementKind, startPt: Vec2): void {
     const startCanvasPt: Vec2 = this.viewport.toCanvas(startPt);
     this._session = { elementId, elementKind, startCanvasPt };

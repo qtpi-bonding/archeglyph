@@ -4,7 +4,26 @@ export function toggleSelection(current: ElementRef[], ref: ElementRef): Element
   throw new Error('not implemented');
 }
 export function addAllSelection(current: ElementRef[], refs: ElementRef[]): ElementRef[] {
-  throw new Error('not implemented');
+  const result: ElementRef[] = [];
+  const seen = new Set<string>();
+
+  for (const ref of current) {
+    const key = `${ref.id}\u0000${ref.kind}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(ref);
+    }
+  }
+
+  for (const ref of refs) {
+    const key = `${ref.id}\u0000${ref.kind}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(ref);
+    }
+  }
+
+  return result;
 }
 export function clearSelection(): ElementRef[] {
   throw new Error('not implemented');

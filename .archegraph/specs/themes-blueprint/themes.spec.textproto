@@ -50,11 +50,13 @@ methods: [
     doc:
       "Name → Option<Theme>. Exact match on BUNDLED_THEME_NAMES; null for "
       "anything else so callers can fall back to treating the string as a "
-      "file path. Fresh Theme per call, never memoized (proto values are "
-      "mutable)."
+      "file path. Delegate to getBundledTheme(name) for the actual lookup — "
+      "don't re-implement the three-way name branch here, that duplication "
+      "is exactly what getBundledTheme already is. Fresh Theme per call, "
+      "never memoized (proto values are mutable)."
     inputs: [ { name: "name", type: { primitive: CHARACTER } } ]
     output: { named: { symbol: "Option", args: [ { named: { symbol: "archeglyph.theme.v1.Theme" } } ] } }
-    uses: ["lightTheme", "darkTheme", "blueprintTheme", "BUNDLED_THEME_NAMES"]
+    uses: ["BUNDLED_THEME_NAMES", "getBundledTheme"]
   },
   { name: "getBundledTheme"
     change_type: MODIFIED

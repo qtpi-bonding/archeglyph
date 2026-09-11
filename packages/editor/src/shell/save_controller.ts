@@ -4,6 +4,14 @@ import { Accessor, createEffect, createSignal } from 'solid-js';
 import { EditorState } from '../state/editor_state';
 import { HostAdapter } from '../adapters/host_adapter';
 
+/**
+ * Create the reactive save handle for an editor session.
+ *
+ * The initial effect is deliberately ignored: loading a document must not
+ * immediately write it back. Subsequent version changes replace the pending
+ * timer, while saveNow cancels that timer and uses the same save routine as
+ * the debounced path.
+ */
 export function createSaveController(adapter: HostAdapter, state: EditorState, debounceMs: number): SaveController {
   const [status, setStatus] = createSignal<SaveStatus>('idle');
   const [errorMessage, setErrorMessage] = createSignal<string | undefined>(undefined);
@@ -18,6 +26,8 @@ export function createSaveController(adapter: HostAdapter, state: EditorState, d
   };
 
   const save = async (): Promise<void> => {
+    // Check again when the timer fires. The adapter can become unavailable
+    // while a debounce is pending (for example, when the host changes mode).
     if (!adapter.canSave()) {
       return;
     }

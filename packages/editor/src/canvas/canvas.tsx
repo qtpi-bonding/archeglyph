@@ -30,7 +30,7 @@ import { PipelineError, renderPipeline } from '@archeglyph/core/pipeline';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
-import { applyAllPendingEdits } from './ghost_layer';
+import { GhostLayer } from './ghost_layer';
 import { EditorState } from '../state/editor_state';
 import { Vec2, ViewportState } from './viewport';
 import { DragHandler } from './drag_handler';
@@ -107,21 +107,6 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }));
 
   const [savedSvg] = createResource<string, RenderSource>(savedSource, async (src: RenderSource): Promise<string> => {
-    const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
-    if (result.kind === 'err') { return ''; }
-    else { return result.value; }
-  });
-
-  const ghostSource = createMemo((): RenderSource | false => {
-    const stylesheet: Stylesheet = props.state.stylesheet();
-    if (stylesheet.pendingEdits.length === 0) { return false; }
-    else {
-      const merged: Stylesheet = applyAllPendingEdits(stylesheet);
-      return { diagram: props.state.diagram(), stylesheet: merged, theme: props.theme };
-    }
-  });
-
-  const [ghostSvg] = createResource<string, RenderSource>(ghostSource, async (src: RenderSource): Promise<string> => {
     const result: Result<string, PipelineError> = await renderPipeline(src.diagram, src.stylesheet, src.theme, layoutEngine);
     if (result.kind === 'err') { return ''; }
     else { return result.value; }
@@ -253,9 +238,11 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <div style={{ transform: transform(), position: 'absolute', 'transform-origin': '0 0' }}>
         <Show when={hasPending()}>
-          <div
-            style={{ position: 'absolute', top: '0', left: '0', opacity: '0.3' }}
-            innerHTML={ghostSvg() ?? ''}
+          <GhostLayer
+            diagram={props.state.diagram()}
+            stylesheet={props.state.stylesheet()}
+            theme={props.theme}
+            layoutEngine={layoutEngine}
           />
         </Show>
         <div

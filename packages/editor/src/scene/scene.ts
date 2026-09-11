@@ -11,6 +11,7 @@ import { Accessor, createEffect, createResource, createSignal } from 'solid-js';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { elementKey } from './element_key';
 import { ElementRef } from '../ui_state/ui_state';
+import type { EditorState } from '../state';
 
 export interface SceneGeometry {
   diagram: LaidOutDiagram;
@@ -73,7 +74,7 @@ export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEn
   type SceneSource = { version: number; theme: Theme };
   type SceneResult = Result<SceneGeometry, SceneError>;
 
-  const [snapshot] = createResource<SceneSource, SceneResult>(
+  const [snapshot] = createResource<SceneResult, SceneSource>(
     () => ({ version: state.version(), theme: theme() }),
     async (source: SceneSource): Promise<SceneResult> => {
       const layoutResult = await layoutPipeline(
@@ -83,9 +84,11 @@ export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEn
         layoutEngine,
       );
       if (layoutResult.kind === 'err') {
+        // PipelineError carries only `stage`, so compose a readable line
+        // rather than repeating the stage name twice in the banner.
         return Err({
           stage: layoutResult.error.stage,
-          message: layoutResult.error.stage,
+          message: `layout failed at stage "${layoutResult.error.stage}"`,
         });
       }
 
@@ -114,7 +117,9 @@ export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEn
     }
   });
 
-  return { geometry, error: sceneError, loading: snapshot.loading };
+  // snapshot.loading is a reactive getter property, not an Accessor — wrap
+  // it so reading Scene.loading() still tracks.
+  return { geometry, error: sceneError, loading: () => snapshot.loading };
 }
 export interface Scene {
   geometry: Accessor<SceneGeometry | undefined>;

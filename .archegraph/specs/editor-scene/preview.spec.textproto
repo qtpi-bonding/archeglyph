@@ -101,18 +101,26 @@ methods: [
       "it. An edge is re-routed when either endpoint moved; look its\n"
       "endpoints up through byKey (an endpoint id may name a node or a\n"
       "group), falling back to the element's unmoved rect for the endpoint\n"
-      "that stayed."
+      "that stayed.\n"
+      "\n"
+      "Grandfathered post-build: the impl reaches routeEdgeBetween through\n"
+      "a file-local previewEdges() helper shared with previewResize, rather\n"
+      "than calling it directly — the right call, since both previews need\n"
+      "the identical 'which edges moved, re-route those' loop. No direct\n"
+      "uses: edge on routeEdgeBetween here as a result. Keep that shape."
     inputs: [
       { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
       { name: "intent",   type: { named: { symbol: "MoveIntent" } } }
     ]
     output: { named: { symbol: "ScenePreview" } }
-    uses: ["SceneGeometry", "MoveIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey", "routeEdgeBetween"]
+    uses: ["SceneGeometry", "MoveIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey"]
   },
   { name: "previewResize"
     doc:
       "resizeBounds on the one element, then re-route its attached edges\n"
-      "the same way previewMove does. Resizing a group does NOT move its\n"
+      "the same way previewMove does — through the same file-local\n"
+      "previewEdges() helper, so there is no direct uses: edge on\n"
+      "routeEdgeBetween here either. Resizing a group does NOT move its\n"
       "members — the container grows or shrinks around them; that is the\n"
       "difference between resizing a group and moving one."
     inputs: [
@@ -120,6 +128,6 @@ methods: [
       { name: "intent",   type: { named: { symbol: "ResizeIntent" } } }
     ]
     output: { named: { symbol: "ScenePreview" } }
-    uses: ["SceneGeometry", "ResizeIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey", "resizeBounds", "routeEdgeBetween"]
+    uses: ["SceneGeometry", "ResizeIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey", "resizeBounds"]
   }
 ]

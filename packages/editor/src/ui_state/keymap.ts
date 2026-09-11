@@ -13,6 +13,36 @@ export interface KeymapEntry {
   chord: Chord;
   command: CommandId;
 }
+export const KEYMAP: KeymapEntry[] = [
+  { chord: { key: 'z', meta: true }, command: 'undo' },
+  { chord: { key: 'z', meta: true, shift: true }, command: 'redo' },
+  { chord: { key: 'Backspace' }, command: 'delete' },
+  { chord: { key: 'Delete' }, command: 'delete' },
+  { chord: { key: 'Escape' }, command: 'escape' },
+  { chord: { key: 'a', meta: true }, command: 'select-all' },
+  { chord: { key: 'ArrowUp' }, command: 'nudge-up' },
+  { chord: { key: 'ArrowDown' }, command: 'nudge-down' },
+  { chord: { key: 'ArrowLeft' }, command: 'nudge-left' },
+  { chord: { key: 'ArrowRight' }, command: 'nudge-right' },
+  { chord: { key: 's' }, command: 'ring-next' },
+  { chord: { key: 's', shift: true }, command: 'ring-prev' },
+  { chord: { key: 's', meta: true }, command: 'save' },
+];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
-  throw new Error('not implemented');
+  for (const entry of KEYMAP) {
+    const { chord } = entry;
+    const chordUsesMeta = chord.meta === true;
+    const eventUsesMeta = event.metaKey || event.ctrlKey;
+    const chordUsesShift = chord.shift === true;
+
+    if (
+      chord.key === event.key &&
+      chordUsesMeta === eventUsesMeta &&
+      chordUsesShift === event.shiftKey
+    ) {
+      return entry.command;
+    }
+  }
+
+  return undefined;
 }

@@ -6,6 +6,7 @@
 #   <!-- archeglyph version=1 -->
 #   <svg xmlns="http://www.w3.org/2000/svg"
 #        viewBox="<computed by svgPainter.viewBox>"
+#        width="<viewBox width>" height="<viewBox height>"
 #        style="background: <canvas background color or #ffffff>">
 #     <defs>
 #       <!-- arrowhead markers from svgPainter.arrowMarkers -->
@@ -16,58 +17,106 @@
 #     <!-- annotations, sorted by id -->
 #   </svg>
 #
+# MODIFIED, wave 2 "renderer Δ: data-attrs, explicit width/height, edge
+# hit-stroke, annotation painting" (docs/implementation-order.md), plus a
+# real bug fix found while authoring this delta: today's render() takes
+# svgPainter.edgePath()'s return value (a bare path `d=` attribute STRING,
+# per svg_painter.spec.textproto's own contract — edgePath itself is
+# correct) and concatenates it directly as `<g id="edge-...">${pathSvg}</g>`
+# with NO `<path>` element around it at all. That's invalid SVG content —
+# a bare string floating inside a `<g>` — so every edge in every rendered
+# diagram today is invisible (verified: `archeglyph render` on a 2-node
+# 1-edge diagram produces `<g id="edge-e1">M 132.00,32.00 L 152.00,32.00</g>`
+# with no `<path>` tag). This delta's own spec already documented the
+# correct behavior in the "Implementation notes" below; wrap edgePath()'s
+# output in a real `<path>` this time.
+#
 # Implementation notes for SvgRendererImpl.render():
 #
-# 1. Collect arrowhead variants in use:
-#    Walk diagram.edges, collect edge.layout?.arrowheads?.start and .end
+# 1. Collect arrowhead variants in use (UNCHANGED):
+#    Walk diagram.edges, collect edge.connection.arrowheads?.start and .end
 #    (ArrowheadVariant). Deduplicate. Pass to svgPainter.arrowMarkers().
 #
-# 2. Render groups outer-first:
+# 2. Render groups outer-first (UNCHANGED body, ADD data attrs — see #7):
 #    Sort diagram.groups by id for determinism.
-#    For groups with isSuperNode=false: render as a container rect using
-#      svgPainter.shapePath(group.shape, group.position, group.size) for
-#      the background, then svgPainter.textElement for the label at
-#      (group.position.x + group.size.x/2, group.position.y + 12).
-#    For groups with isSuperNode=true: render as a node shape with a
-#      "+N" indicator — use svgPainter.shapePath for the shape, then two
-#      text elements: the group label and "+<hiddenDescendantCount>" below it.
+#    svgPainter.shapePath(group.shape, group.position, group.size) for the
+#    background, then svgPainter.textElement for the label at
+#    (group.position.x + group.size.x/2, group.position.y + group.size.y/2).
 #
-# 3. Render nodes:
+# 3. Render nodes (UNCHANGED body, ADD data attrs — see #7):
 #    Sort diagram.nodes by id.
-#    For each node: svgPainter.shapePath(node.shape, node.position, node.size)
-#    then svgPainter.textElement(node.label, node.typography,
+#    svgPainter.shapePath(node.shape, node.position, node.size) then
+#    svgPainter.textElement(node.label, node.typography,
 #      { x: node.position.x + node.size.x/2, y: node.position.y + node.size.y/2 }).
 #
-# 4. Render edges:
-#    Sort diagram.edges by id.
-#    For each edge:
-#      path d = svgPainter.edgePath(edge.sections)
-#      emit <path d="..." fill="none" stroke="<color>" stroke-width="<width>"
-#                  marker-end="url(#ah-<end-variant>)"
-#                  marker-start="url(#ah-<start-variant>)" />
-#      if edge has a label: svgPainter.textElement at midpoint of first section.
+# 4. Render edges (MODIFIED — the actual bug fix + hit-stroke):
+#    Sort diagram.edges by id. For each edge:
+#      const d = svgPainter.edgePath(edge.sections);
+#      const strokeColor = edge.connection.stroke?.paint.case === 'color'
+#        ? edge.connection.stroke.paint.value.value : '#000000';
+#      const strokeWidth = edge.connection.stroke?.width ?? 1;
+#      const startMarker = <arrowhead start id from edge.connection.arrowheads?.start, if not NONE>;
+#      const endMarker = <arrowhead end id from edge.connection.arrowheads?.end, if not NONE>;
+#      visible path: `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"${startMarkerAttr}${endMarkerAttr}/>`
+#      hit-stroke twin, emitted FIRST (under the visible path, same d):
+#        `<path d="${d}" fill="none" stroke="transparent" stroke-width="12" style="pointer-events: stroke"/>`
+#      wrap both plus the optional label in the same
+#      `<g id="edge-${id}" data-element-id="${id}" data-kind="edge">`.
+#    Marker attributes match the existing arrowMarkers() id convention
+#    (`marker-start="url(#ah-<variant>)"` / `marker-end="url(#ah-<variant>)"`),
+#    same as before this delta — only omitted when the variant is
+#    ARROWHEAD_NONE or unset.
+#    Label (unchanged): if edge.label.length > 0 && edge.sections.length > 0,
+#    svgPainter.textElement at the first section's midpoint.
 #
-# 5. Render annotations:
-#    Sort diagram.annotations by id.
-#    If annotation has a callout (layout?.anchor is set):
-#      emit <line> from annotation.position to the anchor element's center
-#      using the callout Glyph1D stroke style.
-#    Emit svgPainter.shapePath(annotation.shape, annotation.position, size)
-#      where size = annotation.layout?.size ?? { x: 120, y: 40 } (default).
-#    Emit svgPainter.textElement for the label.
+# 5. Render annotations (ADDED — today's renderer never emits annotations
+#    at all, docs/editor-ui-review.md §2.11 / §5.5):
+#    Sort diagram.annotations by id. Build nodeById/groupById Maps (id ->
+#    the LaidOutNode/LaidOutGroup) for callout resolution. For each
+#    annotation:
+#      - If annotation.layout?.anchor is set AND its ref_kind is
+#        REF_KIND_NODE or REF_KIND_GROUP AND the referenced id exists in
+#        the corresponding map: draw a callout `<line>` from the
+#        annotation's own centre (position + size/2) to the target
+#        element's centre (target.position + target.size/2), styled from
+#        annotation.callout (Stroke color/width, same attrs as edgePath's
+#        visible path). REF_KIND_EDGE or an unresolvable ref: skip the
+#        line silently (not an error) — out of scope for this delta, a
+#        later wave's annotation-editing pillar can add edge-anchor
+#        support.
+#      - svgPainter.shapePath(annotation.shape, annotation.position,
+#        annotation.size) — size is ALWAYS present now (layout Δ, already
+#        merged), no more `?? default` fallback needed here.
+#      - svgPainter.textElement(annotation.content, annotation.typography,
+#        { x: annotation.position.x + annotation.size.x/2, y: annotation.position.y + annotation.size.y/2 }).
+#      - Wrap in `<g id="annotation-${id}" data-element-id="${id}" data-kind="annotation">`.
 #
-# 6. Wrap in <svg> with viewBox from svgPainter.viewBox(diagram).
-#    Prefix with the metadata comment.
+# 6. Wrap in <svg> with viewBox from svgPainter.viewBox(diagram) (unchanged
+#    call), PLUS explicit width/height (ADDED — docs/editor-ui-review.md
+#    §2.8: no width/height means the browser falls back to a 300×150
+#    replaced-element default). viewBox() returns a single
+#    "minX minY width height" string; parse the 3rd/4th space-separated
+#    tokens for the width/height attribute values rather than changing
+#    viewBox()'s own signature/contract — e.g.
+#    `const vbParts = vb.split(' '); const svgWidth = vbParts[2]; const svgHeight = vbParts[3];`
+#    then `width="${svgWidth}" height="${svgHeight}"` on the `<svg>` tag.
+#    Prefix with the metadata comment (unchanged).
 #
-# Error: return Err(RenderError) only if diagram.id is empty (structural
-# invariant violation). All other problems (missing glyphs, unknown shapes)
-# use defaults silently.
+# 7. Data attributes (ADDED, applies to EVERY element group — nodes,
+#    groups, edges, annotations): each already has `id="<kind>-<id>"` for
+#    backward compatibility with existing DOM-id-parsing consumers
+#    (editor/canvas/canvas.tsx) — KEEP that attribute as-is, additionally
+#    add `data-element-id="<id>"` (the bare id, no kind prefix) and
+#    `data-kind="node"` / `"edge"` / `"group"` / `"annotation"` on the same
+#    `<g>`. This is the stable hook a future scene/hit-test module reads
+#    instead of parsing the `id` attribute's string prefix.
 
 file: "packages/core/src/renderer/svg_renderer/impl.ts"
-doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string."
+doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string. Now paints annotations, wraps edges in real <path> elements, and emits data-attrs + explicit width/height."
 
 structs: [
   { name: "SvgRendererImpl"
+    change_type: MODIFIED
     implements: [{ named: { symbol: "SvgRenderer" } }]
     methods: [
       { name: "render"
@@ -79,7 +128,7 @@ structs: [
           { primitive: CHARACTER },
           { named: { symbol: "RenderError" } }
         ]}}
-        uses: []
+        uses: ["shapePath", "textElement", "edgePath", "viewBox", "arrowMarkers"]
       }
     ]
   }

@@ -55,6 +55,11 @@
 # Walk all nodes, groups, annotations — take the union of their bounding boxes.
 # Add 16px padding on all sides. Round to 2dp.
 # If the diagram is empty, return "0 0 100 100".
+#
+# MODIFIED, wave 2 "renderer Δ": annotations now always carry a real `size`
+# (layout Δ, already merged) — use the FULL annotation extent
+# (position.x + size.x, position.y + size.y) in the max bounds, not just
+# the position point as today. Same treatment nodes/groups already get.
 
 file: "packages/core/src/renderer/svg_painter/impl.ts"
 doc: "Pure SVG string helpers — shape paths, edge paths, text elements, arrowhead markers, viewBox."
@@ -68,14 +73,12 @@ methods: [
     ]
     output: { primitive: CHARACTER }
   },
-  # sections param is EdgeSection[] (array) — declare as EdgeSection[], not EdgeSection
   { name: "edgePath"
     inputs: [
       { name: "sections", type: { named: { symbol: "EdgeSection" } } }
     ]
     output: { primitive: CHARACTER }
   },
-  # label param is Localization[] (array); variants param is ArrowheadVariant[] (array)
   { name: "textElement"
     inputs: [
       { name: "label",      type: { named: { symbol: "archeglyph.content.v1.Localization" } } },
@@ -91,6 +94,8 @@ methods: [
     output: { primitive: CHARACTER }
   },
   { name: "viewBox"
+    change_type: MODIFIED
+    doc: "Annotation bounds now use the full position+size extent, not just the position point — see file-level MODIFIED note above."
     inputs: [
       { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }
     ]

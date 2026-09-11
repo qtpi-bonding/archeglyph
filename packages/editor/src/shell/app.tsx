@@ -11,24 +11,50 @@ import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
 import { Canvas } from '../canvas/canvas';
-import { SelectedElement, SelectionContext, SelectionState } from '../canvas/selection';
+import { ElementKind, SelectedElement, SelectionContext, SelectionState } from '../canvas/selection';
 import { TopBar } from './top_bar';
 import { Inspector } from './inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
+import { createUiState } from '../ui_state/ui_state';
+import { Scene, createScene } from '../scene/scene';
+import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
+import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
+import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = new URLSearchParams(window.location.search);
   const pair: AdapterPair = selectAdapters(params);
   const theme: Theme = create(ThemeSchema, {});
+  const [themeAccessor] = createSignal<Theme>(theme);
+  const ui = createUiState();
+  const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
-
   const [state, setState] = createSignal<EditorState | null>(null);
-
-  const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
+  const [scene, setScene] = createSignal<Scene | null>(null);
   const selection: SelectionState = {
-    selected: getSelected,
-    setSelected: (el: SelectedElement | null): void => { setSelectedSignal(el); },
+    selected: (): SelectedElement | null => {
+      const selected = ui.selection()[0];
+      if (selected === undefined) { return null; }
+      const kind = selected.kind === 'node' ? ElementKind.NODE
+        : selected.kind === 'group' ? ElementKind.GROUP
+        : selected.kind === 'edge' ? ElementKind.EDGE
+        : ElementKind.ANNOTATION;
+      return { id: selected.id, kind };
+    },
+    setSelected: (element: SelectedElement | null): void => {
+      if (element === null) { ui.setSelection([]); return; }
+      const kind = element.kind === ElementKind.NODE ? 'node'
+        : element.kind === ElementKind.GROUP ? 'group'
+        : element.kind === ElementKind.EDGE ? 'edge'
+        : 'annotation';
+      ui.setSelection([{ id: element.id, kind }]);
+    },
   };
+
+  function installState(nextState: EditorState): void {
+    setState(nextState);
+    setScene(createScene(nextState, themeAccessor, layoutEngine));
+  }
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
     if (result.kind === 'err') {
@@ -36,37 +62,25 @@ export const App: Component<{}> = (): JSX.Element => {
       return;
     }
     const stylesheet: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, {});
-    setState(createEditorState(result.value.diagram, stylesheet));
+    installState(createEditorState(result.value.diagram, stylesheet));
   }
 
-  function onOpen(): void {
-    pair.adapter.load().then(loadFrom);
-  }
+  function onOpen(): void { pair.adapter.load().then(loadFrom); }
 
   function onNew(): void {
-    const diagram: Diagram = create(DiagramSchema, {});
-    const stylesheet: Stylesheet = create(StylesheetSchema, {});
-    setState(createEditorState(diagram, stylesheet));
+    installState(createEditorState(create(DiagramSchema, {}), create(StylesheetSchema, {})));
   }
 
   onMount((): void => {
-    if (autoLoad) {
-      pair.adapter.load().then(loadFrom);
-    }
-
+    if (autoLoad) { pair.adapter.load().then(loadFrom); }
     function onKeyDown(e: KeyboardEvent): void {
       const currentState: EditorState | null = state();
       if (currentState === null) { return; }
-      if (e.metaKey && e.shiftKey && e.key === 'z') {
-        currentState.redo();
-      } else if (e.metaKey && e.key === 'z') {
-        currentState.undo();
-      }
+      if (e.metaKey && e.shiftKey && e.key === 'z') { currentState.redo(); }
+      else if (e.metaKey && e.key === 'z') { currentState.undo(); }
     }
     document.addEventListener('keydown', onKeyDown);
-    onCleanup((): void => {
-      document.removeEventListener('keydown', onKeyDown);
-    });
+    onCleanup((): void => document.removeEventListener('keydown', onKeyDown));
   });
 
   return (
@@ -84,7 +98,9 @@ export const App: Component<{}> = (): JSX.Element => {
           <TopBar state={state()!} adapter={pair.adapter} />
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
-              <Canvas state={state()!} theme={theme} />
+              <Show when={scene() !== null}>
+                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={themeAccessor()} ui={ui} />
+              </Show>
             </Resizable.Panel>
             <Resizable.Handle />
             <Resizable.Panel initialSize={'280px'} minSize={'200px'} style={{ height: '100%', overflow: 'hidden' }}>

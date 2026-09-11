@@ -38,6 +38,37 @@ function isDimmed(element: Element, refs: Array<ElementRef>): boolean {
   return refs.some((ref: ElementRef): boolean => elementKey(ref) === key);
 }
 
+/**
+ * Move the renderer's markup into `host`, dropping the wrapper it came in.
+ *
+ * The renderer emits a complete `<svg viewBox width height>` document — the
+ * same bytes `archeglyph render` writes to a file. Injected as-is inside our
+ * own <svg> that becomes a NESTED viewport, which clips everything drawn
+ * outside its box and paints the diagram's background as an opaque slab with
+ * a visible edge in the middle of the canvas. So the root <svg> is unwrapped
+ * and its background <rect> left behind; the canvas element paints that
+ * colour instead, edge to edge. Nothing inside the <defs> and <g> children is
+ * touched, so editor and CLI still draw the same elements.
+ */
+function injectDiagram(host: SVGGElement, svg: string): void {
+  host.replaceChildren();
+  if (svg === '') {
+    return;
+  }
+  const parsed: Document = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  const root: SVGSVGElement | null = parsed.querySelector('svg');
+  if (root === null) {
+    return;
+  }
+  for (const child of Array.from(root.children)) {
+    // Direct children are <defs>, the background <rect>, then one <g> per
+    // element. The rect is the only one that is neither.
+    if (child.tagName === 'defs' || child.tagName === 'g') {
+      host.appendChild(document.importNode(child, true));
+    }
+  }
+}
+
 /** Solid component that preserves renderer SVG markup and applies preview dimming. */
 export const DiagramLayer: Component<DiagramLayerProps> = (props: DiagramLayerProps): JSX.Element => {
   let host!: SVGGElement;
@@ -47,8 +78,12 @@ export const DiagramLayer: Component<DiagramLayerProps> = (props: DiagramLayerPr
   });
 
   createEffect((): void => {
+    injectDiagram(host, props.svg);
+  });
+
+  createEffect((): void => {
     // Read svg so newly injected renderer groups receive the current dimming
-    // state as well; the markup itself remains owned by innerHTML.
+    // state as well; the markup itself remains owned by injectDiagram.
     props.svg;
     const refs: Array<ElementRef> = props.dimmed;
     host.setAttribute('data-dimmed', refs.length > 0 ? 'true' : 'false');
@@ -63,7 +98,6 @@ export const DiagramLayer: Component<DiagramLayerProps> = (props: DiagramLayerPr
       ref={host}
       class="diagram-layer"
       data-dimmed={props.dimmed.length > 0 ? 'true' : 'false'}
-      innerHTML={props.svg}
     />
   );
 };

@@ -46,6 +46,13 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   let pointerId: number | undefined;
 
   const geometry = createMemo((): SceneGeometry | undefined => props.scene.geometry());
+  // The diagram's own background, painted edge to edge by the canvas element
+  // rather than as a slab inside the injected SVG (see diagram_layer's
+  // injectDiagram). Falls back to the chrome token before the first scene.
+  const background = createMemo((): string => {
+    const value: string | undefined = geometry()?.diagram.canvas?.background?.value;
+    return value === undefined || value === '' ? 'var(--ag-bg, #0f1a2b)' : value;
+  });
   const hovering = createMemo((): boolean => props.ui.hover() !== undefined);
   const cursor = createMemo((): string => cursorFor(props.ui.tool(), hovering(), panning()));
   const transform = createMemo((): string => {
@@ -161,7 +168,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: 'var(--ag-bg, #0f1a2b)', 'touch-action': 'none', cursor: cursor() }}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: background(), 'touch-action': 'none', cursor: cursor() }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

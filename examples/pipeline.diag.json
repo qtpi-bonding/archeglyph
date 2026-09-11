@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "pipeline",
+  "title": [{ "locale": "en", "source": "Render pipeline" }],
+  "graph": {
+    "nodes": {
+      "load": { "id": "load", "label": [{ "locale": "en", "source": "load" }], "parentGroup": "core", "tags": { "kind": "stage" } },
+      "resolve": { "id": "resolve", "label": [{ "locale": "en", "source": "resolve" }], "parentGroup": "core", "tags": { "kind": "stage" } },
+      "layout": { "id": "layout", "label": [{ "locale": "en", "source": "layout" }], "parentGroup": "core", "tags": { "kind": "stage" } },
+      "render": { "id": "render", "label": [{ "locale": "en", "source": "render" }], "parentGroup": "core", "tags": { "kind": "stage" } },
+      "diagram": { "id": "diagram", "label": [{ "locale": "en", "source": "diagram.json" }], "tags": { "kind": "file" } },
+      "stylesheet": { "id": "stylesheet", "label": [{ "locale": "en", "source": "style.json" }], "tags": { "kind": "file" } },
+      "svg": { "id": "svg", "label": [{ "locale": "en", "source": "out.svg" }], "tags": { "kind": "file" } }
+    },
+    "edges": {
+      "diagram__load": { "id": "diagram__load", "source": "diagram", "target": "load" },
+      "stylesheet__load": { "id": "stylesheet__load", "source": "stylesheet", "target": "load" },
+      "load__resolve": { "id": "load__resolve", "source": "load", "target": "resolve" },
+      "resolve__layout": { "id": "resolve__layout", "source": "resolve", "target": "layout" },
+      "layout__render": { "id": "layout__render", "source": "layout", "target": "render" },
+      "render__svg": { "id": "render__svg", "source": "render", "target": "svg" }
+    },
+    "groups": {
+      "core": { "id": "core", "label": [{ "locale": "en", "source": "@archeglyph/core" }] }
+    }
+  },
+  "metadata": { "generator": "hand", "canonicalLocale": "en" }
+}

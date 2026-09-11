@@ -97,22 +97,22 @@ const inputStyle: JSX.CSSProperties = {
   width: '100%',
   'box-sizing': 'border-box',
   padding: '2px 4px',
-  border: '1px solid #ccc',
+  border: '1px solid var(--ag-edge)',
   'border-radius': '2px',
   'font-size': '12px',
-  background: '#fff',
-  color: '#333',
+  background: 'var(--ag-field)',
+  color: 'var(--ag-fg)',
 };
 
 const labelTextStyle: JSX.CSSProperties = {
   display: 'block',
   'font-size': '10px',
-  color: '#888',
+  color: 'var(--ag-fg-3)',
 };
 
 const sectionLabelStyle: JSX.CSSProperties = {
   'margin-bottom': '4px',
-  color: '#888',
+  color: 'var(--ag-fg-3)',
 };
 
 const fieldRowStyle: JSX.CSSProperties = {
@@ -133,7 +133,7 @@ const NodeForm: Component<{ state: EditorState; id: string }> = (props): JSX.Ele
     <div>
       <div style={{ 'font-weight': 'bold', 'margin-bottom': '8px' }}>Node</div>
       <div style={{ 'margin-bottom': '8px' }}>
-        <span style={{ color: '#888' }}>id: </span>
+        <span style={{ color: 'var(--ag-fg-3)' }}>id: </span>
         <span>{props.id}</span>
       </div>
       <div style={sectionLabelStyle}>position</div>
@@ -204,7 +204,7 @@ const GroupForm: Component<{ state: EditorState; id: string }> = (props): JSX.El
     <div>
       <div style={{ 'font-weight': 'bold', 'margin-bottom': '8px' }}>Group</div>
       <div style={{ 'margin-bottom': '8px' }}>
-        <span style={{ color: '#888' }}>id: </span>
+        <span style={{ color: 'var(--ag-fg-3)' }}>id: </span>
         <span>{props.id}</span>
       </div>
       <div style={sectionLabelStyle}>position</div>
@@ -245,7 +245,7 @@ const IdOnlyPanel: Component<{ label: string; id: string }> = (props): JSX.Eleme
     <div>
       <div style={{ 'font-weight': 'bold', 'margin-bottom': '8px' }}>{props.label}</div>
       <div>
-        <span style={{ color: '#888' }}>id: </span>
+        <span style={{ color: 'var(--ag-fg-3)' }}>id: </span>
         <span>{props.id}</span>
       </div>
     </div>
@@ -265,10 +265,10 @@ export const Inspector: Component<InspectorProps> = (props: InspectorProps): JSX
   const selected = (): SelectedElement | null => selection.selected();
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#fafafa', 'border-left': '1px solid #ddd', 'box-sizing': 'border-box', padding: '8px', 'font-size': '12px', color: '#333', overflow: 'auto' }}>
+    <div style={{ width: '100%', height: '100%', background: 'var(--ag-panel)', 'border-left': '1px solid var(--ag-edge)', 'box-sizing': 'border-box', padding: '8px', 'font-size': '12px', color: 'var(--ag-fg)', overflow: 'auto' }}>
       <Show
         when={selected()}
-        fallback={<div style={{ color: '#888' }}>Nothing selected</div>}
+        fallback={<div style={{ color: 'var(--ag-fg-3)' }}>Nothing selected</div>}
         keyed
       >
         {(sel) => (

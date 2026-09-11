@@ -41,3 +41,6 @@ archebuild.db-wal
 .DS_Store
 *.swp
 *~
+
+# archegraph per-node build worktrees (transient; recreated by every build)
+.claude/worktrees/

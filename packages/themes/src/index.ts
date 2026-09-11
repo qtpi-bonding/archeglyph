@@ -20,9 +20,13 @@ export const BUNDLED_THEME_NAMES: string[] = ['light', 'dark', 'blueprint'];
 // kind_to_*_component mapping (design.md L1138), so this is just a starting
 // palette, not a schema-mandated shape. dark flips the two colors so the
 // shape still reads against the theme's own (dark) canvas.
-function glyphNodeComponent(strokeColor: string, fillColor: string) {
+function glyphNodeComponent(strokeColor: string, fillColor: string, textColor: string) {
   return create(NodeComponentSchema, {
     name: 'glyph',
+    // Label colour is explicit for the same reason as blueprint's: an absent
+    // Typography leaves <text> with no fill, so it renders black whatever the
+    // theme's own foreground is.
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: textColor }) }),
     shape: create(Glyph2DSchema, {
       shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
       cornerRadius: 0,
@@ -57,7 +61,14 @@ function blueprintNodeShape(strokeColor: string, fillColor: string) {
 }
 
 function blueprintNodeComponent() {
-  return create(NodeComponentSchema, { name: 'glyph', shape: blueprintNodeShape('#8ad1ff', '#122238') });
+  return create(NodeComponentSchema, {
+    name: 'glyph',
+    shape: blueprintNodeShape('#8ad1ff', '#122238'),
+    // Without this the renderer emits <text> with no fill and the label falls
+    // back to SVG's default black, which is unreadable on this theme's navy
+    // ground. Groups and annotations already carry their own typography.
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '#bfe3ff' }) }),
+  });
 }
 
 function blueprintEdgeComponent() {
@@ -145,7 +156,7 @@ export function darkTheme(): Theme {
       },
       shapePaths: {},
     }),
-    nodeComponents: [glyphNodeComponent('#FFFFFF', '#000000')],
+    nodeComponents: [glyphNodeComponent('#FFFFFF', '#000000', '#c0caf5')],
     edgeComponents: [glyphEdgeComponent('#FFFFFF')],
   });
 }
@@ -187,7 +198,7 @@ export function lightTheme(): Theme {
     schemaVersion: 1,
     name: 'light',
     tokens,
-    nodeComponents: [glyphNodeComponent('#000000', '#FFFFFF')],
+    nodeComponents: [glyphNodeComponent('#000000', '#FFFFFF', '#1a1a1a')],
     edgeComponents: [glyphEdgeComponent('#000000')],
   });
 }

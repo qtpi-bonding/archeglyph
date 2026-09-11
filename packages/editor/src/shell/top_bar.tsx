@@ -75,10 +75,10 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
   }
 
   return (
-    <div style={{ display: 'flex', 'align-items': 'center', padding: '0 8px', height: '40px', background: '#f5f5f5', 'border-bottom': '1px solid #ddd' }}>
+    <div style={{ display: 'flex', 'align-items': 'center', padding: '0 8px', height: '40px', background: 'var(--ag-panel)', 'border-bottom': '1px solid var(--ag-edge)' }}>
       <span style={{ flex: '1', 'font-size': '14px' }}>{fileName}</span>
       <Show when={props.adapter.canSave()}>
-        <span style={{ 'margin-right': '8px', 'font-size': '12px', color: saveStatus() === 'error' ? '#c00' : '#888' }}>
+        <span style={{ 'margin-right': '8px', 'font-size': '12px', color: saveStatus() === 'error' ? 'var(--ag-danger)' : 'var(--ag-fg-3)' }}>
           {saveStatus() === 'saving' ? 'Saving…' : saveStatus() === 'saved' ? 'Saved' : saveStatus() === 'error' ? 'Save failed' : ''}
         </span>
       </Show>

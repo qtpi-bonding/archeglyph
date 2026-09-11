@@ -1,0 +1,99 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* archeglyph editor chrome tokens — decision D12 (2026-09-10), "Storm × Blueprint, islands".
+   Source mockup: docs/design/editor-directions.html (top frames).
+   The live copy; docs/design/editor-tokens.css is the reference it was seeded from.
+   Canvas element colours (nodes, edges, groups) are NOT here — they belong to the
+   "blueprint" theme (docs/editor-ui-review.md §10 D12b) so the CLI renders them too. */
+:root {
+  /* ground + surfaces */
+  --ag-bg: #0f1a2b;          /* canvas ground */
+  --ag-panel: #122238;       /* floating islands */
+  --ag-field: #0d1727;       /* inputs */
+  --ag-edge: #1f3550;        /* panel borders, separators */
+
+  /* text */
+  --ag-fg: #bfe3ff;
+  --ag-fg-2: #7fb6e0;
+  --ag-fg-3: #3f6a8f;        /* section labels, key hints */
+
+  /* hues, one job each */
+  --ag-blue: #7ab8ff;        /* primary: selection outline + handles, active tool, focus ring */
+  --ag-blue-soft: rgba(122, 184, 255, 0.16);
+  --ag-blue-glow: rgba(122, 184, 255, 0.50);
+  --ag-teal: #73daca;        /* hover outline, saved/dirty dot, status accents */
+  --ag-purple: #bb9af7;      /* secondary controls (fit), group-related chrome */
+
+  /* grid: dots on intersections, faint lines between */
+  --ag-grid-dot: #2f5480;
+  --ag-grid-line: rgba(47, 84, 128, 0.28);
+  --ag-grid-size: 24px;
+  --ag-grid: radial-gradient(circle at 0 0, var(--ag-grid-dot) 1.2px, transparent 1.6px),
+             linear-gradient(var(--ag-grid-line) 1px, transparent 1px),
+             linear-gradient(90deg, var(--ag-grid-line) 1px, transparent 1px);
+
+  /* shape */
+  --ag-radius: 3px;          /* islands and fields; near-square is part of the blueprint read */
+  --ag-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+
+  /* type */
+  --ag-font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --ag-font-mono: "JetBrains Mono", ui-monospace, monospace;   /* key hints, numeric fields */
+  --ag-font-label: "Noto Sans Mono", ui-monospace, monospace;  /* diagram labels (D9) */
+}
+
+/* Error banner (canvas.tsx). Not in editor-tokens.css because the mockup has
+   no error state; kept in the same palette so it reads as part of the chrome. */
+:root {
+  --ag-error: #3a1f2b;
+  --ag-error-text: #f7768e;
+  --ag-danger: #f7768e;
+}
+
+/* Chrome defaults. top_bar and inspector are both rewritten in later waves
+   (editor-shell v2, inspector v2); until then they at least sit in the same
+   palette as the canvas instead of defaulting to white. */
+button {
+  background: var(--ag-field);
+  color: var(--ag-fg);
+  border: 1px solid var(--ag-edge);
+  border-radius: var(--ag-radius);
+  padding: 3px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  color: var(--ag-fg-3);
+  cursor: default;
+}
+
+button:not(:disabled):hover {
+  border-color: var(--ag-blue);
+}
+
+input, select {
+  font: inherit;
+}
+
+/* The height chain. App's root div is height:100%, which resolves against
+   `auto` unless every ancestor has a height — without this the canvas
+   collapses to its content height and the page shows bare <body> below it. */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+/* Declares the page dark so the browser stops force-darkening it. Chrome's
+   auto dark mode otherwise inverts the injected diagram SVG, which turns the
+   blueprint theme's navy ground white and its labels invisible. */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--ag-bg);
+  color: var(--ag-fg);
+  font-family: var(--ag-font-ui);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}

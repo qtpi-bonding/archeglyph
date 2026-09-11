@@ -5,6 +5,7 @@
 import { create } from '@bufbuild/protobuf';
 import { AnnotationComponentSchema, FontSpecSchema, NodeComponentSchema, EdgeComponentSchema, Theme, ThemeSchema, TokensSchema } from '@archeglyph/proto/gen/theme_pb';
 import { ArrowheadVariant, ArrowheadsSchema, ColorSchema, FillSchema, Glyph1DSchema, Glyph2DSchema, ShapeType, StrokeSchema, TypographySchema } from '@archeglyph/proto/gen/style_pb';
+import { Option } from '@archeglyph/proto/util/result';
 
 /**
  * The names findBundledTheme accepts, in display order: light, dark, blueprint.
@@ -243,4 +244,14 @@ export function getBundledTheme(name: string): Theme {
   if (name === 'dark') return darkTheme();
   if (name === 'blueprint') return blueprintTheme();
   return lightTheme();
+}
+
+/**
+ * Name → Option<Theme>. Exact match on BUNDLED_THEME_NAMES; null for anything
+ * else so callers can fall back to treating the string as a file path. A new
+ * theme is created for every successful call because proto values are mutable.
+ */
+export function findBundledTheme(name: string): Option<Theme> {
+  if (!BUNDLED_THEME_NAMES.includes(name)) return null;
+  return getBundledTheme(name);
 }

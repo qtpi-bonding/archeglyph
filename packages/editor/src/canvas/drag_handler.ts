@@ -51,8 +51,13 @@ export class DragHandler {
     this._setOffset = set;
   }
 
+<<<<<<< HEAD
   dragOffset(): Option<Vec2> {
     return this._getOffset();
+=======
+  activeSession(): DragSession | null {
+    return this._session;
+>>>>>>> 3015428ce37465ea6881374f56533dff22ce0e90
   }
 
   onPointerDown(elementId: string, elementKind: ElementKind, startPt: Vec2): void {

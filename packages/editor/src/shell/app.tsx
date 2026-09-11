@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Component, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
+import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import Resizable from '@corvu/resizable';
 import { create } from '@bufbuild/protobuf';
 import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
-import { Theme, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
+import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { getBundledTheme } from '@archeglyph/themes';
 import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
@@ -21,39 +22,43 @@ import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 
+const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
+
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = new URLSearchParams(window.location.search);
   const pair: AdapterPair = selectAdapters(params);
-  const theme: Theme = create(ThemeSchema, {});
-  const [themeAccessor] = createSignal<Theme>(theme);
+  const theme: Theme = getBundledTheme('blueprint');
   const ui = createUiState();
-  const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
+  const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
   const selection: SelectionState = {
     selected: (): SelectedElement | null => {
-      const selected = ui.selection()[0];
-      if (selected === undefined) { return null; }
-      const kind = selected.kind === 'node' ? ElementKind.NODE
-        : selected.kind === 'group' ? ElementKind.GROUP
-        : selected.kind === 'edge' ? ElementKind.EDGE
-        : ElementKind.ANNOTATION;
-      return { id: selected.id, kind };
+      const selected = getSelected();
+      if (selected === null) { return null; }
+      return selected;
     },
     setSelected: (element: SelectedElement | null): void => {
-      if (element === null) { ui.setSelection([]); return; }
-      const kind = element.kind === ElementKind.NODE ? 'node'
-        : element.kind === ElementKind.GROUP ? 'group'
-        : element.kind === ElementKind.EDGE ? 'edge'
-        : 'annotation';
-      ui.setSelection([{ id: element.id, kind }]);
+      setSelectedSignal(element);
     },
   };
+  createEffect((): void => {
+    const selected = ui.selection()[0];
+    if (selected === undefined) {
+      selection.setSelected(null);
+      return;
+    }
+    const kind = selected.kind === 'node' ? ElementKind.NODE
+      : selected.kind === 'group' ? ElementKind.GROUP
+      : selected.kind === 'edge' ? ElementKind.EDGE
+      : ElementKind.ANNOTATION;
+    selection.setSelected({ id: selected.id, kind });
+  });
 
   function installState(nextState: EditorState): void {
     setState(nextState);
-    setScene(createScene(nextState, themeAccessor, layoutEngine));
+    setScene(createScene(nextState, () => theme, layoutEngine));
   }
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
@@ -99,7 +104,7 @@ export const App: Component<{}> = (): JSX.Element => {
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
               <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={themeAccessor()} ui={ui} />
+                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} />
               </Show>
             </Resizable.Panel>
             <Resizable.Handle />

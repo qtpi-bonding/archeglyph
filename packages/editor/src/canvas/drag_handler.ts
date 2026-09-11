@@ -64,20 +64,6 @@ export class DragHandler {
     this._setOffset({ x: 0, y: 0 });
   }
 
-  onPointerMove(screenPt: Vec2): void {
-    const session: DragSession | null = this._session;
-    if (session === null) {
-      // no-op
-    } else {
-      const canvasPt: Vec2 = this.viewport.toCanvas(screenPt);
-      const delta: Vec2 = {
-        x: canvasPt.x - session.startCanvasPt.x,
-        y: canvasPt.y - session.startCanvasPt.y,
-      };
-      this._setOffset(delta);
-    }
-  }
-
   onPointerUp(): void {
     const session: DragSession | null = this._session;
     if (session === null) {

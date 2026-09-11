@@ -4,7 +4,7 @@ import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
-import { getBundledTheme } from '@archeglyph/themes';
+import { findBundledTheme, getBundledTheme } from '@archeglyph/themes';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { ValidatorImpl } from '@archeglyph/core/validator/validator';
@@ -58,16 +58,20 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     }
 
     let theme: Theme;
-    if (params.theme !== undefined) {
-      const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
-      const themeResult = await loadTheme(themeText);
-      if (themeResult.kind === 'err') {
-        throw Object.assign(new ValidateOpError(), { stage: 'load', cause: themeResult.error });
-      }
-      theme = themeResult.value;
+    if (params.theme === undefined) {
+      theme = getBundledTheme('dark');
     } else {
-      ctx.logger.info('no --theme provided; using built-in placeholder');
-      theme = getBundledTheme('light');
+      const bundledTheme = findBundledTheme(params.theme);
+      if (bundledTheme !== null) {
+        theme = bundledTheme;
+      } else {
+        const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
+        const themeResult = await loadTheme(themeText);
+        if (themeResult.kind === 'err') {
+          throw Object.assign(new ValidateOpError(), { stage: 'load', cause: themeResult.error });
+        }
+        theme = themeResult.value;
+      }
     }
 
     const resolveResult = await resolvePipeline(diagramResult.value, stylesheet, theme);

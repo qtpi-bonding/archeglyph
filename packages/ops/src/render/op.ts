@@ -2,7 +2,7 @@
 
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { extname, basename, dirname, join, resolve } from 'node:path';
-import { getBundledTheme } from '@archeglyph/themes';
+import { findBundledTheme, getBundledTheme } from '@archeglyph/themes';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
@@ -56,16 +56,21 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     }
 
     let theme: Theme;
-    if (params.theme !== undefined) {
-      const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
-      const themeResult = await loadTheme(themeText);
-      if (themeResult.kind === 'err') {
-        throw Object.assign(new RenderOpError(), { stage: 'load', cause: themeResult.error });
-      }
-      theme = themeResult.value;
+    if (params.theme === undefined) {
+      ctx.logger.info('no --theme provided; using bundled dark theme');
+      theme = getBundledTheme('dark');
     } else {
-      ctx.logger.info('no --theme provided; using built-in placeholder');
-      theme = getBundledTheme('light');
+      const bundledTheme = findBundledTheme(params.theme);
+      if (bundledTheme !== null) {
+        theme = bundledTheme;
+      } else {
+        const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
+        const themeResult = await loadTheme(themeText);
+        if (themeResult.kind === 'err') {
+          throw Object.assign(new RenderOpError(), { stage: 'load', cause: themeResult.error });
+        }
+        theme = themeResult.value;
+      }
     }
 
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));

@@ -135,6 +135,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       }
       if (diagram.canvas?.margin !== undefined) {
         const margin: string = String(diagram.canvas.margin);
+        // ELK's padding option uses its named-side string representation.
         layoutOptions['org.eclipse.elk.padding'] = `[top=${margin},left=${margin},bottom=${margin},right=${margin}]`;
       }
 

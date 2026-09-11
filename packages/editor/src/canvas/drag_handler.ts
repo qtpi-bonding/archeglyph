@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { createSignal } from 'solid-js';
-import type { Accessor } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
+import { Accessor, createSignal, Setter } from 'solid-js';
 import {
   AnnotationEntry,
   AnnotationEntrySchema,
@@ -26,6 +25,7 @@ import {
   StyleEditState,
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
+import { Option } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
 import { ElementKind } from './selection';
 import { Vec2, ViewportState } from './viewport';
@@ -36,21 +36,22 @@ export type DragSession = {
   startCanvasPt: Vec2;
 };
 
+/** Handles one pointer drag and commits it as one stylesheet edit. */
 export class DragHandler {
   state!: EditorState;
   viewport!: ViewportState;
 
-  private _session: DragSession | null = null;
-  private readonly _getOffset: Accessor<Vec2 | null>;
-  private readonly _setOffset: (v: Vec2 | null) => void;
+  private _session: Option<DragSession> = null;
+  private readonly _getOffset: Accessor<Option<Vec2>>;
+  private readonly _setOffset: Setter<Option<Vec2>>;
 
   constructor() {
-    const [get, set] = createSignal<Vec2 | null>(null);
+    const [get, set] = createSignal<Option<Vec2>>(null);
     this._getOffset = get;
-    this._setOffset = set as (v: Vec2 | null) => void;
+    this._setOffset = set;
   }
 
-  dragOffset(): Vec2 | null {
+  dragOffset(): Option<Vec2> {
     return this._getOffset();
   }
 
@@ -60,17 +61,28 @@ export class DragHandler {
     this._setOffset({ x: 0, y: 0 });
   }
 
-  onPointerUp(): void {
-    const session: DragSession | null = this._session;
+  onPointerMove(screenPt: Vec2): void {
+    const session: Option<DragSession> = this._session;
     if (session === null) {
-      // no-op
-    } else {
-      const offset: Vec2 = this._getOffset() ?? { x: 0, y: 0 };
-      const edit: StyleEdit = buildDragEdit(this.state, session.elementId, session.elementKind, offset);
-      this.state.applyStyleEdit(edit);
-      this._session = null;
-      this._setOffset(null);
+      return;
     }
+    const currentCanvasPt: Vec2 = this.viewport.toCanvas(screenPt);
+    this._setOffset({
+      x: currentCanvasPt.x - session.startCanvasPt.x,
+      y: currentCanvasPt.y - session.startCanvasPt.y,
+    });
+  }
+
+  onPointerUp(): void {
+    const session: Option<DragSession> = this._session;
+    if (session === null) {
+      return;
+    }
+    const offset: Vec2 = this._getOffset() ?? { x: 0, y: 0 };
+    const edit: StyleEdit = buildDragEdit(this.state, session.elementId, session.elementKind, offset);
+    this.state.applyStyleEdit(edit);
+    this._session = null;
+    this._setOffset(null);
   }
 }
 

@@ -49,7 +49,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerY: number = group.position.y + group.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
       const labelSvg: string = textElement(group.label, group.typography, center);
-      groupsSvg = groupsSvg + `<g id="group-${group.id}">${shape}${labelSvg}</g>`;
+      groupsSvg += `<g id="group-${group.id}">${shape}${labelSvg}</g>`;
     }
 
     let nodesSvg: string = '';
@@ -59,7 +59,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerY: number = node.position.y + node.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
       const labelSvg: string = textElement(node.label, node.typography, center);
-      nodesSvg = nodesSvg + `<g id="node-${node.id}">${shape}${labelSvg}</g>`;
+      nodesSvg += `<g id="node-${node.id}">${shape}${labelSvg}</g>`;
     }
 
     let edgesSvg: string = '';
@@ -76,7 +76,7 @@ export class SvgRendererImpl implements SvgRenderer {
             })
           )
         : '';
-      edgesSvg = edgesSvg + `<g id="edge-${edge.id}">${pathSvg}${labelSvg}</g>`;
+      edgesSvg += `<g id="edge-${edge.id}">${pathSvg}${labelSvg}</g>`;
     }
 
     const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${defs}${groupsSvg}${nodesSvg}${edgesSvg}</svg>`;

@@ -11,7 +11,11 @@ export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleCha
   throw new Error('not implemented');
 }
 export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleChange {
-  throw new Error('not implemented');
+  return create(NodeStyleChangeSchema, {
+    nodeId,
+    changeType: StyleChangeType.MODIFIED,
+    ...(after === undefined ? {} : { after }),
+  });
 }
 export function annotationChange(annotationId: string, after?: AnnotationEntry): AnnotationStyleChange {
   throw new Error('not implemented');
@@ -23,6 +27,10 @@ import { AnnotationStyleChange } from '@archeglyph/proto/gen/style_pb';
 import { EdgeStyleChange } from '@archeglyph/proto/gen/style_pb';
 import { GroupStyleChange } from '@archeglyph/proto/gen/style_pb';
 import { NodeStyleChange } from '@archeglyph/proto/gen/style_pb';
+import { NodeStyleChangeSchema } from '@archeglyph/proto/gen/style_pb';
+import { NodeStyleEntry } from '@archeglyph/proto/gen/style_pb';
+import { StyleChangeType } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
 
 export interface EditParts {
   nodeChanges?: Array<NodeStyleChange>;

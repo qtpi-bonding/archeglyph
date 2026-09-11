@@ -20,6 +20,7 @@ export class TokenResolverImpl implements TokenResolver {
       return Ok(resolved);
     }
     walk(resolved, tokens);
+    walk(resolved.canvas, tokens);
     return Ok(resolved);
   }
 }

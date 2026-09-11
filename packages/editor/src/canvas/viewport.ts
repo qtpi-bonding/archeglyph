@@ -14,7 +14,4 @@ export class ViewportState {
     return { x: (screenPt.x - this.panX) / this.zoom, y: (screenPt.y - this.panY) / this.zoom };
   }
 
-  toScreen(canvasPt: Vec2): Vec2 {
-    return { x: canvasPt.x * this.zoom + this.panX, y: canvasPt.y * this.zoom + this.panY };
-  }
 }

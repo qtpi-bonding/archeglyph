@@ -6,6 +6,13 @@ import { create } from '@bufbuild/protobuf';
 import { FontSpecSchema, NodeComponentSchema, EdgeComponentSchema, Theme, ThemeSchema, TokensSchema } from '@archeglyph/proto/gen/theme_pb';
 import { ColorSchema, FillSchema, Glyph1DSchema, Glyph2DSchema, ShapeType, StrokeSchema } from '@archeglyph/proto/gen/style_pb';
 
+/**
+ * The names findBundledTheme accepts, in display order: light, dark, blueprint.
+ * Exported so CLI help text and the editor's theme picker can list them without
+ * a second source of truth.
+ */
+export const BUNDLED_THEME_NAMES: string[] = ['light', 'dark', 'blueprint'];
+
 // Default starter vocabulary: one node look, one edge look, both named "glyph"
 // per bind's implicit default. Deliberately the most geometric/boring shape
 // (plain square outline + fill) — theme.proto has no default_* or

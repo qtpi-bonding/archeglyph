@@ -3,7 +3,11 @@
 
 import { create } from '@bufbuild/protobuf';
 import { type Localization, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
+<<<<<<< HEAD
 import { AnnotationEntrySchema, type AnnotationAnchor, type StyleEdit, type Stylesheet, type Vec2 } from '@archeglyph/proto/gen/style_pb';
+=======
+import { type AnnotationAnchor, StyleEdit, Stylesheet, Vec2 } from '@archeglyph/proto/gen/style_pb';
+>>>>>>> 212fa2d396d17c97469d8fb13da38c9c272aa54b
 
 import { patchAnnotationEntry } from './entry_patch';
 import { annotationChange, styleEdit } from './edit_builder';
@@ -46,7 +50,16 @@ export function setAnnotationTextEdit(stylesheet: Stylesheet, id: string, text: 
   });
 }
 export function addAnnotationEdit(stylesheet: Stylesheet, id: string, position: Vec2, text: string): StyleEdit {
-  throw new Error('not implemented');
+  const annotation = patchAnnotationEntry(undefined, {
+    id,
+    content: localized(text),
+    position,
+  });
+
+  return styleEdit({
+    annotationChanges: [annotationChange(id, annotation)],
+    description: 'Add annotation',
+  });
 }
 export function deleteAnnotationEdit(stylesheet: Stylesheet, id: string): StyleEdit {
   throw new Error('not implemented');

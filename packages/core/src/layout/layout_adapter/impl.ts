@@ -107,7 +107,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       }
 
       for (const node of diagram.nodes) {
-        const elkNode = {
+        const elkNode: ElkNode = {
           id: node.id,
           width: node.layout?.size?.x ?? DEFAULT_WIDTH,
           height: node.layout?.size?.y ?? DEFAULT_HEIGHT,

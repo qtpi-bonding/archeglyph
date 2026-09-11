@@ -3,3 +3,4 @@
 export { PipelineError } from './pipeline_error';
 export { resolvePipeline } from './resolve_pipeline';
 export { renderPipeline } from './render_pipeline';
+export { layoutPipeline } from './render_pipeline';

@@ -1,0 +1,42 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* archeglyph editor chrome tokens — decision D12 (2026-09-10), "Storm × Blueprint, islands".
+   Source mockup: docs/design/editor-directions.html (top frames).
+   This file is the reference; wave 3 copies it into packages/editor/src/shell/styles.css.
+   Canvas element colours (nodes, edges, groups) are NOT here — they belong to the
+   "blueprint" theme (docs/editor-ui-review.md §10 D12b) so the CLI renders them too. */
+:root {
+  /* ground + surfaces */
+  --ag-bg: #0f1a2b;          /* canvas ground */
+  --ag-panel: #122238;       /* floating islands */
+  --ag-field: #0d1727;       /* inputs */
+  --ag-edge: #1f3550;        /* panel borders, separators */
+
+  /* text */
+  --ag-fg: #bfe3ff;
+  --ag-fg-2: #7fb6e0;
+  --ag-fg-3: #3f6a8f;        /* section labels, key hints */
+
+  /* hues, one job each */
+  --ag-blue: #7ab8ff;        /* primary: selection outline + handles, active tool, focus ring */
+  --ag-blue-soft: rgba(122, 184, 255, 0.16);
+  --ag-blue-glow: rgba(122, 184, 255, 0.50);
+  --ag-teal: #73daca;        /* hover outline, saved/dirty dot, status accents */
+  --ag-purple: #bb9af7;      /* secondary controls (fit), group-related chrome */
+
+  /* grid: dots on intersections, faint lines between */
+  --ag-grid-dot: #2f5480;
+  --ag-grid-line: rgba(47, 84, 128, 0.28);
+  --ag-grid-size: 24px;
+  --ag-grid: radial-gradient(circle at 0 0, var(--ag-grid-dot) 1.2px, transparent 1.6px),
+             linear-gradient(var(--ag-grid-line) 1px, transparent 1px),
+             linear-gradient(90deg, var(--ag-grid-line) 1px, transparent 1px);
+
+  /* shape */
+  --ag-radius: 3px;          /* islands and fields; near-square is part of the blueprint read */
+  --ag-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+
+  /* type */
+  --ag-font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --ag-font-mono: "JetBrains Mono", ui-monospace, monospace;   /* key hints, numeric fields */
+  --ag-font-label: "Noto Sans Mono", ui-monospace, monospace;  /* diagram labels (D9) */
+}

@@ -1,0 +1,238 @@
+<title>archeglyph Editor Directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Kalam:wght@400;700&display=swap">
+<style>
+:root{
+  --page:#0d0f16; --page-2:#13161f; --ink:#c8cee0; --ink-2:#7d869c; --line:#222635; --accent:#5fd3c4;
+  --frame-w:100%;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14px;line-height:1.5}
+header{padding:40px 40px 20px;max-width:1240px;margin:0 auto}
+header h1{font-size:22px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+header p{margin:0;color:var(--ink-2);max-width:68ch}
+header code{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:28px 24px;padding:12px 40px 60px;max-width:1240px;margin:0 auto}
+.dir{display:flex;flex-direction:column;gap:10px;min-width:0}
+.dir h2{font-size:14px;font-weight:600;margin:0;display:flex;gap:10px;align-items:baseline}
+.dir h2 .n{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-2);font-weight:400}
+.dir p{margin:0;color:var(--ink-2);font-size:13px;max-width:62ch}
+.dir .sw{display:flex;gap:4px;margin-left:auto}
+.dir .sw i{width:12px;height:12px;border-radius:3px;display:block;border:1px solid rgba(255,255,255,.08)}
+
+/* ---------- the fake editor frame ---------- */
+.frame{position:relative;width:var(--frame-w);aspect-ratio:16/10;border-radius:10px;overflow:hidden;
+  background:var(--bg);color:var(--fg);font-family:var(--ui,"IBM Plex Sans",sans-serif);font-size:11px;
+  border:1px solid var(--edge);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.frame .canvas{position:absolute;inset:0;background:var(--bg);background-image:var(--grid);background-size:var(--grid-size,20px 20px)}
+.frame svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.frame .panel{position:absolute;background:var(--panel);border:1px solid var(--edge);color:var(--fg);
+  border-radius:var(--r,8px);box-shadow:var(--shadow,none);backdrop-filter:var(--blur,none)}
+.frame .tools{display:flex;gap:2px;padding:4px}
+.frame .tools .t{width:26px;height:26px;border-radius:calc(var(--r,8px) - 3px);display:grid;place-items:center;color:var(--fg-2);position:relative}
+.frame .tools .t.on{background:var(--accent-soft);color:var(--accent)}
+.frame .tools .t svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.frame .tools .t kbd{position:absolute;right:2px;bottom:1px;font:8px/1 "JetBrains Mono",monospace;color:var(--fg-3)}
+.frame .tools .sep{width:1px;background:var(--edge);margin:5px 3px}
+.frame .props{width:140px;padding:8px 10px;display:flex;flex-direction:column;gap:7px}
+.frame .props h4{margin:0;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+.frame .props .id{font-family:"Noto Sans Mono",monospace;font-size:10px;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frame .row{display:flex;gap:5px}
+.frame .field{flex:1;background:var(--field);border:1px solid var(--edge);border-radius:calc(var(--r,8px) - 4px);padding:3px 6px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--fg);display:flex;justify-content:space-between}
+.frame .field b{font-weight:400;color:var(--fg-3)}
+.frame .chips{display:flex;gap:4px;flex-wrap:wrap}
+.frame .chip{width:16px;height:16px;border-radius:4px;border:1px solid var(--edge)}
+.frame .chip.on{outline:2px solid var(--accent);outline-offset:1px}
+.frame .zoom{display:flex;align-items:center;gap:6px;padding:3px 8px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--fg-2)}
+.frame .status{position:absolute;left:0;right:0;bottom:0;height:20px;background:var(--panel);border-top:1px solid var(--edge);display:flex;align-items:center;gap:14px;padding:0 10px;font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--fg-3)}
+.frame .status .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:5px}
+.frame .status .mode{color:var(--accent);margin-left:auto}
+.frame .title{font-weight:500;color:var(--fg-2);font-size:11px;padding:0 10px;display:flex;align-items:center;gap:8px}
+.frame .title .file{font-family:"Noto Sans Mono",monospace;font-size:10px;color:var(--fg)}
+
+/* --- layout: floating islands (excalidraw) --- */
+.islands .strip{position:absolute;top:10px;left:50%;transform:translateX(-50%)}
+.islands .props{position:absolute;top:10px;left:10px}
+.islands .zoom{position:absolute;left:10px;bottom:10px}
+.islands .undo{position:absolute;right:10px;bottom:10px}
+.islands .title{position:absolute;top:10px;right:10px;height:34px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r,8px);box-shadow:var(--shadow,none)}
+.islands .status{display:none}
+/* --- layout: docked (figma) --- */
+.docked .canvas{inset:30px 150px 20px 40px}
+.docked .bar{position:absolute;top:0;left:0;right:0;height:30px;background:var(--panel);border-bottom:1px solid var(--edge);display:flex;align-items:center}
+.docked .bar .title{flex:1}
+.docked .bar .zoom{margin-left:auto}
+.docked .rail{position:absolute;top:30px;left:0;bottom:20px;width:40px;background:var(--panel);border-right:1px solid var(--edge)}
+.docked .rail .tools{flex-direction:column;align-items:center;padding-top:6px}
+.docked .rail .tools .sep{width:22px;height:1px;margin:3px 0}
+.docked .props{position:absolute;top:30px;right:0;bottom:20px;width:150px;border-radius:0;border-width:0 0 0 1px;box-shadow:none}
+.docked .undo{display:none}
+/* --- layout: minimal (bottom bar only) --- */
+.minimal .bottom{position:absolute;left:10px;right:10px;bottom:10px;height:36px;display:flex;align-items:center;gap:8px;padding:0 6px}
+.minimal .bottom .tools{padding:0}
+.minimal .bottom .zoom{margin-left:auto}
+.minimal .props{position:absolute;top:10px;right:10px;width:132px}
+.minimal .status{display:none}
+.minimal .title{position:absolute;top:10px;left:10px;height:26px;display:flex;align-items:center;background:transparent}
+
+/* scene styling via vars */
+.scene .node rect,.scene .node path{fill:var(--node);stroke:var(--node-line);stroke-width:1.2}
+.scene .node text{font-family:"Noto Sans Mono",monospace;font-size:9.5px;fill:var(--fg);text-anchor:middle;dominant-baseline:middle}
+.scene .group rect{fill:var(--group);stroke:var(--group-line);stroke-width:1;stroke-dasharray:var(--group-dash,0)}
+.scene .group text{font-family:"Noto Sans Mono",monospace;font-size:8.5px;fill:var(--fg-3);letter-spacing:.06em}
+.scene .edge{fill:none;stroke:var(--edge-line);stroke-width:1.2}
+.scene .arrow{fill:var(--edge-line)}
+.scene .hover rect{stroke:var(--accent);stroke-opacity:.6}
+.scene .sel{fill:none;stroke:var(--accent);stroke-width:1;stroke-dasharray:var(--sel-dash,0)}
+.scene .hd{fill:var(--panel);stroke:var(--accent);stroke-width:1}
+.scene .glow{filter:drop-shadow(0 0 6px var(--accent-glow))}
+.scene .ring text{font-family:"JetBrains Mono",monospace;font-size:7.5px;fill:var(--accent);text-anchor:middle;dominant-baseline:middle}
+.scene .ring circle{fill:var(--accent-soft);stroke:var(--accent);stroke-width:.6}
+
+/* ---------- directions ---------- */
+.d1{--bg:#1a1b26;--panel:#1f2231;--field:#16161e;--edge:#2b2f44;--fg:#c0caf5;--fg-2:#9aa5ce;--fg-3:#565f89;
+  --accent:#73daca;--accent-soft:rgba(115,218,202,.14);--accent-glow:rgba(115,218,202,.5);
+  --node:#24283b;--node-line:#7aa2f7;--group:rgba(187,154,247,.06);--group-line:#bb9af7;--edge-line:#7dcfff;
+  --grid:radial-gradient(#2b2f44 1px,transparent 1px);--r:10px;--shadow:0 6px 18px rgba(0,0,0,.35)}
+.d2{--bg:#24283b;--panel:#1f2335;--field:#1a1e2e;--edge:#3b4261;--fg:#c0caf5;--fg-2:#a9b1d6;--fg-3:#737aa2;
+  --accent:#2ac3de;--accent-soft:rgba(42,195,222,.14);--accent-glow:rgba(42,195,222,.5);
+  --node:#292e42;--node-line:#7aa2f7;--group:rgba(122,162,247,.05);--group-line:#565f89;--edge-line:#89ddff;
+  --grid:linear-gradient(#2b3049 1px,transparent 1px),linear-gradient(90deg,#2b3049 1px,transparent 1px);--r:6px}
+.d3{--bg:#0a1214;--panel:#0e1a1d;--field:#0a1214;--edge:#173036;--fg:#c5ece6;--fg-2:#7fb3ab;--fg-3:#3f6e68;
+  --accent:#2dd4bf;--accent-soft:rgba(45,212,191,.12);--accent-glow:rgba(45,212,191,.55);
+  --node:#0f1f22;--node-line:#2dd4bf;--group:rgba(45,212,191,.04);--group-line:#1f5f57;--group-dash:4 3;--edge-line:#5eead4;
+  --grid:radial-gradient(#173036 1px,transparent 1px);--grid-size:16px 16px;--r:4px;--ui:"JetBrains Mono",monospace}
+.d4{--bg:#1e1e2e;--panel:#262637;--field:#1e1e2e;--edge:#3a3a4e;--fg:#e6e6f0;--fg-2:#b5b5c8;--fg-3:#7a7a92;
+  --accent:#94e2d5;--accent-soft:rgba(148,226,213,.16);--accent-glow:rgba(148,226,213,.4);
+  --node:#2a2a3d;--node-line:#e6e6f0;--group:rgba(203,166,247,.06);--group-line:#cba6f7;--group-dash:6 4;--edge-line:#cdd6f4;
+  --grid:none;--r:12px;--shadow:0 8px 20px rgba(0,0,0,.4);--sel-dash:3 3}
+.d4 .scene .node text,.d4 .scene .group text{font-family:"Kalam",cursive;font-size:12px}
+.d4 .scene .node rect,.d4 .scene .group rect,.d4 .scene .edge{filter:url(#rough)}
+.d5{--bg:#0f1a2b;--panel:#122238;--field:#0f1a2b;--edge:#1f3550;--fg:#bfe3ff;--fg-2:#7fb6e0;--fg-3:#3f6a8f;
+  --accent:#4fd1c5;--accent-soft:rgba(79,209,197,.12);--accent-glow:rgba(79,209,197,.5);
+  --node:transparent;--node-line:#8ad1ff;--group:transparent;--group-line:#3f6a8f;--edge-line:#8ad1ff;
+  --grid:linear-gradient(#1a2d47 1px,transparent 1px),linear-gradient(90deg,#1a2d47 1px,transparent 1px);--grid-size:24px 24px;--r:2px}
+.d6{--bg:#0f1117;--panel:rgba(30,34,48,.62);--field:rgba(10,12,20,.6);--edge:rgba(255,255,255,.09);--fg:#d6dbea;--fg-2:#a4acc4;--fg-3:#6b7390;
+  --accent:#5eead4;--accent-soft:rgba(94,234,212,.14);--accent-glow:rgba(94,234,212,.6);
+  --node:#1b1f2e;--node-line:#4e5a80;--group:rgba(94,234,212,.03);--group-line:#2f3c5a;--edge-line:#8b98c2;
+  --grid:none;--r:12px;--blur:blur(10px);--shadow:0 10px 30px rgba(0,0,0,.45)}
+.d6 .canvas{background:radial-gradient(60% 80% at 30% 20%,#182035 0,#0f1117 70%)}
+.d7{--bg:#2e3440;--panel:#3b4252;--field:#2e3440;--edge:#4c566a;--fg:#eceff4;--fg-2:#d8dee9;--fg-3:#8f9bb3;
+  --accent:#88c0d0;--accent-soft:rgba(136,192,208,.16);--accent-glow:rgba(136,192,208,.5);
+  --node:#434c5e;--node-line:#8fbcbb;--group:rgba(129,161,193,.06);--group-line:#81a1c1;--edge-line:#d8dee9;
+  --grid:radial-gradient(#434c5e 1px,transparent 1px);--r:6px}
+.d8{--bg:#000;--panel:#0a0a0a;--field:#000;--edge:#262626;--fg:#e5e5e5;--fg-2:#a3a3a3;--fg-3:#525252;
+  --accent:#14b8a6;--accent-soft:rgba(20,184,166,.15);--accent-glow:rgba(20,184,166,.55);
+  --node:#0a0a0a;--node-line:#404040;--group:transparent;--group-line:#262626;--edge-line:#737373;
+  --grid:none;--r:3px;--ui:"JetBrains Mono",monospace}
+.d9{--bg:#132120;--panel:#1a2b2a;--field:#122020;--edge:#28403e;--fg:#dbeae8;--fg-2:#9fc0bc;--fg-3:#5f827e;
+  --accent:#7fd8c9;--accent-soft:rgba(127,216,201,.16);--accent-glow:rgba(127,216,201,.45);
+  --node:#1e3331;--node-line:#7fd8c9;--group:rgba(127,216,201,.05);--group-line:#3e6864;--edge-line:#a8d5ce;
+  --grid:radial-gradient(#243b39 1.2px,transparent 1.2px);--grid-size:22px 22px;--r:14px;--shadow:0 8px 22px rgba(0,0,0,.35)}
+.d9 .frame,.d9.frame{font-size:12px}
+
+footer{padding:0 40px 60px;max-width:1240px;margin:0 auto;color:var(--ink-2);font-size:13px;max-width:70ch}
+footer h3{color:var(--ink);font-size:13px;margin:0 0 6px}
+@media (prefers-reduced-motion:no-preference){.frame{transition:transform .2s}.frame:hover{transform:translateY(-2px)}}
+.mx{--bg:#0f1a2b;--panel:#122238;--field:#0d1727;--edge:#1f3550;--fg:#bfe3ff;--fg-2:#7fb6e0;--fg-3:#3f6a8f;
+  --accent:#7ab8ff;--accent-soft:rgba(122,184,255,.16);--accent-glow:rgba(122,184,255,.5);
+  --teal:#73daca;--purple:#bb9af7;
+  --node:rgba(18,34,56,.55);--node-line:#8ad1ff;--group:rgba(187,154,247,.04);--group-line:#bb9af7;--group-dash:5 4;--edge-line:#73daca;
+  --grid:radial-gradient(circle at 0 0,#2f5480 1.2px,transparent 1.6px),linear-gradient(rgba(47,84,128,.28) 1px,transparent 1px),linear-gradient(90deg,rgba(47,84,128,.28) 1px,transparent 1px);
+  --grid-size:24px 24px;--r:3px}
+.mx .scene .group text{fill:var(--purple);opacity:.85}
+.mx .scene .hover rect{stroke:var(--teal);stroke-opacity:.8}
+.mx .title span:last-child{color:var(--teal)}
+.mx .zoom span:last-child{color:var(--purple)}
+.mx .canvas{background-position:0 0,0 0,0 0}
+.mx.islands{--shadow:0 6px 16px rgba(0,0,0,.35)}
+.mx .scene .node rect{rx:2}
+.mixrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:28px 24px;padding:12px 40px 8px;max-width:1240px;margin:0 auto}
+.mixhead{padding:0 40px;max-width:1240px;margin:0 auto}
+.mixhead h2{font-size:15px;font-weight:600;margin:24px 0 4px}
+.mixhead p{margin:0;color:var(--ink-2);font-size:13px;max-width:70ch}
+</style>
+
+<header>
+  <h1>archeglyph editor — nine directions</h1>
+  <p>Same graph in every frame: <code>loaders → resolver → layout → renderer</code> with <code>resolver</code> and <code>layout</code> inside the <code>core</code> group, <code>layout</code> selected, <code>renderer</code> hovered. Node labels are Noto Sans Mono in all of them (your metrics decision). Every frame has the same composition: tool strip top-centre, inspector left, file name top-right, zoom bottom-left, undo bottom-right. Only palette, type, radius, grid and glow change. Chrome layout (floating islands vs docked panels vs a single bottom bar) is a separate choice for the next round. Frames are static mockups, nothing is wired.</p>
+</header>
+
+<svg width="0" height="0" style="position:absolute"><filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter></svg>
+
+<div class="mixhead"><h2>Mix: Storm × Blueprint, islands</h2><p>Blueprint’s navy ground, panels and ice-blue text; Storm’s island chrome, inspector density and Tokyo Night proportions. Blue primary for selection and the active tool; Tokyo teal on edges, hover and the saved dot; Tokyo purple on group boundaries and labels; sky-blue node strokes. Still blueprint, with three hues doing three jobs. 24px drafting grid, dots on the intersections, lines at 28%. Shown at two sizes: the second frame is how it reads at full width.</p></div>
+<div class="mixrow" id="mixrow"></div>
+<div class="mixhead"><h2>The nine original directions</h2></div>
+<div class="grid" id="grid"></div>
+
+<footer>
+  <h3>What stays fixed regardless of direction</h3>
+  <p>Selection outline plus eight handles, hover outline, key hints on tools, a mode indicator, a zoom readout, and a dirty dot. Those come from the plan, not the theme. The theme decides colour, radius, whether panels float or dock, whether the grid is dots, lines or nothing, and how loud the accent is.</p>
+</footer>
+
+<script>
+const dirs = [
+ {c:'d1', layout:'islands', name:'Tokyo Night islands', blurb:'Excalidraw chrome on the Tokyo Night palette. Blue node outlines, purple group, teal reserved for selection so it always reads as "yours". Dotted grid, soft shadows, 10px radius.', sw:['#1a1b26','#7aa2f7','#bb9af7','#73daca']},
+ {c:'d2', layout:'islands', name:'Storm docked', blurb:'Tokyo Night Storm: lighter ground, line grid, tighter radius, cyan accent instead of teal. The "serious tool" reading; best for long sessions.', sw:['#24283b','#7aa2f7','#2ac3de','#89ddff']},
+ {c:'d3', layout:'islands', name:'Teal terminal', blurb:'Near-black with teal everything, monospace chrome, dashed group, 4px radius, fine dot grid. The keyboard-first argument made visual.', sw:['#0a1214','#2dd4bf','#5eead4','#173036']},
+ {c:'d4', layout:'islands', name:'Sketch', blurb:'The hand-drawn look, done as a theme: rough outlines via a displacement filter (rough.js in the real renderer), Kalam labels, dashed groups, dashed selection. Playful; would be a bundled theme, not the default.', sw:['#1e1e2e','#cba6f7','#94e2d5','#e6e6f0']},
+ {c:'d5', layout:'islands', name:'Blueprint', blurb:'Drafting-paper navy with a 24px line grid, unfilled nodes, cyan strokes, square corners. Architecture-diagram vernacular; teal only on selection.', sw:['#0f1a2b','#8ad1ff','#4fd1c5','#1f3550']},
+ {c:'d6', layout:'islands', name:'Glass', blurb:'Frosted translucent islands over a subtle radial ground, muted node colour so the diagram is the only saturated thing besides the teal glow on selection. Quietest chrome of the set.', sw:['#0f1117','#5eead4','#4e5a80','#1b1f2e']},
+ {c:'d7', layout:'islands', name:'Nord calm', blurb:'Nord palette. Low-contrast, no glow, frost-blue accent instead of teal. The easiest on the eyes for hours; the least distinctive.', sw:['#2e3440','#88c0d0','#8fbcbb','#81a1c1']},
+ {c:'d8', layout:'islands', name:'Console', blurb:'Pure black, hairline borders, one teal, 3px radius, no grid, mono everywhere. Closest to a TUI; pairs naturally with the hex ring.', sw:['#000000','#14b8a6','#404040','#e5e5e5']},
+ {c:'d9', layout:'islands', name:'Soft teal', blurb:'Warm dark teal ground, bigger type, 14px radius, friendly. Excalidraw’s approachability without the sketch. If you want the editor to feel inviting rather than technical, this is the one.', sw:['#132120','#7fd8c9','#a8d5ce','#28403e']},
+];
+
+const I = {
+  select:'<svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-3 6z"/></svg>',
+  hand:'<svg viewBox="0 0 24 24"><path d="M8 13V6a2 2 0 014 0v6M12 12V5a2 2 0 014 0v7M16 12V7a2 2 0 014 0v8a6 6 0 01-6 6h-2a6 6 0 01-5-3l-3-5a2 2 0 013-2l1 2"/></svg>',
+  text:'<svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13M9 19h6"/></svg>',
+  undo:'<svg viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 010 10h-2"/></svg>',
+  redo:'<svg viewBox="0 0 24 24"><path d="M15 14l4-4-4-4M19 10h-9a5 5 0 000 10h2"/></svg>',
+  layout:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="6"/><rect x="14" y="4" width="7" height="6"/><rect x="8" y="14" width="7" height="6"/><path d="M6.5 10v2h9v2M11.5 14v-2"/></svg>',
+  pin:'<svg viewBox="0 0 24 24"><path d="M12 17v4M8 17h8l-1-4V7h1V3H8v4h1v6z"/></svg>',
+  save:'<svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z M8 3v5h7V3 M8 21v-7h8v7"/></svg>',
+};
+function tool(k,key,on){return `<div class="t${on?' on':''}">${I[k]}<kbd>${key}</kbd></div>`}
+function tools(){return `<div class="tools">${tool('select','v',1)}${tool('hand','h')}${tool('text','t')}<div class="sep"></div>${tool('layout','')}${tool('pin','')}<div class="sep"></div>${tool('undo','')}${tool('redo','')}</div>`}
+function props(){return `<div class="panel props"><h4>Node</h4><div class="id">layout</div>
+<div class="row"><div class="field"><b>x</b>236</div><div class="field"><b>y</b>118</div></div>
+<div class="row"><div class="field"><b>w</b>96</div><div class="field"><b>h</b>34</div></div>
+<h4>Shape</h4><div class="chips"><div class="chip on" style="background:var(--node)"></div><div class="chip" style="background:var(--node-line)"></div><div class="chip" style="background:var(--accent)"></div><div class="chip" style="background:var(--edge-line)"></div><div class="chip" style="background:var(--group-line)"></div></div>
+<div class="row"><div class="field"><b>stroke</b>1.2</div><div class="field"><b>r</b>4</div></div>
+<h4>Typography</h4><div class="field"><b>font</b>Noto Mono</div></div>`}
+function zoom(){return `<div class="panel zoom"><span>−</span><span>100%</span><span>+</span><span style="color:var(--fg-3)">fit</span></div>`}
+function scene(){return `<svg class="scene" viewBox="0 0 560 350" preserveAspectRatio="xMidYMid meet">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrow" d="M0 0L10 5 0 10z"/></marker></defs>
+<g class="group"><rect x="188" y="88" width="230" height="116" rx="6"/><text x="200" y="102">CORE</text></g>
+<g class="node"><rect x="60" y="126" width="96" height="34" rx="4"/><text x="108" y="143">loaders</text></g>
+<g class="node"><rect x="204" y="126" width="96" height="34" rx="4"/><text x="252" y="143">resolver</text></g>
+<g class="node glow"><rect x="308" y="152" width="96" height="34" rx="4"/><text x="356" y="169">layout</text></g>
+<g class="node hover"><rect x="440" y="126" width="96" height="34" rx="4"/><text x="488" y="143">renderer</text></g>
+<path class="edge" d="M156 143H204" marker-end="url(#ah)"/>
+<path class="edge" d="M300 143H320V152" marker-end="url(#ah)"/>
+<path class="edge" d="M404 169H420V143H440" marker-end="url(#ah)"/>
+<g><rect class="sel" x="304" y="148" width="104" height="42"/>
+<rect class="hd" x="301" y="145" width="6" height="6"/><rect class="hd" x="353" y="145" width="6" height="6"/><rect class="hd" x="405" y="145" width="6" height="6"/>
+<rect class="hd" x="301" y="166" width="6" height="6"/><rect class="hd" x="405" y="166" width="6" height="6"/>
+<rect class="hd" x="301" y="187" width="6" height="6"/><rect class="hd" x="353" y="187" width="6" height="6"/><rect class="hd" x="405" y="187" width="6" height="6"/></g>
+<g class="ring" opacity=".85"><circle cx="356" cy="230" r="7"/><text x="356" y="230.5">s</text>
+<circle cx="341" cy="217" r="6"/><text x="341" y="217.5">w</text><circle cx="371" cy="217" r="6"/><text x="371" y="217.5">e</text>
+<circle cx="336" cy="230" r="6" opacity=".55"/><text x="336" y="230.5">a</text><circle cx="376" cy="230" r="6" opacity=".55"/><text x="376" y="230.5">d</text>
+<circle cx="341" cy="243" r="6" opacity=".55"/><text x="341" y="243.5">z</text><circle cx="371" cy="243" r="6" opacity=".55"/><text x="371" y="243.5">x</text></g>
+</svg>`}
+function frame(d){
+  const t = `<div class="title"><span class="file">pipeline.style.json</span><span style="color:var(--accent)">•</span></div>`;
+  let chrome='';
+  if(d.layout==='islands') chrome = `<div class="panel strip tools">${tools().slice(19,-6)}</div>${props()}${zoom()}<div class="panel undo tools">${tool('undo','')}${tool('redo','')}</div>${t}`;
+  if(d.layout==='docked') chrome = `<div class="bar">${t}${zoom()}</div><div class="rail">${tools()}</div>${props()}<div class="status"><span><span class="dot"></span>saved</span><span>4 nodes · 3 edges · 1 group</span><span class="mode">select</span></div>`;
+  if(d.layout==='minimal') chrome = `${t}${props()}<div class="panel bottom">${tools()}${zoom().replace('class="panel zoom"','class="zoom"')}<span style="font-family:'JetBrains Mono';font-size:9.5px;color:var(--accent)">select · saved</span></div>`;
+  return `<div class="frame ${d.c} ${d.layout}"><div class="canvas">${scene()}</div>${chrome}</div>`;
+}
+document.getElementById('mixrow').innerHTML = [
+ {c:'mx', layout:'islands', name:'Storm × Blueprint', blurb:'Roles: blue #7ab8ff = selection and active tool; teal #73daca = edges and hover; purple #bb9af7 = groups; sky #8ad1ff = node outlines; navy #0f1a2b ground.', sw:['#0f1a2b','#7ab8ff','#73daca','#bb9af7']},
+ {c:'mx', layout:'islands', name:'Storm × Blueprint, wide', blurb:'Same tokens; the frame spans the row so the grid density and panel proportions read at working size.', sw:['#0f1a2b','#7ab8ff','#73daca','#bb9af7'], wide:true},
+].map(d=>`<section class="dir"${d.wide?' style="grid-column:1/-1"':''}><h2>${d.name}<span class="sw">${d.sw.map(s=>`<i style="background:${s}"></i>`).join('')}</span></h2>${frame(d)}<p>${d.blurb}</p></section>`).join('');
+document.getElementById('grid').innerHTML = dirs.map((d,i)=>`<section class="dir">
+<h2><span class="n">0${i+1}</span>${d.name}<span class="sw">${d.sw.map(s=>`<i style="background:${s}"></i>`).join('')}</span></h2>
+${frame(d)}<p>${d.blurb}</p></section>`).join('');
+</script>

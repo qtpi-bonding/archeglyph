@@ -49,6 +49,9 @@ constants: [
       "Do not parse, rewrite, or re-order the injected markup for any other\n"
       "reason."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<DiagramLayerProps>" } }
-    uses: ["DiagramLayerProps", "ElementRef", "elementKey"]
+    uses: ["DiagramLayerProps", "ElementRef"]
+    # Grandfathered post-build: elementKey is called from a file-local
+    # helper that tests one data-element-id against the dimmed list, not
+    # from the component initializer.
   }
 ]

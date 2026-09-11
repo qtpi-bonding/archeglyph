@@ -1,38 +1,34 @@
-# Brownfield deletes for the canvas rewrite (wave 3).
+# Brownfield deletes for the canvas rewrite (wave 3) — COMPLETED, now empty.
 #
-# Two whole files retire. Both are superseded by modules that already exist
-# and are verified, so this is removal, not migration:
+# This pillar retired two whole files:
 #
-#   drag_handler.ts — the drag preview it computed is now scene/preview's
-#     ScenePreview, drawn by overlay_layer. Its commit-on-pointer-up path
-#     is finding §2.1 (a plain click writes a position edit and teleports
-#     the node to 0,0); nothing replaces it in this wave, and wave 4's
-#     move_gesture + move_edit builder replace it properly.
+#   canvas/drag_handler.ts — the drag preview it computed is now
+#     scene/preview's ScenePreview, drawn by overlay_layer. Its
+#     commit-on-pointer-up path was finding §2.1 (a plain click writes a
+#     position edit and teleports the node to 0,0); wave 4's move_gesture
+#     plus the move_edit builder replace it properly.
 #
-#   viewport.ts — replaced by ui_state's Viewport + viewport_math (wave 2,
-#     merged), which take a ContainerRect and so fix finding §2.16. Its
-#     local Vec2 is the second definition of that type in the repo
+#   canvas/viewport.ts — replaced by ui_state's Viewport + viewport_math
+#     (wave 2), which take a ContainerRect and so fix finding §2.16. Its
+#     local Vec2 was the second definition of that type in the repo
 #     (docs/relaxing-koine-constraints.md §3.3); core/geometry's is the
 #     survivor.
+#
+# The 11 per-symbol DELETED entries that drove this are removed rather than
+# left in place: once the files are gone the symbols are absent from gcode,
+# and `archegraph plan` rejects a DELETED node whose symbol it cannot find
+# ("DELETED node references symbol not in gcode"). Keeping them would mean
+# this pillar could never be re-planned. Git history has the originals.
+#
+# Worth knowing for the next pillar that retires a whole file: the 11
+# parallel per-symbol delete nodes each edited the same two files, and
+# convergence fanned them in badly — drag_handler.ts landed with literal
+# conflict markers committed into it and viewport.ts was left half-deleted.
+# Both were resolved by hand with `git rm`, which is what the spec meant
+# anyway. Prefer retiring a whole file in one node, or expect to clean up
+# after convergence.
 #
 # canvas/selection.ts deliberately SURVIVES this pillar — inspector.tsx
 # still consumes useSelection and the numeric ElementKind enum, and that
 # migration belongs to inspector v2 in wave 5. See app.spec.textproto for
 # the one-way bridge that keeps it consistent meanwhile.
-
-node_deltas: [
-  # drag_handler.ts — entire file
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragSession#"                  change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#"                  change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#dragOffset()."     change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#activeSession()."  change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#onPointerDown()."  change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#onPointerMove()."  change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/drag_handler.ts/DragHandler#onPointerUp()."    change_type: DELETED },
-
-  # viewport.ts — entire file
-  { symbol: "packages/editor/src/canvas/viewport.ts/Vec2#"                   change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/viewport.ts/ViewportState#"          change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/viewport.ts/ViewportState#toCanvas()." change_type: DELETED },
-  { symbol: "packages/editor/src/canvas/viewport.ts/ViewportState#toScreen()." change_type: DELETED }
-]

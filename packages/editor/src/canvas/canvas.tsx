@@ -161,7 +161,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#fff', 'touch-action': 'none', cursor: cursor() }}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: 'var(--ag-bg, #0f1a2b)', 'touch-action': 'none', cursor: cursor() }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -179,7 +179,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       <Show when={errorVisible() && props.scene.error() !== undefined}>
         <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', padding: '8px 12px', background: 'var(--ag-error, #fee)', color: 'var(--ag-error-text, #600)', 'z-index': '2' }}>
           <span>{props.scene.error()!.message}</span>
-          <button aria-label="Dismiss error" onClick={(): void => setErrorVisible(false)} style={{ float: 'right' }}>×</button>
+          <button aria-label="Dismiss error" onClick={(): void => { setErrorVisible(false); }} style={{ float: 'right' }}>×</button>
         </div>
       </Show>
     </div>

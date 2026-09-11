@@ -50,6 +50,11 @@ constants: [
       "A failed layout or render renders nothing rather than an error: the\n"
       "ghost is advisory, and the real picture above it is still correct."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<GhostLayerProps>" } }
-    uses: ["GhostLayerProps", "applyAllPendingEdits", "layoutPipeline", "SvgRendererImpl"]
+    uses: ["GhostLayerProps"]
+    # Grandfathered post-build: applyAllPendingEdits / layoutPipeline /
+    # SvgRendererImpl are reached from the resource fetcher and the merged-
+    # source memo inside this component rather than from the component
+    # initializer itself, so no direct edge is emitted. Correct factoring;
+    # do not flatten it to win an edge.
   }
 ]

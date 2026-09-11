@@ -59,11 +59,18 @@ constants: [
       "the resize gesture — but they are drawn now because the overlay owns\n"
       "drawing and adding them later would mean reopening this file.\n"
       "\n"
-      "Constant apparent size: divide every stroke-width and handle side by\n"
-      "props.zoom. Colours come from CSS custom properties (--ag-blue for\n"
+      "Constant apparent size, and the two cases differ: STROKES use\n"
+      "vector-effect=\"non-scaling-stroke\" and a plain stroke-width, which\n"
+      "already holds them constant on screen — dividing by zoom on top of\n"
+      "that makes outlines thin out as you zoom in. SHAPES (the handle\n"
+      "rects) are sized in diagram units and so DO divide by props.zoom.\n"
+      "Colours come from CSS custom properties (--ag-blue for\n"
       "selection, --ag-teal for hover, per docs/design/editor-tokens.css and\n"
       "decision D12) — do not hard-code hex values here."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<OverlayLayerProps>" } }
-    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "Bounds", "elementKey", "handlePositions"]
+    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "elementKey", "handlePositions"]
+    # Grandfathered post-build: Bounds is referenced by OverlayLayerProps
+    # (which carries its own edge) and by the file-local shape helpers, not
+    # by the component initializer.
   }
 ]

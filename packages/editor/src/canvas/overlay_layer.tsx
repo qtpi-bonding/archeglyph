@@ -34,7 +34,7 @@ function boundsRect(bounds: Bounds, className: string, zoom: number): JSX.Elemen
       height={bounds.maxY - bounds.minY}
       fill="none"
       stroke={className === 'hover-outline' ? 'var(--ag-teal)' : 'var(--ag-blue)'}
-      stroke-width={2 / zoom}
+      stroke-width={2}
       vector-effect="non-scaling-stroke"
     />
   );
@@ -57,7 +57,7 @@ function refOutline(
         points={pointsAttribute(points)}
         fill="none"
         stroke={className === 'hover-outline' ? 'var(--ag-teal)' : 'var(--ag-blue)'}
-        stroke-width={2 / zoom}
+        stroke-width={2}
         vector-effect="non-scaling-stroke"
       />
     );
@@ -81,33 +81,42 @@ function previewEdges(preview: ScenePreview, zoom: number): Array<JSX.Element> {
       points={pointsAttribute(edge.points)}
       fill="none"
       stroke="var(--ag-blue)"
-      stroke-width={2 / zoom}
+      stroke-width={2}
       vector-effect="non-scaling-stroke"
     />
   ));
 }
 
 export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerProps): JSX.Element => {
-  const selectedEntry: ElementBounds | undefined = props.selection.length === 1
+  // These must be functions, not values computed in the component body: a
+  // Solid component body runs once, so reading props there would freeze the
+  // handles at their mount-time selection and zoom.
+  const selectedEntry = (): ElementBounds | undefined => props.selection.length === 1
     ? props.geometry.byKey[elementKey(props.selection[0])]
     : undefined;
-  const handles = selectedEntry === undefined || selectedEntry.ref.kind === 'edge'
-    ? []
-    : handlePositions(selectedEntry.bounds);
-  const handleSide: number = 8 / props.zoom;
-  const handleElements: Array<JSX.Element> = handles.map((handlePoint): JSX.Element => (
-    <rect
-      class="resize-handle"
-      x={handlePoint.point.x - handleSide / 2}
-      y={handlePoint.point.y - handleSide / 2}
-      width={handleSide}
-      height={handleSide}
-      fill="var(--ag-blue)"
-      stroke="var(--ag-blue)"
-      stroke-width={1 / props.zoom}
-      vector-effect="non-scaling-stroke"
-    />
-  ));
+
+  const handleElements = (): Array<JSX.Element> => {
+    const entry: ElementBounds | undefined = selectedEntry();
+    if (entry === undefined || entry.ref.kind === 'edge') {
+      return [];
+    }
+    // A handle is a SHAPE, not a stroke, so it is sized in diagram units and
+    // genuinely needs dividing by zoom to hold a constant on-screen size.
+    const handleSide: number = 8 / props.zoom;
+    return handlePositions(entry.bounds).map((handlePoint): JSX.Element => (
+      <rect
+        class="resize-handle"
+        x={handlePoint.point.x - handleSide / 2}
+        y={handlePoint.point.y - handleSide / 2}
+        width={handleSide}
+        height={handleSide}
+        fill="var(--ag-blue)"
+        stroke="var(--ag-blue)"
+        stroke-width={1}
+        vector-effect="non-scaling-stroke"
+      />
+    ));
+  };
 
   return (
     <g class="overlay-layer">
@@ -117,7 +126,7 @@ export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerPr
       )}
       {props.preview === undefined ? null : previewBounds(props.preview.bounds, props.zoom)}
       {props.preview === undefined ? null : previewEdges(props.preview, props.zoom)}
-      {handleElements}
+      {handleElements()}
       {props.marquee === undefined ? null : boundsRect(props.marquee, 'marquee', props.zoom)}
     </g>
   );

@@ -60,7 +60,12 @@ constants: [
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
     uses: [
       "Canvas", "Scene", "UiState", "createScene", "createUiState",
-      "getBundledTheme", "LayoutEngineImpl", "ElkAdapterImpl", "createBrowserElk"
+      "getBundledTheme"
     ]
+    # Grandfathered post-build: LayoutEngineImpl / ElkAdapterImpl /
+    # createBrowserElk are NOT in this list, because the doc above asks for
+    # the engine to be built once at module scope rather than per render.
+    # The impl did that, so those edges belong to the module-level
+    # `layoutEngine` const, not to App. Keep that shape.
   }
 ]

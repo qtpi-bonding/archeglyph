@@ -71,7 +71,12 @@ export function setNodesGlyphEdit(stylesheet: Stylesheet, nodeIds: Array<string>
   });
 }
 export function setNodeGlyphEdit(stylesheet: Stylesheet, nodeId: string, patch: NodeGlyphPatch): StyleEdit {
-  throw new Error('not implemented');
+  return styleEdit({
+    nodeChanges: [
+      nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch)),
+    ],
+    description: 'Set glyph on node',
+  });
 }
 export function setEdgeGlyphEdit(stylesheet: Stylesheet, edgeId: string, patch: EdgeGlyphPatch): StyleEdit {
   const existing = stylesheet.edges[edgeId];

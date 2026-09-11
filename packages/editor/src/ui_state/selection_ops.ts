@@ -38,5 +38,5 @@ export function selectInRect(candidates: { ref: ElementRef; bounds: Bounds }[], 
   throw new Error('not implemented');
 }
 export function replaceSelection(ref: ElementRef): ElementRef[] {
-  throw new Error('not implemented');
+  return [ref];
 }

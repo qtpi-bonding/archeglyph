@@ -4,7 +4,11 @@ import { boundsCentre, boundsProjectToEdge, type Bounds } from '../../geometry/b
 import type { Vec2 } from '../../geometry/vec2';
 
 export function routeStraight(sourceBounds: Bounds, targetBounds: Bounds, sourceAttach?: Vec2, targetAttach?: Vec2): Vec2[] {
-  throw new Error('not implemented');
+  const sourceCentre = boundsCentre(sourceBounds);
+  const targetCentre = boundsCentre(targetBounds);
+  const start = resolveAttachPoint(sourceBounds, targetCentre, sourceAttach);
+  const end = resolveAttachPoint(targetBounds, sourceCentre, targetAttach);
+  return [start, end];
 }
 export function resolveAttachPoint(bounds: Bounds, towardCentre: Vec2, attachHint?: Vec2): Vec2 {
   const centre = boundsCentre(bounds);

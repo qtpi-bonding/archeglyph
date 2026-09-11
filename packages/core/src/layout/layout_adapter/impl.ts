@@ -151,7 +151,15 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
         const elkEdges: ElkEdge[] = elkNode.edges ?? [];
         for (const edge of elkEdges) {
-          edgeSectionsRaw[edge.id] = edge.sections ?? [];
+          // Depending on the ELK configuration an edge may be exposed both
+          // on the graph that owns it and on a containing graph.  Keep a
+          // useful section list if one has already been collected rather
+          // than allowing a later, empty representation to erase it.
+          const sections: ElkSection[] = edge.sections ?? [];
+          const existingSections: ElkSection[] | undefined = edgeSectionsRaw[edge.id];
+          if (sections.length > 0 || existingSections === undefined) {
+            edgeSectionsRaw[edge.id] = sections;
+          }
         }
         const elkChildren: ElkNode[] = elkNode.children ?? [];
         for (const child of elkChildren) {

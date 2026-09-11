@@ -1,0 +1,26 @@
+file: "packages/ops/src/render/op.ts"
+doc:
+  "Brownfield MODIFIED — renderOp's theme resolution accepts a bundled theme "
+  "name or a file path, and defaults to the bundled 'dark' theme (D12b)."
+
+constants: [
+  { name: "renderOp"
+    change_type: MODIFIED
+    doc:
+      "Theme resolution only; everything else in execute is unchanged — read "
+      "the existing impl and preserve it.\n"
+      "  params.theme undefined → getBundledTheme('dark'), log "
+      "'no --theme provided; using bundled dark theme'.\n"
+      "  findBundledTheme(params.theme) non-null → use it.\n"
+      "  otherwise → treat as a path: readFile + loadTheme as today."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "RenderParams" } },
+      { named: { symbol: "RenderOutput" } }
+    ]}}
+    uses: [
+      "renderParamsSchema", "loadDiagram", "loadStylesheet", "loadTheme",
+      "renderPipeline", "RenderOpError", "deriveOutPath",
+      "getBundledTheme", "findBundledTheme"
+    ]
+  }
+]

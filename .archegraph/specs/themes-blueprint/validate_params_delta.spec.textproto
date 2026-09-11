@@ -1,0 +1,14 @@
+file: "packages/ops/src/validate/validate_params.ts"
+doc: "Brownfield MODIFIED — --theme help text now documents bundled names."
+
+constants: [
+  { name: "validateParamsSchema"
+    change_type: MODIFIED
+    doc:
+      "Only the `theme` field's describe() changes: 'Bundled theme name "
+      "(light, dark, blueprint) or path to a .theme.json file; uses the "
+      "bundled dark theme if omitted.' Schema shape is unchanged."
+    type: { named: { symbol: "z.ZodType", args: [ { named: { symbol: "ValidateParams" } } ] } }
+    uses: ["ValidateParams"]
+  }
+]

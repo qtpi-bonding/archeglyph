@@ -1,0 +1,68 @@
+# themes-blueprint pillar (wave 2, docs/implementation-order.md; decision D12b in
+# docs/editor-ui-review.md §10). Adds the "blueprint" bundled theme — the
+# editor's default look — and name-based bundled-theme lookup so the CLI can
+# take `--theme blueprint` as well as a file path. The existing `dark` theme
+# becomes the CLI default (D12b: "ultra simple" for README embeds).
+#
+# Blueprint values come from the approved mockup docs/design/editor-directions.html
+# (top frames) and docs/design/editor-tokens.css. Hues have one job each:
+# sky #8ad1ff node outlines, teal #73daca edges, purple #bb9af7 groups,
+# blue #7ab8ff primary/selection, navy #0f1a2b ground, ice #bfe3ff text.
+# Components are name-bound only (design.md §4.3): all bundled looks are
+# named "glyph" so `archeglyph bind`'s implicit default picks them up.
+
+file: "packages/themes/src/index.ts"
+doc:
+  "Bundled themes: light, dark, blueprint. Pure data module. Adds name-based "
+  "lookup (findBundledTheme / BUNDLED_THEME_NAMES) alongside getBundledTheme."
+
+constants: [
+  { name: "BUNDLED_THEME_NAMES"
+    doc:
+      "The names findBundledTheme accepts, in display order: light, dark, "
+      "blueprint. Exported so CLI help text and the editor's theme picker "
+      "can list them without a second source of truth."
+    type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } }
+    value: "['light', 'dark', 'blueprint']"
+  }
+]
+
+methods: [
+  { name: "blueprintTheme"
+    doc:
+      "Return a fresh Theme named 'blueprint' (D12b). Same token VOCABULARY as "
+      "lightTheme/darkTheme (identical keys). Token values: colors.background "
+      "#0f1a2b, foreground #bfe3ff, muted #3f6a8f, primary #7ab8ff, accent "
+      "#bb9af7, success #73daca, warning #e0af68, danger #f7768e; fonts, "
+      "sizes, spacings and dashes identical to darkTheme.\n"
+      "Components, all named 'glyph': node = SHAPE_RECT, corner_radius 2, "
+      "stroke #8ad1ff width 1.2, fill #122238 opacity 0.55; edge = stroke "
+      "#73daca width 1.2, arrowheads end FILLED; group (groupComponents) = "
+      "SHAPE_RECT, corner_radius 3, stroke #bb9af7 width 1 with custom "
+      "dasharray '5,4', fill #bb9af7 opacity 0.04, typography color #bb9af7; "
+      "annotation = the node look with typography color #bfe3ff. Reuse the "
+      "file-local component helpers where they fit; add group/annotation "
+      "helpers beside them rather than inlining."
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  },
+  { name: "findBundledTheme"
+    doc:
+      "Name → Option<Theme>. Exact match on BUNDLED_THEME_NAMES; null for "
+      "anything else so callers can fall back to treating the string as a "
+      "file path. Fresh Theme per call, never memoized (proto values are "
+      "mutable)."
+    inputs: [ { name: "name", type: { primitive: CHARACTER } } ]
+    output: { named: { symbol: "Option", args: [ { named: { symbol: "archeglyph.theme.v1.Theme" } } ] } }
+    uses: ["lightTheme", "darkTheme", "blueprintTheme", "BUNDLED_THEME_NAMES"]
+  },
+  { name: "getBundledTheme"
+    change_type: MODIFIED
+    doc:
+      "Adds 'blueprint' → blueprintTheme(). Unknown names still fall back to "
+      "lightTheme() (unchanged contract for existing callers)."
+    inputs: [ { name: "name", type: { primitive: CHARACTER } } ]
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+    uses: ["lightTheme", "darkTheme", "blueprintTheme"]
+  }
+]

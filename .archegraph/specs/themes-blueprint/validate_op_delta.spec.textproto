@@ -1,0 +1,24 @@
+file: "packages/ops/src/validate/op.ts"
+doc:
+  "Brownfield MODIFIED — validateOp's theme resolution accepts a bundled theme "
+  "name or a file path, and defaults to the bundled 'dark' theme (D12b)."
+
+constants: [
+  { name: "validateOp"
+    change_type: MODIFIED
+    doc:
+      "Theme resolution only; everything else in execute is unchanged — read "
+      "the existing impl and preserve it. Same three-way rule as renderOp: "
+      "undefined → getBundledTheme('dark'); findBundledTheme(name) non-null → "
+      "use it; otherwise path → readFile + loadTheme."
+    type: { named: { symbol: "Operation", args: [
+      { named: { symbol: "ValidateParams" } },
+      { named: { symbol: "ValidateOutput" } }
+    ]}}
+    uses: [
+      "validateParamsSchema", "loadDiagram", "loadStylesheet", "loadTheme",
+      "ValidatorImpl", "ValidateRequest", "resolvePipeline", "ValidateOpError",
+      "getBundledTheme", "findBundledTheme"
+    ]
+  }
+]

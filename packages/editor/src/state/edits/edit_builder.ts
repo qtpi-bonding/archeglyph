@@ -61,7 +61,7 @@ export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleCha
 export function annotationChange(annotationId: string, after?: AnnotationEntry): AnnotationStyleChange {
   return create(AnnotationStyleChangeSchema, {
     annotationId,
-    changeType: StyleChangeType.ADDED,
+    changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.ADDED,
     ...(after === undefined ? {} : { after }),
     unsetPaths: [],
     kinds: [],

@@ -6,8 +6,6 @@ export interface Chord {
   shift?: boolean;
 }
 export type CommandId = 'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'save';
-import { Chord } from './keymap';
-import { CommandId } from './keymap';
 
 export interface KeymapEntry {
   chord: Chord;

@@ -1,0 +1,42 @@
+# New pillar, wave 3 of docs/implementation-order.md ("editor-scene ✎").
+# Tiny identity helpers shared by scene.ts, hit_test.ts and preview.ts —
+# their own file so the bounds index, the hit tester and the preview all
+# agree on what "the same element" means.
+#
+# DELIBERATE DEVIATION from docs/editor-ui-review.md §8.2, which lists a
+# `scene/element_ref` module owning the ElementRef type. ElementRef already
+# exists at ui_state/ui_state.ts (editor-ui-state pillar, wave 2, merged)
+# and has two consumers there (navigation.ts, selection_ops.ts). Moving it
+# would mean a three-file delta across a just-built pillar to fix a naming
+# aesthetic. It stays put; scene imports it. The import direction
+# (scene -> ui_state) is type-only and acyclic — ui_state deliberately
+# takes plain {ref, centre} / {ref, bounds} data and never imports scene.
+# Only the stable-key half of that module-plan line lands here.
+
+file: "packages/editor/src/scene/element_key.ts"
+doc: "Stable string key and equality for an ElementRef. The one definition of element identity."
+
+methods: [
+  { name: "elementKey"
+    doc:
+      "`${kind}:${id}` — the key SceneGeometry.byKey is indexed by. Kind\n"
+      "goes first so the prefix is a fixed small vocabulary and an id\n"
+      "containing ':' can never collide across kinds."
+    inputs: [ { name: "ref", type: { named: { symbol: "ElementRef" } } } ]
+    output: { primitive: CHARACTER }
+    uses: ["ElementRef"]
+  },
+  { name: "refsEqual"
+    doc:
+      "Identity comparison by id AND kind. ElementRef is a plain object, so\n"
+      "=== is wrong; every call site that currently hand-writes\n"
+      "`a.id === b.id && a.kind === b.kind` (selection_ops, navigation)\n"
+      "should read as this once those are next touched."
+    inputs: [
+      { name: "a", type: { named: { symbol: "ElementRef" } } },
+      { name: "b", type: { named: { symbol: "ElementRef" } } }
+    ]
+    output: { primitive: BOOLEAN }
+    uses: ["ElementRef"]
+  }
+]

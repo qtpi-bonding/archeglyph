@@ -1,0 +1,125 @@
+# New pillar, wave 3 of docs/implementation-order.md ("editor-scene ✎").
+# Source of truth #2 in docs/editor-ui-review.md §7: derived, read-only,
+# recomputed from DocumentState, never edited. This is the module that
+# fixes the shared prerequisite behind findings §2.1 (drag teleports to
+# 0,0 because nothing knows where a node currently is), §2.4 (no selection
+# outline because nothing knows a node's rect), §2.8 (no fit-to-view
+# because nothing knows the content bounds), §5.5 (laid-out geometry never
+# reaches the editor at all) and §5.6 (edges unselectable).
+#
+# Split in two on purpose:
+#   buildSceneGeometry  pure, synchronous, Solid-free — LaidOutDiagram +
+#                       svg string in, indexed geometry out. Unit-testable
+#                       with no DOM and no ELK.
+#   createScene         the thin reactive wrapper that runs the pipeline
+#                       and feeds buildSceneGeometry.
+# Same shape as save_controller (wave 2, merged): a plain factory returning
+# an object of Solid accessors, not a class, not itself a Solid primitive.
+#
+# LAST-KNOWN-GOOD is the point of the geometry/error split. A transient
+# layout or render failure must not blank the canvas (§2.9 — render errors
+# currently present as a silently blank canvas). geometry() keeps the last
+# successful SceneGeometry; error() carries the failure alongside it, and
+# the canvas shows a banner over the stale-but-readable picture.
+#
+# The scene is the ONLY caller of layoutPipeline in the editor. Nothing
+# else may run ELK. Consumers read geometry and never recompute it.
+
+file: "packages/editor/src/scene/scene.ts"
+doc: "The derived scene: laid-out geometry, a bounds index, edge polylines and the rendered SVG, memoised per document version."
+
+structs: [
+  { name: "ElementBounds"
+    doc: "One entry in the bounds index: what it is, where it is, and which group encloses it (undefined at canvas level). parentGroup is what a later wave's enter/leave-group navigation needs — the containment index navigation.ts explicitly deferred to this pillar."
+    fields: [
+      { name: "ref",         type: { named: { symbol: "ElementRef" } } },
+      { name: "bounds",      type: { named: { symbol: "Bounds" } } },
+      { name: "parentGroup", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "SceneError"
+    doc: "A layout or render failure, flattened to two strings so the canvas banner needs no knowledge of PipelineError vs RenderError. stage is PipelineError.stage verbatim, or 'render' for a renderer failure."
+    fields: [
+      { name: "stage",   type: { primitive: CHARACTER } },
+      { name: "message", type: { primitive: CHARACTER } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "SceneGeometry"
+    doc:
+      "One computed snapshot. Everything geometric the editor is allowed to\n"
+      "read. `index` holds nodes, groups and annotations (things with a\n"
+      "rect); edges live in `edgePolylines` instead because they have no\n"
+      "meaningful bounding box for hit-testing — see hit_test.ts. `svg` is\n"
+      "the core renderer's own output, injected verbatim by the canvas, so\n"
+      "the editor and `archeglyph render` always show the same picture."
+    fields: [
+      { name: "diagram",       type: { named: { symbol: "LaidOutDiagram" } } },
+      { name: "index",         type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementBounds" } }] } } },
+      { name: "byKey",         doc: "elementKey(ref) -> entry, for O(1) lookup during a drag.", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Record<string, ElementBounds>" } } },
+      { name: "edgePolylines", doc: "edge id -> flattened point list (startPoint, bendPoints…, endPoint per section).", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Record<string, Vec2[]>" } } },
+      { name: "contentBounds", doc: "Union of every indexed rect. Empty diagram -> zero-size bounds at the origin. This is what fit-to-view reads.", type: { named: { symbol: "Bounds" } } },
+      { name: "svg",           type: { primitive: CHARACTER } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "Scene"
+    doc: "Handle returned by createScene. Read-only by construction — there are no setters."
+    fields: [
+      { name: "geometry", doc: "Last successful snapshot; undefined only before the first one lands.", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<SceneGeometry | undefined>" } } },
+      { name: "error",    doc: "Set when the most recent recompute failed; geometry() still holds the previous good one.", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<SceneError | undefined>" } } },
+      { name: "loading",  type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<boolean>" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "buildSceneGeometry"
+    doc:
+      "Pure. Index nodes, groups and annotations with geometry/bounds'\n"
+      "boundsFromRect over their position+size, carrying parentGroup where\n"
+      "the laid-out element has one (annotations have none). Flatten each\n"
+      "edge's sections into one point list. contentBounds is boundsUnion\n"
+      "across the indexed rects.\n"
+      "\n"
+      "Positions are canvas-absolute — the layout Δ (wave 2, merged) made\n"
+      "that the contract, so there is NO parent-offset accumulation to do\n"
+      "here. Do not reintroduce it; that was finding §5.1 and it is fixed\n"
+      "upstream."
+    inputs: [
+      { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } },
+      { name: "svg",     type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "SceneGeometry" } }
+    uses: ["SceneGeometry", "ElementBounds", "LaidOutDiagram", "elementKey", "boundsFromRect", "boundsUnion"]
+  },
+  { name: "createScene"
+    doc:
+      "Recompute whenever state.version() changes: layoutPipeline(diagram,\n"
+      "stylesheet, theme, layoutEngine) then SvgRendererImpl().render(),\n"
+      "then buildSceneGeometry. A Solid createResource keyed on version()\n"
+      "is the natural fit (layoutPipeline is async), but the caller owns no\n"
+      "cleanup, so keep the accessors plain.\n"
+      "\n"
+      "On success: set geometry, clear error. On either stage failing: set\n"
+      "error and LEAVE geometry alone — that is the whole point of the\n"
+      "split, and it is what stops a bad edit from blanking the canvas.\n"
+      "\n"
+      "`theme` is a Solid Accessor over the proto Theme (`import type\n"
+      "{ Theme } from '@archeglyph/proto/gen/theme_pb'`) — an accessor, not\n"
+      "a value, so swapping theme re-runs the scene like any other change.\n"
+      "\n"
+      "layoutEngine is a parameter, not constructed here: the editor passes\n"
+      "a browser-ELK-backed one (elk_host_browser) and the CLI a node one.\n"
+      "core must stay host-agnostic — that was the §5.0 build blocker."
+    inputs: [
+      { name: "state",        type: { named: { symbol: "EditorState" } } },
+      { name: "theme",        type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<Theme>" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } }
+    ]
+    output: { named: { symbol: "Scene" } }
+    uses: ["Scene", "SceneGeometry", "SceneError", "EditorState", "LayoutEngine", "archeglyph.theme.v1.Theme", "buildSceneGeometry", "layoutPipeline", "SvgRendererImpl"]
+  }
+]

@@ -1,0 +1,125 @@
+# New pillar, wave 3 of docs/implementation-order.md ("editor-scene ✎").
+# What the overlay draws while a gesture is in flight. Pure functions:
+# geometry + intent -> the rects and edge paths to paint this frame.
+# Nothing here touches DocumentState — a gesture is a preview plus ONE
+# StyleEdit at the very end (docs/editor-ui-review.md §7).
+#
+# This is the half of the approved drawing model (option A) that makes it
+# work: the canvas injects core's own SVG verbatim and never mutates it,
+# dims the elements being moved via a CSS rule keyed on the renderer's
+# data-element-id attributes (wave 2 renderer Δ, merged — that is what
+# those attributes were added for), and the overlay repaints the moving
+# things from a ScenePreview. So the picture at rest is always the genuine
+# renderer output, and only the in-flight frames are editor-drawn.
+#
+# Re-routing touched edges is the difference between "PowerPoint" and
+# today's behaviour: §5.2/§2.2 — a drag currently re-runs ELK, which moves
+# everything else and detaches the edges. Here the moved rects are known,
+# so the edges are re-routed locally with edge_router (wave 2, merged) and
+# nothing else on the canvas shifts at all.
+#
+# previewResize lands now even though the resize GESTURE is wave 5
+# (editor-resize). It is a pure function over the same inputs, it keeps
+# the overlay's two code paths symmetric, and specifying it later would
+# mean a delta on a file that is otherwise finished.
+
+file: "packages/editor/src/scene/preview.ts"
+doc: "Applies an in-flight move or resize to scene geometry and re-routes the edges it touches."
+
+structs: [
+  { name: "MoveIntent"
+    doc: "Move every ref by one shared delta, in diagram units."
+    fields: [
+      { name: "refs",  type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "delta", type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "ResizeIntent"
+    doc: "Drag one handle of one element by delta. Single-element by design — multi-select resize is not in the UX contract (§6)."
+    fields: [
+      { name: "ref",    type: { named: { symbol: "ElementRef" } } },
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "delta",  type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "PreviewEdge"
+    doc: "An edge re-routed for this frame: its id and the polyline to paint."
+    fields: [
+      { name: "id",     type: { primitive: CHARACTER } },
+      { name: "points", type: { named: { symbol: "Array", args: [{ named: { symbol: "Vec2" } }] } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "ScenePreview"
+    doc: "One frame of a gesture. `bounds` is only the elements that MOVED — the canvas dims exactly these in the injected SVG and repaints them from here, so an empty list must leave the picture untouched. `edges` is only the edges with a moved endpoint."
+    fields: [
+      { name: "bounds", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementBounds" } }] } } },
+      { name: "edges",  type: { named: { symbol: "Array", args: [{ named: { symbol: "PreviewEdge" } }] } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "resizeBounds"
+    doc:
+      "Apply a handle drag to a rect: the named edges follow the delta and\n"
+      "the opposite edges stay put ('se' moves max only, 'n' moves min.y\n"
+      "only, and so on). Clamp to a small positive minimum in both axes so\n"
+      "a fast drag past the far edge cannot invert or zero the rect."
+    inputs: [
+      { name: "bounds", type: { named: { symbol: "Bounds" } } },
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "delta",  type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Bounds" } }
+    uses: ["Bounds", "Handle", "Vec2"]
+  },
+  { name: "routeEdgeBetween"
+    doc:
+      "Re-route one edge between two rects. ORTHOGONAL routing ->\n"
+      "routeOrthogonal, everything else -> routeStraight (CURVED has no\n"
+      "router yet and straight is the honest fallback; MANUAL waypoints are\n"
+      "author-pinned and are NOT re-routed — return them unchanged).\n"
+      "Pass the edge's source_attach / target_attach hints straight\n"
+      "through; edge_router projects them onto the outline itself."
+    inputs: [
+      { name: "edge",         type: { named: { symbol: "LaidOutEdge" } } },
+      { name: "sourceBounds", type: { named: { symbol: "Bounds" } } },
+      { name: "targetBounds", type: { named: { symbol: "Bounds" } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "Vec2" } }] } }
+    uses: ["LaidOutEdge", "Bounds", "Vec2", "routeStraight", "routeOrthogonal"]
+  },
+  { name: "previewMove"
+    doc:
+      "Shift each ref's indexed rect by delta. Moving a GROUP moves its\n"
+      "members too — walk index entries whose parentGroup chain reaches a\n"
+      "moved group, so dragging a group does not tear its contents out of\n"
+      "it. An edge is re-routed when either endpoint moved; look its\n"
+      "endpoints up through byKey (an endpoint id may name a node or a\n"
+      "group), falling back to the element's unmoved rect for the endpoint\n"
+      "that stayed."
+    inputs: [
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "intent",   type: { named: { symbol: "MoveIntent" } } }
+    ]
+    output: { named: { symbol: "ScenePreview" } }
+    uses: ["SceneGeometry", "MoveIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey", "routeEdgeBetween"]
+  },
+  { name: "previewResize"
+    doc:
+      "resizeBounds on the one element, then re-route its attached edges\n"
+      "the same way previewMove does. Resizing a group does NOT move its\n"
+      "members — the container grows or shrinks around them; that is the\n"
+      "difference between resizing a group and moving one."
+    inputs: [
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "intent",   type: { named: { symbol: "ResizeIntent" } } }
+    ]
+    output: { named: { symbol: "ScenePreview" } }
+    uses: ["SceneGeometry", "ResizeIntent", "ScenePreview", "ElementBounds", "PreviewEdge", "elementKey", "resizeBounds", "routeEdgeBetween"]
+  }
+]

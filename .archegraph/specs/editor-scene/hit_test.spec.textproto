@@ -1,0 +1,93 @@
+# New pillar, wave 3 of docs/implementation-order.md ("editor-scene ✎").
+# Point -> element and point -> resize handle, both pure over a
+# SceneGeometry. This is what replaces reading the DOM to find out what
+# was clicked: canvas.tsx today parses an SVG element's id string, which
+# is finding §2.15 (querySelector('#' + id) throws outright on ids with
+# CSS-special characters) and §5.6 (edges are effectively unselectable
+# because a 1px stroke is an impossible click target).
+#
+# SCOPE CUT, disclosed: the module-plan line in docs/editor-ui-review.md
+# §8.2 also lists "rect -> element refs (marquee)". Not here — ui_state's
+# selectInRect (wave 2, merged) already implements exactly that, and its
+# `{ ref, bounds }[]` parameter is structurally SceneGeometry.index. The
+# canvas passes geometry.index straight to selectInRect. Adding a second
+# marquee function would be the duplication this rebuild exists to remove.
+#
+# handlePositions is deliberately here rather than in the canvas: the
+# overlay layer DRAWS the eight handles and hit_test HITS them, and if
+# those two disagree by a pixel the handles feel broken. One function,
+# both callers.
+
+file: "packages/editor/src/scene/hit_test.ts"
+doc: "Pure hit-testing over a SceneGeometry: what is under this point, and which resize handle."
+
+structs: [
+  { name: "Handle"
+    doc: "Emit exactly: export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';"
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'" } }
+    typescript: {}
+  },
+  { name: "HandlePoint"
+    doc: "One of the eight handles and where it sits, in diagram coordinates."
+    fields: [
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "point",  type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "handlePositions"
+    doc:
+      "The eight handle points for a rect, corners and edge midpoints, in\n"
+      "the order the Handle union lists them (clockwise from north-west).\n"
+      "Diagram coordinates — the overlay scales them for display so handles\n"
+      "stay a constant screen size at any zoom."
+    inputs: [ { name: "bounds", type: { named: { symbol: "Bounds" } } } ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "HandlePoint" } }] } }
+    uses: ["HandlePoint", "Handle", "Bounds"]
+  },
+  { name: "hitTestHandle"
+    doc:
+      "Which handle is within `radius` of `point`, nearest first, or\n"
+      "undefined. Callers pass a radius already converted from screen to\n"
+      "diagram units (divide by zoom), so a handle stays equally easy to\n"
+      "grab zoomed in or out.\n"
+      "Checked BEFORE hitTestPoint by the gesture router: a handle sits on\n"
+      "its element's own outline, so element-first would make handles\n"
+      "unreachable."
+    inputs: [
+      { name: "bounds", type: { named: { symbol: "Bounds" } } },
+      { name: "point",  type: { named: { symbol: "Vec2" } } },
+      { name: "radius", type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Handle | undefined" } }
+    uses: ["Handle", "HandlePoint", "Bounds", "Vec2", "handlePositions", "distance"]
+  },
+  { name: "hitTestPoint"
+    doc:
+      "Topmost element at `point`, or undefined for empty canvas.\n"
+      "\n"
+      "Order is annotations, then nodes, then edges, then groups — NOT the\n"
+      "renderer's paint order reversed. Two deliberate choices:\n"
+      "  - nodes before edges, so an edge passing under a node never steals\n"
+      "    a click meant for the node, even though the edge is painted on\n"
+      "    top;\n"
+      "  - groups last, so clicking a group's empty interior selects the\n"
+      "    group but clicking its children selects the children.\n"
+      "Within a kind, later-indexed wins (matches paint order among peers).\n"
+      "\n"
+      "Rects use boundsContains. Edges use distanceToPolyline against\n"
+      "edgePolylines with `edgeTolerance` — this is the fat invisible hit\n"
+      "target that makes edges clickable at all (§5.6); callers convert it\n"
+      "from screen pixels the same way hitTestHandle's radius works."
+    inputs: [
+      { name: "geometry",      type: { named: { symbol: "SceneGeometry" } } },
+      { name: "point",         type: { named: { symbol: "Vec2" } } },
+      { name: "edgeTolerance", type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef | undefined" } }
+    uses: ["SceneGeometry", "ElementRef", "Vec2", "boundsContains", "distanceToPolyline"]
+  }
+]

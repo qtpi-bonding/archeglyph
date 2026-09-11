@@ -4,5 +4,5 @@ export function elementKey(ref: ElementRef): string {
   throw new Error('not implemented');
 }
 export function refsEqual(a: ElementRef, b: ElementRef): boolean {
-  throw new Error('not implemented');
+  return a.id === b.id && a.kind === b.kind;
 }

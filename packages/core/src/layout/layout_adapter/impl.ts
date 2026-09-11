@@ -126,6 +126,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const layoutOptions: Record<string, string> = {
         'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
+        // Without this, elk.layered lays each group out as its own problem and
+        // declines to route an edge whose endpoints sit at different depths —
+        // it returns with an empty sections array, which the renderer emits as
+        // d="". Every edge here is declared on the root graph, so any edge into
+        // or out of a group is exactly that case.
+        'org.eclipse.elk.hierarchyHandling': 'INCLUDE_CHILDREN',
       };
       if (diagram.canvas?.nodeSpacing !== undefined) {
         layoutOptions['org.eclipse.elk.spacing.nodeNode'] = String(diagram.canvas.nodeSpacing);
@@ -154,8 +160,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const nodePositions: Record<string, NodePosition> = {};
       const edgeSectionsRaw: Record<string, ElkSection[]> = {};
+      const containerOrigin: Record<string, Vec2> = {};
 
-      function walkElkNode(elkNode: ElkNode): void {
+      // Node and group positions stay parent-relative here on purpose —
+      // layout_engine's absolutizePositions converts those, and its
+      // position-override loops depend on receiving relative input, so doing
+      // it in both places would double every offset. containerOrigin is a
+      // side table for edges only; nothing downstream sees it.
+      function walkElkNode(elkNode: ElkNode, origin: Vec2): void {
         if (elkNode.id !== 'root') {
           nodePositions[elkNode.id] = {
             x: elkNode.x ?? 0,
@@ -164,6 +176,8 @@ export class ElkAdapterImpl implements LayoutAdapter {
             h: elkNode.height ?? DEFAULT_HEIGHT,
           };
         }
+        const absolute: Vec2 = vec2(origin.x + (elkNode.x ?? 0), origin.y + (elkNode.y ?? 0));
+        containerOrigin[elkNode.id] = absolute;
         const elkEdges: ElkEdge[] = elkNode.edges ?? [];
         for (const edge of elkEdges) {
           // Depending on the ELK configuration an edge may be exposed both
@@ -171,18 +185,57 @@ export class ElkAdapterImpl implements LayoutAdapter {
           // useful section list if one has already been collected rather
           // than allowing a later, empty representation to erase it.
           const sections: ElkSection[] = edge.sections ?? [];
-          const existingSections: ElkSection[] | undefined = edgeSectionsRaw[edge.id];
-          if (sections.length > 0 || existingSections === undefined) {
+          const existing: ElkSection[] | undefined = edgeSectionsRaw[edge.id];
+          if (sections.length > 0 || existing === undefined) {
             edgeSectionsRaw[edge.id] = sections;
           }
         }
         const elkChildren: ElkNode[] = elkNode.children ?? [];
         for (const child of elkChildren) {
-          walkElkNode(child);
+          walkElkNode(child, absolute);
         }
       }
 
-      walkElkNode(result);
+      walkElkNode(result, vec2(0, 0));
+
+      // ELK reports an edge's geometry in the frame of the lowest common
+      // ancestor of its endpoints, but it also exposes the same edge on more
+      // than one graph -- so which container we happened to read it from says
+      // nothing about which frame the numbers are in. Derive the ancestor
+      // from the endpoints instead, which is what actually determines it.
+      const parentOf: Record<string, string | undefined> = {};
+      for (const node of diagram.nodes) {
+        parentOf[node.id] = node.parentGroup;
+      }
+      for (const group of diagram.groups) {
+        parentOf[group.id] = group.parentGroup;
+      }
+
+      function ancestry(id: string): string[] {
+        const chain: string[] = [];
+        let current: string | undefined = parentOf[id];
+        // Guard against a cycle in a malformed parentGroup chain: the
+        // visibility filter validates group acyclicity, but this walk must
+        // not hang if it ever sees one.
+        const seen = new Set<string>();
+        while (current !== undefined && !seen.has(current)) {
+          seen.add(current);
+          chain.unshift(current);
+          current = parentOf[current];
+        }
+        return chain;
+      }
+
+      function edgeOrigin(source: string, target: string): Vec2 {
+        const a: string[] = ancestry(source);
+        const b: string[] = ancestry(target);
+        let common: string | undefined;
+        for (let i = 0; i < Math.min(a.length, b.length); i++) {
+          if (a[i] !== b[i]) { break; }
+          common = a[i];
+        }
+        return common === undefined ? vec2(0, 0) : containerOrigin[common] ?? vec2(0, 0);
+      }
 
       const nodes = diagram.nodes.map(node => {
         const pos = nodePositions[node.id] ?? { x: 0, y: 0, w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT };
@@ -199,12 +252,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
       });
 
       const edges = diagram.edges.map(edge => {
-        const rawSections: ElkSection[] = edgeSectionsRaw[edge.id] ?? [];
-        const sections = rawSections.map(s =>
+        const origin: Vec2 = edgeOrigin(edge.source, edge.target);
+        const point = (p: ElkPoint | undefined): Vec2 =>
+          vec2(origin.x + (p?.x ?? 0), origin.y + (p?.y ?? 0));
+        const sections = (edgeSectionsRaw[edge.id] ?? []).map(s =>
           Object.assign(new EdgeSection(), {
-            startPoint: vec2(s.startPoint?.x ?? 0, s.startPoint?.y ?? 0),
-            bendPoints: (s.bendPoints ?? []).map(bp => vec2(bp.x ?? 0, bp.y ?? 0)),
-            endPoint: vec2(s.endPoint?.x ?? 0, s.endPoint?.y ?? 0),
+            startPoint: point(s.startPoint),
+            bendPoints: (s.bendPoints ?? []).map(point),
+            endPoint: point(s.endPoint),
           })
         );
         return Object.assign(new LaidOutEdge(), {

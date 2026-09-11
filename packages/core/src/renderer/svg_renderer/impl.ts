@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { create } from '@bufbuild/protobuf';
-import { ArrowheadVariant, type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import {
+  ArrowheadVariant,
+  GroupLabelPosition,
+  TextAlign,
+  type Typography,
+  TypographySchema,
+  type Vec2,
+  Vec2Schema,
+} from '@archeglyph/proto/gen/style_pb';
 import { Ok, Err, type Result } from '@archeglyph/proto/util/result';
 import { type LaidOutAnnotation } from '../../layout/laid_out_annotation';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
@@ -10,6 +18,49 @@ import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
 import { RenderError } from '../render_error';
 import { arrowMarkers, backgroundRect, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
+
+/**
+ * Where a group's label sits, and which way it reads from there.
+ *
+ * GroupLayout.label_position has been in the schema since the data model was
+ * locked but the renderer only ever drew the centre, which puts the label
+ * straight through the group's own children. UNSPECIFIED therefore means
+ * TOP_LEFT — the architecture-diagram convention, and what the blueprint
+ * mockup draws.
+ *
+ * The anchor point and the text-anchor have to agree: a label placed at the
+ * left inset but centred on it hangs off the group's edge. An explicit
+ * Typography.align from the stylesheet or theme still wins; this only fills
+ * in the one the position implies.
+ */
+function groupLabelPlacement(group: LaidOutGroup): { anchor: Vec2; align: TextAlign } {
+  const size: number = group.typography.size ?? 13;
+  const inset: number = size;
+  const left: number = group.position.x + inset;
+  const right: number = group.position.x + group.size.x - inset;
+  const centerX: number = group.position.x + group.size.x / 2;
+  const top: number = group.position.y + inset;
+  const bottom: number = group.position.y + group.size.y - inset / 2;
+
+  switch (group.layout?.labelPosition) {
+    case GroupLabelPosition.GROUP_LABEL_TOP_CENTER:
+      return { anchor: point(centerX, top), align: TextAlign.ALIGN_CENTER };
+    case GroupLabelPosition.GROUP_LABEL_TOP_RIGHT:
+      return { anchor: point(right, top), align: TextAlign.ALIGN_RIGHT };
+    case GroupLabelPosition.GROUP_LABEL_BOTTOM_LEFT:
+      return { anchor: point(left, bottom), align: TextAlign.ALIGN_LEFT };
+    case GroupLabelPosition.GROUP_LABEL_BOTTOM_CENTER:
+      return { anchor: point(centerX, bottom), align: TextAlign.ALIGN_CENTER };
+    case GroupLabelPosition.GROUP_LABEL_BOTTOM_RIGHT:
+      return { anchor: point(right, bottom), align: TextAlign.ALIGN_RIGHT };
+    default:
+      return { anchor: point(left, top), align: TextAlign.ALIGN_LEFT };
+  }
+}
+
+function point(x: number, y: number): Vec2 {
+  return create(Vec2Schema, { x, y });
+}
 
 function markerId(variant: ArrowheadVariant): string {
   switch (variant) {
@@ -63,10 +114,11 @@ export class SvgRendererImpl implements SvgRenderer {
     let groupsSvg: string = '';
     for (const group of sortedGroups) {
       const shape: string = shapePath(group.shape, group.position, group.size);
-      const centerX: number = group.position.x + group.size.x / 2;
-      const centerY: number = group.position.y + group.size.y / 2;
-      const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
-      const labelSvg: string = textElement(group.label, group.typography, center);
+      const placement = groupLabelPlacement(group);
+      const labelTypography: Typography = group.typography.align !== undefined
+        ? group.typography
+        : create(TypographySchema, { ...group.typography, align: placement.align });
+      const labelSvg: string = textElement(group.label, labelTypography, placement.anchor);
       groupsSvg += `<g id="group-${group.id}" data-element-id="${group.id}" data-kind="group">${shape}${labelSvg}</g>`;
     }
 

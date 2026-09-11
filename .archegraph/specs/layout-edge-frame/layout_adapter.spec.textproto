@@ -1,0 +1,76 @@
+# Wave 3b. Edges come back from ELK in the wrong coordinate frame, and edges
+# that cross a group boundary come back with no geometry at all. Both are
+# visible the moment a diagram has a group; both were invisible to verify,
+# which checks wiring rather than numbers.
+#
+# Found by hand on examples/pipeline.diag.json, whose `core` group sits at
+# (12,72). `load` and `resolve` are both inside it and 72px down the canvas,
+# but the edge between them renders at y=32 — its sections are still in the
+# group's local frame. Meanwhile `diagram -> load` goes from a top-level node
+# into the group and renders as `d=""`.
+#
+# Why this belongs in the adapter and not in layout_engine's
+# absolutizePositions, which already does exactly this job for nodes and
+# groups: only the adapter knows WHICH ELK container owned a given edge.
+# Every edge is declared on the root graph (see the runLayout body), but ELK
+# reassigns each one to the lowest common ancestor of its endpoints and
+# returns its sections relative to THAT container's origin. By the time the
+# engine sees a LaidOutEdge that ownership is gone, and recovering it would
+# mean recomputing the LCA from source and target parentGroup chains — deriving
+# something the adapter was holding and threw away.
+#
+# Node and group positions deliberately stay parent-relative here. The engine
+# absolutizes them, and its override loops depend on that ordering
+# (docs/implementation-order.md wave 2). Doing it twice would double every
+# offset.
+
+file: "packages/core/src/layout/layout_adapter/impl.ts"
+doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back. ELK instance is host-injected (see elk_host_node / elk_host_browser); this file has no node:module or environment-specific import."
+
+structs: [
+  { name: "ElkAdapterImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "LayoutAdapter" } }]
+    methods: [
+      { name: "runLayout"
+        is_async: true
+        doc:
+          "Two changes; everything else in this method is unchanged.\n"
+          "\n"
+          "1. Edge sections become canvas-absolute. walkElkNode currently\n"
+          "   recurses with no notion of where it is, so sections are stored\n"
+          "   exactly as ELK returned them. Thread the container's absolute\n"
+          "   origin through the recursion — root starts at (0,0), each child\n"
+          "   adds its own x/y — and record that origin alongside the raw\n"
+          "   sections, then add it to startPoint, every bendPoint and\n"
+          "   endPoint when building each EdgeSection. Keep the existing rule\n"
+          "   about not letting a later empty section list overwrite a\n"
+          "   populated one: an edge can surface on more than one graph.\n"
+          "\n"
+          "2. Add 'org.eclipse.elk.hierarchyHandling': 'INCLUDE_CHILDREN' to\n"
+          "   layoutOptions. Without it elk.layered treats each group as its\n"
+          "   own layout problem and refuses to route an edge whose endpoints\n"
+          "   are at different depths, returning it with an empty sections\n"
+          "   array — which the renderer emits as `d=\"\"`. This option is what\n"
+          "   makes cross-boundary edges route at all.\n"
+          "\n"
+          "Node and group positions must STILL be recorded parent-relative.\n"
+          "layout_engine's absolutizePositions converts those, and its\n"
+          "position-override loops rely on running against relative input."
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: [
+          "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
+          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection",
+          "measureLabel"
+        ]
+      }
+    ]
+  }
+]

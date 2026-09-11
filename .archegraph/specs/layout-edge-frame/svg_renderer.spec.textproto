@@ -1,0 +1,59 @@
+# Wave 3b, second half. Group labels are drawn dead centre in the group box,
+# where they collide with the group's own nodes — on
+# examples/pipeline.diag.json "@archeglyph/core" is painted straight through
+# the `layout` node.
+#
+# Centre was never a decision, it was the only thing implemented:
+# GroupLayout.label_position has existed in proto/style.proto since the data
+# model was locked (GROUP_LABEL_TOP_LEFT ... BOTTOM_RIGHT) and the renderer
+# has never read it. The blueprint mockup
+# (docs/design/editor-directions.html) draws the group label at the top-left
+# inset, which is also the architecture-diagram vernacular the theme is
+# imitating.
+
+file: "packages/core/src/renderer/svg_renderer/impl.ts"
+doc: "SVG renderer — converts LaidOutDiagram to a deterministic SVG string. Now paints annotations, wraps edges in real <path> elements, and emits data-attrs + explicit width/height."
+
+structs: [
+  { name: "SvgRendererImpl"
+    change_type: MODIFIED
+    implements: [{ named: { symbol: "SvgRenderer" } }]
+    methods: [
+      { name: "render"
+        doc:
+          "One change: group labels honour GroupLayout.label_position instead\n"
+          "of always sitting at the centre of the group box. Everything else\n"
+          "in render() — node order, edge painting, annotations, data attrs,\n"
+          "the viewBox — is untouched.\n"
+          "\n"
+          "GROUP_LABEL_UNSPECIFIED means TOP_LEFT. That is a behaviour change\n"
+          "for existing diagrams and it is the intended one: centred group\n"
+          "labels overlap the group's own children, so there is no diagram\n"
+          "this makes worse.\n"
+          "\n"
+          "Two things move together and must agree, or the label will sit\n"
+          "correctly and then render off its own anchor: the anchor POINT\n"
+          "inset from the named corner or edge, and the SVG text-anchor. A\n"
+          "left position needs text-anchor start, a right position end, a\n"
+          "centre position middle. textElement already emits text-anchor from\n"
+          "Typography.align, so derive an align for the position and pass it\n"
+          "only when the resolved typography does not already set one — an\n"
+          "explicit align in the stylesheet or theme still wins.\n"
+          "\n"
+          "Inset the label from the box rather than sitting it on the stroke,\n"
+          "and leave room below a top label for the first row of children.\n"
+          "Use the group's own resolved font size to size the inset so the\n"
+          "label does not crowd the border at large type."
+        inputs: [
+          { name: "diagram",
+            type: { named: { symbol: "LaidOutDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: CHARACTER },
+          { named: { symbol: "RenderError" } }
+        ]}}
+        uses: ["shapePath", "textElement", "edgePath", "viewBox", "arrowMarkers"]
+      }
+    ]
+  }
+]

@@ -50,10 +50,6 @@ export class DragHandler {
     this._setOffset = set as (v: Vec2 | null) => void;
   }
 
-  dragOffset(): Vec2 | null {
-    return this._getOffset();
-  }
-
   activeSession(): DragSession | null {
     return this._session;
   }

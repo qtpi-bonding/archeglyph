@@ -10,6 +10,7 @@ import { FilteredGroup } from '../filtered_group';
 import { FilteredNode } from '../filtered_node';
 import {
   AnnotationEntry,
+  CanvasStyle,
   CanvasStyleSchema,
   ColorSchema,
   EdgeStyleEntry,

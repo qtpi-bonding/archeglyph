@@ -69,7 +69,14 @@ function textAnchorValue(align: TextAlign): string {
   else { return ''; }
 }
 
-export function viewBox(diagram: LaidOutDiagram): string {
+type ViewBoxExtents = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+function viewBoxExtents(diagram: LaidOutDiagram): ViewBoxExtents {
   let minX: number = Infinity;
   let minY: number = Infinity;
   let maxX: number = -Infinity;
@@ -109,11 +116,21 @@ export function viewBox(diagram: LaidOutDiagram): string {
   }
 
   if (minX === Infinity) {
-    return '0 0 100 100';
+    return { x: 0, y: 0, width: 100, height: 100 };
   }
 
   const pad: number = 16;
-  return `${r(minX - pad)} ${r(minY - pad)} ${r(maxX - minX + 2 * pad)} ${r(maxY - minY + 2 * pad)}`;
+  return {
+    x: minX - pad,
+    y: minY - pad,
+    width: maxX - minX + 2 * pad,
+    height: maxY - minY + 2 * pad,
+  };
+}
+
+export function viewBox(diagram: LaidOutDiagram): string {
+  const extents: ViewBoxExtents = viewBoxExtents(diagram);
+  return `${r(extents.x)} ${r(extents.y)} ${r(extents.width)} ${r(extents.height)}`;
 }
 
 export function backgroundRect(diagram: LaidOutDiagram): string {
@@ -121,8 +138,8 @@ export function backgroundRect(diagram: LaidOutDiagram): string {
   if (background === undefined || background.value === '' || background.value.startsWith('$')) {
     return '';
   }
-  const parts: string[] = viewBox(diagram).split(' ');
-  return `<rect x="${parts[0]}" y="${parts[1]}" width="${parts[2]}" height="${parts[3]}" fill="${escapeXml(background.value)}"/>`;
+  const extents: ViewBoxExtents = viewBoxExtents(diagram);
+  return `<rect x="${r(extents.x)}" y="${r(extents.y)}" width="${r(extents.width)}" height="${r(extents.height)}" fill="${escapeXml(background.value)}"/>`;
 }
 
 export function arrowMarkers(variants: ArrowheadVariant[]): string {

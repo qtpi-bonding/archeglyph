@@ -145,6 +145,7 @@ footer h3{color:var(--ink);font-size:13px;margin:0 0 6px}
 .mx .zoom span:last-child{color:var(--purple)}
 .mx .canvas{background-position:0 0,0 0,0 0}
 .mx.islands{--shadow:0 6px 16px rgba(0,0,0,.35)}
+.mx.hex .canvas{background-image:none;--grid-dot:#2f5480;--grid-line:rgba(47,84,128,.28)}
 .mx .scene .node rect{rx:2}
 .mixrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:28px 24px;padding:12px 40px 8px;max-width:1240px;margin:0 auto}
 .mixhead{padding:0 40px;max-width:1240px;margin:0 auto}
@@ -159,7 +160,7 @@ footer h3{color:var(--ink);font-size:13px;margin:0 0 6px}
 
 <svg width="0" height="0" style="position:absolute"><filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter></svg>
 
-<div class="mixhead"><h2>Mix: Storm × Blueprint, islands</h2><p>Blueprint’s navy ground, panels and ice-blue text; Storm’s island chrome, inspector density and Tokyo Night proportions. Blue primary for selection and the active tool; Tokyo teal on edges, hover and the saved dot; Tokyo purple on group boundaries and labels; sky-blue node strokes. Still blueprint, with three hues doing three jobs. 24px drafting grid, dots on the intersections, lines at 28%. Shown at two sizes: the second frame is how it reads at full width.</p></div>
+<div class="mixhead"><h2>Mix: Storm × Blueprint, islands</h2><p>Blueprint’s navy ground, panels and ice-blue text; Storm’s island chrome, inspector density and Tokyo Night proportions. Blue primary for selection and the active tool; Tokyo teal on edges, hover and the saved dot; Tokyo purple on group boundaries and labels; sky-blue node strokes. Still blueprint, with three hues doing three jobs. 24px drafting grid, dots on the intersections, lines at 28%. Shown at two sizes, then once more on a hex lattice instead of a square grid.</p></div>
 <div class="mixrow" id="mixrow"></div>
 <div class="mixhead"><h2>The nine original directions</h2></div>
 <div class="grid" id="grid"></div>
@@ -220,17 +221,49 @@ function scene(){return `<svg class="scene" viewBox="0 0 560 350" preserveAspect
 <circle cx="336" cy="230" r="6" opacity=".55"/><text x="336" y="230.5">a</text><circle cx="376" cy="230" r="6" opacity=".55"/><text x="376" y="230.5">d</text>
 <circle cx="341" cy="243" r="6" opacity=".55"/><text x="341" y="243.5">z</text><circle cx="371" cy="243" r="6" opacity=".55"/><text x="371" y="243.5">x</text></g>
 </svg>`}
+function sceneHex(){return `<svg class="scene" viewBox="0 0 560 350" preserveAspectRatio="xMidYMid meet">
+<defs>
+<marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrow" d="M0 0L10 5 0 10z"/></marker>
+<pattern id="hexgrid" width="24" height="41.569" patternUnits="userSpaceOnUse">
+  <g stroke="var(--grid-line,rgba(47,84,128,.28))" stroke-width="1">
+    <path d="M0 0H24M0 20.785H24"/>
+    <path d="M0 0L12 20.785L24 41.569M24 0L12 20.785L0 41.569"/>
+  </g>
+  <g fill="var(--grid-dot,#2f5480)">
+    <circle cx="0" cy="0" r="1.3"/><circle cx="24" cy="0" r="1.3"/><circle cx="12" cy="20.785" r="1.3"/><circle cx="0" cy="41.569" r="1.3"/><circle cx="24" cy="41.569" r="1.3"/>
+  </g>
+</pattern>
+</defs>
+<rect x="0" y="0" width="560" height="350" fill="url(#hexgrid)"/>
+<g class="group"><rect x="192" y="110" width="216" height="118" rx="3"/><text x="204" y="124">CORE</text></g>
+<g class="node"><rect x="60" y="128.5" width="96" height="34" rx="2"/><text x="108" y="145.5">loaders</text></g>
+<g class="node"><rect x="204" y="128.5" width="96" height="34" rx="2"/><text x="252" y="145.5">resolver</text></g>
+<g class="node glow"><rect x="300" y="170" width="96" height="34" rx="2"/><text x="348" y="187">layout</text></g>
+<g class="node hover"><rect x="444" y="128.5" width="96" height="34" rx="2"/><text x="492" y="145.5">renderer</text></g>
+<path class="edge" d="M156 145.5H204" marker-end="url(#ah2)"/>
+<path class="edge" d="M300 149L312 169.8" marker-end="url(#ah2)"/>
+<path class="edge" d="M396 183L420 141.5H444" marker-end="url(#ah2)"/>
+<g><rect class="sel" x="296" y="166" width="104" height="42"/>
+<rect class="hd" x="293" y="163" width="6" height="6"/><rect class="hd" x="345" y="163" width="6" height="6"/><rect class="hd" x="397" y="163" width="6" height="6"/>
+<rect class="hd" x="293" y="184" width="6" height="6"/><rect class="hd" x="397" y="184" width="6" height="6"/>
+<rect class="hd" x="293" y="205" width="6" height="6"/><rect class="hd" x="345" y="205" width="6" height="6"/><rect class="hd" x="397" y="205" width="6" height="6"/></g>
+<g class="ring" opacity=".85"><circle cx="348" cy="250" r="7"/><text x="348" y="250.5">s</text>
+<circle cx="336" cy="229.2" r="6"/><text x="336" y="229.7">w</text><circle cx="360" cy="229.2" r="6"/><text x="360" y="229.7">e</text>
+<circle cx="324" cy="250" r="6" opacity=".55"/><text x="324" y="250.5">a</text><circle cx="372" cy="250" r="6" opacity=".55"/><text x="372" y="250.5">d</text>
+<circle cx="336" cy="270.8" r="6" opacity=".55"/><text x="336" y="271.3">z</text><circle cx="360" cy="270.8" r="6" opacity=".55"/><text x="360" y="271.3">x</text></g>
+</svg>`}
 function frame(d){
   const t = `<div class="title"><span class="file">pipeline.style.json</span><span style="color:var(--accent)">•</span></div>`;
   let chrome='';
   if(d.layout==='islands') chrome = `<div class="panel strip tools">${tools().slice(19,-6)}</div>${props()}${zoom()}<div class="panel undo tools">${tool('undo','')}${tool('redo','')}</div>${t}`;
   if(d.layout==='docked') chrome = `<div class="bar">${t}${zoom()}</div><div class="rail">${tools()}</div>${props()}<div class="status"><span><span class="dot"></span>saved</span><span>4 nodes · 3 edges · 1 group</span><span class="mode">select</span></div>`;
   if(d.layout==='minimal') chrome = `${t}${props()}<div class="panel bottom">${tools()}${zoom().replace('class="panel zoom"','class="zoom"')}<span style="font-family:'JetBrains Mono';font-size:9.5px;color:var(--accent)">select · saved</span></div>`;
-  return `<div class="frame ${d.c} ${d.layout}"><div class="canvas">${scene()}</div>${chrome}</div>`;
+  return `<div class="frame ${d.c} ${d.layout}${d.hex?' hex':''}"><div class="canvas">${d.hex?sceneHex():scene()}</div>${chrome}</div>`;
 }
 document.getElementById('mixrow').innerHTML = [
  {c:'mx', layout:'islands', name:'Storm × Blueprint', blurb:'Roles: blue #7ab8ff = selection and active tool; teal #73daca = edges and hover; purple #bb9af7 = groups; sky #8ad1ff = node outlines; navy #0f1a2b ground.', sw:['#0f1a2b','#7ab8ff','#73daca','#bb9af7']},
  {c:'mx', layout:'islands', name:'Storm × Blueprint, wide', blurb:'Same tokens; the frame spans the row so the grid density and panel proportions read at working size.', sw:['#0f1a2b','#7ab8ff','#73daca','#bb9af7'], wide:true},
+ {c:'mx', layout:'islands', name:'Storm × Blueprint, hex lattice', blurb:'Same tokens on a triangular lattice (24px pitch): dots on the lattice points, faint lines in the three 60° families. Node centres snap to lattice points, so edges leave at 0° or 60° and the ring keys w e a d z x are literal lattice neighbours. Rectangles still sit fine on it; only the centres are snapped.', sw:['#0f1a2b','#7ab8ff','#73daca','#bb9af7'], wide:true, hex:true},
 ].map(d=>`<section class="dir"${d.wide?' style="grid-column:1/-1"':''}><h2>${d.name}<span class="sw">${d.sw.map(s=>`<i style="background:${s}"></i>`).join('')}</span></h2>${frame(d)}<p>${d.blurb}</p></section>`).join('');
 document.getElementById('grid').innerHTML = dirs.map((d,i)=>`<section class="dir">
 <h2><span class="n">0${i+1}</span>${d.name}<span class="sw">${d.sw.map(s=>`<i style="background:${s}"></i>`).join('')}</span></h2>

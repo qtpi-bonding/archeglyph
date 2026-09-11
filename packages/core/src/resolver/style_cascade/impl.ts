@@ -10,6 +10,9 @@ import { FilteredGroup } from '../filtered_group';
 import { FilteredNode } from '../filtered_node';
 import {
   AnnotationEntry,
+  CanvasStyle,
+  CanvasStyleSchema,
+  ColorSchema,
   EdgeStyleEntry,
   Fill,
   FillSchema,
@@ -137,7 +140,16 @@ export class StyleCascadeImpl implements StyleCascade {
     const stylesheet: Stylesheet | undefined = request.stylesheet;
     const theme: Theme | undefined = request.theme;
 
-    const result: ResolvedDiagram = Object.assign(new ResolvedDiagram(), { id: filtered.id });
+    const canvas: CanvasStyle = stylesheet?.canvas === undefined
+      ? create(CanvasStyleSchema)
+      : create(CanvasStyleSchema, stylesheet.canvas);
+    if (canvas.background === undefined) {
+      canvas.background = create(ColorSchema, { value: '$colors.background' });
+    }
+    const result: ResolvedDiagram = Object.assign(new ResolvedDiagram(), {
+      id: filtered.id,
+      canvas,
+    });
 
     const sortedNodes: FilteredNode[] = filtered.nodes.slice();
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));

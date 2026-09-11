@@ -7,7 +7,15 @@ export function prevInDocumentOrder(elements: NavigableElement[], current?: Elem
   throw new Error('not implemented');
 }
 export function nextInDocumentOrder(elements: NavigableElement[], current?: ElementRef): ElementRef | undefined {
-  throw new Error('not implemented');
+  if (elements.length === 0) {
+    return undefined;
+  }
+
+  const currentIndex = current === undefined
+    ? -1
+    : elements.findIndex((element) => element.ref.id === current.id && element.ref.kind === current.kind);
+  const nextIndex = (currentIndex + 1) % elements.length;
+  return elements[nextIndex].ref;
 }
 export function nearestInDirection(elements: NavigableElement[], from: NavigableElement, direction: Vec2, halfAngleRad: number): ElementRef | undefined {
   throw new Error('not implemented');

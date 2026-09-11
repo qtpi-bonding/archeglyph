@@ -32,7 +32,9 @@ export function addAnnotationEdit(stylesheet: Stylesheet, id: string, position: 
   throw new Error('not implemented');
 }
 export function deleteAnnotationEdit(stylesheet: Stylesheet, id: string): StyleEdit {
-  throw new Error('not implemented');
+  return styleEdit({
+    annotationChanges: [annotationChange(id)],
+  });
 }
 export function localized(text: string): Array<Localization> {
   return [create(LocalizationSchema, { locale: 'en', source: text })];

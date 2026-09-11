@@ -5,8 +5,8 @@ import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 import { type StyleEdit, type Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
-import { patchAnnotationEntry, patchNodeEntry } from './entry_patch';
-import { annotationChange, nodeChange, styleEdit } from './edit_builder';
+import { patchAnnotationEntry, patchGroupEntry, patchNodeEntry } from './entry_patch';
+import { annotationChange, groupChange, nodeChange, styleEdit } from './edit_builder';
 
 export interface NodeGlyphPatch {
   shape?: Glyph2D;
@@ -40,7 +40,13 @@ export interface EdgeGlyphPatch {
   component?: string;
 }
 export function setGroupGlyphEdit(stylesheet: Stylesheet, groupId: string, patch: GroupGlyphPatch): StyleEdit {
-  throw new Error('not implemented');
+  const existing = stylesheet.groups[groupId];
+  return styleEdit({
+    groupChanges: [
+      groupChange(groupId, patchGroupEntry(existing, patch)),
+    ],
+    description: 'Set glyph on group',
+  });
 }
 import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { GroupLabelPosition } from '@archeglyph/proto/gen/style_pb';

@@ -154,10 +154,9 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));
     for (const node of sortedNodes) {
       const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
-      const componentName: string = entry?.component ?? '';
-      const themeComponent: NodeComponent | undefined =
-        componentName === '' ? undefined : findNodeComponent(theme, componentName);
-      if (componentName !== '' && themeComponent === undefined) {
+      const componentName: string = entry?.component ?? 'glyph';
+      const themeComponent: NodeComponent | undefined = findNodeComponent(theme, componentName);
+      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `node ${node.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);
@@ -181,10 +180,9 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedEdges.sort((a: FilteredEdge, b: FilteredEdge): number => compareIds(a.id, b.id));
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
-      const componentName: string = entry?.component ?? '';
-      const themeComponent: EdgeComponent | undefined =
-        componentName === '' ? undefined : findEdgeComponent(theme, componentName);
-      if (componentName !== '' && themeComponent === undefined) {
+      const componentName: string = entry?.component ?? 'glyph';
+      const themeComponent: EdgeComponent | undefined = findEdgeComponent(theme, componentName);
+      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `edge ${edge.id}: theme component '${componentName}' not found` }));
       }
       const connection: Glyph1D = create(Glyph1DSchema);
@@ -209,10 +207,9 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedGroups.sort((a: FilteredGroup, b: FilteredGroup): number => compareIds(a.id, b.id));
     for (const group of sortedGroups) {
       const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
-      const componentName: string = entry?.component ?? '';
-      const themeComponent: NodeComponent | undefined =
-        componentName === '' ? undefined : findGroupComponent(theme, componentName);
-      if (componentName !== '' && themeComponent === undefined) {
+      const componentName: string = entry?.component ?? 'glyph';
+      const themeComponent: NodeComponent | undefined = findGroupComponent(theme, componentName);
+      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `group ${group.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);
@@ -238,10 +235,9 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedAnnotations.sort((a: FilteredAnnotation, b: FilteredAnnotation): number => compareIds(a.id, b.id));
     for (const annotation of sortedAnnotations) {
       const entry: AnnotationEntry = annotation.entry;
-      const componentName: string = entry.component ?? '';
-      const themeComponent: AnnotationComponent | undefined =
-        componentName === '' ? undefined : findAnnotationComponent(theme, componentName);
-      if (componentName !== '' && themeComponent === undefined) {
+      const componentName: string = entry.component ?? 'glyph';
+      const themeComponent: AnnotationComponent | undefined = findAnnotationComponent(theme, componentName);
+      if (entry.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `annotation ${annotation.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);

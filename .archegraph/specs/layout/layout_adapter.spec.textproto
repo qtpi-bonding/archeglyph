@@ -26,6 +26,21 @@
 # type assertions only where ElkShape's optional x/y/width/height genuinely
 # need a fallback (e.g. `elkNode.x ?? 0`), same as today.
 #
+# MODIFIED again (wave 2, "layout Δ: annotation size/content"): when
+# building each LaidOutAnnotation, also set `content: ann.content`
+# (ResolvedAnnotation now carries this — see the annotation_content
+# pillar, same session) and `size`: `ann.layout?.size` if the user set an
+# explicit AnnotationLayout.size hint, else
+# `measureLabel(firstLocalizationText(ann.content), theme-independent — no
+# font family needed here, pass any string e.g. 'mono', ann.typography.size
+# ?? DEFAULT sizes.font_normal)` from
+# `@archeglyph/core/text/font_metrics` — mirrors the existing
+# `node.layout?.size?.x ?? DEFAULT_WIDTH` explicit-override-else-auto
+# pattern. `firstLocalizationText` here just means: take
+# `ann.content[0]?.source ?? ''` (Localization's text field is named
+# `source` per content.proto) — no real locale-selection logic belongs at
+# this layer, that's a renderer/UI concern for a later wave.
+#
 # Implementation notes for ElkAdapterImpl (unchanged from before):
 #
 # Building the elkjs input:
@@ -50,7 +65,8 @@
 # - For each ELK edge: extract sections array (startPoint, bendPoints,
 #   endPoint per section) → EdgeSection[].
 # - Annotations: copy directly from ResolvedDiagram.annotations, extracting
-#   position from annotation.layout?.position ?? { x: 0, y: 0 }.
+#   position from annotation.layout?.position ?? { x: 0, y: 0 }, plus the
+#   new size/content construction described above.
 # - Build LaidOutNode/LaidOutEdge/LaidOutGroup/LaidOutAnnotation/LaidOutDiagram
 #   with all fields supplied at construction time (see archebuild.yaml rule).
 
@@ -80,7 +96,8 @@ structs: [
         ]}}
         uses: [
           "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
-          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection"
+          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection",
+          "measureLabel"
         ]
       }
     ]

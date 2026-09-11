@@ -1,9 +1,11 @@
 # Orchestrates the full layout pipeline:
 #   1. Call ElkAdapter.runLayout(diagram) → raw LaidOutDiagram (elk positions)
-#   2. Apply position overrides: for any node/edge/group whose style entry has
+#   2. Coordinate-frame pass (see MODIFIED block below): convert nodes'/
+#      groups' parent-relative ELK positions into canvas-absolute.
+#   3. Apply position overrides: for any node/edge/group whose style entry has
 #      an explicit position set (NodeLayout.position, GroupLayout.position,
 #      EdgeLayout.waypoints), replace the elkjs result with the override.
-#   3. Return the final LaidOutDiagram.
+#   4. Return the final LaidOutDiagram.
 #
 # Position override semantics (§5.3 of docs/design.md):
 # - Node: if resolved.layout?.position is set, replace laidOutNode.position
@@ -14,6 +16,96 @@
 #   and build a single EdgeSection from the waypoints array instead
 #   (startPoint=waypoints[0], endPoint=waypoints[last], bendPoints=middle).
 # - Annotations: already explicitly positioned by ElkAdapter; no override step.
+#
+# NodeLayout.position / GroupLayout.position in the STYLE FILE are
+# documented as parent-relative (design.md), matching the same frame ELK's
+# own raw output uses — so overrides get the SAME parent-relative-to-
+# absolute treatment as ELK's own positions, not applied as absolute
+# verbatim (that mismatch was the actual bug — see MODIFIED block below).
+#
+# MODIFIED again (wave 2, "layout Δ: absolute coordinate frame",
+# docs/editor-ui-review.md §5.1 — HIGH severity): ELK's raw per-node/group
+# x/y are relative to their OWN PARENT's local origin, not canvas-absolute
+# — a node inside a group renders at the group's local (x,y) instead of
+# inside the group, because the renderer treats `LaidOutNode.position` as
+# canvas-absolute unconditionally. Fix: after ElkAdapter.runLayout()
+# returns and BEFORE applying position overrides, walk groups
+# parent-before-child and accumulate each group's own absolute position
+# into its children's (still-relative) positions, so `LaidOutNode.position`
+# / `LaidOutGroup.position` become canvas-absolute by contract for
+# everything downstream (renderer, and the future editor scene). Root
+# groups (no parentGroup) are already absolute — ELK's root-level
+# coordinates have no parent to be relative to.
+#
+# Insert this as a new private method, called once right after
+# `this.adapter.runLayout(...)` succeeds and before the override loops.
+# Emit EXACTLY:
+#
+#   private absolutizePositions(laid: LaidOutDiagram): void {
+#     const groupById = new Map(laid.groups.map(g => [g.id, g]));
+#
+#     function depthOf(group: LaidOutGroup): number {
+#       let depth = 0;
+#       let current: LaidOutGroup | undefined = group;
+#       while (current?.parentGroup !== undefined) {
+#         current = groupById.get(current.parentGroup);
+#         depth += 1;
+#       }
+#       return depth;
+#     }
+#
+#     const orderedGroups = laid.groups.slice().sort((a, b) => depthOf(a) - depthOf(b));
+#
+#     for (const group of orderedGroups) {
+#       if (group.parentGroup !== undefined) {
+#         const parent = groupById.get(group.parentGroup);
+#         if (parent !== undefined) {
+#           group.position = create(Vec2Schema, {
+#             x: group.position.x + parent.position.x,
+#             y: group.position.y + parent.position.y,
+#           });
+#         }
+#       }
+#     }
+#
+#     for (const node of laid.nodes) {
+#       if (node.parentGroup !== undefined) {
+#         const parent = groupById.get(node.parentGroup);
+#         if (parent !== undefined) {
+#           node.position = create(Vec2Schema, {
+#             x: node.position.x + parent.position.x,
+#             y: node.position.y + parent.position.y,
+#           });
+#         }
+#       }
+#     }
+#   }
+#
+# Sorting by depthOf ascending guarantees a group's OWN position is already
+# absolute (accumulated) by the time it's used as a child's parent offset.
+# `Vec2Schema`/`create` come from `@bufbuild/protobuf` /
+# `@archeglyph/proto/gen/style_pb`, same as the rest of this file.
+#
+# Position-override application (existing loops) MUST use this same
+# already-absolutized parent position when writing an override, not treat
+# the override value as absolute verbatim:
+#
+#   for (const node of laid.nodes) {
+#     const overridePos = resolvedNodeById.get(node.id)?.layout?.position;
+#     if (overridePos != null) {
+#       const parent = node.parentGroup !== undefined ? groupById.get(node.parentGroup) : undefined;
+#       node.position = parent !== undefined
+#         ? create(Vec2Schema, { x: parent.position.x + overridePos.x, y: parent.position.y + overridePos.y })
+#         : overridePos;
+#     }
+#   }
+#
+# Same treatment for the group-override loop (a group's own override is
+# relative to ITS parent, resolved the same way). Out of scope for this
+# delta: if an override changes a GROUP's position, that new position is
+# NOT re-cascaded into that group's already-absolutized children — matches
+# today's behavior (overrides already didn't cascade) and isn't part of
+# what wave 2 asks for here.
 #
 # MODIFIED (host-injected ELK, wave 1 of docs/implementation-order.md):
 # LayoutEngineImpl's constructor now takes a required `adapter: LayoutAdapter`
@@ -52,10 +144,15 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
-        # LayoutAdapter is accessed via the class field this.adapter, not as a
-        # direct type reference in the method body. No uses needed — the invocation
-        # of this.adapter.runLayout() is the structural dependency.
-        uses: []
+        uses: ["absolutizePositions"]
+      },
+      { name: "absolutizePositions"
+        doc: "Private helper. See the file-level MODIFIED block above for the exact required body and call-site ordering."
+        inputs: [
+          { name: "laid", type: { named: { symbol: "LaidOutDiagram" } } }
+        ]
+        output: { primitive: VOID }
+        uses: ["LaidOutGroup"]
       }
     ]
   }

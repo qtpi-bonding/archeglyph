@@ -1,0 +1,32 @@
+# MODIFIED, part of wave 2's "layout Δ: annotation size/content"
+# (docs/implementation-order.md). Adds the field that's been silently
+# dropped since annotations were first resolved: AnnotationEntry.content
+# (the annotation's actual text, style.proto: "Text content (localizable)")
+# is present on the raw style-file entry and even survives into
+# FilteredAnnotation.entry unchanged, but StyleCascadeImpl's construction
+# of ResolvedAnnotation never copies it — so by the time layout/render see
+# an annotation, its text is gone. This field addition plus the sibling
+# style_cascade.spec.textproto delta (same directory) close that gap.
+#
+# Own dedicated spec directory (not resolver/) for the same reason
+# pipeline_split and edge_router got their own — resolver/'s existing
+# specs predate this session's work and would show unrelated drift on
+# replan; this directory touches exactly two files.
+
+file: "packages/core/src/resolver/resolved_annotation/impl.ts"
+doc: "ResolvedAnnotation: a filtered+cascaded annotation, ready for layout. Now carries its own text."
+
+structs: [
+  { name: "ResolvedAnnotation"
+    change_type: MODIFIED
+    fields: [
+      { name: "id",         type: { primitive: CHARACTER } },
+      { name: "shape",      type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "callout",    type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "layout",     type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } }, is_optional: true },
+      { name: "content",    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "archeglyph.content.v1.Localization[]" } } }
+    ]
+    typescript: {}
+  }
+]

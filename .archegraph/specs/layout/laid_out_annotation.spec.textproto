@@ -6,12 +6,25 @@
 # The layout stage passes annotations through unchanged from ResolvedAnnotation,
 # only copying the position from their AnnotationLayout into the top-level
 # position field for the renderer's convenience.
+#
+# MODIFIED, wave 2 "layout Δ: annotation size/content"
+# (docs/implementation-order.md): adds `size` and `content` so annotations
+# can finally be bounded, hit-tested, and painted with real text
+# (docs/editor-ui-review.md §5.5). `content` comes from the sibling
+# annotation_content pillar's ResolvedAnnotation#content addition (a
+# separate delta, same session, targeting the resolver). `size` is
+# computed in layout_adapter/impl.ts: `layout?.size` if the user set an
+# explicit AnnotationLayout.size hint, else measureLabel() over the
+# content text via @archeglyph/core/text/font_metrics — same
+# explicit-override-else-auto pattern nodes already use for their own
+# size (`node.layout?.size?.x ?? DEFAULT_WIDTH`).
 
 file: "packages/core/src/layout/laid_out_annotation/impl.ts"
-doc: "Annotation with resolved glyphs and explicit position (never auto-laid-out)."
+doc: "Annotation with resolved glyphs, layout-assigned position, and now size + text content."
 
 structs: [
   { name: "LaidOutAnnotation"
+    change_type: MODIFIED
     fields: [
       { name: "id",
         type: { primitive: CHARACTER } },
@@ -31,7 +44,13 @@ structs: [
       # (outline projection hint), label.
       { name: "layout",
         type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } },
-        is_optional: true }
+        is_optional: true },
+      { name: "size",
+        doc: "layout?.size if the user set one, else measureLabel() over content. Never absent — a size is always computed."
+        type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "content",
+        doc: "Copied from ResolvedAnnotation#content. Localizable text; renderer picks a locale."
+        type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "archeglyph.content.v1.Localization[]" } } }
     ]
   }
 ]

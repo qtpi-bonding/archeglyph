@@ -60,6 +60,7 @@ export class DragHandler {
 >>>>>>> 3015428ce37465ea6881374f56533dff22ce0e90
   }
 
+<<<<<<< HEAD
   onPointerDown(elementId: string, elementKind: ElementKind, startPt: Vec2): void {
     const startCanvasPt: Vec2 = this.viewport.toCanvas(startPt);
     this._session = { elementId, elementKind, startCanvasPt };
@@ -79,6 +80,8 @@ export class DragHandler {
     });
   }
 
+=======
+>>>>>>> b013f3f539d7e11f6af99e7b59d146abba044843
   onPointerUp(): void {
     const session: Option<DragSession> = this._session;
     if (session === null) {

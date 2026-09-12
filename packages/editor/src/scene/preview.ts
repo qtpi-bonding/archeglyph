@@ -226,7 +226,7 @@ export function previewResize(geometry: SceneGeometry, intent: ResizeIntent): Sc
     return { bounds: [], edges: [] };
   }
 
-  const next = resizeBounds(target.bounds, intent.handle, intent.delta, intent.keepAspect ?? false);
+  const next = resizeBounds(target.bounds, intent.handle, intent.delta, intent.keepAspect);
   // Resizing is deliberately single-element: unlike previewMove, a group
   // resize changes only the group's container and leaves its members where
   // they are.

@@ -16,3 +16,7 @@ export interface HostAdapter {
   load(): Promise<Result<LoadResult, AdapterError>>;
   save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>>;
 }
+export interface FileStamp {
+  lastModified: number;
+  size: number;
+}

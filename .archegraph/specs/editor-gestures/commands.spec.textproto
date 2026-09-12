@@ -1,0 +1,71 @@
+# Wave 4. One named action per thing the editor can do, so the keyboard, the
+# palette, the toolbar and the context menu all invoke the same code rather
+# than each growing their own copy. Wave 6's palette and toolbar are consumers
+# of this registry, not reimplementations of it.
+#
+# A command is a plain function over a context struct. It is deliberately NOT
+# the ops-package Operation shape: those are async, Result-returning, and
+# built for a CLI process boundary with params to validate. An editor command
+# is a synchronous local action on already-loaded state, and borrowing that
+# machinery would mean wrapping every arrow-key nudge in a Result nobody reads.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The registry of named editor actions, shared by the keyboard, palette and menus."
+
+structs: [
+  { name: "CommandContext"
+    doc: "Everything a command may touch. Passed per invocation rather than captured, so commands stay pure functions of their inputs and can be exercised without a live editor."
+    fields: [
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "ui", type: { named: { symbol: "UiState" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } }, is_optional: true },
+      { name: "rect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "save", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "Command"
+    fields: [
+      { name: "id", type: { named: { symbol: "CommandId" } } },
+      { name: "label", type: { primitive: CHARACTER }, doc: "Shown in the palette and menus." },
+      { name: "run", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(context: CommandContext) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "runCommand"
+    doc:
+      "Looks up and runs a command, ignoring an id with no entry rather than\n"
+      "throwing — an unbound key is not an error.\n"
+      "\n"
+      "What each does, where it is not obvious from the id:\n"
+      "  delete — hides nodes, deletes annotations. D3: the editor only truly\n"
+      "    removes what it owns, and it does not own the graph.\n"
+      "  escape — clears the selection; wave 6 extends it to leave a mode.\n"
+      "  nudge-* — moves the selection by one diagram unit, ten with shift,\n"
+      "    through the same move_edit path a drag uses, so the two coalesce\n"
+      "    into one undo entry when repeated.\n"
+      "  ring-next / ring-prev — D6's navigation on `s`, over the Scene's own\n"
+      "    element order so the ring matches what is on screen."
+    inputs: [
+      { name: "id", type: { named: { symbol: "CommandId" } } },
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: VOID }
+    uses: ["COMMANDS"]
+  }
+]
+
+constants: [
+  { name: "COMMANDS"
+    doc: "Every command, keyed by id. The single place a new action is added."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
+    uses: [
+      "Command", "CommandContext", "moveElementsEdit", "setNodesHiddenEdit",
+      "deleteAnnotationEdit", "clearSelection", "nextInDocumentOrder",
+      "prevInDocumentOrder", "fitBoundsToRect"
+    ]
+  }
+]

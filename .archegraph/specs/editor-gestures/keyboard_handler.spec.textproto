@@ -1,0 +1,35 @@
+# Wave 4. Turns a keydown into a command, and — the part that is easy to
+# forget until someone renames a node — knows when NOT to.
+
+file: "packages/editor/src/gestures/keyboard_handler.ts"
+doc: "Routes keydown events to commands, staying out of the way while text is being edited."
+
+methods: [
+  { name: "shouldIgnoreKey"
+    doc:
+      "True while the event targets a text-entry surface: an input, a\n"
+      "textarea, or anything contenteditable. Without this, typing a node\n"
+      "label means Backspace hides the node and Cmd+A selects the diagram\n"
+      "instead of the text. Wave 6's inline annotation editor and the\n"
+      "inspector's fields both depend on it."
+    inputs: [{ name: "target", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "EventTarget | null" } } }]
+    output: { primitive: BOOLEAN }
+  },
+  { name: "handleKeyDown"
+    doc:
+      "Resolves the chord and runs the command, returning whether it consumed\n"
+      "the event so the caller can preventDefault only when something\n"
+      "actually happened — swallowing unmatched keys would break browser\n"
+      "shortcuts the editor has no opinion about.\n"
+      "\n"
+      "Shift is passed through to the command rather than resolved here,\n"
+      "because for the nudge commands it is a magnitude (ten units instead of\n"
+      "one) and not a different binding."
+    inputs: [
+      { name: "event", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeyboardEvent" } } },
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: BOOLEAN }
+    uses: ["shouldIgnoreKey", "resolveChord", "runCommand"]
+  }
+]

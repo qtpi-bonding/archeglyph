@@ -1,0 +1,55 @@
+# Wave 4. Lifted out of canvas.tsx unchanged in behaviour, so it can be
+# tested. The logic itself is finding §2.7's fix and is easy to get wrong in
+# both directions: hijack every wheel event and a trackpad user cannot scroll;
+# hijack none and nobody can zoom.
+
+file: "packages/editor/src/gestures/wheel_handler.ts"
+doc: "Decides whether a wheel event zooms or pans, and produces the resulting viewport."
+
+structs: [
+  { name: "WheelInput"
+    doc: "The fields of a WheelEvent the decision needs, so the function never sees a DOM event."
+    fields: [
+      { name: "deltaX", type: { primitive: REAL } },
+      { name: "deltaY", type: { primitive: REAL } },
+      { name: "deltaMode", type: { primitive: INTEGER } },
+      { name: "ctrlKey", type: { primitive: BOOLEAN } },
+      { name: "point", type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "isTrackpadScroll"
+    doc:
+      "A two-finger scroll and a mouse wheel arrive as the same event type, so\n"
+      "this is a heuristic and should be named as one: a horizontal component,\n"
+      "a pixel delta mode, or a fractional deltaY all indicate a trackpad. A\n"
+      "real wheel reports whole-line deltas on one axis.\n"
+      "\n"
+      "ctrlKey is the exception in the other direction — the OS sets it for a\n"
+      "pinch, which is unambiguously a zoom."
+    inputs: [{ name: "input", type: { named: { symbol: "WheelInput" } } }]
+    output: { primitive: BOOLEAN }
+  },
+  { name: "applyWheel"
+    doc:
+      "Trackpad scroll pans by the raw delta; anything else zooms about the\n"
+      "pointer, clamped. Zoom is exponential in deltaY so that a fast flick\n"
+      "and a slow one cover the same ratio per unit of scroll, and so that\n"
+      "zooming out can never reach or pass zero."
+    inputs: [
+      { name: "viewport", type: { named: { symbol: "Viewport" } } },
+      { name: "rect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "input", type: { named: { symbol: "WheelInput" } } }
+    ]
+    output: { named: { symbol: "Viewport" } }
+    uses: ["isTrackpadScroll", "zoomAboutPoint"]
+  }
+]
+
+constants: [
+  { name: "MIN_ZOOM" type: { primitive: REAL } value: "0.1" },
+  { name: "MAX_ZOOM" type: { primitive: REAL } value: "8" }
+]

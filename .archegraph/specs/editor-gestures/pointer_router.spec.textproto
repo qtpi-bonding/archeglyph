@@ -1,0 +1,87 @@
+# Wave 4. Decides WHICH gesture a pointer-down begins, and — the part that
+# makes the editor feel right or wrong — when a press has travelled far enough
+# to count as a drag rather than a click.
+#
+# Without a threshold every click is a one-pixel drag, which is finding §2.1
+# in a new form: today's canvas commits a position edit on pointer-up whether
+# or not anything moved, so clicking a node teleports it. A click and a drag
+# must be different events, decided by distance, not by which handler ran.
+#
+# Pure on purpose. The canvas passes in what it already knows (the hit, the
+# tool, the modifiers, the button) and gets back a decision; nothing here
+# touches an event object, a DOM node or a signal. That is what makes the
+# awkward cases — drag started on empty space, middle-click pan, shift-click
+# extending a selection — testable without a browser.
+
+file: "packages/editor/src/gestures/pointer_router.ts"
+doc: "Chooses the gesture a press begins, and separates a click from a drag by distance travelled."
+
+structs: [
+  { name: "PressContext"
+    doc: "Everything the decision depends on, flattened out of the DOM event by the caller."
+    fields: [
+      { name: "point", type: { named: { symbol: "Vec2" } } },
+      { name: "hit", type: { named: { symbol: "ElementRef" } }, is_optional: true },
+      { name: "tool", type: { named: { symbol: "Tool" } } },
+      { name: "button", type: { primitive: INTEGER } },
+      { name: "additive", type: { primitive: BOOLEAN }, doc: "Shift or Meta held — extend the selection rather than replace it." },
+      { name: "onHandle", type: { named: { symbol: "Handle" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "GestureDecision"
+    doc:
+      "`kind` is what a drag would become; `selection` is what should be\n"
+      "selected immediately on press, independent of whether a drag follows.\n"
+      "Those are separate because selecting must feel instant while moving\n"
+      "must not start until the pointer has actually moved."
+    fields: [
+      { name: "kind", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'pan' | 'move' | 'marquee' | 'resize' | 'none'" } } },
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }, is_optional: true },
+      { name: "handle", type: { named: { symbol: "Handle" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "routePress"
+    doc:
+      "The rules, in order: middle button or the hand tool always pans,\n"
+      "whatever is under the pointer. A press on a resize handle of the\n"
+      "current selection resizes. A press on an element moves it, selecting\n"
+      "it first unless it is already selected — dragging a multi-selection\n"
+      "must not collapse it to the one element grabbed. A press on empty\n"
+      "space clears the selection and begins a marquee.\n"
+      "\n"
+      "`additive` never begins a move: shift-clicking is how a selection is\n"
+      "built up, so it toggles and stays put."
+    inputs: [
+      { name: "context", type: { named: { symbol: "PressContext" } } },
+      { name: "current", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { named: { symbol: "GestureDecision" } }
+    uses: ["clearSelection", "replaceSelection", "toggleSelection"]
+  },
+  { name: "exceedsThreshold"
+    doc:
+      "Whether the pointer has travelled far enough from its press point for\n"
+      "the gesture to begin. Measured in SCREEN pixels, not diagram units —\n"
+      "the distance a hand wobbles does not change with zoom, so dividing by\n"
+      "zoom here would make drags impossible to start when zoomed out and\n"
+      "impossible to avoid when zoomed in."
+    inputs: [
+      { name: "origin", type: { named: { symbol: "Vec2" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { primitive: BOOLEAN }
+  }
+]
+
+constants: [
+  { name: "DRAG_THRESHOLD_PX"
+    doc: "Screen pixels of travel before a press becomes a drag. 4 is about the range of an unintentional wobble on a trackpad without swallowing a deliberate short drag."
+    type: { primitive: REAL }
+    value: "4"
+  }
+]

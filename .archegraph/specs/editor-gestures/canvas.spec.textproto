@@ -1,0 +1,50 @@
+# Wave 4, brownfield. canvas.tsx keeps its composition and its layers; what
+# changes is that its inline pointer and wheel logic becomes a thin adapter
+# over the pure functions in this pillar.
+#
+# The point is not tidiness. The gesture rules are where this editor will feel
+# right or wrong, and while they live inside event handlers they can only be
+# checked by hand with a mouse. Moved out, every one of them — the drag
+# threshold, which press begins which gesture, the parent-relative conversion
+# on commit — is a unit test.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The single SVG scene; now a thin adapter feeding pointer and wheel events to the gesture layer."
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Additions to the existing component; the SVG structure, the layers, the\n"
+      "ResizeObserver, fit-on-load and the error banner are unchanged.\n"
+      "\n"
+      "onPointerDown asks routePress what to begin and applies its selection\n"
+      "immediately, but starts NO gesture yet — it records the press and\n"
+      "waits. onPointerMove starts the pending gesture once exceedsThreshold\n"
+      "passes, then feeds panUpdate / moveUpdate / marqueeUpdate. onPointerUp\n"
+      "commits: moveCommit's edit through state.applyStyleEdit, or\n"
+      "marqueeCommit's refs into ui.setSelection. A press that never crossed\n"
+      "the threshold commits nothing, which is what stops a plain click\n"
+      "writing a position edit (finding §2.1).\n"
+      "\n"
+      "The live preview goes to OverlayLayer as its `preview` prop and the\n"
+      "moving refs to DiagramLayer as `dimmed` — both already accept these\n"
+      "and have been rendering undefined/empty since wave 3.\n"
+      "\n"
+      "onWheel delegates to applyWheel. Keydown is a document listener, not a\n"
+      "canvas one, so shortcuts work while focus is in a panel; it delegates\n"
+      "to handleKeyDown and preventDefaults only when that returns true.\n"
+      "\n"
+      "Gesture state is a plain signal holding a discriminated union of the\n"
+      "session types, NOT one signal per gesture kind — two gestures must be\n"
+      "impossible to run at once, and separate signals make that a bug that\n"
+      "compiles."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: [
+      "routePress", "exceedsThreshold", "panUpdate", "moveUpdate", "moveCommit",
+      "marqueeUpdate", "marqueeCommit", "applyWheel", "handleKeyDown",
+      "DiagramLayer", "GhostLayer", "OverlayLayer", "hitTestPoint",
+      "screenToDiagram", "fitBoundsToRect", "cursorFor"
+    ]
+  }
+]

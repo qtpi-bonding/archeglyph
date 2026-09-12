@@ -206,6 +206,21 @@ execution:
   # unresolved package imports don't block local symbol emission, so the
   # workspace-cross-package types resolve via tsconfig paths at typecheck time
   # without needing per-worktree node_modules surgery.
+  # Per-node worktrees need the same link BEFORE the agent runs, not only at
+  # the end. A node whose spec has a test_plan runs those tests in its own
+  # worktree, and a fresh git checkout has no node_modules, so every import
+  # fails and the node is marked failed even when its code is correct. Observed
+  # on layout-pin: all three nodes wrote correct implementations, typechecked
+  # them, reported "tests could not run because the environment lacks
+  # elkjs/lib/elk.bundled.js", and had their work discarded uncommitted.
+  #
+  # Same relative depth as the post_dag link: .archebuild/worktrees/<name>/ is
+  # three levels below the project root either way.
+  pre_node:
+    - label: link-node-modules
+      command: |
+        [ -e node_modules ] || ln -s ../../../node_modules node_modules
+
   post_dag:
     - label: link-node-modules
       command: |

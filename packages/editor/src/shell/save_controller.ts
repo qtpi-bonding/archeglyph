@@ -3,6 +3,7 @@
 import { Accessor, createEffect, createSignal } from 'solid-js';
 import { EditorState } from '../state/editor_state';
 import { HostAdapter } from '../adapters/host_adapter';
+import { hashStylesheet } from '../state/stylesheet_hash';
 
 /**
  * Create the reactive save handle for an editor session.
@@ -12,11 +13,18 @@ import { HostAdapter } from '../adapters/host_adapter';
  * timer, while saveNow cancels that timer and uses the same save routine as
  * the debounced path.
  */
-export function createSaveController(adapter: HostAdapter, state: EditorState, debounceMs: number): SaveController {
+export function createSaveController(
+  adapter: HostAdapter,
+  state: EditorState,
+  debounceMs: number,
+  initialBaseHash?: string,
+): SaveController {
   const [status, setStatus] = createSignal<SaveStatus>('idle');
   const [errorMessage, setErrorMessage] = createSignal<string | undefined>(undefined);
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let isFirstRun = true;
+  let baseHash: string | undefined = initialBaseHash;
+  let staleBlocked: boolean = false;
 
   const clearDebounce = (): void => {
     if (debounceTimer !== undefined) {
@@ -28,18 +36,26 @@ export function createSaveController(adapter: HostAdapter, state: EditorState, d
   const save = async (): Promise<void> => {
     // Check again when the timer fires. The adapter can become unavailable
     // while a debounce is pending (for example, when the host changes mode).
-    if (!adapter.canSave()) {
+    if (!adapter.canSave() || staleBlocked) {
       return;
     }
 
     setStatus('saving');
-    const result = await adapter.save(state.stylesheet());
+    const stylesheet = state.stylesheet();
+    const result = await adapter.save(stylesheet, baseHash);
     if (result.kind === 'err') {
+      if (result.error.kind === 'stale') {
+        staleBlocked = true;
+        setErrorMessage(undefined);
+        setStatus('stale');
+        return;
+      }
       setErrorMessage(result.error.message);
       setStatus('error');
       return;
     }
 
+    baseHash = await hashStylesheet(stylesheet);
     setErrorMessage(undefined);
     setStatus('saved');
   };
@@ -51,7 +67,7 @@ export function createSaveController(adapter: HostAdapter, state: EditorState, d
       return;
     }
     clearDebounce();
-    if (!adapter.canSave()) {
+    if (staleBlocked || !adapter.canSave()) {
       return;
     }
     debounceTimer = setTimeout((): void => {
@@ -63,6 +79,12 @@ export function createSaveController(adapter: HostAdapter, state: EditorState, d
   return {
     status,
     errorMessage,
+    adoptBaseHash(hash: string): void {
+      baseHash = hash;
+      staleBlocked = false;
+      setErrorMessage(undefined);
+      setStatus('idle');
+    },
     async saveNow(): Promise<void> {
       clearDebounce();
       await save();
@@ -76,7 +98,8 @@ export function createSaveController(adapter: HostAdapter, state: EditorState, d
 export interface SaveController {
   status: Accessor<SaveStatus>;
   errorMessage: Accessor<string | undefined>;
+  adoptBaseHash: (hash: string) => void;
   saveNow(): Promise<void>;
   dispose(): void;
 }
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'stale';

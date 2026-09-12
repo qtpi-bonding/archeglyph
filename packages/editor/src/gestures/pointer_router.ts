@@ -11,6 +11,7 @@ export const DRAG_THRESHOLD_PX: number = 4;
 export interface PressContext {
   point: Vec2;
   hit?: ElementRef;
+  onAnchorGrip?: ElementRef;
   tool: Tool;
   button: number;
   additive: boolean;

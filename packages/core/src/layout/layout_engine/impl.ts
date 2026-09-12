@@ -228,9 +228,9 @@ export class LayoutEngineImpl implements LayoutEngine {
       const size = annotation.layout?.size ?? create(Vec2Schema, measured);
       return Object.assign(new LaidOutAnnotation(), {
         id: annotation.id,
-        anchor: annotation.anchor,
         position,
         size,
+        anchor: annotation.anchor,
         shape: annotation.shape,
         typography: annotation.typography,
         callout: annotation.callout,

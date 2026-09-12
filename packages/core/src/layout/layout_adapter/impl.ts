@@ -374,7 +374,9 @@ export class ElkAdapterImpl implements LayoutAdapter {
         });
       });
 
-      // Annotations bypass ELK — always explicitly positioned
+      // Annotations bypass ELK — always explicitly positioned. An anchor is
+      // copied for rendering only; it must not make the referenced element a
+      // layout participant or otherwise affect ELK's result.
       const annotations = diagram.annotations.map(ann => {
         const font: string = ann.typography.font ?? '';
         const fontSize: number = ann.typography.size ?? 16;

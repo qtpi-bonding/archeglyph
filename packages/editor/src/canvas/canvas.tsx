@@ -143,7 +143,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     if (active?.kind === 'pan') { props.ui.setViewport(panUpdate(active.session, currentScreen)); return; }
     if (active?.kind === 'move') {
       const currentGeometry: SceneGeometry | undefined = geometry();
-      if (currentGeometry !== undefined) { setPreview(moveUpdate(active.session, currentGeometry, currentDiagram, props.ui.viewport().zoom)); }
+      if (currentGeometry !== undefined) { setPreview(moveUpdate(active.session, currentGeometry, currentDiagram)); }
       return;
     }
     if (active?.kind === 'marquee') { setMarquee(marqueeUpdate(active.session, currentDiagram)); return; }

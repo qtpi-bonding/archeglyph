@@ -68,10 +68,10 @@ export function moveCommit(session: MoveSession, geometry: SceneGeometry, styles
 
   return moves.length === 0 ? undefined : moveElementsEdit(stylesheet, moves);
 }
-export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2, zoom: number): ScenePreview {
+export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2): ScenePreview {
   const delta = {
-    x: (current.x - session.origin.x) / zoom,
-    y: (current.y - session.origin.y) / zoom,
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
   };
   return previewMove(geometry, { refs: session.refs, delta });
 }

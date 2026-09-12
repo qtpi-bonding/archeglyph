@@ -28,10 +28,14 @@ structs: [
           "straight from the style entries and edges are routed by\n"
           "edge_router. Nothing can drift, because nothing is being computed.\n"
           "\n"
-          "OTHERWISE — ELK runs, with every already-pinned element handed to it\n"
-          "as a fixed-position hint (see layout_adapter), so it places only\n"
-          "what has no position yet. This is D1b: a newcomer is seeded once,\n"
-          "into a diagram whose existing arrangement it must not disturb.\n"
+          "OTHERWISE — some elements are pinned and some are not. ELK cannot\n"
+          "be asked to respect the pinned ones: elk.layered ignores fixed\n"
+          "positions outright (measured, including interactive mode and all\n"
+          "four interactive phase strategies) and elk.fixed honours them but\n"
+          "places nothing. So seedNewcomers assigns positions for the unpinned\n"
+          "elements, near whatever they connect to, and the pinned ones are\n"
+          "used exactly as written. ELK is not consulted for placement in this\n"
+          "path at all.\n"
           "\n"
           "WHAT THIS ACTUALLY FIXES, which is not what it first appears.\n"
           "\n"
@@ -64,7 +68,7 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
-        uses: ["absolutizePositions", "isFullyPinned", "layoutFromPins"]
+        uses: ["absolutizePositions", "isFullyPinned", "layoutFromPins", "seedNewcomers"]
       },
       { name: "isFullyPinned"
         doc: "True when every node and group carries an explicit position. Private."

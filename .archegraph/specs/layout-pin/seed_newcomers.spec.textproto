@@ -1,0 +1,69 @@
+# Wave 5, D1b. Where a newly added element goes when the rest of the diagram
+# is already arranged.
+#
+# ELK cannot answer this. Measured, not assumed:
+#
+#   elk.layered   places everything, ignores pinned positions entirely --
+#                 verified with interactive mode and all four interactive
+#                 phase strategies; it returned a(12,12) b(12,72) for inputs
+#                 pinned at (10,20) and (300,20).
+#   elk.fixed     honours pinned positions exactly, and leaves anything
+#                 unpositioned at (0,0) -- it does not place at all.
+#
+# Neither does both, which is the D1b fallback the plan predicted.
+#
+# The approach uses the one thing a placement rule throws away: the edges. An
+# element being added is almost always connected to something already on the
+# canvas, and next to that thing is where a person would have dragged it.
+
+file: "packages/core/src/layout/seed_newcomers.ts"
+doc: "Places newly added elements near what they connect to, without disturbing anything already pinned."
+
+methods: [
+  { name: "seedNewcomers"
+    doc:
+      "Positions for every element that has none, given the ones that do.\n"
+      "Returns only the new positions; pinned elements are never returned and\n"
+      "never move.\n"
+      "\n"
+      "Four steps:\n"
+      "\n"
+      "1. ANCHORS. The pinned elements adjacent to any unpinned one. A\n"
+      "   subgraph of the unpinned elements plus their anchors, carrying only\n"
+      "   the edges among that set, goes to elk.layered. ELK arranges them\n"
+      "   relative to each other, which is what it is good at and what a\n"
+      "   placement rule cannot do.\n"
+      "\n"
+      "2. TRANSLATE so the anchors return to their real pinned positions.\n"
+      "   With ONE anchor this is exact. With several it cannot be — ELK\n"
+      "   chose its own spacing between them — so align the anchor CENTROID\n"
+      "   and accept that the result is near its neighbours rather than\n"
+      "   exactly between them. Being approximately right beside the right\n"
+      "   thing beats being exactly below everything.\n"
+      "\n"
+      "3. NUDGE off collisions. The subgraph never saw the pinned elements\n"
+      "   that were not anchors, so a translated cluster can land on one.\n"
+      "   Push the whole cluster down until nothing intersects any pinned\n"
+      "   element. The cluster moves together so ELK's relative arrangement\n"
+      "   survives.\n"
+      "\n"
+      "4. FALLBACK. An unpinned element with no edge to any pinned one has no\n"
+      "   anchor and nothing to be near, so it goes below the content bounds\n"
+      "   of everything pinned. Also the whole-diagram case: nothing pinned\n"
+      "   means no anchors, and the caller should not be here at all.\n"
+      "\n"
+      "Determinism matters more than optimality: the same diagram must seed\n"
+      "the same way twice, or a CI job regenerating a diagram produces a diff\n"
+      "every run. Sort by id wherever an order is chosen."
+    is_async: true
+    inputs: [
+      { name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } },
+      { name: "pinned", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Vec2>" } } },
+      { name: "elk", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ELK" } } }
+    ]
+    # is_async already wraps this in a Promise; naming one here too emits
+    # Promise<Promise<...>>.
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Map<string, Vec2>" } }
+    uses: ["archeglyph.style.v1.Vec2", "boundsUnion", "boundsIntersects"]
+  }
+]

@@ -86,7 +86,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
                 ? {
                     x: position.x,
                     y: position.y,
-                    layoutOptions: { 'org.eclipse.elk.position': 'true' },
+                    layoutOptions: { 'org.eclipse.elk.position': `(${position.x},${position.y})` },
                   }
                 : {}),
             }
@@ -100,14 +100,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
                 ? {
                     x: position.x,
                     y: position.y,
-                    layoutOptions: { 'org.eclipse.elk.position': 'true' },
+                    layoutOptions: { 'org.eclipse.elk.position': `(${position.x},${position.y})` },
                   }
                 : {}),
             };
         if (position !== undefined) {
           groupElkNodes[group.id].x = position.x;
           groupElkNodes[group.id].y = position.y;
-          groupElkNodes[group.id].layoutOptions = { 'org.eclipse.elk.position': 'MANUAL' };
+          groupElkNodes[group.id].layoutOptions = { 'org.eclipse.elk.position': `(${position.x},${position.y})` };
         }
       }
 
@@ -137,14 +137,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
             ? {
                 x: position.x,
                 y: position.y,
-                layoutOptions: { 'org.eclipse.elk.position': 'true' },
+                layoutOptions: { 'org.eclipse.elk.position': `(${position.x},${position.y})` },
               }
             : {}),
         };
         if (position !== undefined) {
           elkNode.x = position.x;
           elkNode.y = position.y;
-          elkNode.layoutOptions = { 'org.eclipse.elk.position': 'MANUAL' };
+          elkNode.layoutOptions = { 'org.eclipse.elk.position': `(${position.x},${position.y})` };
         }
         if (node.parentGroup) {
           const parent = groupElkNodes[node.parentGroup];
@@ -178,6 +178,13 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const layoutOptions: Record<string, string> = {
         'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
+        // elk.layered ignores org.eclipse.elk.position outright unless it is
+        // running interactively. Without this the pinned coordinates are
+        // accepted, silently discarded, and the layout is computed as though
+        // nothing were pinned -- which is what the override loop in
+        // layout_engine was then papering over, and why a newcomer could be
+        // placed exactly where a pinned node was about to be restored.
+        'org.eclipse.elk.interactive': 'true',
         // Without this, elk.layered lays each group out as its own problem and
         // declines to route an edge whose endpoints sit at different depths —
         // it returns with an empty sections array, which the renderer emits as

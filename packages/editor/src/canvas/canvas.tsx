@@ -39,6 +39,8 @@ export interface CanvasProps {
   theme: Theme;
   ui: UiState;
   state: EditorState;
+  /** Called by the shell after a canvas interaction changes the selection. */
+  onFocusInspector?: () => void;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -116,7 +118,10 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       additive: event.shiftKey || event.metaKey,
       onHandle,
     }, props.ui.selection());
-    if (decision.selection !== undefined) { props.ui.setSelection(decision.selection); }
+    if (decision.selection !== undefined) {
+      props.ui.setSelection(decision.selection);
+      props.onFocusInspector?.();
+    }
     if (decision.kind !== 'none') {
       setGesture({ kind: 'pending', decision, originScreen: screen, originDiagram: diagram });
     }
@@ -193,6 +198,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
       const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));
       props.ui.setSelection(selected);
+      props.onFocusInspector?.();
     }
     setGesture(undefined);
     setPreview(undefined);
@@ -216,7 +222,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
     const onKeyDown = (event: KeyboardEvent): void => {
-      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined });
+      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined, focusInspector: props.onFocusInspector });
       if (handled) { event.preventDefault(); }
     };
     document.addEventListener('keydown', onKeyDown);

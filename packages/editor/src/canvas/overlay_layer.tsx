@@ -5,6 +5,8 @@ import type { Bounds } from '@archeglyph/core/geometry/bounds';
 import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { elementKey } from '../scene/element_key';
 import { handlePositions } from '../scene/hit_test';
+import { anchorGripPoint } from '../scene/anchor_grip';
+import { calloutPreviews } from '../scene/callout_preview';
 import type { ElementRef } from '../ui_state/ui_state';
 import type { ElementBounds, SceneGeometry } from '../scene/scene';
 import type { ScenePreview } from '../scene/preview';
@@ -17,6 +19,7 @@ export interface OverlayLayerProps {
   hover?: ElementRef;
   zoom: number;
   preview?: ScenePreview;
+  anchorLine?: Array<Vec2>;
   marquee?: Bounds;
 }
 
@@ -87,6 +90,53 @@ function previewEdges(preview: ScenePreview, zoom: number): Array<JSX.Element> {
   ));
 }
 
+function calloutPreviewEdges(
+  geometry: SceneGeometry,
+  moved: Array<ElementBounds>,
+): Array<JSX.Element> {
+  return calloutPreviews(geometry, moved).map((edge): JSX.Element => (
+    <polyline
+      class="preview-edge"
+      points={pointsAttribute(edge.points)}
+      fill="none"
+      stroke="var(--ag-blue)"
+      stroke-width={2}
+      vector-effect="non-scaling-stroke"
+    />
+  ));
+}
+
+function anchorLineElement(points: Array<Vec2>): JSX.Element {
+  return (
+    <polyline
+      class="anchor-line"
+      points={pointsAttribute(points)}
+      fill="none"
+      stroke="var(--ag-blue)"
+      stroke-width={2}
+      stroke-dasharray="4 4"
+      vector-effect="non-scaling-stroke"
+    />
+  );
+}
+
+function anchorGripElement(entry: ElementBounds, zoom: number): JSX.Element {
+  const point: Vec2 = anchorGripPoint(entry.bounds);
+  const radius: number = 5 / zoom;
+  return (
+    <circle
+      class="anchor-grip"
+      cx={point.x}
+      cy={point.y}
+      r={radius}
+      fill="var(--ag-blue)"
+      stroke="var(--ag-blue)"
+      stroke-width={1}
+      vector-effect="non-scaling-stroke"
+    />
+  );
+}
+
 export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerProps): JSX.Element => {
   // These must be functions, not values computed in the component body: a
   // Solid component body runs once, so reading props there would freeze the
@@ -118,6 +168,16 @@ export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerPr
     ));
   };
 
+  const gripElement = (): MaybeElement => {
+    if (props.preview !== undefined || props.marquee !== undefined || props.anchorLine !== undefined) {
+      return null;
+    }
+    const entry: ElementBounds | undefined = selectedEntry();
+    return entry === undefined || entry.ref.kind !== 'annotation'
+      ? null
+      : anchorGripElement(entry, props.zoom);
+  };
+
   return (
     <g class="overlay-layer">
       {props.hover === undefined ? null : refOutline(props.hover, props.geometry, 'hover-outline', props.zoom)}
@@ -126,7 +186,10 @@ export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerPr
       )}
       {props.preview === undefined ? null : previewBounds(props.preview.bounds, props.zoom)}
       {props.preview === undefined ? null : previewEdges(props.preview, props.zoom)}
+      {props.preview === undefined ? null : calloutPreviewEdges(props.geometry, props.preview.bounds)}
+      {props.anchorLine === undefined || props.anchorLine.length < 2 ? null : anchorLineElement(props.anchorLine)}
       {handleElements()}
+      {gripElement()}
       {props.marquee === undefined ? null : boundsRect(props.marquee, 'marquee', props.zoom)}
     </g>
   );

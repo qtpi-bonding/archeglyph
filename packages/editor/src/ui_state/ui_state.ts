@@ -5,6 +5,7 @@ import { Accessor, createSignal, Setter } from 'solid-js';
 export function createUiState(): UiState {
   const [selection, setSelection] = createSignal<ElementRef[]>([]);
   const [hover, setHover] = createSignal<ElementRef | undefined>(undefined);
+  const [textEditTarget, setTextEditTarget] = createSignal<ElementRef | undefined>(undefined);
   const [tool, setTool] = createSignal<Tool>('select');
   const [viewport, setViewport] = createSignal<Viewport>({
     panX: 0,
@@ -17,6 +18,8 @@ export function createUiState(): UiState {
     setSelection,
     hover,
     setHover,
+    textEditTarget,
+    setTextEditTarget,
     tool,
     setTool,
     viewport,
@@ -37,6 +40,8 @@ export interface UiState {
   setSelection: Setter<ElementRef[]>;
   hover: Accessor<ElementRef | undefined>;
   setHover: Setter<ElementRef | undefined>;
+  textEditTarget: Accessor<ElementRef | undefined>;
+  setTextEditTarget: Setter<ElementRef | undefined>;
   tool: Accessor<Tool>;
   setTool: Setter<Tool>;
   viewport: Accessor<Viewport>;

@@ -1,16 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Component, JSX, Show } from 'solid-js';
-import { create } from '@bufbuild/protobuf';
-import {
-  AnnotationEntrySchema,
-  AnnotationLayoutSchema,
-  AnnotationStyleChangeSchema,
-  StyleChangeType,
-  StyleEditSchema,
-  StyleEditState,
-  Vec2Schema,
-} from '@archeglyph/proto/gen/style_pb';
 import { EditorState } from '../state/editor_state';
 import { EDITOR_THEMES } from './editor_theme';
 import { HostAdapter } from '../adapters/host_adapter';
@@ -37,24 +27,6 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
     props.state.redo();
   }
 
-  function onAddAnnotation(): void {
-    const annotationId: string = crypto.randomUUID();
-    const centerX: number = window.innerWidth / 2;
-    const centerY: number = window.innerHeight / 2;
-
-    const position = create(Vec2Schema, { x: centerX, y: centerY });
-    const layout = create(AnnotationLayoutSchema, { position });
-    const entry = create(AnnotationEntrySchema, { id: annotationId, content: [], layout });
-    const change = create(AnnotationStyleChangeSchema, {
-      annotationId,
-      changeType: StyleChangeType.ADDED,
-      after: entry,
-    });
-    const edit = create(StyleEditSchema, { annotationChanges: [change], state: StyleEditState.APPLIED });
-
-    props.state.applyStyleEdit(edit);
-  }
-
   function onSave(): void {
     void props.saveController?.saveNow();
   }
@@ -74,7 +46,6 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
       </Show>
       <button disabled={!props.state.canUndo()} onClick={onUndo}>Undo</button>
       <button disabled={!props.state.canRedo()} onClick={onRedo}>Redo</button>
-      <button onClick={onAddAnnotation}>+ Annotation</button>
       {/* Chrome palette. Deliberately separate from the diagram's theme —
           this styles the application, not the document, and is never written
           to the style file. A placeholder until wave 6's toolbar. */}

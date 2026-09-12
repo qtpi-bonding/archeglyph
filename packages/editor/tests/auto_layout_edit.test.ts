@@ -60,6 +60,7 @@ describe('auto-layout and unpin-all produce the same edit (repaired testgen case
               geometry: undefined,
               rect: {} as ContainerRect,
               save: () => {},
+              beginTextEdit: () => {},
             };
           }
 

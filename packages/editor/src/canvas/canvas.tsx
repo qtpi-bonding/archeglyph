@@ -8,7 +8,7 @@ import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import { Bounds } from '@archeglyph/core/geometry/bounds';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Scene, SceneGeometry } from '../scene/scene';
-import { hitTestPoint } from '../scene/hit_test';
+import { Handle, handleAtPoint, hitTestPoint } from '../scene/hit_test';
 import { ElementRef, UiState } from '../ui_state/ui_state';
 import { ContainerRect, fitBoundsToRect, screenToDiagram } from '../ui_state/viewport_math';
 import { cursorFor } from './cursor';
@@ -16,7 +16,7 @@ import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
 import { OverlayLayer } from './overlay_layer';
 import { routePress, exceedsThreshold, GestureDecision } from '../gestures/pointer_router';
-import { MoveSession, MarqueeSession, PanSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate } from '../gestures/drag_machines';
+import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
 import { applyWheel } from '../gestures/wheel_handler';
 import { handleKeyDown } from '../gestures/keyboard_handler';
 import { EditorState } from '../state/editor_state';
@@ -28,6 +28,7 @@ type GestureSession =
   | { kind: 'pending'; decision: GestureDecision; originScreen: Vec2; originDiagram: Vec2 }
   | { kind: 'pan'; session: PanSession }
   | { kind: 'move'; session: MoveSession }
+  | { kind: 'resize'; session: ResizeSession }
   | { kind: 'marquee'; session: MarqueeSession };
 
 export interface CanvasProps {
@@ -56,6 +57,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   const [gesture, setGesture] = createSignal<GestureSession | undefined>(undefined);
   const [preview, setPreview] = createSignal<ScenePreview | undefined>(undefined);
   const [marquee, setMarquee] = createSignal<Bounds | undefined>(undefined);
+  const [handle, setHandle] = createSignal<Handle | undefined>(undefined);
   let containerRef!: HTMLDivElement;
   let pointerId: number | undefined;
 
@@ -77,7 +79,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     return `${viewport.panX}px ${viewport.panY}px`;
   });
   const hovering = createMemo((): boolean => props.ui.hover() !== undefined);
-  const cursor = createMemo((): string => cursorFor(props.ui.tool(), hovering(), panning()));
+  const cursor = createMemo((): string => cursorFor(props.ui.tool(), hovering(), panning(), handle()));
   const transform = createMemo((): string => {
     const viewport = props.ui.viewport();
     return `translate(${viewport.panX} ${viewport.panY}) scale(${viewport.zoom})`;
@@ -102,12 +104,17 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const hit: ElementRef | undefined = hitAt(event);
     const screen: Vec2 = pointFromEvent(event);
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
+    const currentGeometry: SceneGeometry | undefined = geometry();
+    const onHandle: Handle | undefined = currentGeometry === undefined
+      ? undefined
+      : handleAtPoint(currentGeometry, props.ui.selection(), diagram, 8 / props.ui.viewport().zoom);
     const decision: GestureDecision = routePress({
       point: diagram,
       hit,
       tool: props.ui.tool(),
       button: event.button,
       additive: event.shiftKey || event.metaKey,
+      onHandle,
     }, props.ui.selection());
     if (decision.selection !== undefined) { props.ui.setSelection(decision.selection); }
     if (decision.kind !== 'none') {
@@ -132,6 +139,13 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
         const session: MoveSession = { refs: decision.selection ?? props.ui.selection(), origin: currentGesture.originDiagram };
         setGesture({ kind: 'move', session });
         active = { kind: 'move', session };
+      } else if (decision.kind === 'resize' && decision.handle !== undefined) {
+        const selection: Array<ElementRef> = props.ui.selection();
+        if (selection.length !== 1) { return; }
+        const session: ResizeSession = { ref: selection[0], handle: decision.handle, origin: currentGesture.originDiagram };
+        setGesture({ kind: 'resize', session });
+        setHandle(session.handle);
+        active = { kind: 'resize', session };
       } else if (decision.kind === 'marquee') {
         const session: MarqueeSession = { origin: currentGesture.originDiagram };
         setGesture({ kind: 'marquee', session });
@@ -146,10 +160,20 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       if (currentGeometry !== undefined) { setPreview(moveUpdate(active.session, currentGeometry, currentDiagram)); }
       return;
     }
+    if (active?.kind === 'resize') {
+      const currentGeometry: SceneGeometry | undefined = geometry();
+      if (currentGeometry !== undefined) { setPreview(resizeUpdate(active.session, currentGeometry, currentDiagram, event.shiftKey)); }
+      return;
+    }
     if (active?.kind === 'marquee') { setMarquee(marqueeUpdate(active.session, currentDiagram)); return; }
 
     const hit: ElementRef | undefined = hitAt(event);
     props.ui.setHover(hit);
+    const currentGeometry: SceneGeometry | undefined = geometry();
+    const hoveredHandle: Handle | undefined = currentGeometry === undefined
+      ? undefined
+      : handleAtPoint(currentGeometry, props.ui.selection(), currentDiagram, 8 / props.ui.viewport().zoom);
+    setHandle(hoveredHandle);
   }
 
   function onPointerUp(event: PointerEvent): void {
@@ -163,6 +187,9 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     if (active?.kind === 'move' && currentGeometry !== undefined) {
       const edit = moveCommit(active.session, currentGeometry, props.stylesheet, currentDiagram);
       if (edit !== undefined) { props.state.applyStyleEdit(edit); }
+    } else if (active?.kind === 'resize' && currentGeometry !== undefined) {
+      const edit = resizeCommit(active.session, currentGeometry, props.stylesheet, currentDiagram, event.shiftKey);
+      if (edit !== undefined) { props.state.applyStyleEdit(edit); }
     } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
       const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));
       props.ui.setSelection(selected);
@@ -171,6 +198,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     setPreview(undefined);
     setMarquee(undefined);
     setPanning(false);
+    setHandle(undefined);
     setPointerOrigin(undefined);
   }
 

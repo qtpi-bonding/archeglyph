@@ -109,5 +109,8 @@ export const COMMANDS: Array<Command> = [
 
 export function runCommand(id: CommandId, context: CommandContext): void {
   const command = COMMANDS.find((candidate) => candidate.id === id);
-  command?.run(context);
+  if (command === undefined) {
+    return;
+  }
+  command.run(context);
 }

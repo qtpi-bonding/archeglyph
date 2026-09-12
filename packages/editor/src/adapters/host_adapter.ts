@@ -9,6 +9,7 @@ export class LoadResult {
   stylesheet?: Stylesheet;
 }
 export class AdapterError {
+  kind?: 'io' | 'stale' | 'unsupported';
   message!: string;
 }
 export interface HostAdapter {

@@ -10,15 +10,25 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Scene, SceneGeometry } from '../scene/scene';
 import { hitTestPoint } from '../scene/hit_test';
 import { ElementRef, UiState } from '../ui_state/ui_state';
-import { clearSelection, replaceSelection, toggleSelection } from '../ui_state/selection_ops';
-import { ContainerRect, fitBoundsToRect, screenToDiagram, zoomAboutPoint } from '../ui_state/viewport_math';
+import { ContainerRect, fitBoundsToRect, screenToDiagram } from '../ui_state/viewport_math';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
 import { OverlayLayer } from './overlay_layer';
+import { routePress, exceedsThreshold, GestureDecision } from '../gestures/pointer_router';
+import { MoveSession, MarqueeSession, PanSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate } from '../gestures/drag_machines';
+import { applyWheel } from '../gestures/wheel_handler';
+import { handleKeyDown } from '../gestures/keyboard_handler';
+import { EditorState } from '../state/editor_state';
+import { ScenePreview } from '../scene/preview';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = PointerEvent | WheelEvent;
+type GestureSession =
+  | { kind: 'pending'; decision: GestureDecision; originScreen: Vec2; originDiagram: Vec2 }
+  | { kind: 'pan'; session: PanSession }
+  | { kind: 'move'; session: MoveSession }
+  | { kind: 'marquee'; session: MarqueeSession };
 
 export interface CanvasProps {
   diagram: Diagram;
@@ -27,6 +37,7 @@ export interface CanvasProps {
   stylesheet: Stylesheet;
   theme: Theme;
   ui: UiState;
+  state: EditorState;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -42,6 +53,9 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   const [errorVisible, setErrorVisible] = createSignal<boolean>(false);
   const [fitDone, setFitDone] = createSignal<boolean>(false);
   const [pointerOrigin, setPointerOrigin] = createSignal<Point | undefined>(undefined);
+  const [gesture, setGesture] = createSignal<GestureSession | undefined>(undefined);
+  const [preview, setPreview] = createSignal<ScenePreview | undefined>(undefined);
+  const [marquee, setMarquee] = createSignal<Bounds | undefined>(undefined);
   let containerRef!: HTMLDivElement;
   let pointerId: number | undefined;
 
@@ -81,42 +95,58 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     return hitTestPoint(currentGeometry, diagramPoint, 6 / props.ui.viewport().zoom);
   }
 
-  function updateSelection(hit: ElementRef | undefined, event: PointerEvent): void {
-    if (hit === undefined) {
-      props.ui.setSelection(clearSelection());
-    } else if (event.shiftKey || event.metaKey) {
-      props.ui.setSelection(toggleSelection(props.ui.selection(), hit));
-    } else {
-      props.ui.setSelection(replaceSelection(hit));
-    }
-  }
-
   function onPointerDown(event: PointerEvent): void {
     event.preventDefault();
     containerRef.setPointerCapture(event.pointerId);
     pointerId = event.pointerId;
     const hit: ElementRef | undefined = hitAt(event);
-    const hand = props.ui.tool() === 'hand';
-    if (!hand && event.button !== 1) { updateSelection(hit, event); }
-    if (hit === undefined || hand || event.button === 1) {
-      setPanning(true);
-      setPointerOrigin({ x: event.clientX, y: event.clientY });
+    const screen: Vec2 = pointFromEvent(event);
+    const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
+    const decision: GestureDecision = routePress({
+      point: diagram,
+      hit,
+      tool: props.ui.tool(),
+      button: event.button,
+      additive: event.shiftKey || event.metaKey,
+    }, props.ui.selection());
+    if (decision.selection !== undefined) { props.ui.setSelection(decision.selection); }
+    if (decision.kind !== 'none') {
+      setGesture({ kind: 'pending', decision, originScreen: screen, originDiagram: diagram });
     }
   }
 
   function onPointerMove(event: PointerEvent): void {
-    if (panning()) {
-      const origin: Point | undefined = pointerOrigin();
-      if (origin === undefined) { return; }
-      const viewport = props.ui.viewport();
-      props.ui.setViewport({
-        ...viewport,
-        panX: viewport.panX + event.clientX - origin.x,
-        panY: viewport.panY + event.clientY - origin.y,
-      });
-      setPointerOrigin({ x: event.clientX, y: event.clientY });
+    const currentScreen: Vec2 = pointFromEvent(event);
+    const currentDiagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), currentScreen);
+    const currentGesture: GestureSession | undefined = gesture();
+    let active: GestureSession | undefined = currentGesture;
+    if (currentGesture?.kind === 'pending') {
+      if (!exceedsThreshold(currentGesture.originScreen, currentScreen)) { return; }
+      const decision: GestureDecision = currentGesture.decision;
+      if (decision.kind === 'pan') {
+        const session: PanSession = { origin: currentGesture.originScreen, viewport: props.ui.viewport() };
+        setGesture({ kind: 'pan', session });
+        setPanning(true);
+        active = { kind: 'pan', session };
+      } else if (decision.kind === 'move') {
+        const session: MoveSession = { refs: decision.selection ?? props.ui.selection(), origin: currentGesture.originDiagram };
+        setGesture({ kind: 'move', session });
+        active = { kind: 'move', session };
+      } else if (decision.kind === 'marquee') {
+        const session: MarqueeSession = { origin: currentGesture.originDiagram };
+        setGesture({ kind: 'marquee', session });
+        active = { kind: 'marquee', session };
+      } else {
+        return;
+      }
+    }
+    if (active?.kind === 'pan') { props.ui.setViewport(panUpdate(active.session, currentScreen)); return; }
+    if (active?.kind === 'move') {
+      const currentGeometry: SceneGeometry | undefined = geometry();
+      if (currentGeometry !== undefined) { setPreview(moveUpdate(active.session, currentGeometry, currentDiagram, props.ui.viewport().zoom)); }
       return;
     }
+    if (active?.kind === 'marquee') { setMarquee(marqueeUpdate(active.session, currentDiagram)); return; }
 
     const hit: ElementRef | undefined = hitAt(event);
     props.ui.setHover(hit);
@@ -127,25 +157,29 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       containerRef.releasePointerCapture(event.pointerId);
       pointerId = undefined;
     }
+    const active: GestureSession | undefined = gesture();
+    const currentDiagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), pointFromEvent(event));
+    const currentGeometry: SceneGeometry | undefined = geometry();
+    if (active?.kind === 'move' && currentGeometry !== undefined) {
+      const edit = moveCommit(active.session, currentGeometry, props.stylesheet, currentDiagram, props.ui.viewport().zoom);
+      if (edit !== undefined) { props.state.applyStyleEdit(edit); }
+    } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
+      const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));
+      props.ui.setSelection(selected);
+    }
+    setGesture(undefined);
+    setPreview(undefined);
+    setMarquee(undefined);
     setPanning(false);
     setPointerOrigin(undefined);
   }
 
   function onWheel(event: WheelEvent): void {
     event.preventDefault();
-    const viewport = props.ui.viewport();
-    // A horizontal component is the reliable signal available on WheelEvent
-    // for a two-finger scroll.  Keep the ordinary vertical wheel gesture as
-    // zoom, while preserving trackpad scrolling when it supplies both axes.
-    const trackpadScroll: boolean = !event.ctrlKey && (
-      event.deltaX !== 0 || event.deltaMode !== WheelEvent.DOM_DELTA_LINE || !Number.isInteger(event.deltaY)
-    );
-    if (trackpadScroll) {
-      props.ui.setViewport({ ...viewport, panX: viewport.panX - event.deltaX, panY: viewport.panY - event.deltaY });
-      return;
-    }
-    const factor: number = Math.exp(-event.deltaY * 0.01);
-    props.ui.setViewport(zoomAboutPoint(viewport, pointFromEvent(event), containerRect(), factor, 0.1, 8));
+    props.ui.setViewport(applyWheel(props.ui.viewport(), containerRect(), {
+      deltaX: event.deltaX, deltaY: event.deltaY, deltaMode: event.deltaMode,
+      ctrlKey: event.ctrlKey, point: pointFromEvent(event),
+    }));
   }
 
   onMount((): void => {
@@ -153,9 +187,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const observer: ResizeObserver = new ResizeObserver(refreshRect);
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
+    const onKeyDown = (event: KeyboardEvent): void => {
+      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined });
+      if (handled) { event.preventDefault(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
     onCleanup((): void => {
       observer.disconnect();
       containerRef.removeEventListener('wheel', onWheel);
+      document.removeEventListener('keydown', onKeyDown);
     });
   });
 
@@ -193,9 +233,9 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
           <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} theme={props.theme} layoutEngine={props.layoutEngine} />
-          <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={[]} />
+          <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={gesture()?.kind === 'move' ? (gesture() as { kind: 'move'; session: MoveSession }).session.refs : []} />
           <Show when={geometry() !== undefined}>
-            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} />
+            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={preview()} marquee={marquee()} />
           </Show>
         </g>
       </svg>

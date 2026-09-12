@@ -8,7 +8,42 @@ import { hashStylesheet } from '../state/stylesheet_hash';
 import { AdapterError, FileStamp, HostAdapter, LoadResult } from '../adapters/host_adapter';
 
 export function watchOnFocus(adapter: HostAdapter, currentStylesheet: () => Stylesheet, onChange: (change: ExternalChange) => void): () => void {
-  throw new Error('not implemented');
+  let checking: boolean = false;
+  let disposed: boolean = false;
+  let hasLastStamp: boolean = false;
+  let lastStamp: FileStamp;
+
+  const check: () => void = (): void => {
+    if (checking || disposed) {
+      return;
+    }
+
+    checking = true;
+    const loaded: Stylesheet = currentStylesheet();
+    const previousStamp: FileStamp | undefined = hasLastStamp ? lastStamp : undefined;
+    void checkForExternalChange(adapter, loaded, previousStamp).then((change: ExternalChange | undefined): void => {
+      if (disposed || change === undefined) {
+        return;
+      }
+
+      if (change.stamp !== undefined) {
+        lastStamp = change.stamp;
+        hasLastStamp = true;
+      }
+      onChange(change);
+    }).finally((): void => {
+      checking = false;
+    });
+  };
+
+  window.addEventListener('focus', check);
+  return (): void => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    window.removeEventListener('focus', check);
+  };
 }
 
 export async function checkForExternalChange(

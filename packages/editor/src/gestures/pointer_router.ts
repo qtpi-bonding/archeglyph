@@ -5,6 +5,9 @@ import { Handle } from '../handle';
 import { Tool } from '../tool';
 import { Vec2 } from '../vec2';
 
+/** Screen pixels of travel before a press becomes a drag. 4 is about the range of an unintentional wobble on a trackpad without swallowing a deliberate short drag. */
+export const DRAG_THRESHOLD_PX: number = 4;
+
 export interface PressContext {
   point: Vec2;
   hit?: ElementRef;

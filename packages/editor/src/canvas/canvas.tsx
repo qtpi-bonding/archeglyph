@@ -222,7 +222,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
     const onKeyDown = (event: KeyboardEvent): void => {
-      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined });
+      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined, focusInspector: props.onFocusInspector });
       if (handled) { event.preventDefault(); }
     };
     document.addEventListener('keydown', onKeyDown);

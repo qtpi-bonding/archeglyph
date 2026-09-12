@@ -4,9 +4,12 @@
 # Deliberately NOT a new routing algorithm. A callout is geometrically the
 # same problem as an edge -- two boxes, project each end onto its own outline,
 # optional normalized attachment hint on one end -- and edge_router already
-# solves it. routeStraight + resolveAttachPoint (layout/edge_router/impl.ts)
-# are reused verbatim, which is also what makes a callout's attachment
-# convention identical to an edge's rather than merely similar.
+# solves it. resolveAttachPoint (layout/edge_router/impl.ts) is reused for each
+# end, which is what makes a callout's attachment convention identical to an
+# edge's rather than merely similar. routeStraight would do the same job in one
+# call, but calling the shared primitive per end is what lets the doc below say
+# which end receives the hint -- the thing routeStraight's argument order
+# leaves implicit.
 #
 # It lives under layout/ and not renderer/ despite being consumed by the
 # renderer: nothing in it is SVG, every dependency it has is layout/ or
@@ -61,7 +64,7 @@ methods: [
       { name: "annotation", type: { named: { symbol: "LaidOutAnnotation" } } }
     ]
     output: { named: { symbol: "Array", args: [{ named: { symbol: "EdgeSection" } }] } }
-    uses: ["routeStraight", "boundsFromRect", "boundsUnion"]
+    uses: ["resolveAttachPoint", "boundsCentre", "boundsFromRect", "boundsUnion"]
     # Node-or-group bounds-by-id is computed in three other places already
     # (layout_engine endpointBounds, editor preview endpointBounds, svg_painter
     # viewBox). Only the EDGE-target case here is new. Consolidating the four

@@ -64,7 +64,7 @@ function stylesheetWith(anchored: boolean): Stylesheet {
       size: create(Vec2Schema, { x: 60, y: 20 }),
     }),
     anchor: anchored
-      ? create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.REF_KIND_NODE })
+      ? create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.NODE })
       : undefined,
   });
   return create(StylesheetSchema, { schemaVersion: 1, annotations: { note: annotation } });
@@ -113,6 +113,19 @@ describe('anchored annotations render a callout line', () => {
     // match and the first test would prove nothing.
     const group = annotationGroup(await renderWith(false));
     expect(/d="M [-\d.]+,[-\d.]+ L [-\d.]+,[-\d.]+"/.test(group)).toBe(false);
+  });
+
+  test('the callout is painted in the theme callout stroke, not the fallback', async () => {
+    // Guards the other half of this pillar. The blueprint annotation component
+    // had no `callout` at all, so an anchored annotation resolved to an empty
+    // Glyph1D and the edge-styling fallback painted #000000 at width 1 -- a
+    // black hairline on D12b's #0f1a2b canvas. Every other part of the feature
+    // would have been correct and the line invisible.
+    const group = annotationGroup(await renderWith(true));
+    const path = /<path[^>]*d="M [-\d.]+,[-\d.]+ L [-\d.]+,[-\d.]+"[^>]*>/.exec(group);
+    expect(path).not.toBeNull();
+    expect(path![0]).toContain('#73daca');
+    expect(path![0]).not.toContain('#000000');
   });
 
   test('the callout starts on the annotation outline, not at its centre', async () => {

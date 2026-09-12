@@ -152,6 +152,11 @@ export const COMMANDS: Array<Command> = [
       context.ui.setSelection(context.geometry?.index.map((entry) => entry.ref) ?? []);
     },
   },
+  {
+    id: 'focus-inspector' as CommandId,
+    label: 'Focus inspector',
+    run: ({ focusInspector }: CommandContext): void => focusInspector?.(),
+  },
   { id: 'nudge-up', label: 'Nudge up', run: (context: CommandContext): void => runNudge(context, 0, -1) },
   { id: 'nudge-down', label: 'Nudge down', run: (context: CommandContext): void => runNudge(context, 0, 1) },
   { id: 'nudge-left', label: 'Nudge left', run: (context: CommandContext): void => runNudge(context, -1, 0) },

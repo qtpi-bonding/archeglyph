@@ -115,6 +115,7 @@ function spyContext(selection: Array<ElementRef>): Spy {
       rect: { left: 0, top: 0, width: 800, height: 600 },
       save: (): void => { calls.push('save'); },
       focusInspector: (): void => { calls.push('focusInspector'); },
+      beginTextEdit: (): void => { calls.push('beginTextEdit'); },
     },
   };
 }

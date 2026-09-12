@@ -21,6 +21,7 @@ import { applyWheel } from '../gestures/wheel_handler';
 import { handleKeyDown } from '../gestures/keyboard_handler';
 import { EditorState } from '../state/editor_state';
 import { ScenePreview } from '../scene/preview';
+import { elementKey } from '../scene/element_key';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = PointerEvent | WheelEvent;
@@ -228,8 +229,35 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const observer: ResizeObserver = new ResizeObserver(refreshRect);
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
+    const beginTextEdit = (ref: ElementRef): void => {
+      const currentGeometry: SceneGeometry | undefined = geometry();
+      const entry = currentGeometry?.byKey[elementKey(ref)];
+      if (entry !== undefined) {
+        const viewport = props.ui.viewport();
+        const minX: number = entry.bounds.minX * viewport.zoom + viewport.panX;
+        const maxX: number = entry.bounds.maxX * viewport.zoom + viewport.panX;
+        const minY: number = entry.bounds.minY * viewport.zoom + viewport.panY;
+        const maxY: number = entry.bounds.maxY * viewport.zoom + viewport.panY;
+        if (minX < 0 || maxX > containerRect().width || minY < 0 || maxY > containerRect().height) {
+          props.ui.setViewport({
+            zoom: viewport.zoom,
+            panX: containerRect().width / 2 - ((entry.bounds.minX + entry.bounds.maxX) / 2) * viewport.zoom,
+            panY: containerRect().height / 2 - ((entry.bounds.minY + entry.bounds.maxY) / 2) * viewport.zoom,
+          });
+        }
+      }
+      props.ui.setTextEditTarget(ref);
+    };
     const onKeyDown = (event: KeyboardEvent): void => {
-      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => { props.onSave?.(); }, focusInspector: props.onFocusInspector });
+      const handled: boolean = handleKeyDown(event, {
+        state: props.state,
+        ui: props.ui,
+        geometry: geometry(),
+        rect: containerRect(),
+        save: (): void => { props.onSave?.(); },
+        focusInspector: props.onFocusInspector,
+        beginTextEdit,
+      });
       if (handled) { event.preventDefault(); }
     };
     document.addEventListener('keydown', onKeyDown);

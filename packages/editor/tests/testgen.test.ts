@@ -46,6 +46,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('pin-all' as unknown as CommandId, context);
@@ -71,6 +72,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           expect(() => runCommand('pin-all' as unknown as CommandId, context)).not.toThrow();
@@ -98,6 +100,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('pin-all' as unknown as CommandId, context);
@@ -133,6 +136,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('pin-all' as unknown as CommandId, context);
@@ -168,6 +172,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('unpin-all' as unknown as CommandId, context);
@@ -196,6 +201,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           expect(() => runCommand('unpin-all' as unknown as CommandId, context)).not.toThrow();
@@ -223,6 +229,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('unpin-all' as unknown as CommandId, context);
@@ -257,6 +264,7 @@ describe('testgen_gestures__COMMANDS', () => {
               geometry: undefined,
               rect: {} as ContainerRect,
               save: () => {},
+              beginTextEdit: () => {},
             };
           }
 
@@ -294,6 +302,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('auto-layout' as unknown as CommandId, context);
@@ -320,6 +329,7 @@ describe('testgen_gestures__COMMANDS', () => {
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
+            beginTextEdit: () => {},
           };
 
           runCommand('auto-layout' as unknown as CommandId, context);

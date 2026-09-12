@@ -30,6 +30,7 @@ export interface CommandContext {
   rect: ContainerRect;
   save: () => void;
   focusInspector?: () => void;
+  beginTextEdit: (ref: ElementRef) => void;
 }
 
 function selectedElements(context: CommandContext): ElementRef[] {

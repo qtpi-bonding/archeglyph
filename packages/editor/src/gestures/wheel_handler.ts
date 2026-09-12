@@ -6,7 +6,7 @@ import { Viewport } from '../ui_state/ui_state';
 import { Vec2 } from '../vec2';
 
 export const MIN_ZOOM: number = 0.1;
-const MAX_ZOOM: number = 8;
+export const MAX_ZOOM: number = 8;
 
 export function applyWheel(viewport: Viewport, rect: ContainerRect, input: WheelInput): Viewport {
   if (isTrackpadScroll(input)) {

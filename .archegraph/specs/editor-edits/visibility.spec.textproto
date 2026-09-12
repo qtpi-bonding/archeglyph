@@ -20,7 +20,10 @@ methods: [
       { name: "hidden", type: { primitive: BOOLEAN } }
     ]
     output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
-    uses: ["patchNodeEntry", "nodeChange", "styleEdit", "archeglyph.style.v1.NodeVisibility"]
+    uses: ["setNodesHiddenEdit"]
+    # Grandfathered post-build: the impl delegates to setNodesHiddenEdit with a
+    # one-element list instead of repeating the body, so the helper edges belong
+    # to that function, not this one. Better than what was specified.
   },
   { name: "setNodesHiddenEdit"
     doc: "Same, over a selection, as one undoable edit."
@@ -38,6 +41,8 @@ methods: [
       { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
     ]
     output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
-    uses: ["patchNodeEntry", "nodeChange", "styleEdit", "archeglyph.style.v1.NodeVisibility"]
+    uses: ["setNodesHiddenEdit"]
+    # Grandfathered post-build: delegates to setNodesHiddenEdit over every node
+    # id rather than repeating the body.
   }
 ]

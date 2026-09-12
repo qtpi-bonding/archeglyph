@@ -40,7 +40,15 @@ methods: [
       { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
     ]
     output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
-    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
+    uses: ["nodeChange", "groupChange", "styleEdit"]
+    # Corrected post-build: clearing a pin cannot go through patchNodeEntry /
+    # patchGroupEntry. A patch only ever WRITES fields, and the schema has no
+    # "unset" channel — a StyleChange carries a whole `after` entry that
+    # replaces the old one. So unpinning builds an entry that simply does not
+    # have the position, via the file-local withoutNodePosition /
+    # withoutGroupPosition. The build's first attempt invented an `unsetPaths`
+    # field via Object.assign; no such field exists on NodeStyleChange, so
+    # nothing read it and unpinning silently did nothing.
   },
   { name: "unpinElementsEdit"
     doc: "Same, for a selection — 'let ELK decide where these go again'."
@@ -49,6 +57,9 @@ methods: [
       { name: "refs", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementMove" } }] } } }
     ]
     output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
-    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
+    uses: ["nodeChange", "groupChange", "styleEdit"]
+    # Same correction as unpinAllEdit. Annotations in `refs` are skipped:
+    # they are always explicitly positioned, so there is no auto-layout for an
+    # unpinned one to fall back to.
   }
 ]

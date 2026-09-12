@@ -80,12 +80,6 @@ export function marqueeUpdate(session: MarqueeSession, current: Vec2): Bounds {
     x: current.x - session.origin.x,
     y: current.y - session.origin.y,
   });
-  return {
-    minX: Math.min(session.origin.x, current.x),
-    minY: Math.min(session.origin.y, current.y),
-    maxX: Math.max(session.origin.x, current.x),
-    maxY: Math.max(session.origin.y, current.y),
-  };
 }
 export function marqueeCommit(geometry: SceneGeometry, marquee: Bounds): Array<ElementRef> {
   return selectInRect(geometry.index, marquee);

@@ -31,6 +31,11 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 's', shift: true }, command: 'ring-prev' },
   { chord: { key: 's', meta: true }, command: 'save' },
   { chord: { key: 'i', meta: true }, command: 'focus-inspector' },
+  { chord: { key: 'v' }, command: 'tool-select' },
+  { chord: { key: 't' }, command: 'tool-annotation' },
+  { chord: { key: 'n' }, command: 'add-annotation' },
+  { chord: { key: 'Enter' }, command: 'edit-text' },
+  { chord: { key: 'd', meta: true }, command: 'duplicate' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {

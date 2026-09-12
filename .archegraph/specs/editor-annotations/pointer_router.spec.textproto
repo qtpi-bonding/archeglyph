@@ -1,0 +1,83 @@
+# Wave 6, editor-annotations. The annotation tool and the anchor drag, added
+# to the one pure function that decides what a press means.
+
+file: "packages/editor/src/gestures/pointer_router.ts"
+doc: "Pure decision: what does this press start? Tool plus hit-test plus modifiers in, one gesture kind out."
+
+# The three decls below are ONE change and must be read together: a press on
+# an anchor grip is detected by the canvas (PressContext), classified here
+# (routePress), and reported to the caller (GestureDecision). Splitting them
+# across builds would leave a field nothing sets or a kind nothing returns.
+
+structs: [
+  { name: "PressContext"
+    change_type: MODIFIED
+    doc:
+      "Gains `onAnchorGrip`: the annotation whose anchor grip is under the\n"
+      "pointer, from scene/anchor_grip.anchorGripAt, or undefined.\n"
+      "\n"
+      "A separate field from `onHandle` rather than a ninth Handle member,\n"
+      "because Handle is what resizeUpdate switches on and an anchor drag is\n"
+      "not a resize."
+    fields: [
+      { name: "point",        type: { named: { symbol: "Vec2" } } },
+      { name: "hit",          type: { named: { symbol: "ElementRef" } }, is_optional: true },
+      { name: "tool",         type: { named: { symbol: "Tool" } } },
+      { name: "button",       type: { primitive: REAL } },
+      { name: "additive",     type: { primitive: BOOLEAN } },
+      { name: "onHandle",     type: { named: { symbol: "Handle" } }, is_optional: true },
+      { name: "onAnchorGrip", type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+  },
+  { name: "GestureDecision"
+    change_type: MODIFIED
+    doc:
+      "`kind` gains two members: 'create-annotation' and 'anchor'.\n"
+      "\n"
+      "'create-annotation' means the caller should add an annotation at the\n"
+      "press point and open its text editor. 'anchor' means a drag that will\n"
+      "re-point an existing annotation's callout; `ref` carries which\n"
+      "annotation, since unlike a move it is never the whole selection."
+    fields: [
+      { name: "kind",      type: { unsupported: {} } },
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }, is_optional: true },
+      { name: "handle",    type: { named: { symbol: "Handle" } }, is_optional: true },
+      { name: "ref",       type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+  }
+]
+
+methods: [
+  { name: "routePress"
+    change_type: MODIFIED
+    doc:
+      "Two new branches, both ordered deliberately against the existing ones.\n"
+      "\n"
+      "ANNOTATION TOOL. When tool is 'annotation', a press returns\n"
+      "'create-annotation' and clears the selection -- BEFORE the handle and\n"
+      "hit branches, so that pressing over an existing element still creates a\n"
+      "new annotation rather than grabbing what is underneath. The middle\n"
+      "button and the hand tool still win over it, because panning must work\n"
+      "under every tool.\n"
+      "\n"
+      "ANCHOR DRAG. When `context.onAnchorGrip` is set, return 'anchor' with\n"
+      "it as `ref`. No further guard is needed here and none should be added:\n"
+      "anchorGripAt already returns a value only when the selection is exactly\n"
+      "one annotation, so a set field cannot represent a stale hit on an empty\n"
+      "selection.\n"
+      "\n"
+      "It is tested BEFORE the `onHandle` resize branch. The grip sits outside\n"
+      "the outline and the resize handles sit on it, so the two cannot\n"
+      "coincide -- but ordering it first means that if they ever do, the more\n"
+      "specific affordance wins.\n"
+      "\n"
+      "Everything else is unchanged, including that an additive click is a\n"
+      "selection operation and never starts a drag."
+    inputs: [
+      { name: "context", type: { named: { symbol: "PressContext" } } },
+      { name: "current", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { named: { symbol: "GestureDecision" } }
+    uses: ["clearSelection", "replaceSelection", "toggleSelection"]
+  }
+]

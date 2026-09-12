@@ -1,0 +1,56 @@
+# Wave 6, editor-annotations. The one builder the family is missing.
+
+file: "packages/editor/src/state/edits/annotation.ts"
+doc: "StyleEdit builders for annotations — add, set text, set anchor, duplicate, delete."
+
+methods: [
+  { name: "duplicateAnnotationEdit"
+    change_type: ADDED
+    doc:
+      "Copies one annotation entry to a new id, offset so the copy is visibly\n"
+      "not on top of the original.\n"
+      "\n"
+      "Everything except id and position is copied verbatim, the anchor\n"
+      "included: duplicating a note about a node should give a second note\n"
+      "about the same node. Offset is +16,+16 in diagram units, the usual\n"
+      "paste nudge -- large enough to see, small enough to stay in view.\n"
+      "\n"
+      "The new id is derived from the source id and must not collide with any\n"
+      "existing annotation in the stylesheet. Determinism matters here: two\n"
+      "runs over the same stylesheet must produce the same id, because a\n"
+      "random one makes the edit unreplayable and the undo entry unstable.\n"
+      "\n"
+      "Concrete case: duplicating 'note' in a stylesheet that already has\n"
+      "'note' and 'note-2' must not yield 'note-2'."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "id",         type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["newAnnotationId"]
+  },
+  { name: "anchorForElement"
+    change_type: ADDED
+    doc:
+      "Converts an ElementRef into the AnnotationAnchor proto that\n"
+      "setAnnotationAnchorEdit takes, or undefined when the ref cannot be\n"
+      "anchored to.\n"
+      "\n"
+      "This conversion exists nowhere in the editor today: RefKind appears in\n"
+      "no editor file outside the proto imports, so every anchor-writing path\n"
+      "would otherwise invent its own mapping.\n"
+      "\n"
+      "node maps to REF_KIND_NODE, edge to REF_KIND_EDGE, group to\n"
+      "REF_KIND_GROUP. An ElementRef of kind 'annotation' returns undefined:\n"
+      "AnnotationAnchor has no member for it and calloutSections has no case\n"
+      "for it, so an annotation anchored to an annotation would write a value\n"
+      "nothing downstream can read.\n"
+      "\n"
+      "anchorPosition is left unset. Callers that want a specific side set it\n"
+      "themselves; nothing in this pillar does."
+    inputs: [
+      { name: "ref", type: { named: { symbol: "ElementRef" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "AnnotationAnchor | undefined" } }
+  }
+]

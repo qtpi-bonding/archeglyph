@@ -1,0 +1,63 @@
+# Wave 6, editor-annotations. The inline text editor -- §8.2 `canvas/text_editor`.
+#
+# An annotation with no text is an empty box, which is §2.11's complaint. The
+# fix is not a default string; it is that creating an annotation puts you
+# straight into typing, the way every drawing tool does.
+
+file: "packages/editor/src/canvas/text_editor.tsx"
+doc: "Inline text editing for an annotation, positioned over its bounds on the canvas."
+
+structs: [
+  { name: "TextEditorProps"
+    change_type: ADDED
+    doc:
+      "`bounds` are DIAGRAM coordinates from the scene index, not screen\n"
+      "coordinates: the editor renders inside the pan/zoom group so it tracks\n"
+      "the canvas without recomputing on every pan.\n"
+      "\n"
+      "`onCommit` receives the final text; `onCancel` receives nothing. The\n"
+      "component holds the in-progress string itself and tells the caller only\n"
+      "at the end, because a keystroke must not reach DocumentState -- that is\n"
+      "§2.5, one ELK run and one full SVG replacement per character."
+    fields: [
+      { name: "text",     type: { primitive: CHARACTER } },
+      { name: "bounds",   type: { named: { symbol: "Bounds" } } },
+      { name: "onCommit", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(text: string) => void" } } },
+      { name: "onCancel", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "TextEditor"
+    change_type: ADDED
+    doc:
+      "A `foreignObject` over the annotation's bounds holding a focusable\n"
+      "editable element, so the caret sits exactly where the text will be.\n"
+      "\n"
+      "Keys: Enter commits, Escape cancels, Shift+Enter inserts a newline.\n"
+      "Blur commits -- clicking away is how people leave a text box, and\n"
+      "losing what was typed is worse than an unwanted edit that undo can\n"
+      "reverse.\n"
+      "\n"
+      "The component is FINISHED after the first of those to fire, and must\n"
+      "then ignore every subsequent key and blur. Without that latch Escape is\n"
+      "broken rather than merely untidy: cancelling removes focus, focus\n"
+      "removal fires blur, and blur would commit the text the user just asked\n"
+      "to discard. Exactly one of onCommit and onCancel is called, exactly\n"
+      "once, per mount.\n"
+      "\n"
+      "It must stopPropagation on its own key events. The canvas keyboard\n"
+      "handler is on an ancestor and binds bare letters to tools and modes, so\n"
+      "without this, typing the letter v while editing switches tool.\n"
+      "\n"
+      "Autofocus on mount and select all of the existing text, in both cases\n"
+      "-- a freshly created annotation and one reopened for editing. A fresh\n"
+      "one arrives carrying NEW_ANNOTATION_TEXT, which the user is expected to\n"
+      "type straight over. Reopening an existing note to append means one\n"
+      "extra keystroke to deselect, which is the cheaper mistake than making\n"
+      "the common case require a select-all first."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TextEditorProps>" } }
+    uses: ["TextEditorProps"]
+  }
+]

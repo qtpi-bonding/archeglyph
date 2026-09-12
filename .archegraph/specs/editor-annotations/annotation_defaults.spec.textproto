@@ -1,0 +1,64 @@
+# Wave 6, editor-annotations. The two values every "create an annotation" path
+# needs and none of them had.
+#
+# The shipped one in shell/top_bar.tsx uses crypto.randomUUID(), which makes
+# the resulting StyleEdit unreplayable -- the same edit applied twice produces
+# two different documents. That file is being retired anyway; the replacement
+# does not inherit the problem.
+
+file: "packages/editor/src/state/edits/annotation_defaults.ts"
+doc: "The id and the starting text for a newly created annotation."
+
+constants: [
+  { name: "NEW_ANNOTATION_SIZE"
+    change_type: ADDED
+    doc:
+      "The box a new annotation occupies before the scene has measured its\n"
+      "label, in diagram units. 160 wide by 40 high.\n"
+      "\n"
+      "It is not written into the stylesheet and it is not the annotation's\n"
+      "real size -- layout derives that from the text. It exists only so the\n"
+      "inline editor has somewhere to render during the one scene rebuild\n"
+      "between creating an annotation and its bounds existing."
+    type: { named: { symbol: "Vec2" } }
+  },
+  { name: "NEW_ANNOTATION_TEXT"
+    change_type: ADDED
+    doc:
+      "The text a freshly created annotation carries until the user types.\n"
+      "\n"
+      "It exists so the annotation is VISIBLE on creation: an annotation sizes\n"
+      "itself from its label, so empty text would mean a zero-size box the\n"
+      "user cannot see, click, or find again.\n"
+      "\n"
+      "It is real content, not a CSS placeholder -- it is written into the\n"
+      "stylesheet and will be saved if the user walks away. That is accepted:\n"
+      "a visible note saying nothing is recoverable, an invisible one is not."
+    type: { primitive: CHARACTER }
+  }
+]
+
+methods: [
+  { name: "newAnnotationId"
+    change_type: ADDED
+    doc:
+      "An id for a new annotation that is not already used in `stylesheet`.\n"
+      "\n"
+      "Deterministic: the same stylesheet must always yield the same next id.\n"
+      "A random id makes the StyleEdit unreplayable and the undo entry\n"
+      "unstable, and it is what the shipped top_bar does wrong.\n"
+      "\n"
+      "`base` itself when no annotation in the stylesheet has that id.\n"
+      "Otherwise `base` followed by '-' and the lowest integer from 2 upward\n"
+      "that is not taken.\n"
+      "\n"
+      "Concrete cases. Empty stylesheet, base 'note' -> 'note'. Stylesheet\n"
+      "holding 'note', base 'note' -> 'note-2'. Stylesheet holding 'note' and\n"
+      "'note-2', base 'note' -> 'note-3'."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "base",       type: { primitive: CHARACTER } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

@@ -1,0 +1,33 @@
+# Wave 6, editor-annotations. Removing the broken add-annotation path so the
+# pillar does not ship two of them.
+#
+# top_bar.tsx is retired wholesale by editor-shell v2. This spec does not
+# retire it -- it only removes the one button whose behaviour this pillar
+# replaces, because leaving it would mean two "add annotation" paths in the
+# same build with one of them producing an element the user cannot see.
+
+file: "packages/editor/src/shell/top_bar.tsx"
+doc: "The docked top bar — file name, save state, and the actions that predate the toolbar."
+
+constants: [
+  { name: "TopBar"
+    change_type: MODIFIED
+    doc:
+      "The '+ Annotation' button and its handler are removed.\n"
+      "\n"
+      "What it did was wrong in three separate ways, all of them §2.11: it\n"
+      "positioned at window.innerWidth / 2, which is SCREEN pixels and so\n"
+      "ignores pan and zoom entirely; it minted crypto.randomUUID(), which\n"
+      "makes the edit unreplayable; and it hand-built the StyleEdit instead of\n"
+      "calling addAnnotationEdit, so it was a second definition of what adding\n"
+      "an annotation means.\n"
+      "\n"
+      "Nothing replaces it in this bar. The annotation tool and the\n"
+      "add-annotation command are the supported paths, and a toolbar button\n"
+      "for them arrives with the toolbar itself in editor-shell v2.\n"
+      "\n"
+      "Everything else in this component is untouched."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TopBarProps>" } }
+    uses: ["TopBarProps"]
+  }
+]

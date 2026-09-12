@@ -1,0 +1,116 @@
+# Wave 6, editor-annotations. The command registry gains the annotation verbs,
+# and Delete is corrected to what D3 actually says.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The one command registry every dispatcher — keymap, toolbar, context menu, palette — runs through."
+
+structs: [
+  { name: "CommandContext"
+    change_type: MODIFIED
+    doc:
+      "Gains `beginTextEdit`, called by the commands that create or open an\n"
+      "annotation for editing.\n"
+      "\n"
+      "It is a callback rather than a direct UiState write because the canvas\n"
+      "must scroll the annotation into view and focus the editor, neither of\n"
+      "which a command can do. The command decides WHAT is being edited; the\n"
+      "canvas decides how the editor appears.\n"
+      "\n"
+      "`beginTextEdit` specifically is REQUIRED, not optional. An optional\n"
+      "callback is a promise that something upstream populates it, and nothing\n"
+      "checks that anything does -- which is how `focusInspector` shipped as a\n"
+      "chord that resolved, dispatched, called undefined and did nothing.\n"
+      "\n"
+      "This is a rule about NEW callback fields, not a retroactive one.\n"
+      "`focusInspector` and `geometry` stay optional and are not changed by\n"
+      "this pillar: `geometry` is legitimately absent before the first scene\n"
+      "resolves, and re-shaping `focusInspector` is the inspector's business.\n"
+      "\n"
+      "Two places construct a CommandContext: canvas.tsx, which this pillar\n"
+      "changes, and the spyContext in\n"
+      "gestures/command_wiring.test.ts, which exists precisely to catch the\n"
+      "dead-wire bug described above and deliberately leaves no field unset.\n"
+      "Making this field required is a compile error there until it is added,\n"
+      "which is the intended effect -- that test is what proves each new\n"
+      "command has an observable effect."
+    fields: [
+      { name: "state",          type: { named: { symbol: "EditorState" } } },
+      { name: "ui",             type: { named: { symbol: "UiState" } } },
+      { name: "geometry",       type: { named: { symbol: "SceneGeometry" } }, is_optional: true },
+      { name: "rect",           type: { named: { symbol: "ContainerRect" } } },
+      { name: "save",           type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } } },
+      { name: "focusInspector", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } }, is_optional: true },
+      { name: "beginTextEdit",  type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(ref: ElementRef) => void" } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "Six commands added, and one existing command corrected.\n"
+      "\n"
+      "'tool-select' and 'tool-annotation' set ui.tool. Nothing else --\n"
+      "switching tool must not clear the selection, because picking the\n"
+      "annotation tool to annotate the thing you just selected is the common\n"
+      "case.\n"
+      "\n"
+      "'hide' hides every selected node, which is what Delete used to do. D3\n"
+      "forbids binding it to Delete; no OTHER chord is assigned either,\n"
+      "because its intended surfaces are the context menu and the palette and\n"
+      "both are editor-shell's. So it is in this registry, in CommandId, and\n"
+      "in no KEYMAP row.\n"
+      "\n"
+      "'add-annotation' creates one and calls beginTextEdit on it. Its\n"
+      "position -- the annotation's TOP-LEFT, which is what AnnotationLayout\n"
+      "carries -- is (selectionBounds.maxX + 24, selectionBounds.minY) when\n"
+      "something is selected and its bounds are known, so the note sits beside\n"
+      "what it is about rather than on top of it.\n"
+      "\n"
+      "Otherwise the top-left that centres a NEW_ANNOTATION_SIZE box in the\n"
+      "visible viewport. 'Otherwise' is BOTH the nothing-selected case and the\n"
+      "case where `geometry` is absent, which it may be since the field is\n"
+      "optional -- the command must still create an annotation, not silently\n"
+      "do nothing.\n"
+      "\n"
+      "Viewport comes from `rect` and the ui viewport, never from window\n"
+      "dimensions: using screen pixels for a canvas position is the §2.11 bug\n"
+      "verbatim. Its id comes from newAnnotationId and its text from\n"
+      "NEW_ANNOTATION_TEXT, so the resulting edit is replayable.\n"
+      "\n"
+      "'edit-text' calls beginTextEdit when the selection is exactly one\n"
+      "annotation, and does nothing otherwise. Enter is bound to it\n"
+      "unconditionally, so 'otherwise' includes every other selection and the\n"
+      "empty one.\n"
+      "\n"
+      "'duplicate' runs duplicateAnnotationEdit once per selected annotation,\n"
+      "applying each edit before building the next so that every call sees\n"
+      "the ids the previous one wrote -- duplicating two annotations at once\n"
+      "must not produce the same id twice. It leaves the COPIES selected,\n"
+      "which is what makes duplicate-then-drag work. Non-annotation selections are skipped -- duplicating a node would\n"
+      "be content creation, which D2 puts out of scope for this editor.\n"
+      "\n"
+      "CORRECTION to 'delete'. D3 is explicit: Delete and Backspace remove\n"
+      "annotations, and hiding a node is a separate command that is never\n"
+      "bound to Delete. The shipped implementation hides every selected node,\n"
+      "so Delete currently makes nodes disappear from a graph the editor is\n"
+      "not allowed to edit. After this pillar 'delete' removes selected\n"
+      "annotations and does nothing to nodes, edges or groups.\n"
+      "\n"
+      "The hide-nodes behaviour is NOT dropped. It moves to its own 'hide'\n"
+      "command, present in this registry and bound to no chord in KEYMAP.\n"
+      "The Delete command is the only path to setNodesHiddenEdit in the whole\n"
+      "editor today, so removing hiding from Delete without putting it\n"
+      "somewhere would leave no way to hide a node from any surface until\n"
+      "editor-shell ships a menu -- a regression window for a feature that\n"
+      "currently works. Unbound-but-present costs one registry entry and\n"
+      "closes it.\n"
+      "\n"
+      "§6 also asks for a status hint when Delete is pressed on a\n"
+      "non-annotation. There is no surface for a hint until the editor-shell\n"
+      "status island exists, so Delete on a node is silent for now."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<Command>" } }
+    uses: ["Command", "CommandContext", "deleteAnnotationEdit", "duplicateAnnotationEdit", "addAnnotationEdit", "setNodesHiddenEdit", "newAnnotationId", "NEW_ANNOTATION_TEXT", "clearSelection", "elementKey"]
+  }
+]

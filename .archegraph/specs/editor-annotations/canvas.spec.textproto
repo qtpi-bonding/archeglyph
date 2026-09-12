@@ -1,0 +1,80 @@
+# Wave 6, editor-annotations. The composition site -- where the tool, the
+# gesture, the editor and the command context are actually wired together.
+#
+# This is the file that makes the rest of the pillar real. Everything else
+# here is a pure function or a component; without this decl they exist and
+# nothing reaches them.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The canvas: one SVG, three layers, and the owner of pointer and keyboard routing."
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Five additions.\n"
+      "\n"
+      "ANCHOR GRIP HIT. The pointerdown path already computes `onHandle` via\n"
+      "handleAtPoint; it now also computes `onAnchorGrip` via anchorGripAt and\n"
+      "puts it in the PressContext. Both radii are screen pixels divided by\n"
+      "zoom, as handleAtPoint already requires.\n"
+      "\n"
+      "TWO NEW DECISIONS. 'create-annotation' applies addAnnotationEdit at the\n"
+      "press point in DIAGRAM coordinates, with newAnnotationId and\n"
+      "NEW_ANNOTATION_TEXT, then selects it and opens its text editor.\n"
+      "'anchor' starts an AnchorSession and is wired exactly as move and\n"
+      "resize are: anchorUpdate on each pointermove, feeding the overlay's\n"
+      "`anchorLine` prop, and anchorCommit on pointerup. The hit passed to\n"
+      "both is hitTestPoint at the current pointer. No decision logic lives\n"
+      "here; this decl only wires.\n"
+      "\n"
+      "DOUBLE-CLICK, detected from `pointerdown` via `event.detail === 2`,\n"
+      "NOT from a dblclick listener. The first line of onPointerDown is\n"
+      "event.preventDefault(), which suppresses the compatibility mouse\n"
+      "events -- click and dblclick among them -- so a dblclick handler here\n"
+      "would never fire.\n"
+      "\n"
+      "The condition is `event.detail === 2` AND the hit is an annotation.\n"
+      "That press opens the text editor and starts no move gesture. A press\n"
+      "with detail 1 on an already-selected annotation is an ordinary press\n"
+      "and still starts a move -- dragging a selected annotation must keep\n"
+      "working.\n"
+      "\n"
+      "DIMMING. The diagram layer currently dims only during a move, and only\n"
+      "the moved refs. Extend it to also dim any annotation whose callout the\n"
+      "overlay is previewing -- otherwise dragging a callout TARGET, or\n"
+      "resizing either end, leaves the painted callout at full opacity while\n"
+      "the overlay paints a second one over it. calloutPreviews reports which\n"
+      "annotations those are, by id.\n"
+      "\n"
+      "TEXT EDITOR. Render TextEditor when ui.textEditTarget() is set,\n"
+      "positioned from the scene bounds of that ref, inside the pan/zoom group\n"
+      "so it tracks the canvas.\n"
+      "\n"
+      "The scene is an async resource, so for at least one rebuild after an\n"
+      "annotation is created its ref is NOT in geometry.byKey. Do not wait for\n"
+      "it -- gating the editor on bounds existing drops the autofocus that\n"
+      "makes create-then-type work at all. Open the editor immediately at the\n"
+      "bounds the creating gesture already knows: a Bounds whose top-left is\n"
+      "the position passed to addAnnotationEdit and whose extent is\n"
+      "NEW_ANNOTATION_SIZE. Once the ref appears in geometry.byKey, use those\n"
+      "bounds instead -- the editor moves to the real box on the next scene,\n"
+      "which is one frame and not worth avoiding. Commit applies setAnnotationTextEdit and\n"
+      "clears the target; cancel clears the target only. An annotation that\n"
+      "was just created and is cancelled without typing is left in place with\n"
+      "its placeholder text -- undo removes it, and silently deleting on\n"
+      "cancel would make Escape mean two different things.\n"
+      "\n"
+      "COMMAND CONTEXT. The one built here gains `beginTextEdit`: if the ref's\n"
+      "scene bounds are not entirely inside the container rect, pan the\n"
+      "viewport so the ref's centre is at the container's centre; then set\n"
+      "ui.setTextEditTarget. When the bounds are already fully visible, or the\n"
+      "ref is not in the scene index yet, pan nothing and just set the target.\n"
+      "\n"
+      "This is the editor's only production construction site for that\n"
+      "context, so a field left unset here is a command that silently does\n"
+      "nothing."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: ["CanvasProps", "routePress", "anchorGripAt", "handleAtPoint", "hitTestPoint", "TextEditor", "addAnnotationEdit", "setAnnotationTextEdit", "newAnnotationId", "NEW_ANNOTATION_TEXT", "NEW_ANNOTATION_SIZE", "anchorUpdate", "anchorCommit", "AnchorSession", "calloutPreviews", "OverlayLayer", "DiagramLayer", "elementKey"]
+  }
+]

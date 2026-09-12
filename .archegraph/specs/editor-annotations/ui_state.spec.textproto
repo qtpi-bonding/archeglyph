@@ -1,0 +1,50 @@
+# Wave 6, editor-annotations. UiState gains the one field an inline text
+# editor needs: which element is being edited, if any.
+#
+# docs/editor-ui-review.md §7 already lists `textEditTarget` as UiState's, and
+# it is the right owner -- it is transient, never saved, and read by a view.
+# It has simply never been built, because nothing could edit text yet.
+
+file: "packages/editor/src/ui_state/ui_state.ts"
+doc: "The transient UI store — selection, hover, tool, viewport, and what is being text-edited."
+
+structs: [
+  { name: "UiState"
+    change_type: MODIFIED
+    doc:
+      "Gains `textEditTarget` / `setTextEditTarget`: the annotation whose text\n"
+      "is being edited inline, or undefined when none is.\n"
+      "\n"
+      "An ElementRef rather than a plain id, so the accessor is uniform with\n"
+      "`selection` and `hover`, and so a future editable element that is not\n"
+      "an annotation costs nothing. Nothing in this pillar sets it to a\n"
+      "non-annotation ref.\n"
+      "\n"
+      "It is deliberately NOT derived from selection. Editing text is a mode\n"
+      "the user enters and leaves, and an annotation stays selected the whole\n"
+      "time; collapsing the two would make a single click open the editor."
+    fields: [
+      { name: "selection",         type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }] } } },
+      { name: "setSelection",      type: { named: { symbol: "Setter",   args: [{ named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }] } } },
+      { name: "hover",             type: { named: { symbol: "Accessor", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "setHover",          type: { named: { symbol: "Setter",   args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "tool",              type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Tool" } }] } } },
+      { name: "setTool",           type: { named: { symbol: "Setter",   args: [{ named: { symbol: "Tool" } }] } } },
+      { name: "viewport",          type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Viewport" } }] } } },
+      { name: "setViewport",       type: { named: { symbol: "Setter",   args: [{ named: { symbol: "Viewport" } }] } } },
+      { name: "textEditTarget",    type: { named: { symbol: "Accessor", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "setTextEditTarget", type: { named: { symbol: "Setter",   args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+  }
+]
+
+methods: [
+  { name: "createUiState"
+    change_type: MODIFIED
+    doc:
+      "Adds the `textEditTarget` signal, initialised to undefined. Every other\n"
+      "signal is unchanged."
+    inputs: []
+    output: { named: { symbol: "UiState" } }
+  }
+]

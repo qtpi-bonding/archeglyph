@@ -1,0 +1,60 @@
+# Wave 6, editor-annotations. The chords this pillar adds, and the command
+# ids they resolve to.
+#
+# §11.4 gives `t` to the annotation tool and `n` to the new-annotation mode.
+# They are not the same thing: `t` arms the pointer so the next click places
+# an annotation; `n` places one immediately relative to the selection and
+# starts typing. Both exist because one is a mouse workflow and one is not.
+
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative chord to command-id table, and the resolver over it."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Gains six members: 'tool-select', 'tool-annotation', 'add-annotation',\n"
+      "'edit-text', 'duplicate', 'hide'. Every existing member stays.\n"
+      "\n"
+      "'hide' is here even though KEYMAP binds no chord to it. A registry\n"
+      "entry's id must be a CommandId whether or not a chord resolves to it.\n"
+      "\n"
+      "'tool-hand' is NOT added. The hand tool is already in the Tool union\n"
+      "and its chord belongs with the rest of the toolbar in the editor-shell\n"
+      "pillar; adding it here would mean this pillar owning half a toolbar."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' | 'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' | 'duplicate' | 'hide'" } }
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    change_type: MODIFIED
+    doc:
+      "Five entries added: `v` tool-select, `t` tool-annotation, `n`\n"
+      "add-annotation, `Enter` edit-text, `Cmd/Ctrl+D` duplicate.\n"
+      "\n"
+      "Three of the five -- `v`, `t`, `n` -- are bare letters, and those are\n"
+      "the ones that need protecting while the user is typing into an\n"
+      "annotation. Two independent guards cover them, deliberately: the\n"
+      "keyboard handler declines to resolve any chord when the event target is\n"
+      "editable, AND the inline editor stops propagation on its own key\n"
+      "events. Either alone would be sufficient today. Both are specified\n"
+      "because the failure they prevent -- typing a note silently switching\n"
+      "tools -- is silent and is not caught by any test of either component on\n"
+      "its own.\n"
+      "\n"
+      "`Enter` is bound unconditionally here and the command decides whether\n"
+      "it applies; the keymap stays a flat table with no selection-dependent\n"
+      "rows, which is what lets the help sheet render it.\n"
+      "\n"
+      "Note for whoever implements group traversal: §11.2 of the UI review\n"
+      "also gives `Enter` to descend-into-group. Nothing implements that\n"
+      "today -- ui_state/navigation has next/prev in document order and\n"
+      "nothing else -- so there is no live collision. When it lands, the two\n"
+      "have to share the chord inside one command, because a flat table\n"
+      "cannot express selection-dependent rows."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeymapEntry[]" } }
+    uses: ["KeymapEntry", "Chord", "CommandId"]
+  }
+]

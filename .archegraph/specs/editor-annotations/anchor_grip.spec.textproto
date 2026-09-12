@@ -1,0 +1,82 @@
+# Wave 6, editor-annotations. The anchor grip's geometry and hit-testing.
+#
+# Deliberately NOT part of scene/hit_test's Handle. That union is the eight
+# compass directions and it is what resizeUpdate switches on; adding a ninth
+# member would make every resize path carry a case that must never occur. A
+# grip starts a different gesture, so it gets a different type.
+
+file: "packages/editor/src/scene/anchor_grip.ts"
+doc: "Where an annotation's anchor grip sits, and whether a point is on one."
+
+constants: [
+  { name: "ANCHOR_GRIP_OFFSET"
+    change_type: ADDED
+    doc:
+      "How far OUTSIDE the annotation's outline the grip centre sits, in\n"
+      "diagram units. 14.\n"
+      "\n"
+      "Outside, not on the outline, and this is the whole reason the constant\n"
+      "exists. scene/hit_test draws eight resize handles and every one of them\n"
+      "is ON the outline -- four corners and four edge midpoints. A grip\n"
+      "anywhere on that boundary coincides with one of them for some target\n"
+      "direction, and two overlapping affordances that start different\n"
+      "gestures is worse than either."
+    type: { primitive: REAL }
+  }
+]
+
+methods: [
+  { name: "anchorGripPoint"
+    change_type: ADDED
+    doc:
+      "The grip's centre: the point where the ray from the annotation's centre\n"
+      "toward `towardCentre` crosses its outline, pushed a further\n"
+      "ANCHOR_GRIP_OFFSET along that same ray.\n"
+      "\n"
+      "The outline crossing is boundsProjectToEdge, the same function\n"
+      "resolveAttachPoint uses, so the grip sits on the line the callout will\n"
+      "be drawn along rather than merely near it.\n"
+      "\n"
+      "When `towardCentre` is undefined -- an unanchored annotation -- the ray\n"
+      "points straight DOWN (positive y). A fixed direction, so that the grip\n"
+      "for an unanchored annotation is always in the same place relative to\n"
+      "it.\n"
+      "\n"
+      "Concrete case: bounds (0,0)-(100,40), towardCentre undefined, yields\n"
+      "(50, 54) -- centre (50,20), outline crossing (50,40), plus 14."
+    inputs: [
+      { name: "bounds",       type: { named: { symbol: "Bounds" } } },
+      { name: "towardCentre", type: { named: { symbol: "Vec2" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "Vec2" } }
+    uses: ["boundsCentre", "boundsProjectToEdge", "ANCHOR_GRIP_OFFSET"]
+  },
+  { name: "anchorGripAt"
+    change_type: ADDED
+    doc:
+      "The annotation whose grip centre is within `radius` of `point`, or\n"
+      "undefined.\n"
+      "\n"
+      "Returns a result ONLY when `selection` is exactly one element and that\n"
+      "element is an annotation. With two selected there is no single callout\n"
+      "to re-aim, and with none the grip is not drawn, so a hit would be on\n"
+      "something invisible. Returns undefined when the annotation is not in\n"
+      "geometry.byKey.\n"
+      "\n"
+      "The grip's `towardCentre` is the centre of the annotation's current\n"
+      "anchor target when it has one and that target is in the scene index,\n"
+      "and undefined otherwise -- the same input OverlayLayer uses to draw it,\n"
+      "so the drawn grip and the hit target cannot disagree.\n"
+      "\n"
+      "`radius` is in diagram units and is the caller's business to scale by\n"
+      "zoom, exactly as handleAtPoint already requires."
+    inputs: [
+      { name: "geometry",  type: { named: { symbol: "SceneGeometry" } } },
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "point",     type: { named: { symbol: "Vec2" } } },
+      { name: "radius",    type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef | undefined" } }
+    uses: ["anchorGripPoint", "boundsCentre", "elementKey"]
+  }
+]

@@ -1,0 +1,59 @@
+# Wave 6, editor-annotations. Closes the gap the annotation-anchor pillar
+# deliberately left open (see that spec's resolved_annotation header).
+#
+# During a drag the editor does not re-render the SVG. It dims the moving
+# elements and the overlay draws live geometry from scene/preview. Edges are
+# re-routed there; callouts were not, so dragging an annotation or its target
+# left the callout frozen at its pre-drag position until pointer-up.
+#
+# This is a separate pure module rather than an addition to scene/preview so
+# that preview.ts is not touched at all: it already hands the overlay the
+# moved bounds, which is everything a callout needs.
+
+file: "packages/editor/src/scene/callout_preview.ts"
+doc: "Live callout geometry during a gesture, computed from previewed bounds rather than the laid-out diagram."
+
+methods: [
+  { name: "calloutPreviews"
+    change_type: ADDED
+    doc:
+      "One PreviewEdge per anchored annotation whose callout is affected by\n"
+      "the bounds in `moved`, using those bounds for any element that appears\n"
+      "there and the scene's resting bounds for any that does not.\n"
+      "\n"
+      "Affected means EITHER end moved. Dragging the target of a callout has\n"
+      "to re-route it just as dragging the annotation does, and only one of\n"
+      "the two ends is in `moved` in each case.\n"
+      "\n"
+      "An annotation with no anchor, or one whose anchor matches no element,\n"
+      "contributes nothing.\n"
+      "\n"
+      "EDGE-anchored annotations also contribute nothing, and this is a real\n"
+      "gap rather than a case that cannot arise: calloutSections DOES handle\n"
+      "an edge target, taking its bounds from the polyline. The scene index\n"
+      "built by buildSceneGeometry holds nodes, groups and annotations only --\n"
+      "edges live separately in geometry.edgePolylines -- so an ElementBounds\n"
+      "for an edge does not exist to compare against. The visible consequence\n"
+      "is that an edge-anchored callout disappears for the duration of a drag\n"
+      "and reappears on release. Accepted for this pillar because anchoring to\n"
+      "an edge is rare and the alternative is indexing edge bounds, which\n"
+      "belongs with the scene rather than here.\n"
+      "\n"
+      "PreviewEdge.id is the ANNOTATION's id. The overlay keys callouts\n"
+      "separately from edges, so an annotation and an edge sharing an id do\n"
+      "not collide.\n"
+      "\n"
+      "Geometry must agree with what the committed render will paint, or the\n"
+      "line will visibly jump on pointer-up. Use edge_router's\n"
+      "resolveAttachPoint for both ends with the same argument order\n"
+      "calloutSections uses: the annotation end takes no hint and the target's\n"
+      "centre, the target end takes the anchor's anchorPosition and the\n"
+      "annotation's centre."
+    inputs: [
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "moved",    type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementBounds" } }] } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "PreviewEdge" } }] } }
+    uses: ["resolveAttachPoint", "boundsCentre", "elementKey"]
+  }
+]

@@ -1,0 +1,64 @@
+# Wave 6, editor-annotations. Two additions to the overlay: the live callout
+# during a drag, and the grip that starts an anchor drag.
+
+file: "packages/editor/src/canvas/overlay_layer.tsx"
+doc: "Selection outlines, handles, hover, marquee and in-flight gesture geometry, drawn over the diagram."
+
+structs: [
+  { name: "OverlayLayerProps"
+    change_type: MODIFIED
+    doc:
+      "Gains `anchorLine`: the in-flight anchor drag's points, or undefined.\n"
+      "\n"
+      "A separate prop from `preview` because the two are produced\n"
+      "differently. `preview` is derived from moved bounds; an anchor drag\n"
+      "moves nothing, and its line is a function of the free pointer. Folding\n"
+      "it into ScenePreview would mean putting a pointer position into a type\n"
+      "whose whole point is that it is geometry, not input."
+    fields: [
+      { name: "geometry",   type: { named: { symbol: "SceneGeometry" } } },
+      { name: "selection",  type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "hover",      type: { named: { symbol: "ElementRef" } }, is_optional: true },
+      { name: "zoom",       type: { primitive: REAL } },
+      { name: "preview",    type: { named: { symbol: "ScenePreview" } }, is_optional: true },
+      { name: "marquee",    type: { named: { symbol: "Bounds" } }, is_optional: true },
+      { name: "anchorLine", type: { named: { symbol: "Array", args: [{ named: { symbol: "Vec2" } }] } }, is_optional: true }
+    ]
+  }
+]
+
+constants: [
+  { name: "OverlayLayer"
+    change_type: MODIFIED
+    doc:
+      "Three additions.\n"
+      "\n"
+      "CALLOUT PREVIEW. While `preview` is present, draw calloutPreviews over\n"
+      "`preview.bounds` in the same style the preview edges use. The annotation\n"
+      "itself is dimmed in the diagram layer during the gesture, its painted\n"
+      "callout with it, so this replaces rather than doubles the line.\n"
+      "\n"
+      "ANCHOR LINE. When `anchorLine` holds two or more points, draw it as the\n"
+      "in-flight callout, DASHED. A committed callout is solid, so the dash is\n"
+      "what tells a user mid-drag which of the two lines on screen is the one\n"
+      "they are making. Dash rather than colour, because the palette already\n"
+      "spends colour on selection and hover.\n"
+      "\n"
+      "ANCHOR GRIP. Drawn when `selection` is exactly one annotation AND\n"
+      "`preview`, `marquee` and `anchorLine` are all undefined -- that\n"
+      "conjunction is what 'no gesture in flight' means in terms of this\n"
+      "component's own props, since it has no other signal.\n"
+      "\n"
+      "Its centre comes from anchorGripPoint, which places it OUTSIDE the\n"
+      "outline; the eight resize handles sit ON the outline, so the two never\n"
+      "coincide. Give it a shape unlike the handle squares -- it starts a\n"
+      "different gesture.\n"
+      "\n"
+      "Grip position comes from anchorGripPoint, the same function\n"
+      "scene/anchor_grip hit-tests against, so the drawn grip and the hit\n"
+      "target cannot disagree -- the rule handlePositions already follows for\n"
+      "resize handles. This decl only draws it."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<OverlayLayerProps>" } }
+    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "Bounds", "elementKey", "handlePositions", "calloutPreviews", "anchorGripPoint"]
+  }
+]

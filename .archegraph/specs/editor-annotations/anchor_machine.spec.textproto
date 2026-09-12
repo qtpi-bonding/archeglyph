@@ -1,0 +1,97 @@
+# Wave 6, editor-annotations. The anchor drag as a gesture machine, matching
+# move and resize.
+#
+# Its own file rather than more decls in drag_machines.ts, which already holds
+# four session types and six functions.
+#
+# The shape differs from the others in one way worth stating: a move or resize
+# is driven by a DELTA and commits geometry, while an anchor drag is driven by
+# an absolute pointer position and commits a REFERENCE. What is under the
+# pointer is the whole content of the gesture, so there is nothing to
+# accumulate.
+
+file: "packages/editor/src/gestures/anchor_machine.ts"
+doc: "The anchor drag: re-point an annotation's callout at whatever is under the pointer."
+
+structs: [
+  { name: "AnchorSession"
+    change_type: ADDED
+    doc:
+      "The annotation being re-anchored.\n"
+      "\n"
+      "It carries no origin and no accumulated delta, which is where it\n"
+      "differs from MoveSession. For an anchor drag the point where the press\n"
+      "began has no effect on the result; only the pointer position at release\n"
+      "matters."
+    fields: [
+      { name: "ref", type: { named: { symbol: "ElementRef" } } }
+    ]
+  }
+]
+
+methods: [
+  { name: "anchorUpdate"
+    change_type: ADDED
+    doc:
+      "The line to draw right now: from the annotation's outline either to the\n"
+      "raw pointer position, or -- when `hit` names an element -- to that\n"
+      "element's outline.\n"
+      "\n"
+      "Snapping to the hovered element's outline rather than tracking the raw\n"
+      "pointer is what makes the drop target legible -- the user sees the line\n"
+      "attach before releasing, so a release over the wrong element is\n"
+      "visible beforehand rather than a surprise afterwards.\n"
+      "\n"
+      "`hit` is the element under the pointer, or undefined over empty canvas.\n"
+      "An annotation under the pointer is treated as empty canvas: an\n"
+      "annotation anchored to an annotation is not a case the renderer\n"
+      "handles, so it must not be offerable.\n"
+      "\n"
+      "Returns an empty point array when the session's own annotation is not\n"
+      "in the scene index, which can happen for one rebuild after it is\n"
+      "created. Otherwise exactly two points.\n"
+      "\n"
+      "Both ends go through resolveAttachPoint with the SAME argument order\n"
+      "calloutSections and calloutPreviews use, and this is required rather\n"
+      "than stylistic: the annotation end takes no hint and the other end's\n"
+      "centre as towardCentre; the target end takes no hint and the\n"
+      "annotation's centre. If this disagrees with calloutSections the line\n"
+      "visibly jumps at the moment of release.\n"
+      "\n"
+      "Over empty canvas there is no target outline to project onto, so the\n"
+      "annotation end is projected toward the raw pointer and the second point\n"
+      "IS the raw pointer."
+    inputs: [
+      { name: "session",  type: { named: { symbol: "AnchorSession" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "pointer",  type: { named: { symbol: "Vec2" } } },
+      { name: "hit",      type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "Vec2" } }] } }
+    uses: ["resolveAttachPoint", "boundsCentre", "elementKey"]
+  },
+  { name: "anchorCommit"
+    change_type: ADDED
+    doc:
+      "The StyleEdit for the release: anchor the annotation to `hit`, or CLEAR\n"
+      "its anchor when `hit` is undefined or is itself an annotation.\n"
+      "\n"
+      "Clearing on a release over empty canvas is the deliberate choice. The\n"
+      "alternative -- leave the old anchor alone -- gives the user no way to\n"
+      "detach a callout at all, since there is no other affordance for it.\n"
+      "Dragging the line away from everything and letting go is what detaching\n"
+      "looks like.\n"
+      "\n"
+      "No anchorPosition hint is written. The grip sets WHICH element, not\n"
+      "which side of it; leaving the hint unset is what makes the callout\n"
+      "re-aim itself when either end later moves, which is the behaviour that\n"
+      "makes an anchor worth having over a nearby note."
+    inputs: [
+      { name: "session",    type: { named: { symbol: "AnchorSession" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "hit",        type: { named: { symbol: "ElementRef" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["anchorForElement", "setAnnotationAnchorEdit"]
+  }
+]

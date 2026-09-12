@@ -81,7 +81,7 @@ export const Inspector: Component<InspectorProps> = (
     >
       <Show when={model()} fallback={<div style={{ color: 'var(--ag-fg-3)' }}>Nothing selected</div>}>
         {(current) => (
-          <For each={renderableSections(current)}>
+          <For each={renderableSections(current())}>
             {(id) => section(id)}
           </For>
         )}

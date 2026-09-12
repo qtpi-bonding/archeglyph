@@ -1,19 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Component, createEffect, createSignal, JSX } from 'solid-js';
-import { TextField } from '../field_value';
-
-type OptionalText = string | undefined;
-
-/** Common properties for inspector fields containing written text. */
-export interface TextFieldProps {
-  /** Label displayed beside the field. */
-  label: string;
-  /** Written and effective values for the selection. */
-  field: TextField;
-  /** Called when the current text is committed. */
-  onCommit: (value: OptionalText) => void;
-}
+import type { TextField } from '../field_value';
+import type { TextFieldProps } from './color_field';
 
 /** Common text-field properties plus values offered by a datalist. */
 export interface TokenFieldProps extends TextFieldProps {

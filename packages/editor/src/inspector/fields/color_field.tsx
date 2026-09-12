@@ -3,9 +3,13 @@
 import { Component, JSX, createEffect, createSignal, onCleanup } from 'solid-js';
 import { TextField } from '../field_value';
 
-export interface ColorFieldProps {
+/** Common properties for inspector fields containing written text. */
+export interface TextFieldProps {
+  /** Label displayed beside the field. */
   label: string;
+  /** Written and effective values for the selection. */
   field: TextField;
+  /** Called when the current text is committed. */
   onCommit: (value: string | undefined) => void;
 }
 
@@ -50,7 +54,7 @@ function focusCanvas(): void {
   canvas?.focus();
 }
 
-export const ColorFieldInput: Component<ColorFieldProps> = (props: ColorFieldProps): JSX.Element => {
+export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps): JSX.Element => {
   const [text, setText] = createSignal<string>(props.field.mixed ? '' : (props.field.override ?? ''));
   const [focused, setFocused] = createSignal<boolean>(false);
   let beforeFocus: string = text();

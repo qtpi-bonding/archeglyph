@@ -1,0 +1,30 @@
+# Wave 6, pillar A. Same field, one transform further down.
+
+file: "packages/core/src/layout/laid_out_annotation/impl.ts"
+doc: "An annotation with a position and size resolved, ready to paint."
+
+structs: [
+  { name: "LaidOutAnnotation"
+    change_type: MODIFIED
+    doc:
+      "Gains `anchor`, carried verbatim from ResolvedAnnotation.\n"
+      "\n"
+      "Layout does not resolve the anchor into a point. It cannot: the point\n"
+      "depends on both ends' final bounds, and an annotation is positioned\n"
+      "explicitly (D1 -- annotations never auto-layout) while its target may\n"
+      "still be moving. Projection happens at paint time, from bounds that are\n"
+      "by then final."
+    fields: [
+      { name: "id",         type: { primitive: CHARACTER } },
+      { name: "position",   type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "size",       type: { named: { symbol: "archeglyph.style.v1.Vec2" } } },
+      { name: "shape",      type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "callout",    type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }, is_optional: true },
+      { name: "anchor",     type: { named: { symbol: "archeglyph.style.v1.AnnotationAnchor" } }, is_optional: true },
+      { name: "layout",     type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } }, is_optional: true },
+      { name: "content",    type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.content.v1.Localization" } }] } } }
+    ]
+    typescript: {}
+  }
+]

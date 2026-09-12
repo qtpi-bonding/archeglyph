@@ -1,0 +1,63 @@
+# Wave 6, pillar A. The only genuinely new code in this pillar; everything
+# else is one field being carried further.
+#
+# Deliberately NOT a new routing algorithm. A callout is geometrically the
+# same problem as an edge -- two boxes, project each end onto its own outline,
+# optional normalized attachment hint on one end -- and edge_router already
+# solves it. routeStraight + resolveAttachPoint (layout/edge_router/impl.ts)
+# are reused verbatim, which is also what makes a callout's attachment
+# convention identical to an edge's rather than merely similar.
+#
+# It lives under layout/ and not renderer/ despite being consumed by the
+# renderer: nothing in it is SVG, every dependency it has is layout/ or
+# geometry/, and the editor's drag preview will need the same geometry without
+# wanting a renderer import.
+
+file: "packages/core/src/layout/callout_line/impl.ts"
+doc: "Geometry for the line from an anchored annotation to the element it points at."
+
+methods: [
+  { name: "calloutSections"
+    change_type: ADDED
+    doc:
+      "The line from `annotation` to whatever its anchor names, as edge\n"
+      "sections so that the existing edgePath painter can draw it unchanged.\n"
+      "\n"
+      "Returns an EMPTY array in three cases, which callers do not have to\n"
+      "distinguish: the annotation has no anchor; the anchor names an id that\n"
+      "is not in the diagram; the anchor names an edge with no sections.\n"
+      "Empty is the useful answer for all three because edgePath already maps\n"
+      "an empty section list to an empty path string -- so a dangling anchor\n"
+      "paints nothing and the annotation itself is unaffected. A dangling\n"
+      "anchor is a normal mid-edit state (delete the target, the note\n"
+      "remains), not an error, so it must not throw and must not be logged.\n"
+      "\n"
+      "Otherwise exactly ONE section, two points, no bend points. Straight\n"
+      "only: routeOrthogonal exists but a right-angled callout reads as an\n"
+      "edge, which is the one thing a callout must not be mistaken for.\n"
+      "\n"
+      "Target bounds by kind: NODE and GROUP from position and size; EDGE\n"
+      "from the union of its section endpoints and bend points, because an\n"
+      "edge has no box of its own.\n"
+      "\n"
+      "The annotation end gets no attachment hint, so it projects to whichever\n"
+      "point on its own outline faces the target. The target end gets\n"
+      "`anchor.anchorPosition` when set, and no hint when unset -- the same\n"
+      "normalized element-local convention edges use for attachment\n"
+      "(proto/style.proto:448), which resolveAttachPoint already implements.\n"
+      "\n"
+      "Concrete case worth pinning: an annotation at (0,0) size 10x10 anchored\n"
+      "to a node at (100,0) size 10x10, no anchorPosition, yields one section\n"
+      "from (10,5) to (100,5)."
+    inputs: [
+      { name: "diagram",    type: { named: { symbol: "LaidOutDiagram" } } },
+      { name: "annotation", type: { named: { symbol: "LaidOutAnnotation" } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "EdgeSection" } }] } }
+    uses: ["routeStraight", "boundsFromRect", "boundsUnion"]
+    # Node-or-group bounds-by-id is computed in three other places already
+    # (layout_engine endpointBounds, editor preview endpointBounds, svg_painter
+    # viewBox). Only the EDGE-target case here is new. Consolidating the four
+    # is worth doing and is not this pillar's job.
+  }
+]

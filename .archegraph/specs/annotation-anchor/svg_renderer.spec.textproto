@@ -1,0 +1,62 @@
+# Wave 6, pillar A. The consumer -- and the reason the rest of the pillar
+# exists. This is the decl that removes the deferral note at impl.ts:166.
+
+file: "packages/core/src/renderer/svg_renderer/impl.ts"
+doc: "LaidOutDiagram to a deterministic SVG string."
+
+structs: [
+  { name: "SvgRendererImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "render"
+        change_type: MODIFIED
+        doc:
+          "The annotation pass paints a callout line before the annotation's\n"
+          "own shape and text, using calloutSections for the geometry and the\n"
+          "existing edgePath painter for the path data.\n"
+          "\n"
+          "Line BEFORE shape within the same annotation group, so the line\n"
+          "disappears under the annotation's fill where they overlap rather\n"
+          "than being drawn across its text. Same reason edges are painted\n"
+          "before nodes.\n"
+          "\n"
+          "Styling comes from the annotation's `callout` Glyph1D, which is\n"
+          "already resolved and already cascades -- stroke colour, width and\n"
+          "arrowheads read exactly as they do in the edge pass.\n"
+          "\n"
+          "The arrowhead-variant scan that feeds arrowMarkers must WIDEN to\n"
+          "include callouts. It currently walks edges only, so a marker a\n"
+          "callout asks for is only defined when some edge happens to want the\n"
+          "same variant -- and a diagram with one anchored annotation and no\n"
+          "edges emits no defs at all, leaving marker-end pointing at nothing.\n"
+          "Include the `callout.arrowheads` of every annotation that produces a\n"
+          "non-empty section list. Still ONE shared marker set and one id\n"
+          "scheme; a callout and an edge asking for the same variant share a\n"
+          "def.\n"
+          "\n"
+          "The line stays INSIDE the existing `<g id=\"annotation-...\">`\n"
+          "element, and gets no data-element-id and no hit stroke of its own.\n"
+          "The callout is decoration; the annotation is the element. Note that\n"
+          "this is NOT what makes it unselectable -- the editor never hit-tests\n"
+          "this markup at all, it tests the bounds index in scene/hit_test, and\n"
+          "the DiagramLayer string is inert. So a click on the line selects\n"
+          "whatever the bounds index reports there, which is not the\n"
+          "annotation. Emitting no id is for consumers of the SVG, not for the\n"
+          "editor.\n"
+          "\n"
+          "When calloutSections returns empty the path string is empty and\n"
+          "nothing is emitted, which is the unanchored case and by far the\n"
+          "common one.\n"
+          "\n"
+          "Remove the deferral NOTE that currently sits above the annotation\n"
+          "loop; it describes exactly the gap this decl closes."
+        inputs: [{ name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } }]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: CHARACTER },
+          { named: { symbol: "RenderError" } }
+        ]}}
+        uses: ["calloutSections", "edgePath", "shapePath", "textElement"]
+      }
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+# Wave 6, pillar A. The fully-pinned path's LaidOutAnnotation construction
+# site. Both paths build annotations, so both have to carry the anchor or an
+# anchored annotation loses its line depending on whether the diagram happens
+# to be fully pinned.
+
+file: "packages/core/src/layout/layout_engine/impl.ts"
+doc: "Layout orchestrator — runs elkjs when something still needs placing, and otherwise uses the positions already written down."
+
+structs: [
+  { name: "LayoutEngineImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "layoutFromPins"
+        change_type: MODIFIED
+        doc:
+          "The LaidOutAnnotation it builds carries `anchor` through from the\n"
+          "ResolvedAnnotation.\n"
+          "\n"
+          "The rest of this method is unchanged. Annotations were already\n"
+          "copied across here rather than computed, because they are always\n"
+          "explicitly positioned; this adds one more field to the copy."
+        inputs: [{ name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } }]
+        output: { named: { symbol: "LaidOutDiagram" } }
+      }
+    ]
+  }
+]

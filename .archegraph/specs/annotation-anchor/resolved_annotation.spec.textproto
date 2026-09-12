@@ -1,0 +1,49 @@
+# Wave 6, pillar A. One field, carried through two transforms that currently
+# drop it, so that an anchored annotation renders its callout line.
+#
+# `AnnotationEntry.anchor` (proto/style.proto:427) has been in the file format
+# since the schema was written, and the editor has a builder that writes it
+# (state/edits/annotation.ts setAnnotationAnchorEdit). Nothing downstream reads
+# it. The renderer records this at svg_renderer/impl.ts:166.
+#
+# So an annotation can be anchored to a node today and look exactly like an
+# unanchored one -- in the editor and in `archeglyph render` alike.
+#
+# SCOPE. This pillar makes the COMMITTED render correct. It does not touch the
+# editor's drag preview: scene/preview.ts re-routes edges live during a drag
+# and knows nothing about callouts, so while an annotation or its target is
+# being dragged the callout will stay at its pre-drag position and snap on
+# release. Fixing that belongs with the pillar that adds annotation dragging
+# and drag-to-anchor, which is where preview.ts is being touched anyway.
+
+file: "packages/core/src/resolver/resolved_annotation/impl.ts"
+doc: "An annotation after the style cascade: shape, typography, callout styling, and what it points at."
+
+structs: [
+  { name: "ResolvedAnnotation"
+    change_type: MODIFIED
+    doc:
+      "Gains `anchor`.\n"
+      "\n"
+      "The cascade already reads `entry.anchor` -- it is the condition that\n"
+      "decides whether callout styling is merged at all (style_cascade:268).\n"
+      "It just never carried the value forward, so the `callout` Glyph1D\n"
+      "survives resolution while the thing it describes does not.\n"
+      "\n"
+      "Unresolved on purpose: this is the style-file value verbatim, a ref_id\n"
+      "plus kind plus an optional normalized hint. Whether the target exists\n"
+      "is not checked here. A dangling anchor is not an error at resolve\n"
+      "time -- the renderer draws no line and the annotation stays visible,\n"
+      "which is the behaviour someone mid-edit wants."
+    fields: [
+      { name: "id",         type: { primitive: CHARACTER } },
+      { name: "shape",      type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "callout",    type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "anchor",     type: { named: { symbol: "archeglyph.style.v1.AnnotationAnchor" } }, is_optional: true },
+      { name: "layout",     type: { named: { symbol: "archeglyph.style.v1.AnnotationLayout" } }, is_optional: true },
+      { name: "content",    type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.content.v1.Localization" } }] } } }
+    ]
+    typescript: {}
+  }
+]

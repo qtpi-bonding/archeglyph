@@ -1,0 +1,31 @@
+# Wave 6, pillar A. The ELK path's LaidOutAnnotation construction site.
+
+file: "packages/core/src/layout/layout_adapter/impl.ts"
+doc: "elkjs adapter — ResolvedDiagram in, LaidOutDiagram out."
+
+structs: [
+  { name: "ElkAdapterImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "runLayout"
+        change_type: MODIFIED
+        is_async: true
+        doc:
+          "The LaidOutAnnotation it builds carries `anchor` through from the\n"
+          "ResolvedAnnotation.\n"
+          "\n"
+          "Annotations are not handed to ELK and are not part of the graph it\n"
+          "sees; this method only copies them across. Anchoring does not change\n"
+          "that -- an anchored annotation is still invisible to layout, and the\n"
+          "element it points at is placed as though the annotation did not\n"
+          "exist. That is deliberate: a note about a node should not move the\n"
+          "node."
+        inputs: [{ name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } }]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+      }
+    ]
+  }
+]

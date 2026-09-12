@@ -1,0 +1,31 @@
+# Wave 6, pillar A. Without this the pillar ships a line nobody can see.
+#
+# The blueprint annotation component (D12b) defines a shape and typography and
+# no callout at all. So a hand-authored anchored annotation resolves to an
+# empty Glyph1D, and the edge-pass styling convention the renderer adopts for
+# callouts falls back to #000000 at width 1 -- a black hairline on a #0f1a2b
+# canvas. Every other part of this pillar would be correct and the visible
+# outcome would be nothing.
+
+file: "packages/themes/src/index.ts"
+doc: "Bundled themes for archeglyph — the token vocabulary plus the components each theme paints with."
+
+methods: [
+  { name: "blueprintTheme"
+    change_type: MODIFIED
+    doc:
+      "The annotation component gains a `callout` Glyph1D: stroke #73daca at\n"
+      "width 1.2, no arrowheads.\n"
+      "\n"
+      "Same stroke as the edge component, deliberately. A callout and an edge\n"
+      "are the same kind of mark -- a line between two elements -- and D12b\n"
+      "gives teal one job across the palette. They are told apart by the\n"
+      "absence of an arrowhead: an edge asserts direction, a callout only\n"
+      "points.\n"
+      "\n"
+      "Nothing else in the theme changes. The existing annotation shape and\n"
+      "typography stay exactly as they are."
+    inputs: []
+    output: { named: { symbol: "archeglyph.theme.v1.Theme" } }
+  }
+]

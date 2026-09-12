@@ -1,0 +1,32 @@
+# Wave 6, pillar A. The first of the two transforms that drop the anchor.
+
+file: "packages/core/src/resolver/style_cascade/impl.ts"
+doc: "Style cascade — theme component, then per-element entry, into a ResolvedDiagram."
+
+structs: [
+  { name: "StyleCascadeImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "cascade"
+        change_type: MODIFIED
+        doc:
+          "The annotation branch carries `entry.anchor` into the\n"
+          "ResolvedAnnotation it builds.\n"
+          "\n"
+          "This is a pass-through, not a cascade: an anchor is a reference to\n"
+          "another element, not a visual property, so there is nothing for a\n"
+          "theme component to contribute and nothing to merge. Every other\n"
+          "field in this branch is merged from two sources; this one is copied\n"
+          "from one.\n"
+          "\n"
+          "The surrounding lines already read the same field to decide whether\n"
+          "to merge callout styling. Leave that condition as it is."
+        inputs: [{ name: "request", type: { named: { symbol: "CascadeRequest" } } }]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "ResolvedDiagram" } },
+          { named: { symbol: "ResolveError" } }
+        ]}}
+      }
+    ]
+  }
+]

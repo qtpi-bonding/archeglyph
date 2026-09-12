@@ -2,5 +2,15 @@ llm:
   command: "claude -p {prompt} --json-schema {schema} --output-format json --max-turns 50"
 
 tests:
-  skip_property_tests: false
+  # Property tests are generated malformed -- `fc.property(el in fc.record({...}))`
+  # is not valid syntax, and fast-check is not a dependency here. On the
+  # layout-pin run, 19 of 72 emitted tests were property-based and every one
+  # failed to parse, taking 15 planned cases with them including the pillar's
+  # headline invariant. Filed upstream 2026-09-11. Turn this back on once the
+  # generator emits valid fast-check and declares the dependency.
+  #
+  # The cost of skipping is real: cases flagged is_property simply vanish. So
+  # state an invariant in the spec as a CONCRETE case where it can be, rather
+  # than as a general property that will be dropped.
+  skip_property_tests: true
   language: typescript

@@ -25,5 +25,11 @@ export interface GestureDecision {
   handle?: Handle;
 }
 export function exceedsThreshold(origin: Vec2, current: Vec2): boolean {
-  throw new Error('not implemented');
+  const dx = current.x - origin.x;
+  const dy = current.y - origin.y;
+  const threshold = 3;
+
+  // Pointer coordinates are screen coordinates.  Do not apply the diagram's
+  // zoom here: a physical pointer wobble is independent of diagram scale.
+  return dx * dx + dy * dy >= threshold * threshold;
 }

@@ -1,16 +1,17 @@
-import { create } from '@bufbuild/protobuf';
-import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Vec2 } from '@archeglyph/core/geometry/vec2';
+import { create } from '@bufbuild/protobuf';
+import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { Bounds } from '@archeglyph/core/geometry/bounds';
 import type { CommandId } from '../ui_state/keymap';
-import { ContainerRect } from '../ui_state/viewport_math';
+import { ContainerRect, screenToDiagram } from '../ui_state/viewport_math';
 import { EditorState } from '../state/editor_state';
 import { SceneGeometry } from '../scene/scene';
 import { UiState, ElementRef } from '../ui_state/ui_state';
 import { clearSelection } from '../ui_state/selection_ops';
 import { nextInDocumentOrder, prevInDocumentOrder } from '../ui_state/navigation';
-import { deleteAnnotationEdit } from '../state/edits/annotation';
+import { addAnnotationEdit, deleteAnnotationEdit, duplicateAnnotationEdit } from '../state/edits/annotation';
+import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../state/edits/annotation_defaults';
 import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
@@ -39,16 +40,75 @@ function selectedElements(context: CommandContext): ElementRef[] {
 
 function runDelete(context: CommandContext): void {
   const selection = selectedElements(context);
-  const nodeIds = selection.filter((ref) => ref.kind === 'node').map((ref) => ref.id);
-  if (nodeIds.length > 0) {
-    context.state.applyStyleEdit(setNodesHiddenEdit(context.state.stylesheet(), nodeIds, true));
-  }
   for (const ref of selection) {
     if (ref.kind === 'annotation') {
       context.state.applyStyleEdit(deleteAnnotationEdit(context.state.stylesheet(), ref.id));
     }
   }
   context.ui.setSelection(clearSelection());
+}
+
+function runHide(context: CommandContext): void {
+  const nodeIds = selectedElements(context).filter((ref) => ref.kind === 'node').map((ref) => ref.id);
+  if (nodeIds.length > 0) {
+    context.state.applyStyleEdit(setNodesHiddenEdit(context.state.stylesheet(), nodeIds, true));
+  }
+}
+
+function runAddAnnotation(context: CommandContext): void {
+  const stylesheet = context.state.stylesheet();
+  const selection = selectedElements(context);
+  const selectedBounds = context.geometry === undefined
+    ? undefined
+    : selection.reduce((bounds, ref) => {
+      const entry = context.geometry?.byKey[elementKey(ref)];
+      if (entry !== undefined) {
+        bounds.push(entry.bounds);
+      }
+      return bounds;
+    }, [] as Array<Bounds>);
+  const position = selectedBounds !== undefined && selectedBounds.length > 0
+    ? {
+      x: Math.max(...selectedBounds.map((bounds) => bounds.maxX)) + 24,
+      y: Math.min(...selectedBounds.map((bounds) => bounds.minY)),
+    }
+    : (() => {
+      const centre = screenToDiagram(
+        context.ui.viewport(),
+        context.rect,
+        { x: context.rect.left + context.rect.width / 2, y: context.rect.top + context.rect.height / 2 },
+      );
+      return {
+        x: centre.x - NEW_ANNOTATION_SIZE.x / 2,
+        y: centre.y - NEW_ANNOTATION_SIZE.y / 2,
+      };
+    })();
+  const id = newAnnotationId(stylesheet, 'annotation');
+  const ref: ElementRef = { kind: 'annotation', id };
+  context.state.applyStyleEdit(addAnnotationEdit(stylesheet, id, create(Vec2Schema, position), NEW_ANNOTATION_TEXT));
+  context.ui.setSelection([ref]);
+  context.beginTextEdit(ref);
+}
+
+function runEditText(context: CommandContext): void {
+  const selection = selectedElements(context);
+  if (selection.length === 1 && selection[0].kind === 'annotation') {
+    context.beginTextEdit(selection[0]);
+  }
+}
+
+function runDuplicate(context: CommandContext): void {
+  const copies: ElementRef[] = [];
+  for (const ref of selectedElements(context)) {
+    if (ref.kind !== 'annotation') {
+      continue;
+    }
+    const stylesheet = context.state.stylesheet();
+    const id = newAnnotationId(stylesheet, ref.id);
+    context.state.applyStyleEdit(duplicateAnnotationEdit(stylesheet, ref.id));
+    copies.push({ kind: 'annotation', id });
+  }
+  context.ui.setSelection(copies);
 }
 
 function runNudge(context: CommandContext, dx: number, dy: number): void {
@@ -152,6 +212,12 @@ export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
   { id: 'delete', label: 'Delete', run: runDelete },
+  { id: 'hide', label: 'Hide', run: runHide },
+  { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => ui.setTool('select') },
+  { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => ui.setTool('annotation') },
+  { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
+  { id: 'edit-text', label: 'Edit text', run: runEditText },
+  { id: 'duplicate', label: 'Duplicate', run: runDuplicate },
   { id: 'escape', label: 'Escape', run: (context: CommandContext): void => { context.ui.setSelection(clearSelection()); } },
   {
     id: 'select-all',

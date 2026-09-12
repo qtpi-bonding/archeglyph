@@ -2,7 +2,12 @@
 
 import { StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import { anchorForElement, setAnnotationAnchorEdit } from '../state/edits/annotation';
-import { ElementRef } from '../ui_state/ui_state';
+import { boundsCentre } from '@archeglyph/core/geometry/bounds';
+import { resolveAttachPoint } from '@archeglyph/core/layout/edge_router';
+import type { Vec2 } from '@archeglyph/core/geometry/vec2';
+import type { ElementRef } from '../ui_state/ui_state';
+import { elementKey } from '../scene/element_key';
+import type { SceneGeometry } from '../scene/scene';
 
 export function anchorCommit(session: AnchorSession, stylesheet: Stylesheet, hit?: ElementRef): StyleEdit {
   const anchor = hit === undefined || hit.kind === 'annotation'
@@ -15,5 +20,24 @@ export class AnchorSession {
   ref!: ElementRef;
 }
 export function anchorUpdate(session: AnchorSession, geometry: SceneGeometry, pointer: Vec2, hit?: ElementRef): Array<Vec2> {
-  throw new Error('not implemented');
+  const annotation = geometry.byKey[elementKey(session.ref)];
+  if (annotation === undefined) {
+    return [];
+  }
+
+  const annotationCentre = boundsCentre(annotation.bounds);
+  if (hit === undefined || hit.kind === 'annotation') {
+    return [resolveAttachPoint(annotation.bounds, pointer), pointer];
+  }
+
+  const target = geometry.byKey[elementKey(hit)];
+  if (target === undefined) {
+    return [resolveAttachPoint(annotation.bounds, pointer), pointer];
+  }
+
+  const targetCentre = boundsCentre(target.bounds);
+  return [
+    resolveAttachPoint(annotation.bounds, targetCentre),
+    resolveAttachPoint(target.bounds, annotationCentre),
+  ];
 }

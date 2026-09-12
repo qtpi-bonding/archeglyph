@@ -14,6 +14,7 @@ import { deleteAnnotationEdit } from '../state/edits/annotation';
 import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
+import { pinAllEdit, unpinAllEdit } from '../state/edits/layout_command';
 
 export interface Command {
   id: CommandId;
@@ -111,6 +112,18 @@ function runRing(context: CommandContext, direction: 'next' | 'prev'): void {
   }
 }
 
+function runPinAll(context: CommandContext): void {
+  const geometry = context.geometry;
+  if (geometry === undefined) {
+    return;
+  }
+  context.state.applyStyleEdit(pinAllEdit(context.state.stylesheet(), geometry.diagram));
+}
+
+function runUnpinAll(context: CommandContext): void {
+  context.state.applyStyleEdit(unpinAllEdit(context.state.stylesheet()));
+}
+
 export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
@@ -129,6 +142,9 @@ export const COMMANDS: Array<Command> = [
   { id: 'nudge-right', label: 'Nudge right', run: (context: CommandContext): void => runNudge(context, 1, 0) },
   { id: 'ring-next', label: 'Next element', run: (context: CommandContext): void => runRing(context, 'next') },
   { id: 'ring-prev', label: 'Previous element', run: (context: CommandContext): void => runRing(context, 'prev') },
+  { id: 'pin-all' as CommandId, label: 'Pin all', run: runPinAll },
+  { id: 'unpin-all' as CommandId, label: 'Unpin all', run: runUnpinAll },
+  { id: 'auto-layout' as CommandId, label: 'Auto layout', run: runUnpinAll },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
 ];
 

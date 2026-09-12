@@ -1,0 +1,57 @@
+# Wave 5. Tells ELK which elements it may not move.
+#
+# D1b: when a diagram gains an element, ELK places that element and nothing
+# else. Every already-pinned node and group goes in with its position and a
+# fixed-position instruction, so the newcomer is fitted around the arrangement
+# rather than the arrangement being recomputed around it.
+#
+# The risk the plan already names: elk.layered may treat a fixed position as a
+# preference rather than a constraint, since a layered algorithm has its own
+# opinions about ranks. If pinned elements move even slightly, the fallback is
+# org.eclipse.elk.fixed for the pinned set plus a second pass for newcomers.
+# Whichever holds, the OBSERVABLE contract is the same and is what to test:
+# after adding one element, every previously pinned element is exactly where it
+# was.
+
+file: "packages/core/src/layout/layout_adapter/impl.ts"
+doc: "Auto-layout boundary — converts ResolvedDiagram to algorithm input, runs layout, converts result back."
+
+structs: [
+  { name: "ElkAdapterImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "runLayout"
+        change_type: MODIFIED
+        is_async: true
+        doc:
+          "One addition; the coordinate-frame handling, hierarchy option and\n"
+          "result walk are unchanged.\n"
+          "\n"
+          "An element whose style entry carries an explicit position is sent to\n"
+          "ELK with that x/y and with 'org.eclipse.elk.position' set, plus\n"
+          "'org.eclipse.elk.fixed' in its parent's layoutOptions where the\n"
+          "algorithm needs telling that some children are immovable.\n"
+          "\n"
+          "Positions in a style entry are PARENT-RELATIVE and ELK also works\n"
+          "parent-relative, so they are passed through as they are. Converting\n"
+          "here would double-apply the offset that layout_engine's\n"
+          "absolutizePositions adds afterwards -- the same trap as §5.1, which\n"
+          "this pillar is otherwise about avoiding.\n"
+          "\n"
+          "An element with no explicit position is sent exactly as before, and\n"
+          "is the only kind ELK is being asked to place."
+        inputs: [
+          { name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: [
+          "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
+          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection", "measureLabel"
+        ]
+      }
+    ]
+  }
+]

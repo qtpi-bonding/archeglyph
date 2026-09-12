@@ -1,0 +1,29 @@
+# Wave 5. The three commands that operate on pinning, wired to the registry
+# built in wave 4. The builders they call already exist in
+# state/edits/layout_command.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The registry of named editor actions, shared by the keyboard, palette and menus."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "Three entries added; everything already there is unchanged.\n"
+      "\n"
+      "  pin-all — writes every laid-out position into the stylesheet, so the\n"
+      "    diagram is exactly what is on screen and ELK stops running.\n"
+      "  unpin-all — clears them, handing the whole diagram back to ELK.\n"
+      "  auto-layout — unpin-all followed by an immediate relayout, which is\n"
+      "    the same edit; it exists as a separate command because 'lay this\n"
+      "    out again' and 'stop pinning' are different intentions even though\n"
+      "    they are one operation.\n"
+      "\n"
+      "pin-all needs the Scene's LaidOutDiagram, since pinning means writing\n"
+      "down where things currently are. It is a no-op with no geometry rather\n"
+      "than an error -- a command firing before the first layout has resolved\n"
+      "is a timing accident, not a mistake by the user."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
+    uses: ["Command", "CommandContext", "clearSelection", "pinAllEdit", "unpinAllEdit"]
+  }
+]

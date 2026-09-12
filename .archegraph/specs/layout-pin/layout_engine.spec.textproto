@@ -1,0 +1,78 @@
+# Wave 5. The half of pin-on-touch that makes a pinned diagram STABLE.
+#
+# Pinning itself already works: writing NodeLayout.position is what pins an
+# element, and every move edit writes one (D1/D8, state/edits/move). What is
+# missing is the consequence — ELK still runs on every scene rebuild and still
+# gets to have an opinion about where everything goes.
+#
+# The failure that matters is not "layout is slow". It is that a user arranges
+# a diagram, adds one node, and everything they positioned rearranges itself.
+# That is the single most destructive thing an auto-layout editor can do, and
+# it is why D1 makes ELK a seed rather than an authority.
+
+file: "packages/core/src/layout/layout_engine/impl.ts"
+doc: "Layout orchestrator — runs elkjs when something still needs placing, and otherwise uses the positions already written down."
+
+structs: [
+  { name: "LayoutEngineImpl"
+    change_type: MODIFIED
+    methods: [
+      { name: "layout"
+        change_type: MODIFIED
+        is_async: true
+        doc:
+          "Two paths now.\n"
+          "\n"
+          "FULLY PINNED — every node and group in the diagram has an explicit\n"
+          "position in the stylesheet. ELK is not called at all. Positions come\n"
+          "straight from the style entries and edges are routed by\n"
+          "edge_router. Nothing can drift, because nothing is being computed.\n"
+          "\n"
+          "OTHERWISE — ELK runs, with every already-pinned element handed to it\n"
+          "as a fixed-position hint (see layout_adapter), so it places only\n"
+          "what has no position yet. This is D1b: a newcomer is seeded once,\n"
+          "into a diagram whose existing arrangement it must not disturb.\n"
+          "\n"
+          "The invariant the whole pillar exists for, and the one worth testing\n"
+          "directly: adding an element must not move any element that was\n"
+          "already pinned. Not 'not much' — not at all.\n"
+          "\n"
+          "Annotations are excluded from the fully-pinned test. They are always\n"
+          "explicitly positioned and never laid out, so they say nothing about\n"
+          "whether ELK is needed."
+        inputs: [
+          { name: "request", type: { named: { symbol: "LayoutRequest" } } }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LaidOutDiagram" } },
+          { named: { symbol: "LayoutError" } }
+        ]}}
+        uses: ["absolutizePositions", "isFullyPinned", "layoutFromPins"]
+      },
+      { name: "isFullyPinned"
+        doc: "True when every node and group carries an explicit position. Private."
+        inputs: [
+          { name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { primitive: BOOLEAN }
+      },
+      { name: "layoutFromPins"
+        doc:
+          "Builds a LaidOutDiagram entirely from written positions, with sizes\n"
+          "from measureLabel where a style entry gives none, and edge routes\n"
+          "from edge_router. Private; only reached when isFullyPinned holds,\n"
+          "so every lookup is total and a missing position is a programming\n"
+          "error rather than a case to paper over.\n"
+          "\n"
+          "Group sizes still have to be derived from their children, because a\n"
+          "group's extent is a consequence of what is inside it even when its\n"
+          "origin is pinned."
+        inputs: [
+          { name: "diagram", type: { named: { symbol: "ResolvedDiagram" } } }
+        ]
+        output: { named: { symbol: "LaidOutDiagram" } }
+        uses: ["measureLabel", "routeStraight", "routeOrthogonal"]
+      }
+    ]
+  }
+]

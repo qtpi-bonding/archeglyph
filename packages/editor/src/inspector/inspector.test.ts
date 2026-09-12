@@ -82,6 +82,18 @@ describe('inspectorModel', () => {
     expect(inspectorModel(mixed)).toBeUndefined();
   });
 
+  test('a group gets its container section second, beside layout', () => {
+    expect(inspectorModel(refs('group', 'g1'))?.sections)
+      .toEqual(['layout', 'group', 'shape', 'typography']);
+  });
+
+  test('an annotation gets shape AND line -- it has both a Glyph2D and a Glyph1D', () => {
+    // The callout is a Glyph1D exactly as an edge's connection is, and
+    // patchAnnotationEntry already carries both fields.
+    expect(inspectorModel(refs('annotation', 'a1'))?.sections)
+      .toEqual(['layout', 'annotation', 'shape', 'line', 'typography']);
+  });
+
   test('a multi-selection of one kind keeps every id', () => {
     expect(inspectorModel(refs('node', 'a', 'b', 'c'))?.ids).toEqual(['a', 'b', 'c']);
   });

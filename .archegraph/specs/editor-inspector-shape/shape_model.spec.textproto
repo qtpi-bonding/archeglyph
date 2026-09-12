@@ -1,0 +1,122 @@
+# Wave 5 follow-on. The Shape section's read and commit, over Glyph2D.
+#
+# Scope is deliberately narrower than Glyph2D: shape kind, corner radius, fill
+# colour, stroke colour and stroke width. Gradients, glow, decorations, stroke
+# caps, custom dash arrays, fill opacity and custom_path_ref are NOT edited
+# here. They are either rarely hand-set or need a control this pillar does not
+# have, and a half-built gradient editor is worse than none.
+#
+# One consequence has to be stated because the schema makes it silent:
+# Stroke.paint and Fill.paint are ONEOFS of colour or gradient. Writing a
+# colour to an element whose stroke is currently a gradient DISCARDS the
+# gradient. That is inherent to the oneof, not a choice this code makes, but
+# it is a real way to lose data from a file the editor did not author.
+
+file: "packages/editor/src/inspector/models/shape_model.ts"
+doc: "Read and commit for the Shape section: the editable subset of Glyph2D."
+
+structs: [
+  { name: "ShapeModel"
+    doc: "`shape` carries a DISPLAY NAME -- 'rect', 'ellipse', 'hexagon' -- not the numeric enum value. See SHAPE_NAMES for where those names come from and why they are not derived by stripping a prefix."
+    fields: [
+      { name: "shape", type: { named: { symbol: "TextField" } } },
+      { name: "cornerRadius", type: { named: { symbol: "NumberField" } } },
+      { name: "fill", type: { named: { symbol: "TextField" } } },
+      { name: "strokeColor", type: { named: { symbol: "TextField" } } },
+      { name: "strokeWidth", type: { named: { symbol: "NumberField" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "shapeModel"
+    doc:
+      "Overrides from the entry's `shape`; effective values from the laid-out\n"
+      "element's `shape`, which the resolver has cascaded and token-resolved.\n"
+      "\n"
+      "Serves node, group and annotation -- the three kinds with a Glyph2D.\n"
+      "An edge has none and never reaches here.\n"
+      "\n"
+      "SHAPE_UNSPECIFIED reads as NO value, not as the string 'unspecified'.\n"
+      "The enum's zero value means 'renderer picks', which is the same thing\n"
+      "an absent override means, and showing it as a selectable name would\n"
+      "offer the user a way to write a value that means nothing.\n"
+      "\n"
+      "A stroke or fill whose paint is a GRADIENT contributes undefined to\n"
+      "the colour fields rather than a string, so such a field reads as\n"
+      "unset. That is honest: there is no colour to show.\n"
+      "\n"
+      "It also means an unset-looking colour field can be hiding a gradient,\n"
+      "and writing a COLOUR into that field replaces the gradient rather than\n"
+      "filling in a blank. See commitShape, which owns that consequence."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
+    ]
+    output: { named: { symbol: "ShapeModel" } }
+    uses: ["numberField", "textField"]
+  },
+  { name: "commitShape"
+    doc:
+      "One StyleEdit for one Shape field across the whole selection, or\n"
+      "undefined when nothing should be written.\n"
+      "\n"
+      "Goes through the glyph builders -- setNodesGlyphEdit for nodes,\n"
+      "setGroupGlyphEdit and setAnnotationGlyphEdit for the others. They take\n"
+      "a WHOLE Glyph2D, so this reads each element's existing shape and\n"
+      "replaces the one field. Sending a fresh Glyph2D would silently clear\n"
+      "stroke, fill, glow and decorations at once.\n"
+      "\n"
+      "'shape' arrives as a display name and is mapped back through the same\n"
+      "table SHAPE_NAMES reads from, so the two directions cannot disagree.\n"
+      "An unrecognised name commits nothing rather than writing\n"
+      "SHAPE_UNSPECIFIED, which would look like a successful edit and\n"
+      "silently reset the shape.\n"
+      "\n"
+      "Writing `fill` or `strokeColor` sets the oneof's colour case and so\n"
+      "DISCARDS any gradient that element's paint currently held. That is the\n"
+      "schema's doing, but it means the edit is not reversible by clearing\n"
+      "the field afterwards -- clearing removes the colour and does not bring\n"
+      "the gradient back. Undo does.\n"
+      "\n"
+      "An undefined `value` clears that one field and leaves the rest of the\n"
+      "Glyph2D alone.\n"
+      "\n"
+      "Returns undefined when the value equals the existing override for\n"
+      "every id, so a select re-chosen at its current setting writes nothing."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'shape' | 'cornerRadius' | 'fill' | 'strokeColor' | 'strokeWidth'" } } },
+      { name: "value", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | number | undefined" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["setNodesGlyphEdit", "setGroupGlyphEdit", "setAnnotationGlyphEdit"]
+  },
+  { name: "SHAPE_NAMES"
+    doc:
+      "The selectable shape display names, in the enum's declaration order:\n"
+      "triangle, rect, pentagon, hexagon, heptagon, octagon, nonagon,\n"
+      "decagon, ellipse, cylinder. Excludes the zero value -- the empty\n"
+      "option covers that.\n"
+      "\n"
+      "DO NOT DERIVE THESE BY STRIPPING A PREFIX. protobuf-es strips an\n"
+      "enum's prefix only when it matches that enum's own name, so the\n"
+      "generated members are not uniformly shaped:\n"
+      "  ShapeType.SHAPE_RECT            prefix KEPT\n"
+      "  StrokePattern.DASHED            prefix STRIPPED\n"
+      "  ArrowheadVariant.ARROWHEAD_NONE prefix KEPT\n"
+      "Any single strip-the-prefix rule is therefore wrong for some of the\n"
+      "three, and wrong in a way that produces a plausible-looking name\n"
+      "rather than an error.\n"
+      "\n"
+      "So each of these lists is backed by an EXPLICIT table in its own file,\n"
+      "pairing a display name with an enum value, and both directions read\n"
+      "that one table. A name the table does not contain is unrecognised,\n"
+      "which is what makes commitShape's reject-unknown rule enforceable."
+    inputs: []
+    output: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } }
+  }
+]

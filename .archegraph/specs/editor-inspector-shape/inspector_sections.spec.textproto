@@ -1,0 +1,19 @@
+# Wave 5 follow-on. The registry gains two entries. This is the one-line
+# change the previous pillar built the registry for.
+
+file: "packages/editor/src/inspector/inspector_sections.ts"
+doc: "The SectionIds this panel has components for, and the filter that applies them."
+
+constants: [
+  { name: "SECTION_IDS"
+    change_type: MODIFIED
+    doc:
+      "Gains 'shape' and 'line'. Now: layout, shape, line, typography.\n"
+      "\n"
+      "'group' and 'annotation' remain unshipped, so a group selection still\n"
+      "renders three of its four sections and an annotation four of its five.\n"
+      "renderableSections is unchanged and needs no change -- that is what\n"
+      "the registry is for."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "SectionId" } }] } }
+  }
+]

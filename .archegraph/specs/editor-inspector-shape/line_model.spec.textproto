@@ -1,0 +1,108 @@
+# Wave 5 follow-on. The Line section's read and commit, over Glyph1D.
+#
+# Glyph1D serves two different things: an edge's `connection` and an
+# annotation's `callout`. They are the same message and get the same section,
+# which is the whole reason sections are per schema message rather than per
+# element kind.
+#
+# Scope: stroke colour, stroke width, dash pattern, and the two arrowhead
+# variants. Glow, custom dash arrays, stroke caps, gradients and arrowhead
+# size are not edited here.
+
+file: "packages/editor/src/inspector/models/line_model.ts"
+doc: "Read and commit for the Line section: the editable subset of Glyph1D."
+
+structs: [
+  { name: "LineModel"
+    doc: "`pattern`, `arrowStart` and `arrowEnd` carry DISPLAY NAMES -- 'dashed', 'none', 'filled' -- not numeric enum values. See SHAPE_NAMES in shape_model for why these are explicit tables rather than derived from the generated member names."
+    fields: [
+      { name: "strokeColor", type: { named: { symbol: "TextField" } } },
+      { name: "strokeWidth", type: { named: { symbol: "NumberField" } } },
+      { name: "pattern", type: { named: { symbol: "TextField" } } },
+      { name: "arrowStart", type: { named: { symbol: "TextField" } } },
+      { name: "arrowEnd", type: { named: { symbol: "TextField" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "lineModel"
+    doc:
+      "WHICH FIELD IT READS DEPENDS ON THE KIND, and this is the only place\n"
+      "that decides:\n"
+      "  edge        the entry's `connection`, effective from\n"
+      "              LaidOutEdge.connection\n"
+      "  annotation  the entry's `callout`, effective from\n"
+      "              LaidOutAnnotation.callout\n"
+      "No other kind has a Glyph1D and none reaches here.\n"
+      "\n"
+      "LaidOutAnnotation.callout is OPTIONAL where LaidOutEdge.connection is\n"
+      "not: an annotation without a callout has no line at all. An absent\n"
+      "callout contributes undefined to every effective value, so all five\n"
+      "fields read as unset rather than as zero.\n"
+      "\n"
+      "There is no separate 'add a callout' action. Committing ANY ONE of\n"
+      "these five fields on an annotation that has no callout creates the\n"
+      "callout, holding that one field and nothing else. commitLine is where\n"
+      "that happens.\n"
+      "\n"
+      "A gradient paint contributes undefined to strokeColor, as in\n"
+      "shapeModel and for the same reason."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
+    ]
+    output: { named: { symbol: "LineModel" } }
+    uses: ["numberField", "textField"]
+  },
+  { name: "commitLine"
+    doc:
+      "One StyleEdit for one Line field across the selection, or undefined\n"
+      "when nothing should be written.\n"
+      "\n"
+      "setEdgeGlyphEdit writes `connection` for edges;\n"
+      "setAnnotationGlyphEdit writes `callout` for annotations. Both take the\n"
+      "whole Glyph1D, so this reads the existing one and replaces a single\n"
+      "field rather than sending a fresh message.\n"
+      "\n"
+      "Arrowheads are a nested message: writing arrowStart or arrowEnd\n"
+      "rebuilds Arrowheads with the other variant and `size` preserved.\n"
+      "Writing one and dropping the other is the exact failure the builder\n"
+      "tests exist to catch, one level deeper.\n"
+      "\n"
+      "Display names map back through the same tables PATTERN_NAMES and\n"
+      "ARROWHEAD_NAMES read from; an unrecognised name commits nothing rather\n"
+      "than writing the UNSPECIFIED zero value.\n"
+      "\n"
+      "As in commitShape, writing a stroke colour discards a gradient that\n"
+      "paint currently holds, and the same no-op rule applies."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'strokeColor' | 'strokeWidth' | 'pattern' | 'arrowStart' | 'arrowEnd'" } } },
+      { name: "value", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | number | undefined" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["setEdgeGlyphEdit", "setAnnotationGlyphEdit"]
+  },
+  { name: "PATTERN_NAMES"
+    doc: "The selectable dash pattern display names, in enum order: solid, dashed, dotted. Excludes the zero value. Backed by an explicit name-to-value table, per SHAPE_NAMES."
+    inputs: []
+    output: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } }
+  },
+  { name: "ARROWHEAD_NAMES"
+    doc:
+      "The selectable arrowhead display names, in enum order: none, open,\n"
+      "filled, diamond, circle, tee. Excludes the zero value.\n"
+      "\n"
+      "Note the generated members are ArrowheadVariant.ARROWHEAD_NONE and so\n"
+      "on -- protobuf-es keeps that prefix, because it does not match the\n"
+      "enum's own name. The display name drops it. Backed by an explicit\n"
+      "table, per SHAPE_NAMES; a variant added to the proto has to be added\n"
+      "here too, which is the price of the names being choosable."
+    inputs: []
+    output: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } }
+  }
+]

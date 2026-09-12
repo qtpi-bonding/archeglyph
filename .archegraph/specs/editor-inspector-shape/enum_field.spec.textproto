@@ -1,0 +1,59 @@
+# Wave 5 follow-on. The one field kind the first panel pillar did not ship.
+#
+# An enum differs from the other three fields in one way that matters: its
+# value set is closed, so the control is a <select> and there is no typing, no
+# parse step and no blur/Enter distinction -- a change IS a commit. Everything
+# else about it (override vs effective, mixed, clearing) is the same.
+
+file: "packages/editor/src/inspector/fields/enum_field.tsx"
+doc: "A closed-vocabulary inspector field rendered as a select."
+
+structs: [
+  { name: "EnumFieldProps"
+    doc:
+      "TextFieldProps plus the options to offer. The field's value is the\n"
+      "enum's NAME as a string, not its numeric protobuf value -- the model\n"
+      "layer converts, so nothing in the UI has to know that ShapeType.RECT\n"
+      "is 2."
+    fields: [
+      { name: "options", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } }
+    ]
+    extends: [{ named: { symbol: "TextFieldProps" } }]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "EnumFieldInput"
+    doc:
+      "A <select> whose options are props.options plus, at the top, an empty\n"
+      "option meaning 'not set'.\n"
+      "\n"
+      "COMMITS ON CHANGE, not on blur. There is no partially-typed state to\n"
+      "protect, so the blur/Enter rule the text fields follow would only\n"
+      "delay the edit. This is the one field where onChange is correct, and\n"
+      "it is correct for the same reason onInput was wrong there: what\n"
+      "matters is whether an intermediate value can be meaningless, and for a\n"
+      "closed vocabulary none is.\n"
+      "\n"
+      "Selecting the empty option commits undefined, clearing the override.\n"
+      "\n"
+      "When field.mixed the select shows an extra disabled option reading\n"
+      "'Mixed', selected, listed before the empty one. It is disabled because\n"
+      "re-selecting 'Mixed' has no meaning -- unlike a mixed text field,\n"
+      "where the empty box is a legitimate thing to type into.\n"
+      "\n"
+      "THE EMPTY OPTION'S LABEL IS A FUNCTION OF field.effective ALONE, and\n"
+      "is independent of field.mixed -- the two rules do not interact and\n"
+      "either can apply without the other:\n"
+      "  effective defined    'Default (rect)'\n"
+      "  effective undefined  'Default'\n"
+      "A mixed selection whose elements happen to share an effective value\n"
+      "therefore shows BOTH the disabled 'Mixed' option and a 'Default (rect)'\n"
+      "empty option, which is correct: they answer different questions.\n"
+      "\n"
+      "This is how the effective value survives into a control that has no\n"
+      "placeholder of its own."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<EnumFieldProps>" } }
+  }
+]

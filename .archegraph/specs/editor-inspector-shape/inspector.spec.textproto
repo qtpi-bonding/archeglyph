@@ -1,0 +1,23 @@
+# Wave 5 follow-on. The router learns two more section components.
+
+file: "packages/editor/src/inspector/inspector.tsx"
+doc: "The inspector panel: routes a selection to the sections that can render it."
+
+constants: [
+  { name: "Inspector"
+    change_type: MODIFIED
+    doc:
+      "Two cases added to the SectionId-to-component dispatch: 'shape'\n"
+      "renders ShapeSection and 'line' renders LineSection. Both take model,\n"
+      "geometry and state, like LayoutSection.\n"
+      "\n"
+      "Nothing else changes. The empty state, the focus registration, the\n"
+      "Escape handling and the delegation to renderableSections are all\n"
+      "untouched -- and the fact that this is the whole diff is the point of\n"
+      "having put the membership rule in a registry.\n"
+      "\n"
+      "Section ORDER still comes from the model, not from this dispatch."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<InspectorProps>" } }
+    uses: ["inspectorModel", "renderableSections", "LayoutSection", "TypographySection", "ShapeSection", "LineSection"]
+  }
+]

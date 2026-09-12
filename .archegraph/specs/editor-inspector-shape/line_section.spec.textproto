@@ -1,0 +1,46 @@
+# Wave 5 follow-on. The Line section component.
+
+file: "packages/editor/src/inspector/sections/line_section.tsx"
+doc: "The Line section: stroke and arrowheads for an edge's connection or an annotation's callout."
+
+structs: [
+  { name: "LineSectionProps"
+    fields: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "LineSection"
+    doc:
+      "IMPORT, DO NOT REDECLARE. lineModel, commitLine, PATTERN_NAMES, ARROWHEAD_NAMES and the LineModel type\n"
+      "are being created by sibling nodes in THIS SAME BUILD at\n"
+      "packages/editor/src/inspector/models/line_model.ts -- they will not exist on disk when this\n"
+      "node starts. Import them from there. A parallel node that could not\n"
+      "see its sibling has already produced a duplicate interface under a\n"
+      "second name once in this project; the result compiles, passes tests\n"
+      "and is caught only by verify.\n"
+      "\n"
+      "A ColorFieldInput for stroke colour, a NumberFieldInput for stroke\n"
+      "width, and three EnumFieldInputs -- pattern over PATTERN_NAMES, start\n"
+      "and end over ARROWHEAD_NAMES.\n"
+      "\n"
+      "The section's heading is 'Line' for both kinds it serves. It is NOT\n"
+      "renamed to 'Callout' for annotations: the section is named for the\n"
+      "schema message it edits, which is the rule that lets one component\n"
+      "serve both, and a heading that changes with the selection makes the\n"
+      "panel look like it has more sections than it does.\n"
+      "\n"
+      "Each onCommit calls commitLine and hands the result to\n"
+      "state.applyStyleEdit, dropping an undefined edit.\n"
+      "\n"
+      "SOLID: read lineModel inside a memo or accessor, never in the\n"
+      "component body."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<LineSectionProps>" } }
+    uses: ["lineModel", "commitLine", "PATTERN_NAMES", "ARROWHEAD_NAMES", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
+  }
+]

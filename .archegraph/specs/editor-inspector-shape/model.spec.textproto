@@ -1,0 +1,56 @@
+# Wave 5 follow-on. A correction to the landed sectionsByKind table.
+#
+# The core pillar's inspectorModel drifted from its spec on two kinds and
+# nothing caught it: verify checks structural wiring, and a list of section
+# names inside a function body is not wiring. The core pillar's own tests
+# asserted the node and edge lists and not the other two, which is the hole
+# that let it through.
+#
+# It matters now rather than then, because this pillar ships the Shape and
+# Line sections. Without the correction, an annotation selection never names
+# 'shape' or 'line', renderableSections therefore never surfaces them, and
+# ShapeSection, LineSection and the annotation branches of commitShape and
+# commitLine are unreachable from the UI while looking fully wired.
+
+file: "packages/editor/src/inspector/model.ts"
+doc: "Selection -> which inspector sections apply, and to which ids."
+
+methods: [
+  { name: "inspectorModel"
+    change_type: MODIFIED
+    doc:
+      "Only the sectionsByKind table changes. The empty-selection and\n"
+      "mixed-kind guards, the kind check and the id mapping are unchanged.\n"
+      "\n"
+      "The table must be exactly this, in exactly this order -- the order IS\n"
+      "the display order, and the panel takes it from here:\n"
+      "\n"
+      "  node        layout, shape, typography\n"
+      "  group       layout, group, shape, typography\n"
+      "  edge        line, typography\n"
+      "  annotation  layout, annotation, shape, line, typography\n"
+      "\n"
+      "Two corrections against what is currently in the file:\n"
+      "\n"
+      "ANNOTATION GAINS 'shape' AND 'line'. An annotation has a Glyph2D\n"
+      "(`shape`) and a Glyph1D (`callout`) in the schema, and\n"
+      "patchAnnotationEntry already carries both. Omitting them was an error,\n"
+      "not a scope decision.\n"
+      "\n"
+      "GROUP'S 'group' ENTRY MOVES to second, directly after layout. Its\n"
+      "fields -- padding, render mode, label position -- are container\n"
+      "geometry, so they belong beside layout rather than after the paint\n"
+      "sections.\n"
+      "\n"
+      "Neither the 'group' nor the 'annotation' section has a component yet;\n"
+      "renderableSections filters them out. Naming them here is still correct\n"
+      "-- this table describes what the DOMAIN has, and the registry\n"
+      "separately describes what the panel can draw. Conflating the two is\n"
+      "what would make the missing sections invisible rather than merely\n"
+      "unbuilt."
+    inputs: [
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "InspectorModel | undefined" } }
+  }
+]

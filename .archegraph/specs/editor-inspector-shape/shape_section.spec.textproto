@@ -1,0 +1,47 @@
+# Wave 5 follow-on. The Shape section component. Same shape as
+# layout_section and typography_section: read one model, render fields, hand
+# each commit straight to applyStyleEdit, decide nothing.
+
+file: "packages/editor/src/inspector/sections/shape_section.tsx"
+doc: "The Shape section: shape kind, corner radius, fill and stroke for a node, group or annotation."
+
+structs: [
+  { name: "ShapeSectionProps"
+    fields: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "ShapeSection"
+    doc:
+      "IMPORT, DO NOT REDECLARE. shapeModel, commitShape, SHAPE_NAMES and the ShapeModel type\n"
+      "are being created by sibling nodes in THIS SAME BUILD at\n"
+      "packages/editor/src/inspector/models/shape_model.ts -- they will not exist on disk when this\n"
+      "node starts. Import them from there. A parallel node that could not\n"
+      "see its sibling has already produced a duplicate interface under a\n"
+      "second name once in this project; the result compiles, passes tests\n"
+      "and is caught only by verify.\n"
+      "\n"
+      "An EnumFieldInput for shape over SHAPE_NAMES, NumberFieldInputs for\n"
+      "corner radius and stroke width, and ColorFieldInputs for fill and\n"
+      "stroke colour.\n"
+      "\n"
+      "Corner radius is shown for every shape, not only rect. It has no\n"
+      "effect on an ellipse, but hiding a field on a condition means the user\n"
+      "cannot see what is set when they switch shapes, and a value that\n"
+      "silently persists unseen is worse than one visibly ignored.\n"
+      "\n"
+      "Each onCommit calls commitShape and hands the result to\n"
+      "state.applyStyleEdit, dropping an undefined edit.\n"
+      "\n"
+      "SOLID: read shapeModel inside a memo or accessor, never in the\n"
+      "component body."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<ShapeSectionProps>" } }
+    uses: ["shapeModel", "commitShape", "SHAPE_NAMES", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
+  }
+]

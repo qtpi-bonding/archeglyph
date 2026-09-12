@@ -5,7 +5,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { create } from '@bufbuild/protobuf';
 import { StyleEdit, Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { elementKey } from '../scene/element_key';
-import { ScenePreview, previewMove, resizeBounds } from '../scene/preview';
+import { ScenePreview, previewMove, previewResize, resizeBounds } from '../scene/preview';
 import { SceneGeometry } from '../scene/scene';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { resizeAnnotationEdit, resizeGroupEdit, resizeNodeEdit } from '../state/edits/resize';
@@ -120,7 +120,16 @@ export interface ResizeSession {
   origin: Vec2;
 }
 export function resizeUpdate(session: ResizeSession, geometry: SceneGeometry, current: Vec2, keepAspect: boolean): ScenePreview {
-  throw new Error('not implemented');
+  const delta = {
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
+  };
+  return previewResize(geometry, {
+    ref: session.ref,
+    handle: session.handle,
+    delta,
+    keepAspect,
+  });
 }
 export function resizeCommit(session: ResizeSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2, keepAspect: boolean): StyleEdit | undefined {
   const delta = {

@@ -13,17 +13,25 @@ constants: [
       "\n"
       "  pin-all — writes every laid-out position into the stylesheet, so the\n"
       "    diagram is exactly what is on screen and ELK stops running.\n"
-      "  unpin-all — clears them, handing the whole diagram back to ELK.\n"
-      "  auto-layout — unpin-all followed by an immediate relayout, which is\n"
-      "    the same edit; it exists as a separate command because 'lay this\n"
-      "    out again' and 'stop pinning' are different intentions even though\n"
-      "    they are one operation.\n"
+      "  unpin-all — removes EVERY explicit position in the stylesheet,\n"
+      "    whatever wrote it: pin-all, a drag, a nudge, or a hand-edited\n"
+      "    file. Not only the ones pin-all put there. The whole diagram goes\n"
+      "    back to ELK.\n"
+      "  auto-layout — produces the identical StyleEdit that unpin-all\n"
+      "    produces, and nothing further; the relayout is not a second step\n"
+      "    but the consequence of clearing the positions, since a stylesheet\n"
+      "    with no positions sends the next scene through ELK. It exists as a\n"
+      "    separate command because 'lay this out again' and 'stop pinning'\n"
+      "    are different intentions, even though the edit is the same one.\n"
       "\n"
       "pin-all needs the Scene's LaidOutDiagram, since pinning means writing\n"
       "down where things currently are. It is a no-op with no geometry rather\n"
       "than an error -- a command firing before the first layout has resolved\n"
       "is a timing accident, not a mistake by the user."
     type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
-    uses: ["Command", "CommandContext", "clearSelection", "pinAllEdit", "unpinAllEdit"]
+    # Command is absent: it is the element type of the declared
+    # Array<Command>, which is a structural TypeRef rather than anything the
+    # array's value expression references.
+    uses: ["CommandContext", "clearSelection", "pinAllEdit", "unpinAllEdit"]
   }
 ]

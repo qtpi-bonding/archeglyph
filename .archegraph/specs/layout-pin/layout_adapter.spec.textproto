@@ -47,9 +47,12 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
+        # LaidOutDiagram is deliberately absent: it is this method's declared
+        # output type, so the Dependency edge already covers it and repeating
+        # it here would be a second declaration of the same relationship.
         uses: [
           "LaidOutNode", "LaidOutEdge", "LaidOutGroup",
-          "LaidOutAnnotation", "LaidOutDiagram", "EdgeSection", "measureLabel"
+          "LaidOutAnnotation", "EdgeSection", "measureLabel"
         ]
       }
     ]

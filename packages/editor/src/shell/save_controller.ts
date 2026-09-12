@@ -17,14 +17,11 @@ export function createSaveController(
   adapter: HostAdapter,
   state: EditorState,
   debounceMs: number,
-  initialBaseHash?: string,
 ): SaveController {
   const [status, setStatus] = createSignal<SaveStatus>('idle');
   const [errorMessage, setErrorMessage] = createSignal<string | undefined>(undefined);
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let isFirstRun = true;
-  let baseHash: string | undefined = initialBaseHash;
-  let staleBlocked: boolean = false;
 
   const clearDebounce = (): void => {
     if (debounceTimer !== undefined) {
@@ -36,29 +33,19 @@ export function createSaveController(
   const save = async (): Promise<void> => {
     // Check again when the timer fires. The adapter can become unavailable
     // while a debounce is pending (for example, when the host changes mode).
-    if (!adapter.canSave() || staleBlocked) {
+    if (!adapter.canSave()) {
       return;
     }
 
     setStatus('saving');
     const stylesheet = state.stylesheet();
-    const result = await adapter.save(stylesheet, baseHash);
+    const result = await adapter.save(stylesheet);
     if (result.kind === 'err') {
-      if (result.error.kind === 'stale') {
-        staleBlocked = true;
-        setErrorMessage(undefined);
-        setStatus('stale');
-        return;
-      }
       setErrorMessage(result.error.message);
       setStatus('error');
       return;
     }
 
-    // Only advance the optimistic-concurrency base after the adapter has
-    // confirmed that the write succeeded.  In particular, do not advance it
-    // for an I/O error or a stale-write rejection.
-    baseHash = await hashStylesheet(stylesheet);
     setErrorMessage(undefined);
     setStatus('saved');
   };
@@ -70,7 +57,7 @@ export function createSaveController(
       return;
     }
     clearDebounce();
-    if (staleBlocked || !adapter.canSave()) {
+    if (!adapter.canSave()) {
       return;
     }
     debounceTimer = setTimeout((): void => {
@@ -82,17 +69,6 @@ export function createSaveController(
   return {
     status,
     errorMessage,
-    adoptBaseHash(hash: string): void {
-      baseHash = hash;
-      staleBlocked = false;
-      setErrorMessage(undefined);
-      setStatus('idle');
-    },
-    markStale(): void {
-      staleBlocked = true;
-      setErrorMessage(undefined);
-      setStatus('stale');
-    },
     async saveNow(): Promise<void> {
       clearDebounce();
       await save();
@@ -106,9 +82,7 @@ export function createSaveController(
 export interface SaveController {
   status: Accessor<SaveStatus>;
   errorMessage: Accessor<string | undefined>;
-  adoptBaseHash: (hash: string) => void;
-  markStale(): void;
   saveNow(): Promise<void>;
   dispose(): void;
 }
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'stale';
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';

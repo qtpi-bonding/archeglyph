@@ -24,7 +24,7 @@ import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 import { createSaveController, SaveController } from './save_controller';
-import { ExternalChange, watchOnFocus } from './external_change';
+import { FileSync, syncToFile } from './external_change';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -56,8 +56,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
-  const [externalStale, setExternalStale] = createSignal<boolean>(false);
-  let stopWatching: (() => void) | undefined;
+  let fileSync: FileSync | undefined;
   const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
   const selection: SelectionState = {
     selected: (): SelectedElement | null => {
@@ -84,31 +83,25 @@ export const App: Component<{}> = (): JSX.Element => {
 
   function installState(nextState: EditorState): void {
     saveController()?.dispose();
-    if (stopWatching !== undefined) { stopWatching(); stopWatching = undefined; }
+    fileSync?.stop();
+    fileSync = undefined;
     setState(nextState);
     setScene(createScene(nextState, () => theme, layoutEngine));
   }
 
   function startSession(nextState: EditorState, result: LoadResult): void {
     installState(nextState);
-    const controller: SaveController = createSaveController(pair.adapter, nextState, 800, result.baseHash);
-    setSaveController(controller);
-    setExternalStale(false);
-    stopWatching = watchOnFocus(pair.adapter, nextState.stylesheet, (change: ExternalChange): void => {
-      if (change.edit === undefined) {
-        controller.adoptBaseHash(change.baseHash);
-        return;
-      }
-      if (!nextState.dirty()) {
-        nextState.adoptStylesheet(change.stylesheet);
-        controller.adoptBaseHash(change.baseHash);
-        setExternalStale(false);
-        return;
-      }
-      nextState.appendPendingEdit(change.edit);
-      controller.markStale();
-      setExternalStale(true);
-    }, result.stamp);
+    setSaveController(createSaveController(pair.adapter, nextState, 800));
+    // The file is the truth. Anything that rewrites it -- an agent, the CLI,
+    // another editor -- wins, and the canvas follows. No reconciliation, no
+    // prompt: a suggestion from an agent never lands here (it goes to
+    // pendingEdits and touches nothing committed), so an incoming change is
+    // always a decision someone made, and last write wins is the right answer
+    // rather than a compromise. See D14.
+    fileSync?.stop();
+    fileSync = syncToFile(pair.adapter, result.stamp, (stylesheet: Stylesheet): void => {
+      nextState.adoptStylesheet(stylesheet);
+    });
   }
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
@@ -131,7 +124,7 @@ export const App: Component<{}> = (): JSX.Element => {
 
   function onNew(): void {
     installState(createEditorState(create(DiagramSchema, {}), create(StylesheetSchema, {})));
-    setExternalStale(false);
+    
     const current: EditorState | null = state();
     if (current !== null) {
       setSaveController(createSaveController(pair.adapter, current, 800));
@@ -150,7 +143,7 @@ export const App: Component<{}> = (): JSX.Element => {
     onCleanup((): void => document.removeEventListener('keydown', onKeyDown));
     onCleanup((): void => {
       saveController()?.dispose();
-      if (stopWatching !== undefined) { stopWatching(); }
+      fileSync?.stop();
     });
   });
 
@@ -166,11 +159,6 @@ export const App: Component<{}> = (): JSX.Element => {
             </div>
           </Show>
         }>
-          <Show when={externalStale() || saveController()?.status() === 'stale'}>
-            <div style={{ padding: '6px 12px', background: 'var(--ag-warning, #fff3cd)', color: 'var(--ag-warning-text, #664d03)' }}>
-              The file changed; the change is waiting in the pending list.
-            </div>
-          </Show>
           <TopBar
             state={state()!}
             adapter={pair.adapter}

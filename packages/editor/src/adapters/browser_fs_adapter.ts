@@ -31,26 +31,9 @@ export class BrowserFsAdapter implements HostAdapter {
     }
   }
 
-  async save(stylesheet: Stylesheet, expectedBaseHash?: string): Promise<Result<void, AdapterError>> {
+  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
     try {
       const text: string = toJson(StylesheetSchema, stylesheet);
-      // Verify only where a save could actually clobber something. With no
-      // handle the save falls through to saveViaDownload, which writes a NEW
-      // file to the downloads folder and cannot overwrite whatever an agent
-      // edited -- so there is no staleness hazard to guard against, and
-      // refusing here would break saving outright on every browser without
-      // File System Access while protecting nothing.
-      if (expectedBaseHash !== undefined && this.styleHandle !== null) {
-        const file: File = await this.styleHandle.getFile();
-        const loaded: Result<Stylesheet, LoadError> = await loadStylesheet(await file.text());
-        if (loaded.kind === 'err') {
-          return Err(Object.assign(new AdapterError(), { kind: 'io', message: loaded.error.message }));
-        }
-        const actualHash: string = await hashStylesheet(loaded.value);
-        if (actualHash !== expectedBaseHash) {
-          return Err(Object.assign(new AdapterError(), { kind: 'stale', message: 'The stylesheet changed externally' }));
-        }
-      }
       if ('showSaveFilePicker' in window) {
         await this.saveViaFsa(text);
       } else {
@@ -152,6 +135,15 @@ export class BrowserFsAdapter implements HostAdapter {
     } else {
       throw new Error('No .diag.json file selected');
     }
+  }
+
+  /**
+   * The style file handle, so the shell can observe it directly where the
+   * platform allows (FileSystemObserver). Undefined in the download fallback,
+   * which has no file to watch.
+   */
+  watchHandle(): unknown {
+    return this.styleHandle ?? undefined;
   }
 
   private async saveViaFsa(text: string): Promise<void> {

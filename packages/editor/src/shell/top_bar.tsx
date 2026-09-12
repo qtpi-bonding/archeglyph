@@ -60,7 +60,7 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
       <span style={{ flex: '1', 'font-size': '14px' }}>{fileName}</span>
       <Show when={props.adapter.canSave()}>
         <span style={{ 'margin-right': '8px', 'font-size': '12px', color: props.saveController?.status() === 'error' ? 'var(--ag-danger)' : 'var(--ag-fg-3)' }}>
-          {props.saveController?.status() === 'saving' ? 'Saving…' : props.saveController?.status() === 'saved' ? 'Saved' : props.saveController?.status() === 'stale' ? 'File changed' : props.saveController?.status() === 'error' ? 'Save failed' : ''}
+          {props.saveController?.status() === 'saving' ? 'Saving…' : props.saveController?.status() === 'saved' ? 'Saved' : props.saveController?.status() === 'error' ? 'Save failed' : ''}
         </span>
       </Show>
       <button disabled={!props.state.canUndo()} onClick={onUndo}>Undo</button>

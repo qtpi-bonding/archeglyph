@@ -13,7 +13,8 @@ export class LoadResult {
 
 /** Error returned when a host operation cannot be completed safely. */
 export class AdapterError {
-  kind?: 'io' | 'stale' | 'unsupported';
+  /** 'io' for a failed read or write, 'unsupported' where the host cannot do the thing at all. */
+  kind?: 'io' | 'unsupported';
   message!: string;
 }
 export interface HostAdapter {
@@ -28,7 +29,15 @@ export interface HostAdapter {
    * Hosts that cannot perform that read-before-write check must return an
    * unsupported error rather than risk overwriting an external change.
    */
-  save(stylesheet: Stylesheet, expectedBaseHash?: string): Promise<Result<void, AdapterError>>;
+  save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>>;
+  /**
+   * The underlying file handle, for hosts that can be observed directly
+   * (FileSystemObserver). Undefined where there is no handle to watch — the
+   * download fallback has no file at all — and callers fall back to polling
+   * stat(). Deliberately `unknown`: nothing may reach into it, it is only
+   * ever handed back to the platform.
+   */
+  watchHandle?(): unknown;
 
   /** Return the current file stamp without loading or parsing its contents. */
   stat(): Promise<Result<FileStamp, AdapterError>>;

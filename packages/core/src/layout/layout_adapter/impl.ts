@@ -48,6 +48,7 @@ interface ElkNode {
   y?: number;
   children?: ElkNode[];
   edges?: ElkEdge[];
+  layoutOptions?: Record<string, string>;
 }
 
 interface ElkGraph extends ElkNode {
@@ -88,6 +89,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
               children: [],
               edges: [],
             };
+        const position = group.layout?.position;
+        if (position !== undefined) {
+          groupElkNodes[group.id].x = position.x;
+          groupElkNodes[group.id].y = position.y;
+          groupElkNodes[group.id].layoutOptions = { 'org.eclipse.elk.position': 'MANUAL' };
+        }
       }
 
       const rootChildren: ElkNode[] = [];
@@ -112,6 +119,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
           width: node.layout?.size?.x ?? DEFAULT_WIDTH,
           height: node.layout?.size?.y ?? DEFAULT_HEIGHT,
         };
+        const position = node.layout?.position;
+        if (position !== undefined) {
+          elkNode.x = position.x;
+          elkNode.y = position.y;
+          elkNode.layoutOptions = { 'org.eclipse.elk.position': 'MANUAL' };
+        }
         if (node.parentGroup) {
           const parent = groupElkNodes[node.parentGroup];
           if (parent?.children) {
@@ -121,6 +134,17 @@ export class ElkAdapterImpl implements LayoutAdapter {
           }
         } else {
           rootChildren.push(elkNode);
+        }
+      }
+
+      for (const group of diagram.groups) {
+        const children = [
+          ...diagram.nodes.filter(node => node.parentGroup === group.id),
+          ...diagram.groups.filter(child => child.parentGroup === group.id),
+        ];
+        if (children.some(child => child.layout?.position !== undefined)) {
+          const options = groupElkNodes[group.id].layoutOptions ?? {};
+          groupElkNodes[group.id].layoutOptions = { ...options, 'org.eclipse.elk.fixed': 'true' };
         }
       }
 

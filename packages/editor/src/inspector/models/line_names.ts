@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+<<<<<<< HEAD
 import {
   ArrowheadVariant,
   StrokePattern,
@@ -21,4 +22,12 @@ export const ARROWHEAD_TABLE: ReadonlyArray<{
   { name: 'diamond', value: ArrowheadVariant.ARROWHEAD_DIAMOND },
   { name: 'circle', value: ArrowheadVariant.ARROWHEAD_CIRCLE },
   { name: 'tee', value: ArrowheadVariant.ARROWHEAD_TEE },
+=======
+import { StrokePattern } from '@archeglyph/proto/gen/style_pb';
+
+export const PATTERN_TABLE: ReadonlyArray<{ name: string; value: StrokePattern }> = [
+  { name: 'SOLID', value: StrokePattern.SOLID },
+  { name: 'DASHED', value: StrokePattern.DASHED },
+  { name: 'DOTTED', value: StrokePattern.DOTTED },
+>>>>>>> eaf7d1381ca1af2db3b6b9fa47d591b04b7bb1d3
 ];

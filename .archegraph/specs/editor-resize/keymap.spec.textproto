@@ -1,0 +1,32 @@
+# Wave 5. The CommandId union gains the four ids that are already in COMMANDS
+# but not in the type.
+#
+# pin-all, unpin-all and auto-layout shipped in the layout pillar written as
+# `'pin-all' as CommandId` -- a cast that silences the type error rather than
+# stating the id exists. The cast is what lets a typo compile, which is the one
+# thing this union is for. reset-size is added at the same time so it does not
+# need a fourth cast.
+
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative keyboard chord -> command-id table, platform-aware (meta OR ctrl)."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Emit exactly: export type CommandId = 'undo' | 'redo' | 'delete' |\n"
+      "'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |\n"
+      "'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |\n"
+      "'auto-layout' | 'reset-size' | 'save';\n"
+      "\n"
+      "The four `as CommandId` casts in gestures/commands.ts come out at the\n"
+      "same time; leaving one behind would defeat the change.\n"
+      "\n"
+      "KEYMAP is not touched. None of these four has a key binding -- they are\n"
+      "palette and context-menu entries (D3) -- and inventing chords for them\n"
+      "here would spend four letters before the surface that lists them\n"
+      "exists."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'save'" } }
+    typescript: {}
+  }
+]

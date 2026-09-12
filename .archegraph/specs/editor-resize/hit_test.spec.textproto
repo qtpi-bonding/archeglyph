@@ -1,0 +1,39 @@
+# Wave 5. One function: the selection-aware wrapper around hitTestHandle.
+#
+# hitTestHandle takes a Bounds. The canvas has a geometry and a selection, and
+# the rule connecting them -- handles exist only on a single non-edge selection
+# -- is the same rule overlay_layer uses to decide what to draw. Stating it
+# once, here, is what keeps the drawn handle and the grabbable handle the same
+# handle. Left in the component it would be a second copy that can drift, and
+# it would be untestable, since there is no DOM test harness in this repo.
+
+file: "packages/editor/src/scene/hit_test.ts"
+doc: "Point-to-element and point-to-handle hit testing over the scene's bounds index."
+
+methods: [
+  { name: "handleAtPoint"
+    change_type: ADDED
+    doc:
+      "The resize handle under `point`, or undefined.\n"
+      "\n"
+      "Returns undefined unless the selection is exactly one element and that\n"
+      "element is not an edge -- the same condition overlay_layer applies\n"
+      "before drawing handles. A handle that is not drawn must not be\n"
+      "grabbable, and a handle that is drawn must be.\n"
+      "\n"
+      "Also undefined when the selected element is absent from the geometry,\n"
+      "which happens for one frame after a delete.\n"
+      "\n"
+      "`radius` is in DIAGRAM units, so the caller divides its screen-pixel\n"
+      "tolerance by zoom before calling -- the same thing canvas.tsx already\n"
+      "does for hitTestPoint's edge tolerance."
+    inputs: [
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "point", type: { named: { symbol: "Vec2" } } },
+      { name: "radius", type: { primitive: REAL } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Handle | undefined" } }
+    uses: ["hitTestHandle", "elementKey"]
+  }
+]

@@ -1,0 +1,56 @@
+# Wave 5. One command, so that clearNodeSizeEdit has a caller.
+#
+# The builder was written in wave 4 and nothing has ever called it. Without it
+# an explicit size is permanent: once a node is resized there is no way back to
+# the size the renderer derives from the label, because no gesture can produce
+# "no size" and hand-editing the stylesheet is not a user action.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The registry of named editor actions, shared by the keyboard, palette and menus."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "One entry added; everything already there is unchanged.\n"
+      "\n"
+      "  reset-size -- clears the explicit size override on every selected\n"
+      "    node, returning each to the size the renderer derives from its\n"
+      "    label. Position is untouched: D8 pins position only, and a node\n"
+      "    that has been placed should stay placed when its size is released.\n"
+      "    Non-node selections are skipped rather than erroring; groups derive\n"
+      "    their extent from their children and annotations are always\n"
+      "    explicitly sized.\n"
+      "\n"
+      "Like pin-all and unpin-all it has no chord. COMMANDS is a registry\n"
+      "consumed by name -- the palette and context menu in wave 6 are its\n"
+      "reader -- so an entry with no key binding is waiting for its surface,\n"
+      "not dead."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
+    uses: ["CommandContext", "clearSelection", "runResetSize"]
+    # runResetSize is declared even though it is expected to surface as a
+    # MISSING edge: scip does not emit an invocation from an array literal to
+    # a file-local function, which is why the pin commands were grandfathered
+    # rather than declared. Declare it anyway. `uses:` states what the
+    # initializer references, and an edge that is never declared is an edge
+    # verify can never report as absent -- which is exactly how a command
+    # with no runner would ship looking finished.
+  }
+]
+
+methods: [
+  { name: "runResetSize"
+    change_type: ADDED
+    doc:
+      "File-local runner for reset-size, in the same shape as runPinAll and\n"
+      "runUnpinAll. One applyStyleEdit per selected node would be one undo\n"
+      "entry per node; the selection is cleared of its sizes as a single\n"
+      "user action, so the edits are coalesced under one key the way runNudge\n"
+      "coalesces a held arrow."
+    inputs: [
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: VOID }
+    uses: ["clearNodeSizeEdit"]
+  }
+]

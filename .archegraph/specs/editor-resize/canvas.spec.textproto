@@ -1,0 +1,65 @@
+# Wave 5, brownfield. The canvas lines that make resize reachable.
+#
+# This is the whole reason the pillar exists. Everything resize needs has been
+# in the tree since wave 3 and none of it runs, because canvas.tsx never asks
+# whether the pointer is on a handle. routePress has had a `resize` branch and
+# an `onHandle` field since wave 4; the canvas has never set the field, so the
+# branch is dead and so is everything behind it.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The single SVG scene; a thin adapter feeding pointer and wheel events to the gesture layer."
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Additions to the existing component. The SVG structure, the layers, the\n"
+      "ResizeObserver, fit-on-load, the wheel handler and the error banner are\n"
+      "unchanged.\n"
+      "\n"
+      "PRESS. Before routePress, ask handleAtPoint for the handle under the\n"
+      "pointer, passing the current selection and a radius of `8 / zoom`, and\n"
+      "hand the result to routePress as `onHandle`. This one line is what has\n"
+      "been missing.\n"
+      "\n"
+      "That radius is 8 SCREEN pixels expressed in diagram units, which is\n"
+      "what handleAtPoint takes. It is deliberately generous: overlay_layer\n"
+      "draws each handle as a square of side `8 / zoom`, so the drawn square\n"
+      "reaches 4 screen pixels from its centre and the grab radius reaches 8.\n"
+      "The grabbable area is twice the drawn one in every direction, at every\n"
+      "zoom, because a handle that needs pixel-exact aim reads as broken.\n"
+      "\n"
+      "PENDING. The gesture union gains a `resize` arm holding a\n"
+      "ResizeSession. The session's ref is the single selected element and\n"
+      "its origin is the diagram-space press point.\n"
+      "\n"
+      "MOVE. The resize arm feeds resizeUpdate into the same `preview`\n"
+      "signal the move arm uses; OverlayLayer already draws it.\n"
+      "event.shiftKey is read on each move, not captured at press -- the user\n"
+      "presses Shift partway through a drag, which is when it is useful.\n"
+      "\n"
+      "UP. resizeCommit's edit goes through state.applyStyleEdit, like\n"
+      "moveCommit's. A press that never crossed exceedsThreshold commits\n"
+      "nothing.\n"
+      "\n"
+      "CURSOR. cursorFor takes a fourth argument, `handle`, and the canvas has\n"
+      "never passed it, so hovering a handle shows the move cursor and every\n"
+      "directional cursor in that function is unreachable. Track the handle\n"
+      "under the pointer in a signal, updated on hover in onPointerMove\n"
+      "alongside setHover, and pass it. During an active resize the signal\n"
+      "holds the session's handle instead, so the cursor does not flicker back\n"
+      "when the pointer outruns the handle it is dragging.\n"
+      "\n"
+      "moveUpdate and moveCommit lose their `zoom` argument; the two call\n"
+      "sites drop it and keep passing the diagram-space point they already\n"
+      "pass. Nothing else about the move path changes."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: [
+      "routePress", "exceedsThreshold", "panUpdate", "moveUpdate", "moveCommit",
+      "marqueeUpdate", "marqueeCommit", "resizeUpdate", "resizeCommit",
+      "applyWheel", "handleKeyDown", "DiagramLayer", "GhostLayer",
+      "OverlayLayer", "hitTestPoint", "handleAtPoint", "screenToDiagram",
+      "fitBoundsToRect", "cursorFor"
+    ]
+  }
+]

@@ -1,0 +1,64 @@
+# Wave 5. Shift-to-keep-aspect, which is the one resize rule §6 names that the
+# existing resizeBounds does not implement.
+
+file: "packages/editor/src/scene/preview.ts"
+doc: "In-flight gesture geometry: bounds under a move or resize, and the edge routes that follow."
+
+structs: [
+  { name: "ResizeIntent"
+    change_type: MODIFIED
+    doc: "Gains `keepAspect`. Optional, so the existing call sites and tests that omit it keep their current meaning of a free resize."
+    fields: [
+      { name: "ref", type: { named: { symbol: "ElementRef" } } },
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "delta", type: { named: { symbol: "Vec2" } } },
+      { name: "keepAspect", type: { primitive: BOOLEAN }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "resizeBounds"
+    change_type: MODIFIED
+    doc:
+      "Gains an optional `keepAspect` parameter. Everything else -- which\n"
+      "edges each handle moves, and the one-unit minimum that stops an\n"
+      "element inverting -- is unchanged.\n"
+      "\n"
+      "When keepAspect holds, the result has the same width-to-height ratio\n"
+      "as the input bounds. The two axes are not independent, so one of them\n"
+      "decides: take whichever axis the free resize would have changed MORE\n"
+      "in proportion to its own starting length, and derive the other from\n"
+      "the ratio. Using the larger proportional change rather than the larger\n"
+      "absolute one is what makes a wide, short element behave the same as a\n"
+      "tall, narrow one.\n"
+      "\n"
+      "An edge handle under keepAspect still drives from its own axis -- `e`\n"
+      "sets width and height follows. It does not become a no-op.\n"
+      "\n"
+      "Whichever edges the handle moves are the edges that move: `nw` with\n"
+      "aspect held keeps the south-east corner fixed, exactly as it does\n"
+      "without.\n"
+      "\n"
+      "A starting height of zero has no ratio to preserve; fall back to the\n"
+      "free resize rather than dividing by it."
+    inputs: [
+      { name: "bounds", type: { named: { symbol: "Bounds" } } },
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "delta", type: { named: { symbol: "Vec2" } } },
+      { name: "keepAspect", type: { primitive: BOOLEAN }, is_optional: true }
+    ]
+    output: { named: { symbol: "Bounds" } }
+  },
+  { name: "previewResize"
+    change_type: MODIFIED
+    doc: "Passes intent.keepAspect through to resizeBounds. No other change."
+    inputs: [
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "intent", type: { named: { symbol: "ResizeIntent" } } }
+    ]
+    output: { named: { symbol: "ScenePreview" } }
+    uses: ["resizeBounds", "elementKey"]
+  }
+]

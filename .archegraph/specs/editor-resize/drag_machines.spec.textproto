@@ -1,0 +1,161 @@
+# Wave 5. Resize as a fourth machine beside pan, move and marquee, plus one
+# correction to the three that already exist.
+#
+# Almost everything resize needs was built in waves 3 and 4 and has never run:
+# hitTestHandle, previewResize, resizeBounds, the four resize builders in
+# state/edits/resize, the handle branch of cursorFor, and the `resize` case of
+# routePress. Each has unit tests and each is reachable only from those tests.
+# What is missing is the session type that joins a press to a commit, and the
+# canvas lines that open and close it. This pillar is that connection.
+
+file: "packages/editor/src/gestures/drag_machines.ts"
+doc: "Pan, move, marquee and resize as pure begin/update/commit functions over a captured session."
+
+structs: [
+  { name: "ResizeSession"
+    change_type: ADDED
+    doc:
+      "One element, one handle, and where the pointer went down. Resize is\n"
+      "deliberately single-element: `ref`, not `refs`. The overlay draws\n"
+      "handles only on a single selection, so a multi-select resize has no\n"
+      "handle to grab and no agreed meaning (scale each element about its own\n"
+      "centre, or about the group bounding box?). Until that is decided,\n"
+      "making it unrepresentable is better than picking one silently.\n"
+      "\n"
+      "Like MoveSession, the starting bounds are NOT captured -- they are read\n"
+      "from live geometry each update, so a scene rebuilt mid-drag does not\n"
+      "leave the preview anchored to a stale rectangle."
+    fields: [
+      { name: "ref", type: { named: { symbol: "ElementRef" } } },
+      { name: "handle", type: { named: { symbol: "Handle" } } },
+      { name: "origin", type: { named: { symbol: "Vec2" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "resizeUpdate"
+    change_type: ADDED
+    doc:
+      "The live preview for a resize. Delegates the geometry to previewResize,\n"
+      "which already exists and already re-routes the edges attached to the\n"
+      "element being resized.\n"
+      "\n"
+      "`keepAspect` is the Shift modifier. It must be threaded through update\n"
+      "as well as commit, not applied only at commit: a preview that ignores\n"
+      "the modifier shows the user one rectangle and writes a different one.\n"
+      "resizeCommit carries the same parameter for the same reason.\n"
+      "\n"
+      "`current` is a DIAGRAM point and there is no zoom parameter. See\n"
+      "moveUpdate for the rule and why it exists."
+    inputs: [
+      { name: "session", type: { named: { symbol: "ResizeSession" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } },
+      { name: "keepAspect", type: { primitive: BOOLEAN } }
+    ]
+    output: { named: { symbol: "ScenePreview" } }
+    uses: ["previewResize"]
+  },
+  { name: "resizeCommit"
+    change_type: ADDED
+    doc:
+      "The StyleEdit for a finished resize, or undefined when the pointer\n"
+      "ended where it started -- a zero delta must not write an edit, or a\n"
+      "click on a handle lands a no-op in the undo history.\n"
+      "\n"
+      "Dispatches on ref.kind to the builder that already exists for it:\n"
+      "node -> resizeNodeEdit, group -> resizeGroupEdit, annotation ->\n"
+      "resizeAnnotationEdit. An edge ref yields undefined; edges are routed\n"
+      "from their endpoints and have no size of their own.\n"
+      "\n"
+      "SAME TRAP AS moveCommit: geometry bounds are canvas-absolute and the\n"
+      "position field of a style entry is PARENT-RELATIVE (design.md §5.3),\n"
+      "so the parent group's absolute origin comes off before the position is\n"
+      "written. Size is absolute in both spaces and needs no conversion.\n"
+      "\n"
+      "Both position and size are written, not size alone, because six of the\n"
+      "eight handles move one or both origin edges -- dragging `nw` shrinks\n"
+      "the element toward its fixed south-east corner, which is a change of\n"
+      "position as much as of size.\n"
+      "\n"
+      "`keepAspect` is passed straight to resizeBounds, which is where the\n"
+      "aspect rule lives. Dropping it here rather than in resizeUpdate would\n"
+      "commit a different rectangle from the one previewed, which is the\n"
+      "failure the parameter exists to prevent.\n"
+      "\n"
+      "`current` is a DIAGRAM point and there is no zoom parameter. See\n"
+      "moveUpdate for the rule and why it exists."
+    inputs: [
+      { name: "session", type: { named: { symbol: "ResizeSession" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } },
+      { name: "keepAspect", type: { primitive: BOOLEAN } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["resizeBounds", "resizeNodeEdit", "resizeGroupEdit", "resizeAnnotationEdit", "elementKey"]
+  },
+  { name: "moveUpdate"
+    change_type: MODIFIED
+    doc:
+      "Signature change only: the `zoom` parameter is REMOVED and the body no\n"
+      "longer divides by it. Behaviour is otherwise unchanged.\n"
+      "\n"
+      "The parameter was wrong in a way that typechecks. Its doc said `current`\n"
+      "was a screen point, but the canvas has always passed the DIAGRAM point,\n"
+      "because screenToDiagram runs at the top of every pointer handler. The\n"
+      "delta was therefore divided by zoom twice, and a 30-unit drag committed\n"
+      "+60 at zoom 0.5 and +15 at zoom 2 -- correct only at zoom 1, which is a\n"
+      "zoom the editor reaches only by accident, since it fits the diagram on\n"
+      "load.\n"
+      "\n"
+      "The rule that replaces it: every element-space machine (move, marquee,\n"
+      "resize) takes diagram coordinates and has no zoom parameter. Only\n"
+      "panUpdate is screen-space, because panning moves the viewport rather\n"
+      "than anything in the diagram. One space per machine, with no argument\n"
+      "available to get wrong, rather than a documented trap in four places."
+    inputs: [
+      { name: "session", type: { named: { symbol: "MoveSession" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "ScenePreview" } }
+    uses: ["previewMove"]
+  },
+  { name: "moveCommit"
+    change_type: MODIFIED
+    doc:
+      "Signature change only: the `zoom` parameter is REMOVED and the body no\n"
+      "longer divides by it. The parent-relative conversion, the\n"
+      "parentIsMoving walk and the zero-delta guard are all unchanged.\n"
+      "\n"
+      "See moveUpdate for why. `current` and `session.origin` are both diagram\n"
+      "points, so their difference is already a diagram delta."
+    inputs: [
+      { name: "session", type: { named: { symbol: "MoveSession" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["moveElementsEdit", "elementKey"]
+  },
+  { name: "marqueeUpdate"
+    change_type: MODIFIED
+    doc:
+      "No behaviour change. The function returns boundsFromRect and then has a\n"
+      "second, unreachable return statement building the same bounds by hand.\n"
+      "Delete the dead one; keep the boundsFromRect call.\n"
+      "\n"
+      "`current` is a DIAGRAM point and there is no zoom parameter, which is\n"
+      "already true here. See moveUpdate for the rule and why it exists."
+    inputs: [
+      { name: "session", type: { named: { symbol: "MarqueeSession" } } },
+      { name: "current", type: { named: { symbol: "Vec2" } } }
+    ]
+    output: { named: { symbol: "Bounds" } }
+    uses: ["boundsFromRect"]
+  }
+]

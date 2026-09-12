@@ -23,6 +23,10 @@ import {
   Stylesheet,
 } from '@archeglyph/proto/gen/style_pb';
 
+/**
+ * Produces a pending edit containing the deterministic, whole-entry diff
+ * between two stylesheets.
+ */
 export function diffStylesheets(base: Stylesheet, incoming: Stylesheet, author: string): StyleEdit | undefined {
   const nodeChanges: NodeStyleChange[] = [];
   const nodeIds = Array.from(new Set([...Object.keys(base.nodes), ...Object.keys(incoming.nodes)])).sort();

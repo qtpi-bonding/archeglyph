@@ -601,3 +601,299 @@ describe('undo_log: pendingEditsBefore (the §5.9 fix)', () => {
     expect(restored.pendingEdits).toEqual(pendingBefore);
   });
 });
+
+// ---------------------------------------------------------------------------
+// preview.ts
+// ---------------------------------------------------------------------------
+
+describe('resizeBounds', () => {
+  const base = { minX: 0, minY: 0, maxX: 100, maxY: 50 };
+
+  test('se moves only the max corner (max only, per spec)', () => {
+    expect(resizeBounds(base, 'se', vec2(10, 10))).toEqual({ minX: 0, minY: 0, maxX: 110, maxY: 60 });
+  });
+
+  test('nw moves only the min corner', () => {
+    expect(resizeBounds(base, 'nw', vec2(10, 10))).toEqual({ minX: 10, minY: 10, maxX: 100, maxY: 50 });
+  });
+
+  test('ne moves maxX and minY, leaving minX and maxY put', () => {
+    expect(resizeBounds(base, 'ne', vec2(10, -10))).toEqual({ minX: 0, minY: -10, maxX: 110, maxY: 50 });
+  });
+
+  test('sw moves minX and maxY, leaving minY and maxX put', () => {
+    expect(resizeBounds(base, 'sw', vec2(-10, 10))).toEqual({ minX: -10, minY: 0, maxX: 100, maxY: 60 });
+  });
+
+  test('n moves min.y only (matches the spec\'s own example)', () => {
+    expect(resizeBounds(base, 'n', vec2(999, 10))).toEqual({ minX: 0, minY: 10, maxX: 100, maxY: 50 });
+  });
+
+  test('s moves max.y only', () => {
+    expect(resizeBounds(base, 's', vec2(999, 10))).toEqual({ minX: 0, minY: 0, maxX: 100, maxY: 60 });
+  });
+
+  test('e moves max.x only', () => {
+    expect(resizeBounds(base, 'e', vec2(10, 999))).toEqual({ minX: 0, minY: 0, maxX: 110, maxY: 50 });
+  });
+
+  test('w moves min.x only', () => {
+    expect(resizeBounds(base, 'w', vec2(-10, 999))).toEqual({ minX: -10, minY: 0, maxX: 100, maxY: 50 });
+  });
+
+  test('dragging a handle past its own opposite edge clamps to a small positive minimum rather than inverting', () => {
+    // 'e' dragged far enough left to pass minX=0 entirely.
+    const result = resizeBounds(base, 'e', vec2(-500, 0));
+    expect(result.maxX).toBeGreaterThan(result.minX);
+    expect(result.maxX - result.minX).toBeGreaterThan(0);
+    // Spec: "Clamp to a small positive minimum in both axes" -- must not
+    // go to zero or negative width.
+    expect(result.maxX - result.minX).toBeCloseTo(1, 5);
+  });
+
+  test('dragging w past the opposite edge also clamps rather than inverting', () => {
+    const result = resizeBounds(base, 'w', vec2(500, 0));
+    expect(result.maxX - result.minX).toBeGreaterThan(0);
+    expect(result.maxX - result.minX).toBeCloseTo(1, 5);
+  });
+
+  test('an extreme drag never produces a zero or negative size in either axis', () => {
+    const result = resizeBounds(base, 'se', vec2(-100000, -100000));
+    expect(result.maxX - result.minX).toBeGreaterThan(0);
+    expect(result.maxY - result.minY).toBeGreaterThan(0);
+  });
+
+  test('does not mutate the input bounds object', () => {
+    const input = { minX: 0, minY: 0, maxX: 100, maxY: 50 };
+    const copy = { ...input };
+    resizeBounds(input, 'se', vec2(5, 5));
+    expect(input).toEqual(copy);
+  });
+});
+
+describe('routeEdgeBetween', () => {
+  function edgeWithLayout(routing?: EdgeRouting, waypoints: Vec2[] = []): LaidOutEdge {
+    return Object.assign(new LaidOutEdge(), {
+      id: 'e1',
+      source: 's',
+      target: 't',
+      sections: [],
+      layout: routing === undefined ? undefined : create(EdgeLayoutSchema, { routing, waypoints }),
+    });
+  }
+
+  test('MANUAL routing returns the author-pinned waypoints unchanged, ignoring the current bounds', () => {
+    const waypoints = [vec2(1, 1), vec2(2, 2), vec2(3, 3)];
+    const e = edgeWithLayout(EdgeRouting.ROUTING_MANUAL, waypoints);
+    const result = routeEdgeBetween(e, { minX: 0, minY: 0, maxX: 10, maxY: 10 }, { minX: 500, minY: 500, maxX: 510, maxY: 510 });
+    // `create()` normalizes the input array into proto Vec2 messages, so
+    // compare against the stored array (same reference, per "return them
+    // unchanged" in the spec) rather than the raw literal passed in.
+    expect(result).toBe(e.layout!.waypoints);
+    expect(result.map((p) => ({ x: p.x, y: p.y }))).toEqual([{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 3 }]);
+  });
+
+  test('ORTHOGONAL routing dispatches to routeOrthogonal (produces an axis-aligned bend for a diagonal pair)', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_ORTHOGONAL);
+    const source = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const target = { minX: 100, minY: 100, maxX: 110, maxY: 110 };
+    const result = routeEdgeBetween(e, source, target);
+    // A genuinely diagonal pair through routeOrthogonal bends: 3 points,
+    // and the interior point shares an axis with each endpoint.
+    expect(result).toHaveLength(3);
+    const [start, bend, end] = result;
+    expect(bend.x === start.x || bend.y === start.y).toBe(true);
+    expect(bend.x === end.x || bend.y === end.y).toBe(true);
+  });
+
+  test('CURVED routing falls back to routeStraight (no curved router exists yet, per spec)', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_CURVED);
+    const source = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const target = { minX: 100, minY: 100, maxX: 110, maxY: 110 };
+    const result = routeEdgeBetween(e, source, target);
+    // routeStraight always returns exactly 2 points (no bend), unlike
+    // routeOrthogonal's up-to-3 for a diagonal pair.
+    expect(result).toHaveLength(2);
+  });
+
+  test('STRAIGHT routing and unset layout both use routeStraight', () => {
+    const source = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const target = { minX: 100, minY: 0, maxX: 110, maxY: 10 };
+    const withStraight = routeEdgeBetween(edgeWithLayout(EdgeRouting.ROUTING_STRAIGHT), source, target);
+    const withNoLayout = routeEdgeBetween(edgeWithLayout(undefined), source, target);
+    expect(withStraight).toEqual(withNoLayout);
+    expect(withStraight).toHaveLength(2);
+  });
+
+  test('two boxes level with each other (shared y-centre): ORTHOGONAL needs no bend', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_ORTHOGONAL);
+    const source = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const target = { minX: 100, minY: 0, maxX: 110, maxY: 10 };
+    const result = routeEdgeBetween(e, source, target);
+    expect(result).toHaveLength(2);
+    expect(result[0].y).toBeCloseTo(result[1].y, 5);
+  });
+
+  test('two diagonally offset boxes: STRAIGHT produces two distinct endpoints, not the same point twice', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_STRAIGHT);
+    const source = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const target = { minX: 100, minY: 100, maxX: 110, maxY: 110 };
+    const [start, end] = routeEdgeBetween(e, source, target);
+    expect(start).not.toEqual(end);
+  });
+
+  test('overlapping boxes: routing still returns finite, non-NaN points', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_STRAIGHT);
+    const source = { minX: 0, minY: 0, maxX: 50, maxY: 50 };
+    const target = { minX: 10, minY: 10, maxX: 60, maxY: 60 };
+    const [start, end] = routeEdgeBetween(e, source, target);
+    for (const p of [start, end]) {
+      expect(Number.isFinite(p.x)).toBe(true);
+      expect(Number.isFinite(p.y)).toBe(true);
+    }
+  });
+
+  test('identical boxes (same bounds on both sides): degenerates to a single coincident point, not a crash or NaN', () => {
+    const e = edgeWithLayout(EdgeRouting.ROUTING_STRAIGHT);
+    const same = { minX: 0, minY: 0, maxX: 50, maxY: 50 };
+    const [start, end] = routeEdgeBetween(e, same, same);
+    expect(Number.isFinite(start.x)).toBe(true);
+    expect(Number.isFinite(start.y)).toBe(true);
+    expect(start).toEqual(end);
+  });
+});
+
+describe('previewMove', () => {
+  test('moves every element in a multi-element selection by the shared delta', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const n2 = node('n2', vec2(100, 100), vec2(10, 10));
+    const n3 = node('n3', vec2(200, 200), vec2(10, 10)); // not selected
+    const geometry = geometryFrom(diagram({ nodes: [n1, n2, n3] }));
+
+    const intent: MoveIntent = {
+      refs: [{ kind: 'node', id: 'n1' }, { kind: 'node', id: 'n2' }],
+      delta: vec2(5, 5),
+    };
+    const preview = previewMove(geometry, intent);
+    const byId = Object.fromEntries(preview.bounds.map((b) => [b.ref.id, b.bounds]));
+
+    expect(preview.bounds).toHaveLength(2);
+    expect(byId.n1).toEqual({ minX: 5, minY: 5, maxX: 15, maxY: 15 });
+    expect(byId.n2).toEqual({ minX: 105, minY: 105, maxX: 115, maxY: 115 });
+    expect(byId.n3).toBeUndefined();
+  });
+
+  test('an empty selection moves nothing and leaves the picture untouched (empty bounds/edges)', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const geometry = geometryFrom(diagram({ nodes: [n1] }));
+    const intent: MoveIntent = { refs: [], delta: vec2(50, 50) };
+    const preview = previewMove(geometry, intent);
+    expect(preview.bounds).toEqual([]);
+    expect(preview.edges).toEqual([]);
+  });
+
+  test('a ref naming an element absent from the geometry (stale selection) is tolerated, not thrown', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const geometry = geometryFrom(diagram({ nodes: [n1] }));
+    const intent: MoveIntent = { refs: [{ kind: 'node', id: 'does-not-exist' }], delta: vec2(5, 5) };
+    let preview: ReturnType<typeof previewMove> | undefined;
+    expect(() => {
+      preview = previewMove(geometry, intent);
+    }).not.toThrow();
+    expect(preview?.bounds).toEqual([]);
+  });
+
+  test('moving a group also moves its members (parentGroup chain), not just the group rect', () => {
+    const g1 = group('g1', vec2(0, 0), vec2(100, 100));
+    const n1 = node('n1', vec2(10, 10), vec2(20, 20), 'g1');
+    const geometry = geometryFrom(diagram({ nodes: [n1], groups: [g1] }));
+
+    const intent: MoveIntent = { refs: [{ kind: 'group', id: 'g1' }], delta: vec2(3, 4) };
+    const preview = previewMove(geometry, intent);
+    const byKey = Object.fromEntries(preview.bounds.map((b) => [elementKey(b.ref), b.bounds]));
+
+    expect(byKey['group:g1']).toEqual({ minX: 3, minY: 4, maxX: 103, maxY: 104 });
+    expect(byKey['node:n1']).toEqual({ minX: 13, minY: 14, maxX: 33, maxY: 34 });
+  });
+
+  test('re-routes only edges with a moved endpoint, leaving unrelated edges out of the preview entirely', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const n2 = node('n2', vec2(100, 0), vec2(10, 10));
+    const n3 = node('n3', vec2(0, 100), vec2(10, 10));
+    const n4 = node('n4', vec2(100, 100), vec2(10, 10));
+    const moving = edge('e-moving', 'n1', 'n2', [vec2(10, 5), vec2(100, 5)]);
+    const untouched = edge('e-static', 'n3', 'n4', [vec2(10, 105), vec2(100, 105)]);
+    const geometry = geometryFrom(diagram({ nodes: [n1, n2, n3, n4], edges: [moving, untouched] }));
+
+    const intent: MoveIntent = { refs: [{ kind: 'node', id: 'n1' }], delta: vec2(0, 50) };
+    const preview = previewMove(geometry, intent);
+
+    expect(preview.edges.map((e) => e.id)).toEqual(['e-moving']);
+  });
+
+  test('does not mutate the source geometry (the resting picture must stay the genuine renderer output)', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const geometry = geometryFrom(diagram({ nodes: [n1] }));
+    const originalBounds = geometry.byKey['node:n1'].bounds;
+    const snapshotBounds = { ...originalBounds };
+
+    const preview = previewMove(geometry, { refs: [{ kind: 'node', id: 'n1' }], delta: vec2(999, 999) });
+
+    expect(geometry.byKey['node:n1'].bounds).toEqual(snapshotBounds);
+    // The preview's bounds entry must be an independently-allocated object,
+    // not the same reference mutated in place.
+    expect(preview.bounds[0].bounds).not.toBe(originalBounds);
+  });
+});
+
+describe('previewResize', () => {
+  test('resizes only the named element; a group resize does NOT move its members (container grows around them)', () => {
+    const g1 = group('g1', vec2(0, 0), vec2(100, 100));
+    const n1 = node('n1', vec2(10, 10), vec2(20, 20), 'g1');
+    const geometry = geometryFrom(diagram({ nodes: [n1], groups: [g1] }));
+
+    const intent: ResizeIntent = { ref: { kind: 'group', id: 'g1' }, handle: 'se', delta: vec2(50, 50) };
+    const preview = previewResize(geometry, intent);
+
+    expect(preview.bounds).toHaveLength(1);
+    expect(preview.bounds[0].ref).toEqual({ kind: 'group', id: 'g1' });
+    expect(preview.bounds[0].bounds).toEqual({ minX: 0, minY: 0, maxX: 150, maxY: 150 });
+  });
+
+  test('re-routes only edges attached to the resized element', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const n2 = node('n2', vec2(100, 0), vec2(10, 10));
+    const n3 = node('n3', vec2(0, 100), vec2(10, 10));
+    const n4 = node('n4', vec2(100, 100), vec2(10, 10));
+    const attached = edge('e-attached', 'n1', 'n2', [vec2(10, 5), vec2(100, 5)]);
+    const unrelated = edge('e-unrelated', 'n3', 'n4', [vec2(10, 105), vec2(100, 105)]);
+    const geometry = geometryFrom(diagram({ nodes: [n1, n2, n3, n4], edges: [attached, unrelated] }));
+
+    const intent: ResizeIntent = { ref: { kind: 'node', id: 'n1' }, handle: 'se', delta: vec2(5, 5) };
+    const preview = previewResize(geometry, intent);
+
+    expect(preview.edges.map((e) => e.id)).toEqual(['e-attached']);
+  });
+
+  test('a ref naming an element absent from the geometry yields an empty preview rather than throwing', () => {
+    const geometry = geometryFrom(diagram({}));
+    const intent: ResizeIntent = { ref: { kind: 'node', id: 'ghost' }, handle: 'se', delta: vec2(5, 5) };
+    let preview: ReturnType<typeof previewResize> | undefined;
+    expect(() => {
+      preview = previewResize(geometry, intent);
+    }).not.toThrow();
+    expect(preview).toEqual({ bounds: [], edges: [] });
+  });
+
+  test('does not mutate the source geometry', () => {
+    const n1 = node('n1', vec2(0, 0), vec2(10, 10));
+    const geometry = geometryFrom(diagram({ nodes: [n1] }));
+    const originalBounds = geometry.byKey['node:n1'].bounds;
+    const snapshotBounds = { ...originalBounds };
+
+    const preview = previewResize(geometry, { ref: { kind: 'node', id: 'n1' }, handle: 'se', delta: vec2(50, 50) });
+
+    expect(geometry.byKey['node:n1'].bounds).toEqual(snapshotBounds);
+    expect(preview.bounds[0].bounds).not.toBe(originalBounds);
+  });
+});

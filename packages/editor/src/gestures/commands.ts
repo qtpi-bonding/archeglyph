@@ -29,6 +29,7 @@ export interface CommandContext {
   geometry?: SceneGeometry;
   rect: ContainerRect;
   save: () => void;
+  focusInspector?: () => void;
 }
 
 function selectedElements(context: CommandContext): ElementRef[] {
@@ -150,6 +151,11 @@ export const COMMANDS: Array<Command> = [
     run: (context: CommandContext): void => {
       context.ui.setSelection(context.geometry?.index.map((entry) => entry.ref) ?? []);
     },
+  },
+  {
+    id: 'focus-inspector' as CommandId,
+    label: 'Focus inspector',
+    run: ({ focusInspector }: CommandContext): void => focusInspector?.(),
   },
   { id: 'nudge-up', label: 'Nudge up', run: (context: CommandContext): void => runNudge(context, 0, -1) },
   { id: 'nudge-down', label: 'Nudge down', run: (context: CommandContext): void => runNudge(context, 0, 1) },

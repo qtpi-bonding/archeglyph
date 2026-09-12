@@ -76,3 +76,6 @@ export function hitTestHandle(bounds: Bounds, point: Vec2, radius: number): Hand
 
   return nearest;
 }
+export function handleAtPoint(geometry: SceneGeometry, selection: Array<ElementRef>, point: Vec2, radius: number): Handle | undefined {
+  throw new Error('not implemented');
+}

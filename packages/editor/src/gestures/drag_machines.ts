@@ -109,3 +109,18 @@ export function panUpdate(session: PanSession, current: Vec2): Viewport {
     zoom: session.viewport.zoom,
   };
 }
+import { ElementRef } from '../element_ref';
+import { Handle } from '../handle';
+import { Vec2 } from '../vec2';
+
+export interface ResizeSession {
+  ref: ElementRef;
+  handle: Handle;
+  origin: Vec2;
+}
+export function resizeUpdate(session: ResizeSession, geometry: SceneGeometry, current: Vec2, keepAspect: boolean): ScenePreview {
+  throw new Error('not implemented');
+}
+export function resizeCommit(session: ResizeSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2, keepAspect: boolean): StyleEdit | undefined {
+  throw new Error('not implemented');
+}

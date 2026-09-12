@@ -4,7 +4,11 @@ export function applyWheel(viewport: Viewport, rect: ContainerRect, input: Wheel
   throw new Error('not implemented');
 }
 export function isTrackpadScroll(input: WheelInput): boolean {
-  throw new Error('not implemented');
+  if (input.ctrlKey) {
+    return false;
+  }
+
+  return input.deltaX !== 0 || input.deltaMode === 0 || input.deltaY % 1 !== 0;
 }
 import { Vec2 } from '../vec2';
 

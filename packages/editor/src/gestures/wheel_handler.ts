@@ -3,7 +3,7 @@
 
 import { ContainerRect, zoomAboutPoint } from '../ui_state/viewport_math';
 import { Viewport } from '../ui_state/ui_state';
-import { Vec2 } from '../vec2';
+import { Vec2 } from '@archeglyph/core/geometry/vec2';
 
 export const MIN_ZOOM: number = 0.1;
 export const MAX_ZOOM: number = 8;

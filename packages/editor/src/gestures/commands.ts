@@ -1,3 +1,5 @@
+import { create } from '@bufbuild/protobuf';
+import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -9,6 +11,7 @@ import { UiState, ElementRef } from '../ui_state/ui_state';
 import { clearSelection } from '../ui_state/selection_ops';
 import { nextInDocumentOrder, prevInDocumentOrder } from '../ui_state/navigation';
 import { deleteAnnotationEdit } from '../state/edits/annotation';
+import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
 
@@ -45,23 +48,45 @@ function runDelete(context: CommandContext): void {
 }
 
 function runNudge(context: CommandContext, dx: number, dy: number): void {
+  // Read positions from the SCENE, not from the stylesheet.
+  //
+  // A nudge is a move, and a move pins on touch (D1/D8) -- so an element that
+  // ELK is still placing must be nudgeable, and nudging it is what writes its
+  // first explicit position. Reading `stylesheet.nodes[id].layout.position`
+  // would mean only already-pinned elements could be nudged at all, which is
+  // exactly backwards: the unpinned ones are the common case.
+  //
+  // Scene bounds are canvas-absolute and style positions are parent-relative
+  // (design.md §5.3), so the parent group's offset comes off before the delta
+  // goes on -- the same conversion moveCommit does, for the same reason.
+  const geometry = context.geometry;
+  if (geometry === undefined) {
+    return;
+  }
   const moves: ElementMove[] = [];
   for (const ref of selectedElements(context)) {
     if (ref.kind === 'edge') {
       continue;
     }
-    const stylesheet = context.state.stylesheet();
-    const entry = ref.kind === 'node'
-      ? stylesheet.nodes[ref.id]
-      : ref.kind === 'group'
-        ? stylesheet.groups[ref.id]
-        : stylesheet.annotations[ref.id];
-    if (entry?.position !== undefined) {
-      const position: Vec2 = { x: entry.position.x + dx, y: entry.position.y + dy };
-      moves.push({ kind: ref.kind, id: ref.id, position });
+    const entry = geometry.byKey[elementKey(ref)];
+    if (entry === undefined) {
+      continue;
     }
+    const parent = entry.parentGroup === undefined
+      ? undefined
+      : geometry.byKey[elementKey({ kind: 'group', id: entry.parentGroup })];
+    moves.push({
+      kind: ref.kind,
+      id: ref.id,
+      position: create(Vec2Schema, {
+        x: entry.bounds.minX + dx - (parent?.bounds.minX ?? 0),
+        y: entry.bounds.minY + dy - (parent?.bounds.minY ?? 0),
+      }),
+    });
   }
   if (moves.length > 0) {
+    // Coalesced under one key so holding an arrow key is one undo entry, not
+    // one per repeat.
     context.state.applyStyleEdit(moveElementsEdit(context.state.stylesheet(), moves), 'nudge');
   }
 }
@@ -90,7 +115,7 @@ export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
   { id: 'delete', label: 'Delete', run: runDelete },
-  { id: 'escape', label: 'Escape', run: (context: CommandContext): void => context.ui.setSelection(clearSelection()) },
+  { id: 'escape', label: 'Escape', run: (context: CommandContext): void => { context.ui.setSelection(clearSelection()); } },
   {
     id: 'select-all',
     label: 'Select all',

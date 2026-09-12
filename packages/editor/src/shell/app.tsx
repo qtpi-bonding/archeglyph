@@ -8,6 +8,7 @@ import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
+import { readUrlParams } from './url_params';
 import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
@@ -29,7 +30,9 @@ import { FileSync, syncToFile } from './external_change';
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
 export const App: Component<{}> = (): JSX.Element => {
-  const params: URLSearchParams = new URLSearchParams(window.location.search);
+  // Content params (d, s) are read from the fragment, which the browser never
+  // transmits; locators stay in the query. See readUrlParams.
+  const params: URLSearchParams = readUrlParams(window.location);
   const pair: AdapterPair = selectAdapters(params);
   // The DOCUMENT's palette — part of the style file, and what
   // `archeglyph render` uses. Independent of the chrome below.

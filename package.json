@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "build:editor": "bun run --filter @archeglyph/editor build",
     "dev:editor": "bun run --filter @archeglyph/editor dev",
-    "test": "bun test"
+    "test": "bun test --conditions browser"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^2.0.0",

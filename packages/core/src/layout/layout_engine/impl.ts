@@ -230,6 +230,7 @@ export class LayoutEngineImpl implements LayoutEngine {
         id: annotation.id,
         position,
         size,
+        anchor: annotation.anchor,
         shape: annotation.shape,
         typography: annotation.typography,
         callout: annotation.callout,

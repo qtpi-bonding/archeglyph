@@ -1,0 +1,72 @@
+# Wave 5. What the inspector shows, as data rather than as JSX.
+#
+# The old inspector put every decision inside components: which fields exist
+# for which kind, what a field's current value is, what to write when it
+# changes. None of that is testable in this repo -- there is no DOM harness --
+# and all of it is where the behaviour actually lives. So the pillar is
+# arranged the other way round: pure functions decide, components render what
+# they are handed.
+#
+# This file answers only "what sections does this selection get".
+
+file: "packages/editor/src/inspector/model.ts"
+doc: "Selection -> which inspector sections apply, and to which ids."
+
+structs: [
+  { name: "SectionId"
+    doc:
+      "Emit exactly: export type SectionId = 'layout' | 'shape' | 'line' |\n"
+      "'typography' | 'group' | 'annotation';\n"
+      "\n"
+      "One per schema message, NOT one per element kind. A node and an\n"
+      "annotation both have typography, and giving each kind its own section\n"
+      "list is what produced four near-identical forms in the old inspector."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'layout' | 'shape' | 'line' | 'typography' | 'group' | 'annotation'" } }
+    typescript: {}
+  },
+  { name: "InspectorModel"
+    doc:
+      "`kind` and `ids` rather than the ElementRefs, because every consumer\n"
+      "needs the kind once and the ids as a list -- a multi-select edit is one\n"
+      "StyleEdit over many ids, not many edits.\n"
+      "\n"
+      "`sections` is ordered, and the order is the display order."
+    fields: [
+      { name: "kind", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'node' | 'edge' | 'group' | 'annotation'" } } },
+      { name: "ids", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } },
+      { name: "sections", type: { named: { symbol: "Array", args: [{ named: { symbol: "SectionId" } }] } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "inspectorModel"
+    doc:
+      "The sections for a selection, or undefined when there is nothing to\n"
+      "show.\n"
+      "\n"
+      "Undefined in exactly two cases: an EMPTY selection, and a MIXED-KIND\n"
+      "selection. Mixed kinds are excluded rather than intersected because the\n"
+      "shared-field story across kinds is not worth its complexity -- a node\n"
+      "and an edge share typography and nothing else, and a form showing one\n"
+      "field is worse than a line of text saying the selection is mixed.\n"
+      "\n"
+      "Sections per kind, in display order:\n"
+      "  node        layout, shape, typography\n"
+      "  group       layout, group, shape, typography\n"
+      "  edge        line, typography\n"
+      "  annotation  layout, annotation, shape, line, typography\n"
+      "\n"
+      "An edge has no layout section: its geometry is derived from its\n"
+      "endpoints, and the only positional thing it owns is routing, which is\n"
+      "in the line section.\n"
+      "\n"
+      "The annotation's line section is its callout, which is a Glyph1D like\n"
+      "an edge's connection."
+    inputs: [
+      { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "InspectorModel | undefined" } }
+  }
+]

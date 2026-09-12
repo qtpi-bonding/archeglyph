@@ -1,0 +1,46 @@
+# Wave 5. The two missing halves of "clear the size override".
+#
+# clearNodeSizeEdit shipped in wave 4 with no group or annotation equivalent,
+# which was invisible while nothing called it. The inspector shows width and
+# height for all three kinds, so clearing has to work for all three or the
+# field is a trap on two of them.
+
+file: "packages/editor/src/state/edits/resize.ts"
+doc: "Builders for resize and for clearing an explicit size back to the derived one."
+
+methods: [
+  { name: "clearGroupSizeEdit"
+    change_type: ADDED
+    doc:
+      "Removes a group's explicit size, returning it to the extent derived\n"
+      "from its children. Mirrors clearNodeSizeEdit exactly: the layout\n"
+      "message is rebuilt without `size`, and padding, renderMode,\n"
+      "labelPosition and position are preserved.\n"
+      "\n"
+      "A group with no style entry yields an edit with an undefined `after`,\n"
+      "the same no-entry case clearNodeSizeEdit already handles."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "groupId", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "StyleEdit" } }
+    uses: ["groupChange", "styleEdit"]
+  },
+  { name: "clearAnnotationSizeEdit"
+    change_type: ADDED
+    doc:
+      "Removes an annotation's explicit size, returning it to the size\n"
+      "measured from its text. Preserves content, anchor, position, rotation,\n"
+      "shape, typography, callout and component.\n"
+      "\n"
+      "Note this is size only. An annotation's POSITION is never cleared --\n"
+      "there is no auto-layout for annotations to fall back to, which is why\n"
+      "unpinElementsEdit already skips them."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "annotationId", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "StyleEdit" } }
+    uses: ["annotationChange", "styleEdit"]
+  }
+]

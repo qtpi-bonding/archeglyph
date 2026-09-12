@@ -1,0 +1,33 @@
+# Wave 5. Cmd/Ctrl+I for the inspector focus hand-off.
+
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative keyboard chord -> command-id table, platform-aware (meta OR ctrl)."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Emit exactly: export type CommandId = 'undo' | 'redo' | 'delete' |\n"
+      "'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |\n"
+      "'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |\n"
+      "'auto-layout' | 'reset-size' | 'focus-inspector' | 'save';"
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'focus-inspector' | 'save'" } }
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    change_type: MODIFIED
+    doc:
+      "One entry added: { chord: { key: 'i', meta: true }, command:\n"
+      "'focus-inspector' }. Everything already there is unchanged.\n"
+      "\n"
+      "This is the only one of the recently-added command ids to get a chord.\n"
+      "The other four are palette entries (D3); this one is a focus movement,\n"
+      "which is useless from a palette because reaching the palette already\n"
+      "moved the focus."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "KeymapEntry" } }] } }
+    uses: ["KeymapEntry"]
+  }
+]

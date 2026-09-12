@@ -1,0 +1,40 @@
+# Wave 5. The inspector focus hand-off (§11.6).
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The registry of named editor actions, shared by the keyboard, palette and menus."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "One entry added; everything already there is unchanged.\n"
+      "\n"
+      "  focus-inspector -- moves keyboard focus to the first field of the\n"
+      "    inspector for the current selection. A no-op when nothing is\n"
+      "    selected, since there is no field to focus.\n"
+      "\n"
+      "Unlike the other commands this one touches the DOM rather than the\n"
+      "document, so CommandContext gains a `focusInspector` callback that the\n"
+      "shell supplies, and the command calls it. Reaching for the element by\n"
+      "querySelector from here would couple the command table to the\n"
+      "inspector's markup."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
+    uses: ["CommandContext", "clearSelection", "runResetSize"]
+  }
+]
+
+structs: [
+  { name: "CommandContext"
+    change_type: MODIFIED
+    doc: "Gains `focusInspector`, supplied by the shell. Optional, so the existing call sites that build a context without one keep compiling."
+    fields: [
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "ui", type: { named: { symbol: "UiState" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } }, is_optional: true },
+      { name: "rect", type: { named: { symbol: "ContainerRect" } } },
+      { name: "save", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } } },
+      { name: "focusInspector", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

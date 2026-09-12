@@ -1,0 +1,53 @@
+# Wave 5. The one place CommandContext is constructed, so the one place a
+# focus callback can reach the command table.
+#
+# Found by the general review, and worth recording because the narrow checks
+# could not have found it: `focus-inspector` had a caller on paper. COMMANDS
+# names it, the keymap binds it, `uses:` was satisfied. What was missing was
+# that the OPTIONAL field carrying the callback was never populated by anyone,
+# so the chord would have resolved to the command and the command would have
+# called `undefined?.()` forever. A caller check that reads `uses:` lists sees
+# nothing wrong with that.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The single SVG scene; a thin adapter feeding pointer and wheel events to the gesture layer."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc: "Gains `onFocusInspector`, which the shell supplies and the canvas only forwards. Optional: the canvas is usable without an inspector."
+    fields: [
+      { name: "diagram", type: { named: { symbol: "Diagram" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } },
+      { name: "scene", type: { named: { symbol: "Scene" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "theme", type: { named: { symbol: "Theme" } } },
+      { name: "ui", type: { named: { symbol: "UiState" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "onFocusInspector", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "One change: the CommandContext literal built in the onKeyDown handler\n"
+      "gains `focusInspector: props.onFocusInspector`. Everything else --\n"
+      "pointer routing, the resize and move sessions, the wheel handler, the\n"
+      "layers, fit-on-load -- is unchanged.\n"
+      "\n"
+      "This is the only site in the editor that constructs a CommandContext,\n"
+      "so a command needing anything from the DOM has to be fed from here."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: [
+      "routePress", "exceedsThreshold", "panUpdate", "moveUpdate", "moveCommit",
+      "marqueeUpdate", "marqueeCommit", "resizeUpdate", "resizeCommit",
+      "applyWheel", "handleKeyDown", "DiagramLayer", "GhostLayer",
+      "OverlayLayer", "hitTestPoint", "handleAtPoint", "screenToDiagram",
+      "fitBoundsToRect", "cursorFor"
+    ]
+  }
+]

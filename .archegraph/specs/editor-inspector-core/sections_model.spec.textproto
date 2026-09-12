@@ -1,0 +1,153 @@
+# Wave 5. The two sections this pillar ships, each as a read function and a
+# commit function. Both pure, both over data the editor already has.
+#
+# Layout and typography are chosen deliberately as the first two: between them
+# they exercise every field type (number, colour, token reference, enum) and
+# both builder families (the resize/move builders and the glyph builders), so
+# the remaining four sections in the follow-on pillar are mechanical.
+
+file: "packages/editor/src/inspector/sections_model.ts"
+doc: "Read and commit functions for the layout and typography inspector sections."
+
+structs: [
+  { name: "LayoutModel"
+    doc: "Position and size as the four fields the form shows. Groups and annotations use the same shape; edges have no layout section."
+    fields: [
+      { name: "x", type: { named: { symbol: "NumberField" } } },
+      { name: "y", type: { named: { symbol: "NumberField" } } },
+      { name: "width", type: { named: { symbol: "NumberField" } } },
+      { name: "height", type: { named: { symbol: "NumberField" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "TypographyModel"
+    fields: [
+      { name: "size", type: { named: { symbol: "NumberField" } } },
+      { name: "color", type: { named: { symbol: "TextField" } } },
+      { name: "font", type: { named: { symbol: "TextField" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "layoutModel"
+    doc:
+      "Reads each element's stylesheet entry for the overrides and the\n"
+      "laid-out element for the effective values, then folds with\n"
+      "numberField.\n"
+      "\n"
+      "COORDINATE SPACE. Style positions are PARENT-RELATIVE and laid-out\n"
+      "positions are canvas-absolute (design.md §5.3). The field shows the\n"
+      "STYLE value, so the effective value for an element inside a group has\n"
+      "its parent's absolute origin subtracted first. Showing an absolute\n"
+      "placeholder above a relative value would make the two numbers\n"
+      "incomparable in the one place a user compares them.\n"
+      "\n"
+      "Size needs no such conversion; it is absolute in both.\n"
+      "\n"
+      "An id absent from the geometry contributes undefined to both arrays\n"
+      "rather than being skipped, so the arrays stay parallel to `ids`."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
+    ]
+    output: { named: { symbol: "LayoutModel" } }
+    uses: ["numberField", "elementKey"]
+  },
+  { name: "typographyModel"
+    doc:
+      "Overrides come from the entry's `typography`; effective values come\n"
+      "from the laid-out element's `typography`, which the resolver has\n"
+      "already cascaded and token-resolved.\n"
+      "\n"
+      "`color` is Color.value, the string as written. `font` is\n"
+      "Typography.font, which may be a literal or a token reference such as\n"
+      "'$fonts.heading' -- it is shown as written, not expanded, because the\n"
+      "reference is what the user is editing.\n"
+      "\n"
+      "Edges carry typography too, so this reads whichever entry map matches\n"
+      "model.kind."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
+    ]
+    output: { named: { symbol: "TypographyModel" } }
+    uses: ["numberField", "textField", "elementKey"]
+  },
+  { name: "commitLayout"
+    doc:
+      "One StyleEdit for one layout field across the whole selection, or\n"
+      "undefined when nothing should be written.\n"
+      "\n"
+      "`value` is undefined when the user CLEARED the field, which removes\n"
+      "the override and returns the element to its derived value.\n"
+      "\n"
+      "  width/height  clearNodeSizeEdit, clearGroupSizeEdit or\n"
+      "                clearAnnotationSizeEdit by kind.\n"
+      "  x/y           unpinElementsEdit, for nodes and groups ONLY.\n"
+      "\n"
+      "ANNOTATIONS CANNOT BE UNPINNED. unpinElementsEdit filters them out on\n"
+      "purpose -- an annotation is always explicitly positioned and has no\n"
+      "auto-layout position to fall back to, so clearing one would lose its\n"
+      "place with nothing to replace it. Passing an annotation anyway does\n"
+      "not error; it returns an edit with no changes in it, which is worse\n"
+      "than an error because it still reaches the undo log.\n"
+      "\n"
+      "So: an x or y clear on an annotation selection returns undefined here,\n"
+      "before any builder is called. The inspector correspondingly does not\n"
+      "offer x and y as clearable for annotations.\n"
+      "\n"
+      "Writing x or y is a move and writing width or height is a resize, so\n"
+      "this delegates to moveElementsEdit and the resize builders rather than\n"
+      "constructing entries -- the builders are the only StyleEdit\n"
+      "constructors (architecture.md), and they are what preserve the rest of\n"
+      "the entry.\n"
+      "\n"
+      "A resize needs a position as well as a size, since the builders write\n"
+      "both; use the element's current position unchanged.\n"
+      "\n"
+      "ONE edit for the whole selection, not one per id. Three selected nodes\n"
+      "given a width is one undo entry.\n"
+      "\n"
+      "Returns undefined when the value equals the existing override for\n"
+      "every id -- committing on blur means blur fires whether or not anything\n"
+      "was typed, and a no-op must not reach the undo log."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'x' | 'y' | 'width' | 'height'" } } },
+      { name: "value", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "number | undefined" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["moveElementsEdit", "resizeNodeEdit", "resizeGroupEdit", "resizeAnnotationEdit", "clearNodeSizeEdit", "clearGroupSizeEdit", "clearAnnotationSizeEdit", "unpinElementsEdit", "elementKey"]
+  },
+  { name: "commitTypography"
+    doc:
+      "One StyleEdit for one typography field across the selection, through\n"
+      "the glyph builders -- setNodesGlyphEdit for nodes (it already takes a\n"
+      "list), and the single-id builders for the other kinds.\n"
+      "\n"
+      "The builders take a WHOLE Typography message, so this reads each\n"
+      "element's existing typography and replaces the one field, rather than\n"
+      "sending a message with one field set. Sending a fresh message would\n"
+      "silently clear font, weight, align and background -- which typechecks,\n"
+      "and which the builder tests exist to catch.\n"
+      "\n"
+      "An undefined `value` clears that one field and leaves the rest of the\n"
+      "message alone.\n"
+      "\n"
+      "Same no-op rule as commitLayout: undefined when nothing changes."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'size' | 'color' | 'font'" } } },
+      { name: "value", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "string | number | undefined" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["setNodesGlyphEdit", "setEdgeGlyphEdit", "setGroupGlyphEdit", "setAnnotationGlyphEdit"]
+  }
+]

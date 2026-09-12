@@ -1,0 +1,50 @@
+# Wave 5. Mount the new inspector and remove what only existed to feed the
+# old one.
+
+file: "packages/editor/src/shell/app.tsx"
+doc: "The application shell: owns the stores and adapters, mounts the canvas and the inspector."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Three changes. Loading, adapters, theming, save and file-sync are\n"
+      "untouched.\n"
+      "\n"
+      "1. The right-hand panel renders the new Inspector from\n"
+      "   inspector/inspector, passing state, ui, the scene's geometry and\n"
+      "   the document theme. It keeps its place in the Resizable for now --\n"
+      "   the floating islands of D13 are wave 6's shell rewrite, and moving\n"
+      "   the panel is that pillar's job, not this one's.\n"
+      "\n"
+      "   App also owns the inspector's focus entry point: a callback that\n"
+      "   focuses the panel's first field, handed to Inspector so it can\n"
+      "   register the target, and to Canvas as `onFocusInspector` so the\n"
+      "   command table can reach it. Canvas is the only place a\n"
+      "   CommandContext is built, so this is the only route from a chord to\n"
+      "   the DOM.\n"
+      "\n"
+      "2. The SelectionContext bridge comes out: the createSignal of\n"
+      "   SelectedElement, the SelectionState object, the createEffect that\n"
+      "   converts ui.selection()[0] into an ElementKind, and the\n"
+      "   SelectionContext.Provider wrapper. All of it exists only to feed\n"
+      "   the old inspector from the retired single-element selection model.\n"
+      "   The new inspector reads ui.selection() directly.\n"
+      "\n"
+      "3. The onKeyDown listener installed in onMount comes out. It is a\n"
+      "   SECOND document-level shortcut owner beside gestures/keyboard_handler,\n"
+      "   and unlike that one it has no editable-target guard. Harmless while\n"
+      "   the editor had no text fields; the moment the inspector has them,\n"
+      "   Cmd+Z inside a field undoes the DOCUMENT instead of the typing\n"
+      "   (finding at editor-ui-review.md §2.7). keyboard_handler already\n"
+      "   binds undo and redo and already guards, so this is a deletion, not\n"
+      "   a move."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: [
+      "readUrlParams", "selectAdapters", "getBundledTheme", "applyEditorTheme",
+      "findEditorTheme", "createUiState", "createEditorState", "createScene",
+      "seedComponentBindings", "createSaveController", "syncToFile", "Canvas",
+      "TopBar", "Inspector"
+    ]
+  }
+]

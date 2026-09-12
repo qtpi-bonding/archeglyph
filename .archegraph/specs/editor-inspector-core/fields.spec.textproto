@@ -1,0 +1,88 @@
+# Wave 5. Three presentational field components. They hold no rules: each is
+# handed a NumberField or TextField and calls back with the new value.
+#
+# The one behaviour they DO own is when a commit happens, and that is the
+# point of the pillar. The old inspector committed on every keystroke, so
+# typing "120" ran ELK three times, replaced the whole SVG three times and
+# produced three undo entries -- Cmd+Z rewound one character at a time
+# (finding §2.5).
+
+file: "packages/editor/src/inspector/fields.tsx"
+doc: "Number, colour and token field components; commit on blur or Enter, never on input."
+
+constants: [
+  { name: "NumberFieldInput"
+    doc:
+      "Renders field.override as the value and field.effective as the\n"
+      "placeholder, so an unset field shows the real number greyed rather\n"
+      "than a zero.\n"
+      "\n"
+      "COMMIT ON BLUR AND ON ENTER, never on input. Typing is local component\n"
+      "state; only blur and Enter call onCommit. Escape restores the value\n"
+      "the field had on focus and blurs without committing.\n"
+      "\n"
+      "An empty string commits undefined, which is what clears an override.\n"
+      "A value that does not parse as a number commits nothing and restores.\n"
+      "\n"
+      "When field.mixed, the value is empty and the placeholder reads\n"
+      "'Mixed'. Typing into a mixed field and committing sets all selected\n"
+      "elements to that one value, which is the expected meaning.\n"
+      "\n"
+      "ArrowUp and ArrowDown step by 1, and by 10 with Shift, committing each\n"
+      "step -- consecutive steps coalesce in the undo log under one key, the\n"
+      "way a held arrow key coalesces for nudge."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<NumberFieldProps>" } }
+  },
+  { name: "ColorFieldInput"
+    doc:
+      "A text input for the colour as written, beside a swatch showing the\n"
+      "effective colour. Same blur/Enter commit rule as NumberFieldInput.\n"
+      "\n"
+      "Text rather than an <input type=color>: the value may be a token\n"
+      "reference such as '$colors.accent', and a native colour input cannot\n"
+      "represent one. Losing the reference on every edit would defeat the\n"
+      "theming the tokens exist for.\n"
+      "\n"
+      "The swatch shows field.effective, since that is the resolved colour;\n"
+      "an unresolvable value shows no swatch rather than a wrong one."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TextFieldProps>" } }
+  },
+  { name: "TokenFieldInput"
+    doc:
+      "A text input with a datalist of the theme's token names for this\n"
+      "field, so tokens are offered first but a literal is still typeable.\n"
+      "Same commit rule.\n"
+      "\n"
+      "The token list is a prop, not read from a theme here -- this file\n"
+      "renders, it does not resolve."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TokenFieldProps>" } }
+  }
+]
+
+structs: [
+  { name: "NumberFieldProps"
+    fields: [
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "field", type: { named: { symbol: "NumberField" } } },
+      { name: "onCommit", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(value: number | undefined) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "TextFieldProps"
+    fields: [
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "field", type: { named: { symbol: "TextField" } } },
+      { name: "onCommit", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(value: string | undefined) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "TokenFieldProps"
+    fields: [
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "field", type: { named: { symbol: "TextField" } } },
+      { name: "tokens", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } },
+      { name: "onCommit", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(value: string | undefined) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

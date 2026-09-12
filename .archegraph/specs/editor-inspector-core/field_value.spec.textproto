@@ -1,0 +1,78 @@
+# Wave 5. The distinction the whole inspector rests on: what the user WROTE
+# versus what the diagram ACTUALLY USES.
+#
+# The old inspector conflated them and showed `size()?.x ?? 0`. An auto-sized
+# node has no size in the stylesheet, so the field read 0 while the node
+# rendered at its derived width -- and typing into it resized from a baseline
+# of zero (finding §2.6). The fix is not a better default; it is that these
+# are two different values and the field needs both.
+
+file: "packages/editor/src/inspector/field_value.ts"
+doc: "One field's override and effective value, folded across a multi-selection."
+
+structs: [
+  { name: "NumberField"
+    doc:
+      "`override` is what the stylesheet says, absent when the user has not\n"
+      "set it. `effective` is what the diagram currently uses -- from the\n"
+      "laid-out element, which carries the fully cascaded, token-resolved\n"
+      "value.\n"
+      "\n"
+      "The component renders override as the input's VALUE and effective as\n"
+      "its PLACEHOLDER, so an unset field shows the real number greyed out\n"
+      "and clearing a field removes the override rather than writing a zero.\n"
+      "\n"
+      "`mixed` is true when a multi-selection disagrees. It is separate from\n"
+      "`override: undefined` because they mean different things and must look\n"
+      "different: nothing set, versus several things set differently."
+    fields: [
+      { name: "override", type: { primitive: REAL }, is_optional: true },
+      { name: "effective", type: { primitive: REAL }, is_optional: true },
+      { name: "mixed", type: { primitive: BOOLEAN } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "TextField"
+    doc: "The same three-way distinction for string-valued fields -- colours, font token references, component names."
+    fields: [
+      { name: "override", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "effective", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "mixed", type: { primitive: BOOLEAN } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "numberField"
+    doc:
+      "Folds one field across the selection. Both arrays are parallel to the\n"
+      "selected ids and may contain undefined at any position.\n"
+      "\n"
+      "  mixed     true when the DEFINED overrides disagree, or when some\n"
+      "            elements have an override and others do not. Both are real\n"
+      "            disagreement about what the user set.\n"
+      "  override  the shared override when they agree, otherwise undefined.\n"
+      "  effective the shared effective value when they agree, otherwise\n"
+      "            undefined -- three differently-sized nodes have no single\n"
+      "            width to offer as a placeholder.\n"
+      "\n"
+      "A single-element selection is the same code path with arrays of length\n"
+      "one and is never mixed.\n"
+      "\n"
+      "An empty selection yields mixed=false and both values undefined."
+    inputs: [
+      { name: "overrides", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<number | undefined>" } } },
+      { name: "effectives", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<number | undefined>" } } }
+    ]
+    output: { named: { symbol: "NumberField" } }
+  },
+  { name: "textField"
+    doc: "numberField's rules exactly, for strings. Comparison is by value; there is no normalisation, so '#FFF' and '#ffffff' are mixed."
+    inputs: [
+      { name: "overrides", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<string | undefined>" } } },
+      { name: "effectives", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<string | undefined>" } } }
+    ]
+    output: { named: { symbol: "TextField" } }
+  }
+]

@@ -1,0 +1,46 @@
+# Wave 5. A guard that matters only once something commits on blur.
+#
+# applyStyleEdit pushes an undo entry and marks the document dirty for every
+# edit it is handed, with no check that the edit contains any changes. Nothing
+# noticed while every edit came from a gesture, because a gesture that changed
+# nothing never produced an edit at all -- moveCommit and resizeCommit both
+# return undefined on a zero delta.
+#
+# Commit-on-blur breaks that assumption: blur fires whether or not anything
+# was typed, and a builder handed a no-op selection can legitimately return an
+# edit with empty change arrays. Without this guard, tabbing through the
+# inspector would fill the undo log with entries that undo nothing and mark a
+# clean document dirty.
+
+file: "packages/editor/src/state/create_editor_state.ts"
+doc: "The editor's document store: stylesheet, diagram, undo log, dirty flag."
+
+methods: [
+  { name: "createEditorState"
+    change_type: MODIFIED
+    doc:
+      "One change inside applyStyleEdit: an edit whose nodeChanges,\n"
+      "groupChanges, edgeChanges and annotationChanges are ALL empty returns\n"
+      "immediately, without touching the stylesheet, the undo log, the redo\n"
+      "log or the dirty flag.\n"
+      "\n"
+      "This is a guard, not a policy change. Callers should still avoid\n"
+      "producing empty edits -- commitLayout and commitTypography both return\n"
+      "undefined rather than an empty edit -- but the guard protects every\n"
+      "caller rather than the ones that remembered.\n"
+      "\n"
+      "Deliberately NOT extended to 'the edit would produce an identical\n"
+      "stylesheet'. That needs a deep comparison on every keystroke-adjacent\n"
+      "action, and an edit that sets a field to the value it already has is a\n"
+      "caller bug rather than something the store should absorb silently.\n"
+      "\n"
+      "Everything else -- the coalescing window, snapshot capture, redo\n"
+      "clearing, adoptStylesheet, undo and redo -- is unchanged."
+    inputs: [
+      { name: "diagram", type: { named: { symbol: "Diagram" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
+    ]
+    output: { named: { symbol: "EditorState" } }
+    uses: ["captureSnapshot", "pushUndoEntry", "applyStyleEditToStylesheet", "restoreFromSnapshot"]
+  }
+]

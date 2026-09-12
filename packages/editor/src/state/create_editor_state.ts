@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { createSignal } from 'solid-js';
+import { create } from '@bufbuild/protobuf';
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
-import { StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { StyleEdit, Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { applyStyleEditToStylesheet } from './apply_style_edit';
 import { EditorState } from './editor_state';
 import {
@@ -78,6 +79,20 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     markChanged();
   };
 
+  const appendPendingEdit = (edit: StyleEdit): void => {
+    const current: Stylesheet = getStylesheet();
+    setStylesheet(create(StylesheetSchema, {
+      ...current,
+      pendingEdits: [...current.pendingEdits, edit],
+    }));
+    setVersion(getVersion() + 1);
+  };
+
+  const adoptStylesheet = (next: Stylesheet): void => {
+    setStylesheet(next);
+    setVersion(getVersion() + 1);
+  };
+
   return {
     diagram: getDiagram,
     stylesheet: getStylesheet,
@@ -86,6 +101,8 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     applyStyleEdit,
     undo,
     redo,
+    appendPendingEdit,
+    adoptStylesheet,
     dirty: getDirty,
     version: getVersion,
   };

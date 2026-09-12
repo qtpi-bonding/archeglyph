@@ -7,11 +7,11 @@ import { diffStylesheets } from '../state/stylesheet_diff';
 import { hashStylesheet } from '../state/stylesheet_hash';
 import { AdapterError, FileStamp, HostAdapter, LoadResult } from '../adapters/host_adapter';
 
-export function watchOnFocus(adapter: HostAdapter, currentStylesheet: () => Stylesheet, onChange: (change: ExternalChange) => void): () => void {
+export function watchOnFocus(adapter: HostAdapter, currentStylesheet: () => Stylesheet, onChange: (change: ExternalChange) => void, initialStamp?: FileStamp): () => void {
   let checking: boolean = false;
   let disposed: boolean = false;
-  let hasLastStamp: boolean = false;
-  let lastStamp: FileStamp;
+  let hasLastStamp: boolean = initialStamp !== undefined;
+  let lastStamp: FileStamp | undefined = initialStamp;
 
   // Focus can fire repeatedly while an asynchronous check is in flight. Keep
   // the listener synchronous and serialize the checks instead of queueing

@@ -2,15 +2,22 @@ llm:
   command: "claude -p {prompt} --json-schema {schema} --output-format json --max-turns 50"
 
 tests:
-  # Re-enabled 2026-09-12 to retest the upstream fix. This was true on the
-  # layout-pin run: property tests came out as `fc.property(el in
-  # fc.record({...}))`, which is not valid syntax, fast-check was not a
-  # declared dependency, and 19 of 72 emitted tests failed to parse -- taking
-  # 15 planned cases with them including that pillar's headline invariant.
-  # Filed upstream 2026-09-11; the archegraph agent believes it is fixed.
+  # Retested 2026-09-12 on editor-annotations with this set to false. NOT
+  # fixed: 90 occurrences of `fc.property(kind in fc.constantFrom(...))`, the
+  # same invalid syntax as the 2026-09-11 layout-pin run, and fast-check is
+  # still not a declared dependency. That run was also worse -- a filename
+  # leaked into an import list (`import { TextEditor, text_editor.tsx } from
+  # ...`) and 21 imports were emitted mid-file, so the output did not parse at
+  # all and produced zero usable tests.
   #
-  # If it is not, set this back to true. The cost of skipping is real: cases
-  # flagged is_property simply vanish from the plan, so state an invariant as
-  # a CONCRETE case in the spec wherever it can be.
-  skip_property_tests: false
+  # Filed: concordium/archegraph/docs/feedback/
+  # 2026-09-12-testgen-codegen-still-unusable-and-worse.md
+  #
+  # The cost of leaving this true is real: cases flagged is_property simply
+  # vanish from the plan, so state an invariant as a CONCRETE case in the spec
+  # wherever it can be, rather than as a general property.
+  #
+  # Note also that testgen writes packages/<pkg>/tests/testgen.test.ts and
+  # will overwrite whatever is there without asking.
+  skip_property_tests: true
   language: typescript

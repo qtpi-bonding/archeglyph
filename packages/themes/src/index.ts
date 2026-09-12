@@ -112,6 +112,12 @@ function blueprintAnnotationComponent() {
     name: 'glyph',
     shape: blueprintNodeShape('#8ad1ff', '#122238'),
     typography: create(TypographySchema, { color: create(ColorSchema, { value: '#bfe3ff' }) }),
+    callout: create(Glyph1DSchema, {
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: '#73daca' }) },
+        width: 1.2,
+      }),
+    }),
   });
 }
 

@@ -19,9 +19,9 @@ export function inspectorModel(selection: Array<ElementRef>): InspectorModelOpti
 
   const sectionsByKind: Record<InspectorModel['kind'], Array<SectionId>> = {
     node: ['layout', 'shape', 'typography'],
+    group: ['layout', 'group', 'shape', 'typography'],
     edge: ['line', 'typography'],
-    group: ['layout', 'shape', 'typography', 'group'],
-    annotation: ['layout', 'typography', 'annotation'],
+    annotation: ['layout', 'annotation', 'shape', 'line', 'typography'],
   };
 
   return {

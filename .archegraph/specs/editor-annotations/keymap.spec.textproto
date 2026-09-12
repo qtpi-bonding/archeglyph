@@ -55,6 +55,8 @@ constants: [
       "have to share the chord inside one command, because a flat table\n"
       "cannot express selection-dependent rows."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeymapEntry[]" } }
-    uses: ["KeymapEntry", "Chord", "CommandId"]
+    uses: ["KeymapEntry", "Chord"]
+    # CommandId is the type of a field inside each entry, not something the
+    # array initializer references; verify reports it MISSING when declared.
   }
 ]

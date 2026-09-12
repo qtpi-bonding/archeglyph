@@ -111,6 +111,16 @@ constants: [
       "non-annotation. There is no surface for a hint until the editor-shell\n"
       "status island exists, so Delete on a node is silent for now."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<Command>" } }
-    uses: ["Command", "CommandContext", "deleteAnnotationEdit", "duplicateAnnotationEdit", "addAnnotationEdit", "setNodesHiddenEdit", "newAnnotationId", "NEW_ANNOTATION_TEXT", "NEW_ANNOTATION_SIZE", "clearSelection", "elementKey"]
+    uses: ["Command", "CommandContext"]
+    # Corrected after verify. The builders each command reaches for --
+    # addAnnotationEdit, duplicateAnnotationEdit, deleteAnnotationEdit,
+    # setNodesHiddenEdit, newAnnotationId, NEW_ANNOTATION_TEXT,
+    # NEW_ANNOTATION_SIZE, clearSelection, elementKey -- are all called from
+    # file-local run* helpers, not from this const's own initializer, which
+    # only names the helpers. `uses:` records what the DECL's body references,
+    # so declaring them here produced 9 MISSING edges against correct code.
+    # The helpers are not decls, so those edges have nowhere true to live;
+    # they would only become declarable by promoting each run* to its own
+    # decl, which is a bigger change than the edges are worth.
   }
 ]

@@ -59,6 +59,12 @@ constants: [
       "target cannot disagree -- the rule handlePositions already follows for\n"
       "resize handles. This decl only draws it."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<OverlayLayerProps>" } }
-    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "Bounds", "elementKey", "handlePositions", "calloutPreviews", "anchorGripPoint"]
+    uses: ["OverlayLayerProps", "SceneGeometry", "ScenePreview", "ElementRef", "elementKey", "handlePositions"]
+    # Corrected after verify, same reason as COMMANDS: calloutPreviews and
+    # anchorGripPoint are called from file-local shape helpers rather than
+    # from the component initializer. Bounds likewise -- it is referenced by
+    # OverlayLayerProps, which carries its own edge, and by the shape helpers.
+    # The editor-canvas-v2 spec already carried that exact note; this pillar
+    # reintroduced the edge and verify caught it again.
   }
 ]

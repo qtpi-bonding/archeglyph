@@ -96,7 +96,7 @@ function spyContext(selection: Array<ElementRef>): Spy {
     hover: () => undefined,
     setHover: (): void => undefined,
     tool: () => 'select',
-    setTool: (): void => undefined,
+    setTool: (): void => { calls.push('setTool'); },
     viewport: () => ({ panX: 0, panY: 0, zoom: 1 }),
     setViewport: (): void => { calls.push('setViewport'); },
   } as unknown as UiState;
@@ -138,11 +138,26 @@ describe('no command is inert', () => {
   // without one; the question here is whether they do anything WITH one.
   const selection: Array<ElementRef> = [{ id: 'n1', kind: 'node' }];
 
+  // Some commands are meaningful only for a particular selection -- edit-text
+  // acts on exactly one annotation and correctly does nothing for a node, and
+  // delete is annotations-only per D3. So the claim is "there EXISTS a
+  // selection under which this command does something", not "it acts on a
+  // node". A command that is inert under all of these still fails, which is
+  // the bug this file exists to catch.
+  const selections: Array<Array<ElementRef>> = [
+    selection,
+    [{ id: 'a1', kind: 'annotation' }],
+    [],
+  ];
+
   for (const command of COMMANDS) {
     test(`${command.id} has an observable effect`, () => {
-      const spy = spyContext(selection);
-      runCommand(command.id as CommandId, spy.context);
-      expect(spy.calls).not.toEqual([]);
+      const observed = selections.some((candidate: Array<ElementRef>): boolean => {
+        const spy = spyContext(candidate);
+        runCommand(command.id as CommandId, spy.context);
+        return spy.calls.length > 0;
+      });
+      expect(observed).toBe(true);
     });
   }
 

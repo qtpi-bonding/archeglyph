@@ -306,7 +306,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       const currentGeometry: SceneGeometry | undefined = geometry();
       const entry = currentGeometry?.byKey[elementKey(ref)];
       if (entry === undefined && ref.kind === 'annotation') {
-        const position = props.stylesheet.annotations[ref.id]?.position;
+        const position = props.stylesheet.annotations[ref.id]?.layout?.position;
         if (position !== undefined) {
           setEditorFallback({
             minX: position.x,

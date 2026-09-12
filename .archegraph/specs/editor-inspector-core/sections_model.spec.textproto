@@ -88,7 +88,12 @@ methods: [
       { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } }
     ]
     output: { named: { symbol: "TypographyModel" } }
-    uses: ["numberField", "textField", "elementKey"]
+    uses: ["numberField", "textField"]
+    # NOT elementKey. geometry.byKey holds ElementBounds -- ref, bounds and
+    # parentGroup -- and carries no typography, so the cascaded values have to
+    # come from the LaidOut* elements on geometry.diagram instead. Declared as
+    # elementKey originally; verify reported it MISSING, and the spec was the
+    # thing that was wrong.
   },
   { name: "commitLayout"
     doc:

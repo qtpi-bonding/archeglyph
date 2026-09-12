@@ -104,11 +104,15 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
     return undefined;
   }
 
+  // model.kind is narrowed by the edge guard above, but TypeScript discards
+  // that narrowing at the first closure below. Capture it once.
+  const kind: 'node' | 'group' | 'annotation' = model.kind;
+
   const isSize = field === 'width' || field === 'height';
   const overrideValue = (id: string): number | undefined => {
-    const entry = model.kind === 'node'
+    const entry = kind === 'node'
       ? stylesheet.nodes[id]
-      : model.kind === 'group'
+      : kind === 'group'
         ? stylesheet.groups[id]
         : stylesheet.annotations[id];
     if (entry?.layout === undefined) {
@@ -127,7 +131,7 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
   }
 
   const refs: Array<ElementMove> = model.ids.map((id) => ({
-    kind: model.kind,
+    kind: kind,
     id,
     // unpinElementsEdit only uses kind and id; the position is part of the
     // shared move reference type and is deliberately ignored for unpinning.
@@ -139,8 +143,8 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
 
   if (isSize && value === undefined) {
     const edits = model.ids.map((id) => {
-      if (model.kind === 'node') return clearNodeSizeEdit(stylesheet, id);
-      if (model.kind === 'group') return clearGroupSizeEdit(stylesheet, id);
+      if (kind === 'node') return clearNodeSizeEdit(stylesheet, id);
+      if (kind === 'group') return clearGroupSizeEdit(stylesheet, id);
       return clearAnnotationSizeEdit(stylesheet, id);
     });
     return styleEdit({
@@ -152,11 +156,11 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
   }
 
   const edits = model.ids.map((id) => {
-    const bounds = geometry.byKey[elementKey({ kind: model.kind, id })]?.bounds;
+    const bounds = geometry.byKey[elementKey({ kind: kind, id })]?.bounds;
     if (bounds === undefined) {
       return undefined;
     }
-    const parentId = geometry.byKey[elementKey({ kind: model.kind, id })]?.parentGroup;
+    const parentId = geometry.byKey[elementKey({ kind: kind, id })]?.parentGroup;
     const parent = parentId === undefined
       ? undefined
       : geometry.byKey[elementKey({ kind: 'group', id: parentId })];
@@ -166,7 +170,7 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
     });
     if (!isSize) {
       return moveElementsEdit(stylesheet, [{
-        kind: model.kind,
+        kind: kind,
         id,
         position: create(Vec2Schema, {
           x: field === 'x' ? value ?? position.x : position.x,
@@ -178,8 +182,8 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
       x: field === 'width' ? value as number : bounds.maxX - bounds.minX,
       y: field === 'height' ? value as number : bounds.maxY - bounds.minY,
     });
-    if (model.kind === 'node') return resizeNodeEdit(stylesheet, id, position, size);
-    if (model.kind === 'group') return resizeGroupEdit(stylesheet, id, position, size);
+    if (kind === 'node') return resizeNodeEdit(stylesheet, id, position, size);
+    if (kind === 'group') return resizeGroupEdit(stylesheet, id, position, size);
     return resizeAnnotationEdit(stylesheet, id, position, size);
   }).filter((edit): edit is StyleEdit => edit !== undefined);
 

@@ -8,11 +8,7 @@ export interface Chord {
 export type CommandId = 'undo' | 'redo' | 'delete' |
   'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |
   'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |
-<<<<<<< HEAD
-  'auto-layout' | 'reset-size' | 'save' | 'focus-inspector';
-=======
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save';
->>>>>>> 149cd04750f8cdbc1a428de0d2ac331a774de005
 
 export interface KeymapEntry {
   chord: Chord;

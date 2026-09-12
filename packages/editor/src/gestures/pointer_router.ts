@@ -11,6 +11,7 @@ export const DRAG_THRESHOLD_PX: number = 4;
 export interface PressContext {
   point: Vec2;
   hit?: ElementRef;
+  onAnchorGrip?: ElementRef;
   tool: Tool;
   button: number;
   additive: boolean;
@@ -22,6 +23,21 @@ export function routePress(context: PressContext, current: Array<ElementRef>): G
   // over a handle or an element.
   if (context.button === 1 || context.tool === 'hand') {
     return { kind: 'pan' };
+  }
+
+  // The annotation tool has its own press semantics.  A press creates a new
+  // annotation at the press point, even when another element is underneath.
+  // Clear the selection before the handle and hit branches can claim it.
+  if (context.tool === 'annotation') {
+    return { kind: 'create-annotation', selection: clearSelection() };
+  }
+
+  // The anchor grip is the specific affordance for dragging the selected
+  // annotation.  It wins over resize handles if the affordances ever
+  // coincide; anchorGripAt only supplies a value for a valid single
+  // annotation selection.
+  if (context.onAnchorGrip !== undefined) {
+    return { kind: 'anchor', ref: context.onAnchorGrip };
   }
 
   // A handle is meaningful only in the context of an existing selection.  Do
@@ -60,9 +76,10 @@ export function routePress(context: PressContext, current: Array<ElementRef>): G
 }
 
 export interface GestureDecision {
-  kind: 'pan' | 'move' | 'marquee' | 'resize' | 'none';
+  kind: 'pan' | 'move' | 'marquee' | 'resize' | 'create-annotation' | 'anchor' | 'none';
   selection?: Array<ElementRef>;
   handle?: Handle;
+  ref?: ElementRef;
 }
 export function exceedsThreshold(origin: Vec2, current: Vec2): boolean {
   const dx = current.x - origin.x;

@@ -22,13 +22,17 @@ export const TokenFieldInput: Component<TokenFieldProps> = (props: TokenFieldPro
   const [focused, setFocused] = createSignal<boolean>(false);
   const [beforeFocus, setBeforeFocus] = createSignal<string>(writtenValue(props.field));
   const [skipBlurCommit, setSkipBlurCommit] = createSignal<boolean>(false);
+  // See number_field: an untouched field tracks the model and commits nothing
+  // on blur, or it writes stale values back over edits made elsewhere.
+  const [dirty, setDirty] = createSignal<boolean>(false);
   const datalistId: string = `token-field-${nextDatalistId}`;
   nextDatalistId += 1;
 
   createEffect((): void => {
     const field: TextField = props.field;
-    if (!focused()) {
+    if (!dirty()) {
       setText(writtenValue(field));
+      setBeforeFocus(writtenValue(field));
     }
   });
 
@@ -50,24 +54,31 @@ export const TokenFieldInput: Component<TokenFieldProps> = (props: TokenFieldPro
           setFocused(true);
         }}
         onInput={(event: InputEvent): void => {
+          setDirty(true);
           setText((event.currentTarget as HTMLInputElement).value);
         }}
         onBlur={(): void => {
           setFocused(false);
+          const pending: boolean = dirty();
+          setDirty(false);
           if (skipBlurCommit()) {
             setSkipBlurCommit(false);
             return;
           }
-          commit();
+          if (pending) {
+            commit();
+          }
         }}
         onKeyDown={(event: KeyboardEvent): void => {
           const input: HTMLInputElement = event.currentTarget as HTMLInputElement;
           if (event.key === 'Enter') {
             event.preventDefault();
             commit();
+            setDirty(false);
           } else if (event.key === 'Escape') {
             event.preventDefault();
             setText(beforeFocus());
+            setDirty(false);
             setSkipBlurCommit(true);
             input.blur();
           }

@@ -25,13 +25,21 @@ export const NumberFieldInput: Component<NumberFieldProps> = (
 ): JSX.Element => {
   const [text, setText] = createSignal<string>(textForField(props.field));
   const [focused, setFocused] = createSignal<boolean>(false);
+  // Whether the user has typed since focusing. A field they have not touched
+  // is a READOUT, not a pending edit -- see onBlur and the effect below.
+  const [dirty, setDirty] = createSignal<boolean>(false);
   let beforeFocus: string = text();
   let ignoreNextBlur: boolean = false;
 
   createEffect((): void => {
     const field: NumberField = props.field;
-    if (!focused()) {
+    // Track the model whenever the user has nothing typed here, focused or
+    // not. Stopping on focus alone made the field go stale during a drag: the
+    // canvas preventDefaults its pointerdown, so focus stays in the inspector
+    // for the whole gesture and X/Y kept showing the pre-drag position.
+    if (!dirty()) {
       setText(textForField(field));
+      beforeFocus = textForField(field);
     }
   });
 
@@ -51,12 +59,20 @@ export const NumberFieldInput: Component<NumberFieldProps> = (
   };
 
   const finishEditing = (): void => {
-    commitText(text(), true);
+    // Never write back a value the user did not type. Committing on every
+    // blur meant selecting an element, dragging it, then clicking away wrote
+    // the field's stale pre-drag value over the drop position -- the element
+    // visibly jumped back.
+    if (dirty()) {
+      commitText(text(), true);
+    }
+    setDirty(false);
     setFocused(false);
   };
 
   const restoreAndFocusCanvas = (): void => {
     setText(beforeFocus);
+    setDirty(false);
     setFocused(false);
     const canvas: HTMLElement | null = document.querySelector<HTMLElement>(
       '[data-archeglyph-canvas="true"]',
@@ -74,10 +90,13 @@ export const NumberFieldInput: Component<NumberFieldProps> = (
     const amount: number = shift ? 10 : 1;
     const next: number = current + direction * amount;
     setText(String(next));
+    // Stepping commits on the spot, so nothing is left pending for blur.
+    setDirty(false);
     props.onCommit(next, `number-field:${props.label}`);
   };
 
   const onInput = (event: Event): void => {
+    setDirty(true);
     setText((event.currentTarget as HTMLInputElement).value);
   };
 

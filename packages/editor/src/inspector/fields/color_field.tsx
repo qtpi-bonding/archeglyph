@@ -57,12 +57,17 @@ function focusCanvas(): void {
 export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps): JSX.Element => {
   const [text, setText] = createSignal<string>(props.field.mixed ? '' : (props.field.override ?? ''));
   const [focused, setFocused] = createSignal<boolean>(false);
+  // See number_field: an untouched field tracks the model and commits nothing
+  // on blur, or it writes stale values back over edits made elsewhere.
+  const [dirty, setDirty] = createSignal<boolean>(false);
   let beforeFocus: string = text();
   let skipBlur: boolean = false;
 
   createEffect((): void => {
-    if (!focused()) {
-      setText(props.field.mixed ? '' : (props.field.override ?? ''));
+    if (!dirty()) {
+      const value: string = props.field.mixed ? '' : (props.field.override ?? '');
+      setText(value);
+      beforeFocus = value;
     }
   });
 
@@ -83,9 +88,10 @@ export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps
 
   const handleBlur = (): void => {
     setFocused(false);
-    if (!skipBlur) {
+    if (!skipBlur && dirty()) {
       commit();
     }
+    setDirty(false);
     skipBlur = false;
   };
 
@@ -93,11 +99,13 @@ export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps
     if (event.key === 'Enter') {
       event.preventDefault();
       commit();
+      setDirty(false);
       skipBlur = true;
       (event.currentTarget as HTMLInputElement).blur();
     } else if (event.key === 'Escape') {
       event.preventDefault();
       setText(beforeFocus);
+      setDirty(false);
       skipBlur = true;
       setFocused(false);
       (event.currentTarget as HTMLInputElement).blur();
@@ -116,6 +124,7 @@ export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps
           onFocus={handleFocus}
           onBlur={handleBlur}
           onInput={(event: InputEvent): void => {
+            setDirty(true);
             setText((event.currentTarget as HTMLInputElement).value);
           }}
           onKeyDown={handleKeyDown}

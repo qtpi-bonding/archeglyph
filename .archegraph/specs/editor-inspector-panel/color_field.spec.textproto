@@ -2,6 +2,23 @@
 # NumberFieldInput doc for the local-state rule, which governs all three field
 # components and is stated there once in full.
 
+# THE COMMIT RULE, shared by every text-ish field in this pillar
+# (number_field, color_field, token_field):
+#
+#   An input the user has not typed into is a READOUT, not a pending edit.
+#
+# Two halves, and both are needed:
+#   - A pristine field keeps tracking the model even while it holds DOM
+#     focus. Syncing only when unfocused makes the value go stale the moment
+#     anything else edits the element.
+#   - Blur commits ONLY if the user typed. Committing on every blur writes
+#     that stale value back over the newer one.
+#
+# This is not hypothetical. Selecting a node used to move focus into the
+# inspector, and the canvas preventDefaults its pointerdown, so the X field
+# held focus through a drag showing the pre-drag position -- and clicking away
+# afterwards wrote it back, snapping the element to where it started.
+
 file: "packages/editor/src/inspector/fields/color_field.tsx"
 doc: "A colour inspector field: the value as written, plus a swatch of the resolved colour."
 

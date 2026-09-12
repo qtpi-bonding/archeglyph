@@ -121,9 +121,14 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       additive: event.shiftKey || event.metaKey,
       onHandle,
     }, props.ui.selection());
+    // Selecting does NOT move keyboard focus into the inspector. Focus
+    // belongs to the canvas so arrow keys nudge and the chords reach
+    // handleKeyDown; Cmd+I is the deliberate way into the panel. The build
+    // added a focus call here that the spec does not ask for, and because
+    // pointerdown is preventDefault'd the inspector then kept focus through
+    // the whole drag -- so its stale X/Y was written back on the next blur.
     if (decision.selection !== undefined) {
       props.ui.setSelection(decision.selection);
-      props.onFocusInspector?.();
     }
     if (decision.kind !== 'none') {
       setGesture({ kind: 'pending', decision, originScreen: screen, originDiagram: diagram });
@@ -201,7 +206,6 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
       const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));
       props.ui.setSelection(selected);
-      props.onFocusInspector?.();
     }
     setGesture(undefined);
     setPreview(undefined);

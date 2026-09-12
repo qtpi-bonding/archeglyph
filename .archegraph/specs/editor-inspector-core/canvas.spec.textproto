@@ -15,7 +15,18 @@ doc: "The single SVG scene; a thin adapter feeding pointer and wheel events to t
 structs: [
   { name: "CanvasProps"
     change_type: MODIFIED
-    doc: "Gains `onFocusInspector`, which the shell supplies and the canvas only forwards. Optional: the canvas is usable without an inspector."
+    doc:
+      "Gains `onFocusInspector`, which the shell supplies and the canvas only\n"
+      "forwards into CommandContext. Optional: the canvas is usable without an\n"
+      "inspector.\n"
+      "\n"
+      "It is reached ONLY from the Cmd+I command. Do not also call it when a\n"
+      "pointer changes the selection. The build did that unprompted and it\n"
+      "caused a visible data-loss bug: pointerdown is preventDefault'd, so the\n"
+      "inspector input kept DOM focus for the whole drag, stopped tracking the\n"
+      "model, and wrote its stale pre-drag X back on the next blur -- the\n"
+      "element jumped back to where it started. Keyboard focus stays on the\n"
+      "canvas so arrow keys nudge."
     fields: [
       { name: "diagram", type: { named: { symbol: "Diagram" } } },
       { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } },

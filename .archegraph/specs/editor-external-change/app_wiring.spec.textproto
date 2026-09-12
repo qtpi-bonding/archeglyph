@@ -1,0 +1,40 @@
+# Wave 4b. Where the policy lives.
+
+file: "packages/editor/src/shell/app.tsx"
+doc: "Root shell: adapters, document state, stores, and reconciling external file changes."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Additions only; load/open, the two stores, the theme wiring and the\n"
+      "Resizable layout are unchanged.\n"
+      "\n"
+      "On load, keep the LoadResult's baseHash and stamp, and hand the hash to\n"
+      "createSaveController.\n"
+      "\n"
+      "Start watchOnFocus for the session. When it reports a change, the\n"
+      "response depends on whether the user has unsaved work:\n"
+      "\n"
+      "  clean (state.dirty() is false) — adopt the incoming stylesheet\n"
+      "    directly and adopt its hash. There is nothing to conflict with, and\n"
+      "    making someone review changes they have no stake in is noise. This\n"
+      "    is what every editor does with a clean buffer.\n"
+      "\n"
+      "  dirty — append change.edit to the CURRENT stylesheet's pendingEdits\n"
+      "    rather than replacing anything. ghost_layer already draws pending\n"
+      "    edits as a dimmed overlay, so the external change arrives as\n"
+      "    something to look at while the user's own work stays exactly where\n"
+      "    it was. Do NOT adopt the hash here: the document on disk still\n"
+      "    differs from what is in memory, so saving must stay refused until\n"
+      "    the edit is accepted or rejected.\n"
+      "\n"
+      "A change whose `edit` is undefined means the file was rewritten with\n"
+      "identical content — adopt the new stamp and hash, show nothing.\n"
+      "\n"
+      "Show a banner while a save is stale, saying the file changed and that\n"
+      "the change is waiting in the pending list. Wave 7's panel replaces it."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: ["watchOnFocus", "createSaveController", "createScene", "createUiState", "getBundledTheme", "applyEditorTheme"]
+  }
+]

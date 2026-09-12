@@ -26,7 +26,11 @@ export async function hashStylesheet(stylesheet: Stylesheet): Promise<string> {
 
   const canonical: string = JSON.stringify(sortJson(json));
   const bytes: Uint8Array = new TextEncoder().encode(canonical);
-  const digest: ArrayBuffer = await crypto.subtle.digest('SHA-256', bytes);
+  // .slice() to hand digest() an exactly-sized ArrayBuffer. TextEncoder
+  // returns Uint8Array<ArrayBufferLike>, which TS will not narrow to
+  // BufferSource because the backing store could in principle be a
+  // SharedArrayBuffer.
+  const digest: ArrayBuffer = await crypto.subtle.digest('SHA-256', bytes.slice().buffer);
   const hash: Uint8Array = new Uint8Array(digest);
 
   let result: string = '';

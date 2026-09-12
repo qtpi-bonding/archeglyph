@@ -1,0 +1,51 @@
+# Wave 4b, the part that makes the rest of this pillar do anything.
+#
+# Everything else here is machinery with no caller: hashStylesheet,
+# diffStylesheets, checkForExternalChange and watchOnFocus all exist and
+# nothing invokes them. This connects them, which is where the actual policy
+# decisions live.
+
+file: "packages/editor/src/shell/save_controller.ts"
+doc: "Dirty tracking and debounced autosave, now refusing to write over a file that changed underneath it."
+
+methods: [
+  { name: "createSaveController"
+    change_type: MODIFIED
+    doc:
+      "Gains a base hash: the hash of the stylesheet as loaded, updated to the\n"
+      "hash of what was written after each successful save. Passed to\n"
+      "adapter.save so a stale write is refused rather than silently\n"
+      "clobbering.\n"
+      "\n"
+      "A save that fails with kind 'stale' is NOT an error to show and forget.\n"
+      "It sets a distinct status so the shell can offer to review the external\n"
+      "change, and it must NOT retry on a timer — retrying a stale save just\n"
+      "fails again, and if the check were ever wrong it would clobber. Status\n"
+      "stays until something resolves it.\n"
+      "\n"
+      "`adoptBaseHash` lets the shell update the hash after reconciling an\n"
+      "external change, so saving works again without a reload.\n"
+      "\n"
+      "The existing first-run guard stays: loading a document must still not\n"
+      "immediately write it back."
+    inputs: [
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "debounceMs", type: { primitive: REAL } },
+      { name: "initialBaseHash", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    output: { named: { symbol: "SaveController" } }
+    uses: ["hashStylesheet"]
+  }
+]
+
+structs: [
+  { name: "SaveController"
+    change_type: MODIFIED
+    doc: "Gains `adoptBaseHash`, and 'stale' joins the status values."
+    fields: [
+      { name: "adoptBaseHash", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(hash: string) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

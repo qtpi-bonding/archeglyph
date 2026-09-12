@@ -4,7 +4,9 @@
 import { Localization, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
 import {
   AnnotationAnchor,
+  AnnotationAnchorSchema,
   AnnotationEntrySchema,
+  RefKind,
   StyleEdit,
   Stylesheet,
   Vec2
@@ -12,6 +14,20 @@ import {
 import { create } from '@bufbuild/protobuf';
 import { annotationChange, styleEdit } from './edit_builder';
 import { patchAnnotationEntry } from './entry_patch';
+import { ElementRef } from '../../ui_state/ui_state';
+
+export function anchorForElement(ref: ElementRef): AnnotationAnchor | undefined {
+  switch (ref.kind) {
+    case 'node':
+      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.NODE });
+    case 'edge':
+      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.EDGE });
+    case 'group':
+      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.GROUP });
+    case 'annotation':
+      return undefined;
+  }
+}
 
 export function setAnnotationAnchorEdit(stylesheet: Stylesheet, id: string, anchor?: AnnotationAnchor): StyleEdit {
   const existing = stylesheet.annotations[id];

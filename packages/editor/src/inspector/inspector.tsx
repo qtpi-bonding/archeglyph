@@ -9,6 +9,8 @@ import { inspectorModel } from './model';
 import type { InspectorModelOption, SectionId } from './model';
 import { renderableSections } from './inspector_sections';
 import { LayoutSection } from './sections/layout_section';
+import { ShapeSection } from './sections/shape_section';
+import { LineSection } from './sections/line_section';
 import { TypographySection } from './sections/typography_section';
 
 export interface InspectorProps {
@@ -56,6 +58,12 @@ export const Inspector: Component<InspectorProps> = (
     }
     if (id === 'layout') {
       return <LayoutSection state={props.state} model={current} geometry={props.geometry} />;
+    }
+    if (id === 'shape') {
+      return <ShapeSection state={props.state} model={current} geometry={props.geometry} />;
+    }
+    if (id === 'line') {
+      return <LineSection state={props.state} model={current} geometry={props.geometry} />;
     }
     if (id === 'typography') {
       return <TypographySection state={props.state} model={current} geometry={props.geometry} theme={props.theme} />;

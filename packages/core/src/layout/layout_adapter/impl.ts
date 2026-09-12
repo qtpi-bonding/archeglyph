@@ -46,9 +46,9 @@ interface ElkNode {
   height?: number;
   x?: number;
   y?: number;
+  layoutOptions?: Record<string, string>;
   children?: ElkNode[];
   edges?: ElkEdge[];
-  layoutOptions?: Record<string, string>;
 }
 
 interface ElkGraph extends ElkNode {
@@ -76,11 +76,19 @@ export class ElkAdapterImpl implements LayoutAdapter {
       // Build ELK compound nodes for non-superNode groups; leaf nodes for superNodes
       const groupElkNodes: Record<string, ElkNode> = {};
       for (const group of diagram.groups) {
+        const position = group.layout?.position;
         groupElkNodes[group.id] = group.isSuperNode
           ? {
               id: group.id,
               width: group.layout?.size?.x ?? DEFAULT_WIDTH,
               height: group.layout?.size?.y ?? DEFAULT_HEIGHT,
+              ...(position !== undefined
+                ? {
+                    x: position.x,
+                    y: position.y,
+                    layoutOptions: { 'org.eclipse.elk.position': 'true' },
+                  }
+                : {}),
             }
           : {
               id: group.id,
@@ -88,8 +96,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
               height: group.layout?.size?.y ?? DEFAULT_HEIGHT,
               children: [],
               edges: [],
+              ...(position !== undefined
+                ? {
+                    x: position.x,
+                    y: position.y,
+                    layoutOptions: { 'org.eclipse.elk.position': 'true' },
+                  }
+                : {}),
             };
-        const position = group.layout?.position;
         if (position !== undefined) {
           groupElkNodes[group.id].x = position.x;
           groupElkNodes[group.id].y = position.y;
@@ -114,12 +128,19 @@ export class ElkAdapterImpl implements LayoutAdapter {
       }
 
       for (const node of diagram.nodes) {
+        const position = node.layout?.position;
         const elkNode: ElkNode = {
           id: node.id,
           width: node.layout?.size?.x ?? DEFAULT_WIDTH,
           height: node.layout?.size?.y ?? DEFAULT_HEIGHT,
+          ...(position !== undefined
+            ? {
+                x: position.x,
+                y: position.y,
+                layoutOptions: { 'org.eclipse.elk.position': 'true' },
+              }
+            : {}),
         };
-        const position = node.layout?.position;
         if (position !== undefined) {
           elkNode.x = position.x;
           elkNode.y = position.y;
@@ -137,14 +158,21 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
       }
 
+      // A fixed option belongs to the graph that lays out the siblings, not
+      // to the pinned child itself.  Only direct children matter here; a
+      // nested pinned node is handled by the compound graph containing it.
       for (const group of diagram.groups) {
-        const children = [
-          ...diagram.nodes.filter(node => node.parentGroup === group.id),
-          ...diagram.groups.filter(child => child.parentGroup === group.id),
-        ];
-        if (children.some(child => child.layout?.position !== undefined)) {
-          const options = groupElkNodes[group.id].layoutOptions ?? {};
-          groupElkNodes[group.id].layoutOptions = { ...options, 'org.eclipse.elk.fixed': 'true' };
+        const elkGroup = groupElkNodes[group.id];
+        const hasPositionedChild = diagram.groups.some(child =>
+          child.parentGroup === group.id && child.layout?.position !== undefined,
+        ) || diagram.nodes.some(child =>
+          child.parentGroup === group.id && child.layout?.position !== undefined,
+        );
+        if (hasPositionedChild) {
+          elkGroup.layoutOptions = {
+            ...(elkGroup.layoutOptions ?? {}),
+            'org.eclipse.elk.fixed': 'true',
+          };
         }
       }
 

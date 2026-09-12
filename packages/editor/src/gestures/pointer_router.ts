@@ -4,6 +4,7 @@ import { ElementRef } from '../element_ref';
 import { Handle } from '../handle';
 import { Tool } from '../tool';
 import { Vec2 } from '../vec2';
+import { clearSelection, replaceSelection, toggleSelection } from '../ui_state/selection_ops';
 
 export interface PressContext {
   point: Vec2;
@@ -14,7 +15,46 @@ export interface PressContext {
   onHandle?: Handle;
 }
 export function routePress(context: PressContext, current: Array<ElementRef>): GestureDecision {
-  throw new Error('not implemented');
+  // DOM button numbers use 1 for the middle button.  This check deliberately
+  // comes first: panning must not alter selection, even when the pointer is
+  // over a handle or an element.
+  if (context.button === 1 || context.tool === 'hand') {
+    return { kind: 'pan' };
+  }
+
+  // A handle is meaningful only in the context of an existing selection.  Do
+  // not let a stale handle hit turn an empty selection into a resize.
+  if (context.onHandle !== undefined && current.length > 0) {
+    return { kind: 'resize', handle: context.onHandle };
+  }
+
+  if (context.hit === undefined) {
+    return { kind: 'marquee', selection: clearSelection() };
+  }
+
+  const alreadySelected = current.some(
+    (candidate) =>
+      candidate.id === context.hit?.id && candidate.kind === context.hit?.kind,
+  );
+
+  // Additive clicks are selection operations, not the start of a drag.  In
+  // particular, toggling an already selected item must not leave a move
+  // gesture behind.
+  if (context.additive) {
+    return {
+      kind: 'none',
+      selection: toggleSelection(current, context.hit),
+    };
+  }
+
+  // Keep the complete selection when grabbing one of its members.  This is
+  // what makes dragging a multi-selection move all of it rather than collapse
+  // it to the grabbed element.
+  if (alreadySelected) {
+    return { kind: 'move', selection: current };
+  }
+
+  return { kind: 'move', selection: replaceSelection(context.hit) };
 }
 import { ElementRef } from '../element_ref';
 import { Handle } from '../handle';

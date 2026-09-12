@@ -15,6 +15,7 @@ import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
 import { pinAllEdit, unpinAllEdit } from '../state/edits/layout_command';
+import { clearNodeSizeEdit } from '../state/edits/resize';
 
 export interface Command {
   id: CommandId;
@@ -124,6 +125,20 @@ function runUnpinAll(context: CommandContext): void {
   context.state.applyStyleEdit(unpinAllEdit(context.state.stylesheet()));
 }
 
+function runResetSize(context: CommandContext): void {
+  for (const ref of selectedElements(context)) {
+    if (ref.kind !== 'node') {
+      continue;
+    }
+    // Coalesce the per-node edits so resetting a selection is one undoable
+    // action, rather than one undo entry for each selected node.
+    context.state.applyStyleEdit(
+      clearNodeSizeEdit(context.state.stylesheet(), ref.id),
+      'reset-size',
+    );
+  }
+}
+
 export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
@@ -145,6 +160,7 @@ export const COMMANDS: Array<Command> = [
   { id: 'pin-all' as CommandId, label: 'Pin all', run: runPinAll },
   { id: 'unpin-all' as CommandId, label: 'Unpin all', run: runUnpinAll },
   { id: 'auto-layout' as CommandId, label: 'Auto layout', run: runUnpinAll },
+  { id: 'reset-size' as CommandId, label: 'Reset size', run: runResetSize },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
 ];
 

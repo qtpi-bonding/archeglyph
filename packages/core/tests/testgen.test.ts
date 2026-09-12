@@ -151,9 +151,9 @@ describe('testgen_layout_adapter__runLayout', () => {
         expect(elkLeaf.children).toBeUndefined();
     });
 
-    // WHEN: The root element itself (with no parent) carries an explicit position; runLayout applies the position/option handling without erroring on the missing parent for the 'fixed' propagation step
-    // THEN: runLayout applies the position/option handling to an explicitly positioned root element without erroring when there is no parent to propagate 'fixed' onto.
-    test('root_element_with_explicit_position_skips_parent_fixed_propagation', async () => {
+    // WHEN: The root element itself (with no parent group) carries an explicit position; the root graph is the "parent" laying out that root-level sibling, so runLayout marks the root graph's own layoutOptions 'fixed' -- exactly the same propagation a compound group gets for a positioned child, just one level up
+    // THEN: runLayout applies the position/option handling to the explicitly positioned root element AND marks the root graph's own layoutOptions with 'org.eclipse.elk.fixed', since the root graph plays the parent role for root-level children.
+    test('root_element_with_explicit_position_marks_root_graph_fixed', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const node = Object.assign(new ResolvedNode(), {
@@ -168,7 +168,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         expect(elkNode.x).toBe(3);
         expect(elkNode.y).toBe(4);
         expect(elkNode.layoutOptions?.['org.eclipse.elk.position']).toBeDefined();
-        expect(captured.graph.layoutOptions?.['org.eclipse.elk.fixed']).toBeUndefined();
+        expect(captured.graph.layoutOptions?.['org.eclipse.elk.fixed']).toBe('true');
     });
 
     // WHEN: An element that has no corresponding style entry at all is treated the same as one with no explicit position, being sent to ELK unmodified
@@ -578,9 +578,9 @@ describe('testgen_layout_engine__layout', () => {
         expect(laid.position.y).toBeCloseTo(17);
     });
 
-    // WHEN: All nodes are pinned but at least one group lacks an explicit position; because groups also count toward full-pinning, layout takes the ELK path rather than the fully-pinned shortcut
-    // THEN: Takes the ELK path rather than the fully-pinned shortcut, because the unpinned group counts against full-pinning even though all nodes are pinned.
-    test('unpinned_group_forces_elk_path', async () => {
+    // WHEN: All nodes are pinned but at least one group lacks an explicit position; because groups also count toward full-pinning, the diagram is not fully pinned, so layout seeds the unpinned group's position via the adapter and finishes through layoutFromPins -- it never calls adapter.runLayout, because ELK is not consulted for placement once anything is pinned
+    // THEN: Calls adapter.seedPositions (not adapter.runLayout) because the unpinned group counts against full-pinning even though all nodes are pinned, and the not-fully-pinned path never asks ELK to place anything.
+    test('unpinned_group_forces_seed_path_not_run_layout', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const nodeA = Object.assign(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
@@ -592,21 +592,28 @@ describe('testgen_layout_engine__layout', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: [nodeA], groups: [group], edges: [], annotations: [],
         });
-        const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
-            calls.push(d);
+        const seedCalls: ResolvedDiagram[] = [];
+        const runLayoutCalls: ResolvedDiagram[] = [];
+        const spyAdapter: LayoutAdapter = {
+          async seedPositions(d) {
+            seedCalls.push(d);
+            return new Map([['g', vec(0, 0)]]);
+          },
+          async runLayout(d) {
+            runLayoutCalls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
         const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
 
-        expect(calls.length).toBe(1);
+        expect(seedCalls.length).toBe(1);
+        expect(runLayoutCalls.length).toBe(0);
         expect(result.kind).toBe('ok');
     });
 
-    // WHEN: In the not-fully-pinned path, every already-pinned element (nodes and groups) is handed to ELK via layout_adapter as a fixed-position hint so ELK only computes positions for elements with no existing position
-    // THEN: Passes every already-pinned node and group to ELK via layout_adapter as fixed-position hints so ELK computes positions only for elements lacking one.
+    // WHEN: In the not-fully-pinned path, every already-pinned element (nodes and groups) is handed to layout_adapter.seedPositions as the `pinned` map, so ELK is consulted only to arrange the newcomer beside the already-placed elements, never to place the pinned elements themselves -- and adapter.runLayout is never called, since ELK does not compute final placement on this path
+    // THEN: Calls adapter.seedPositions with every already-pinned node and group in the `pinned` map, never calls adapter.runLayout, and the returned diagram carries the pinned positions unchanged plus the seeded newcomer position.
     test('pinned_elements_passed_as_fixed_hints', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const pinnedNode = Object.assign(new ResolvedNode(), {
@@ -621,25 +628,38 @@ describe('testgen_layout_engine__layout', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: [pinnedNode, newcomer], groups: [pinnedGroup], edges: [], annotations: [],
         });
-        const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
-            calls.push(d);
+        const seedCalls: { diagram: ResolvedDiagram; pinned: Map<string, any> }[] = [];
+        const runLayoutCalls: ResolvedDiagram[] = [];
+        const spyAdapter: LayoutAdapter = {
+          async seedPositions(d, pinned) {
+            seedCalls.push({ diagram: d, pinned });
+            return new Map([['newcomer', vec(50, 60)]]);
+          },
+          async runLayout(d) {
+            runLayoutCalls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
 
-        expect(calls.length).toBe(1);
-        const passed = calls[0];
-        const passedPinnedNode = passed.nodes.find((n) => n.id === 'pinned')!;
-        const passedPinnedGroup = passed.groups.find((g) => g.id === 'pinnedGroup')!;
-        const passedNewcomer = passed.nodes.find((n) => n.id === 'newcomer')!;
-        expect(passedPinnedNode.layout?.position?.x).toBeCloseTo(5);
-        expect(passedPinnedNode.layout?.position?.y).toBeCloseTo(6);
-        expect(passedPinnedGroup.layout?.position?.x).toBeCloseTo(200);
-        expect(passedPinnedGroup.layout?.position?.y).toBeCloseTo(200);
-        expect(passedNewcomer.layout?.position).toBeUndefined();
+        expect(seedCalls.length).toBe(1);
+        expect(runLayoutCalls.length).toBe(0);
+        const pinnedArg = seedCalls[0].pinned;
+        expect(pinnedArg.get('pinned')?.x).toBeCloseTo(5);
+        expect(pinnedArg.get('pinned')?.y).toBeCloseTo(6);
+        expect(pinnedArg.get('pinnedGroup')?.x).toBeCloseTo(200);
+        expect(pinnedArg.get('pinnedGroup')?.y).toBeCloseTo(200);
+        expect(pinnedArg.has('newcomer')).toBe(false);
+        expect(result.kind).toBe('ok');
+        if (result.kind === 'ok') {
+          const laidPinned = result.value.nodes.find((n) => n.id === 'pinned')!;
+          const laidNewcomer = result.value.nodes.find((n) => n.id === 'newcomer')!;
+          expect(laidPinned.position.x).toBeCloseTo(5);
+          expect(laidPinned.position.y).toBeCloseTo(6);
+          expect(laidNewcomer.position.x).toBeCloseTo(50);
+          expect(laidNewcomer.position.y).toBeCloseTo(60);
+        }
     });
 
     // WHEN: In the fully-pinned path, edges between the explicitly positioned nodes/groups are routed by edge_router rather than by ELK's own edge routing

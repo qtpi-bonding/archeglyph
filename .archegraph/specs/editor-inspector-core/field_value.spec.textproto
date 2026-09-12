@@ -62,16 +62,16 @@ methods: [
       "\n"
       "An empty selection yields mixed=false and both values undefined."
     inputs: [
-      { name: "overrides", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<number | undefined>" } } },
-      { name: "effectives", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<number | undefined>" } } }
+      { name: "overrides", type: { named: { symbol: "Array", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "number | undefined" } }] } } },
+      { name: "effectives", type: { named: { symbol: "Array", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "number | undefined" } }] } } }
     ]
     output: { named: { symbol: "NumberField" } }
   },
   { name: "textField"
     doc: "numberField's rules exactly, for strings. Comparison is by value; there is no normalisation, so '#FFF' and '#ffffff' are mixed."
     inputs: [
-      { name: "overrides", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<string | undefined>" } } },
-      { name: "effectives", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<string | undefined>" } } }
+      { name: "overrides", type: { named: { symbol: "Array", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } }] } } },
+      { name: "effectives", type: { named: { symbol: "Array", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } }] } } }
     ]
     output: { named: { symbol: "TextField" } }
   }

@@ -67,6 +67,6 @@ methods: [
     inputs: [
       { name: "selection", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
     ]
-    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "InspectorModel | undefined" } }
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "InspectorModel | undefined" } }
   }
 ]

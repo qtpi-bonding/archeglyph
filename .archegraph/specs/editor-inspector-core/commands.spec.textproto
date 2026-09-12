@@ -10,8 +10,11 @@ constants: [
       "One entry added; everything already there is unchanged.\n"
       "\n"
       "  focus-inspector -- moves keyboard focus to the first field of the\n"
-      "    inspector for the current selection. A no-op when nothing is\n"
-      "    selected, since there is no field to focus.\n"
+      "    inspector for the current selection. A no-op whenever the\n"
+      "    inspector is showing no fields, which is the same two cases the\n"
+      "    panel itself treats alike: an EMPTY selection and a MIXED-KIND\n"
+      "    one. In both the panel shows a line of text and there is nothing\n"
+      "    to focus.\n"
       "\n"
       "Unlike the other commands this one touches the DOM rather than the\n"
       "document, so CommandContext gains a `focusInspector` callback that the\n"
@@ -32,8 +35,8 @@ structs: [
       { name: "ui", type: { named: { symbol: "UiState" } } },
       { name: "geometry", type: { named: { symbol: "SceneGeometry" } }, is_optional: true },
       { name: "rect", type: { named: { symbol: "ContainerRect" } } },
-      { name: "save", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } } },
-      { name: "focusInspector", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } }, is_optional: true }
+      { name: "save", type: { arrow: { inputs: [], output: { primitive: VOID } } } },
+      { name: "focusInspector", type: { arrow: { inputs: [], output: { primitive: VOID } } }, is_optional: true }
     ]
     typescript: { struct_kind: STRUCT_KIND_INTERFACE }
   }

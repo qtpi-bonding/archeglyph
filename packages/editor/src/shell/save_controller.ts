@@ -55,6 +55,9 @@ export function createSaveController(
       return;
     }
 
+    // Only advance the optimistic-concurrency base after the adapter has
+    // confirmed that the write succeeded.  In particular, do not advance it
+    // for an I/O error or a stale-write rejection.
     baseHash = await hashStylesheet(stylesheet);
     setErrorMessage(undefined);
     setStatus('saved');
@@ -85,6 +88,11 @@ export function createSaveController(
       setErrorMessage(undefined);
       setStatus('idle');
     },
+    markStale(): void {
+      staleBlocked = true;
+      setErrorMessage(undefined);
+      setStatus('stale');
+    },
     async saveNow(): Promise<void> {
       clearDebounce();
       await save();
@@ -99,6 +107,7 @@ export interface SaveController {
   status: Accessor<SaveStatus>;
   errorMessage: Accessor<string | undefined>;
   adoptBaseHash: (hash: string) => void;
+  markStale(): void;
   saveNow(): Promise<void>;
   dispose(): void;
 }

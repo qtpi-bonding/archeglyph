@@ -23,6 +23,8 @@ import { Scene, createScene } from '../scene/scene';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
+import { createSaveController, SaveController } from './save_controller';
+import { ExternalChange, watchOnFocus } from './external_change';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -53,6 +55,9 @@ export const App: Component<{}> = (): JSX.Element => {
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
+  const [saveController, setSaveController] = createSignal<SaveController | null>(null);
+  const [externalStale, setExternalStale] = createSignal<boolean>(false);
+  let stopWatching: (() => void) | undefined;
   const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
   const selection: SelectionState = {
     selected: (): SelectedElement | null => {
@@ -78,8 +83,32 @@ export const App: Component<{}> = (): JSX.Element => {
   });
 
   function installState(nextState: EditorState): void {
+    saveController()?.dispose();
+    if (stopWatching !== undefined) { stopWatching(); stopWatching = undefined; }
     setState(nextState);
     setScene(createScene(nextState, () => theme, layoutEngine));
+  }
+
+  function startSession(nextState: EditorState, result: LoadResult): void {
+    installState(nextState);
+    const controller: SaveController = createSaveController(pair.adapter, nextState, 800, result.baseHash);
+    setSaveController(controller);
+    setExternalStale(false);
+    stopWatching = watchOnFocus(pair.adapter, nextState.stylesheet, (change: ExternalChange): void => {
+      if (change.edit === undefined) {
+        controller.adoptBaseHash(change.baseHash);
+        return;
+      }
+      if (!nextState.dirty()) {
+        nextState.adoptStylesheet(change.stylesheet);
+        controller.adoptBaseHash(change.baseHash);
+        setExternalStale(false);
+        return;
+      }
+      nextState.appendPendingEdit(change.edit);
+      controller.markStale();
+      setExternalStale(true);
+    }, result.stamp);
   }
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
@@ -95,13 +124,18 @@ export const App: Component<{}> = (): JSX.Element => {
     // defaulting.
     const loaded: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 });
     const stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
-    installState(createEditorState(result.value.diagram, stylesheet));
+    startSession(createEditorState(result.value.diagram, stylesheet), result.value);
   }
 
   function onOpen(): void { pair.adapter.load().then(loadFrom); }
 
   function onNew(): void {
     installState(createEditorState(create(DiagramSchema, {}), create(StylesheetSchema, {})));
+    setExternalStale(false);
+    const current: EditorState | null = state();
+    if (current !== null) {
+      setSaveController(createSaveController(pair.adapter, current, 800));
+    }
   }
 
   onMount((): void => {
@@ -114,6 +148,10 @@ export const App: Component<{}> = (): JSX.Element => {
     }
     document.addEventListener('keydown', onKeyDown);
     onCleanup((): void => document.removeEventListener('keydown', onKeyDown));
+    onCleanup((): void => {
+      saveController()?.dispose();
+      if (stopWatching !== undefined) { stopWatching(); }
+    });
   });
 
   return (
@@ -128,9 +166,15 @@ export const App: Component<{}> = (): JSX.Element => {
             </div>
           </Show>
         }>
+          <Show when={externalStale() || saveController()?.status() === 'stale'}>
+            <div style={{ padding: '6px 12px', background: 'var(--ag-warning, #fff3cd)', color: 'var(--ag-warning-text, #664d03)' }}>
+              The file changed; the change is waiting in the pending list.
+            </div>
+          </Show>
           <TopBar
             state={state()!}
             adapter={pair.adapter}
+            saveController={saveController()}
             editorTheme={chrome().name}
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
           />

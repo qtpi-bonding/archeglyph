@@ -13,6 +13,8 @@ export interface EditorState {
   applyStyleEdit(edit: StyleEdit, coalesceKey?: string): void;
   undo(): void;
   redo(): void;
+  appendPendingEdit(edit: StyleEdit): void;
+  adoptStylesheet(stylesheet: Stylesheet): void;
   dirty: Accessor<boolean>;
   version: Accessor<number>;
 }

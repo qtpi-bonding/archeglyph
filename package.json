@@ -13,14 +13,20 @@
     "typecheck": "tsc --noEmit",
     "build:editor": "bun run --filter @archeglyph/editor build",
     "dev:editor": "bun run --filter @archeglyph/editor dev",
-    "test": "bun test --conditions browser"
+    "test": "bun test --conditions browser --preload ./test/solid_preload.ts"
   },
   "devDependencies": {
+    "@babel/core": "8.0.5",
+    "@babel/preset-typescript": "8.0.1",
     "@bufbuild/protoc-gen-es": "^2.0.0",
+    "@happy-dom/global-registrator": "20.14.5",
     "@rollup/rollup-darwin-x64": "4.63.1",
+    "@solidjs/testing-library": "0.8.10",
     "@types/bun": "1.4.2",
     "@types/node": "^25.8.0",
     "@types/wicg-file-system-access": "^2023.10.7",
+    "babel-preset-solid": "1.9.15",
+    "happy-dom": "20.14.5",
     "typescript": "^5.6.0"
   },
   "dependencies": {

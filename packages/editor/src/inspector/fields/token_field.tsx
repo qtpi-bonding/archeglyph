@@ -60,14 +60,18 @@ export const TokenFieldInput: Component<TokenFieldProps> = (props: TokenFieldPro
         onBlur={(): void => {
           setFocused(false);
           const pending: boolean = dirty();
-          setDirty(false);
           if (skipBlurCommit()) {
             setSkipBlurCommit(false);
+            setDirty(false);
             return;
           }
           if (pending) {
             commit();
           }
+          // AFTER the commit, never before: clearing dirty re-runs the sync
+          // effect, which resets text() to the model value -- so committing
+          // afterwards would read back the old value, not what was typed.
+          setDirty(false);
         }}
         onKeyDown={(event: KeyboardEvent): void => {
           const input: HTMLInputElement = event.currentTarget as HTMLInputElement;

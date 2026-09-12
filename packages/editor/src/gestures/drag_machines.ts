@@ -77,10 +77,19 @@ export function moveUpdate(session: MoveSession, geometry: SceneGeometry, curren
   return previewMove(geometry, { refs: session.refs, delta });
 }
 export function marqueeUpdate(session: MarqueeSession, current: Vec2): Bounds {
+<<<<<<< HEAD
   return boundsFromRect(session.origin, {
     x: current.x - session.origin.x,
     y: current.y - session.origin.y,
   });
+=======
+  return {
+    minX: Math.min(session.origin.x, current.x),
+    minY: Math.min(session.origin.y, current.y),
+    maxX: Math.max(session.origin.x, current.x),
+    maxY: Math.max(session.origin.y, current.y),
+  };
+>>>>>>> de63157e72c371ae8d4791353140139b802ed70c
 }
 export function marqueeCommit(geometry: SceneGeometry, marquee: Bounds): Array<ElementRef> {
   return selectInRect(geometry.index, marquee);

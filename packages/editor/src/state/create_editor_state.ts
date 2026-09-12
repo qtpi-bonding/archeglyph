@@ -31,6 +31,15 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   };
 
   const applyStyleEdit = (edit: StyleEdit, coalesceKey?: string): void => {
+    if (
+      edit.nodeChanges.length === 0 &&
+      edit.groupChanges.length === 0 &&
+      edit.edgeChanges.length === 0 &&
+      edit.annotationChanges.length === 0
+    ) {
+      return;
+    }
+
     const current: Stylesheet = getStylesheet();
     const beforeSnapshot = captureSnapshot(current, edit);
     const updated: Stylesheet = applyStyleEditToStylesheet(current, edit);

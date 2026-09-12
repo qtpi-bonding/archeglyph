@@ -12,10 +12,12 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { Ok, Err, type Result } from '@archeglyph/proto/util/result';
 import { type LaidOutAnnotation } from '../../layout/laid_out_annotation';
+import { type EdgeSection } from '../../layout/edge_section';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
 import { type LaidOutEdge } from '../../layout/laid_out_edge';
 import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
+import { calloutSections } from '../../layout/callout_line/impl';
 import { RenderError } from '../render_error';
 import { arrowMarkers, backgroundRect, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
 
@@ -108,6 +110,13 @@ export class SvgRendererImpl implements SvgRenderer {
         variantsSeen.add(edge.connection.arrowheads.end);
       }
     }
+    for (const annotation of sortedAnnotations) {
+      const sections: EdgeSection[] = calloutSections(diagram, annotation);
+      if (sections.length > 0 && annotation.callout?.arrowheads !== undefined) {
+        variantsSeen.add(annotation.callout.arrowheads.start);
+        variantsSeen.add(annotation.callout.arrowheads.end);
+      }
+    }
 
     const defs: string = arrowMarkers([...variantsSeen]);
 
@@ -163,22 +172,32 @@ export class SvgRendererImpl implements SvgRenderer {
       edgesSvg += `<g id="edge-${edge.id}" data-element-id="${edge.id}" data-kind="edge">${hitStroke}${visiblePath}${labelSvg}</g>`;
     }
 
-    // NOTE: callout-line rendering (annotation -> anchor target) is deferred.
-    // AnnotationEntry.anchor never survives resolution today -- neither
-    // ResolvedAnnotation nor LaidOutAnnotation carries it, only the visual
-    // callout Glyph1D style does. Threading the anchor reference through
-    // resolver + layout is a separate follow-up; this delta paints the
-    // annotation's own shape + text, which is the blocking fix
-    // (docs/editor-ui-review.md §2.11 / §5.5).
     let annotationsSvg: string = '';
     for (const ann of sortedAnnotations) {
       const annCenter: Vec2 = create(Vec2Schema, {
         x: ann.position.x + ann.size.x / 2,
         y: ann.position.y + ann.size.y / 2,
       });
+      const calloutSectionsForAnnotation: EdgeSection[] = calloutSections(diagram, ann);
+      const calloutPath: string = edgePath(calloutSectionsForAnnotation);
+      const calloutStrokeColor: string = ann.callout?.stroke?.paint.case === 'color'
+        ? ann.callout.stroke.paint.value.value
+        : '#000000';
+      const calloutStrokeWidth: number = ann.callout?.stroke?.width ?? 1;
+      const calloutStartVariant: ArrowheadVariant | undefined = ann.callout?.arrowheads?.start;
+      const calloutEndVariant: ArrowheadVariant | undefined = ann.callout?.arrowheads?.end;
+      const calloutStartMarker: string = calloutStartVariant !== undefined && calloutStartVariant !== ArrowheadVariant.ARROWHEAD_NONE
+        ? ` marker-start="url(#${markerId(calloutStartVariant)})"`
+        : '';
+      const calloutEndMarker: string = calloutEndVariant !== undefined && calloutEndVariant !== ArrowheadVariant.ARROWHEAD_NONE
+        ? ` marker-end="url(#${markerId(calloutEndVariant)})"`
+        : '';
+      const calloutSvg: string = calloutPath !== ''
+        ? `<path d="${calloutPath}" fill="none" stroke="${calloutStrokeColor}" stroke-width="${calloutStrokeWidth}"${calloutStartMarker}${calloutEndMarker}/>`
+        : '';
       const shape: string = shapePath(ann.shape, ann.position, ann.size);
       const labelSvg: string = textElement(ann.content, ann.typography, annCenter);
-      annotationsSvg += `<g id="annotation-${ann.id}" data-element-id="${ann.id}" data-kind="annotation">${shape}${labelSvg}</g>`;
+      annotationsSvg += `<g id="annotation-${ann.id}" data-element-id="${ann.id}" data-kind="annotation">${calloutSvg}${shape}${labelSvg}</g>`;
     }
 
     const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${svgWidth}" height="${svgHeight}">${defs}${backgroundRect(diagram)}${groupsSvg}${nodesSvg}${edgesSvg}${annotationsSvg}</svg>`;

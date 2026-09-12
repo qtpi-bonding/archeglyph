@@ -11,10 +11,10 @@ import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { selectInRect } from '../ui_state/selection_ops';
 import { ElementRef, Viewport } from '../ui_state/ui_state';
 
-export function moveCommit(session: MoveSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2, zoom: number): StyleEdit | undefined {
+export function moveCommit(session: MoveSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2): StyleEdit | undefined {
   const delta = {
-    x: (current.x - session.origin.x) / zoom,
-    y: (current.y - session.origin.y) / zoom,
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
   };
   if (delta.x === 0 && delta.y === 0) {
     return undefined;

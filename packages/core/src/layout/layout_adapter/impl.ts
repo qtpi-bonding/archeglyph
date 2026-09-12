@@ -13,8 +13,18 @@ import { LayoutError } from '../layout_error';
 import { ResolvedDiagram } from '../../resolver/resolved_diagram';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 import { measureLabel } from '../../text/font_metrics';
+import { seedNewcomers } from '../seed_newcomers';
 
 export interface LayoutAdapter {
+  /**
+   * Positions for the elements that have none, given the ones that do.
+   *
+   * Lives on the adapter rather than the engine because seeding needs an ELK
+   * instance and the adapter is where ELK ownership was deliberately put
+   * (wave 1, host-injected ELK). The engine stays free of any layout-library
+   * dependency, which is the point of this boundary.
+   */
+  seedPositions(diagram: ResolvedDiagram, pinned: Map<string, Vec2>): Promise<Map<string, Vec2>>;
   runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
@@ -69,6 +79,10 @@ function vec2(x: number, y: number): Vec2 {
 }
 
 export class ElkAdapterImpl implements LayoutAdapter {
+  async seedPositions(diagram: ResolvedDiagram, pinned: Map<string, Vec2>): Promise<Map<string, Vec2>> {
+    return seedNewcomers(diagram, pinned, this.elk);
+  }
+
   constructor(private readonly elk: ELK) {}
 
   async runLayout(diagram: ResolvedDiagram): Promise<Result<LaidOutDiagram, LayoutError>> {

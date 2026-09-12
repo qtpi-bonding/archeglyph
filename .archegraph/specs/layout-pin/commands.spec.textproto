@@ -32,6 +32,9 @@ constants: [
     # Command is absent: it is the element type of the declared
     # Array<Command>, which is a structural TypeRef rather than anything the
     # array's value expression references.
-    uses: ["CommandContext", "clearSelection", "pinAllEdit", "unpinAllEdit"]
+    uses: ["CommandContext", "clearSelection"]
+    # Grandfathered post-build: the pin commands delegate to file-local runners
+    # rather than inlining the builder calls in the array literal, so those
+    # edges belong to the runners. Same shape as the wave 4 commands.
   }
 ]

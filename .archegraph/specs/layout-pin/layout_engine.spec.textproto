@@ -68,7 +68,22 @@ structs: [
           { named: { symbol: "LaidOutDiagram" } },
           { named: { symbol: "LayoutError" } }
         ]}}
-        uses: ["absolutizePositions", "isFullyPinned", "layoutFromPins", "seedNewcomers"]
+        uses: ["absolutizePositions", "layoutFromPins"]
+        # Grandfathered post-build. Two corrections:
+        #
+        # seedNewcomers is NOT called from here. It needs an ELK instance and
+        # the engine deliberately has none -- wave 1 put ELK ownership in the
+        # adapter so the engine carries no layout-library dependency. So layout
+        # calls adapter.seedPositions, which delegates. The edge belongs to the
+        # adapter, and routing it through the boundary is the point rather than
+        # an accident.
+        #
+        # isFullyPinned is a private method reached as `this.isFullyPinned`,
+        # which scip does not emit as an invocation edge -- the same limitation
+        # that leaves `layout() -> absolutizePositions` permanently MISSING on
+        # the older `layout` pillar. Declaring it here additionally let the
+        # indexer bind the bare name to an unrelated occurrence in a generated
+        # test file.
       },
       { name: "isFullyPinned"
         doc: "True when every node and group carries an explicit position. Private."

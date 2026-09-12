@@ -402,8 +402,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [group], edges: [edge], annotations: [],
         });
         const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -446,8 +445,7 @@ describe('testgen_layout_engine__layout', () => {
         const group = Object.assign(new ResolvedGroup(), { id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0 });
         const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [group], edges: [], annotations: [] });
         const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -480,8 +478,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [nodeA], groups: [group], edges: [], annotations: [annotation],
         });
         let elkInvoked = false;
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -509,8 +506,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [], groups: [], edges: [], annotations: [annotation],
         });
         let elkInvoked = false;
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -535,8 +531,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [], groups: [], edges: [], annotations: [],
         });
         let elkInvoked = false;
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -565,8 +560,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [node], groups: [], edges: [], annotations: [],
         });
         let elkInvoked = false;
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -599,8 +593,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [nodeA], groups: [group], edges: [], annotations: [],
         });
         const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -629,8 +622,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [pinnedNode, newcomer], groups: [pinnedGroup], edges: [], annotations: [],
         });
         const calls: ResolvedDiagram[] = [];
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },
@@ -667,8 +659,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [], edges: [edge], annotations: [],
         });
         let elkInvoked = false;
-        const spyAdapter: LayoutAdapter = {
-          async runLayout(d) {
+        const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
             return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
           },

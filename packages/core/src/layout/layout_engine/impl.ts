@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { create } from '@bufbuild/protobuf';
+import { Vec2 } from '@archeglyph/proto/gen/style_pb';
 import { EdgeRouting, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { EdgeSection } from '../edge_section';
 import { routeOrthogonal, routeStraight } from '../edge_router';
@@ -25,6 +26,47 @@ const DEFAULT_WIDTH = 120;
 const DEFAULT_HEIGHT = 40;
 
 /** Coordinates layout adapters and applies resolved geometry overrides. */
+
+/** Every element that already carries an explicit position, by id. */
+function pinnedPositions(diagram: ResolvedDiagram): Map<string, Vec2> {
+  const pinned = new Map<string, Vec2>();
+  for (const node of diagram.nodes) {
+    if (node.layout?.position !== undefined) {
+      pinned.set(node.id, node.layout.position);
+    }
+  }
+  for (const group of diagram.groups) {
+    if (group.layout?.position !== undefined) {
+      pinned.set(group.id, group.layout.position);
+    }
+  }
+  return pinned;
+}
+
+/**
+ * The diagram with seeded positions written onto the elements that had none,
+ * so every element carries one and layoutFromPins can be used unchanged.
+ *
+ * Copies rather than mutating: the ResolvedDiagram belongs to the caller and a
+ * layout pass must not leave positions behind on it, or the next pass would
+ * treat a seeded element as pinned and never re-seed it.
+ */
+function withSeededPositions(diagram: ResolvedDiagram, seeded: Map<string, Vec2>): ResolvedDiagram {
+  const apply = <T extends { id: string; layout?: { position?: Vec2 } }>(element: T): T => {
+    const position = seeded.get(element.id);
+    if (position === undefined || element.layout?.position !== undefined) {
+      return element;
+    }
+    return Object.assign(Object.create(Object.getPrototypeOf(element) as object), element, {
+      layout: Object.assign({}, element.layout, { position }),
+    }) as T;
+  };
+  return Object.assign(Object.create(Object.getPrototypeOf(diagram) as object), diagram, {
+    nodes: diagram.nodes.map(apply),
+    groups: diagram.groups.map(apply),
+  }) as ResolvedDiagram;
+}
+
 export class LayoutEngineImpl implements LayoutEngine {
   constructor(private readonly adapter: LayoutAdapter) {}
 
@@ -36,6 +78,18 @@ export class LayoutEngineImpl implements LayoutEngine {
   async layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>> {
     if (this.isFullyPinned(request.diagram)) {
       return Ok(this.layoutFromPins(request.diagram));
+    }
+
+    // Some pinned, some not. ELK cannot be asked to respect the pinned ones --
+    // elk.layered ignores fixed positions outright and elk.fixed places
+    // nothing -- so the newcomers are seeded beside whatever they connect to
+    // and the result is built from written positions, exactly as the
+    // fully-pinned path does. ELK is consulted for ARRANGEMENT inside
+    // seedPositions, never for where the pinned elements go.
+    const pinned = pinnedPositions(request.diagram);
+    if (pinned.size > 0) {
+      const seeded = await this.adapter.seedPositions(request.diagram, pinned);
+      return Ok(this.layoutFromPins(withSeededPositions(request.diagram, seeded)));
     }
 
     const result = await this.adapter.runLayout(request.diagram);

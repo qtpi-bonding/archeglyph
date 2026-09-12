@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { AdapterError, HostAdapter, LoadResult } from './host_adapter';
+import { AdapterError, FileStamp, HostAdapter, LoadResult } from './host_adapter';
 import { type Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { type Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Err, Ok, type Result } from '@archeglyph/proto/util/result';
 import { loadDiagram, loadStylesheet, type LoadError } from '@archeglyph/core/loaders';
 import { toJson } from '@archeglyph/proto/util/json';
+import { hashStylesheet } from '../state/stylesheet_hash';
 
 function toAdapterError(e: unknown): AdapterError {
   return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
@@ -30,15 +31,44 @@ export class BrowserFsAdapter implements HostAdapter {
     }
   }
 
-  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
+  async save(stylesheet: Stylesheet, expectedBaseHash?: string): Promise<Result<void, AdapterError>> {
     try {
       const text: string = toJson(StylesheetSchema, stylesheet);
+      if (expectedBaseHash !== undefined && this.styleHandle === null) {
+        return Err(Object.assign(new AdapterError(), {
+          kind: 'unsupported',
+          message: 'The current host cannot verify the file before saving',
+        }));
+      }
+      if (expectedBaseHash !== undefined && this.styleHandle !== null) {
+        const file: File = await this.styleHandle.getFile();
+        const loaded: Result<Stylesheet, LoadError> = await loadStylesheet(await file.text());
+        if (loaded.kind === 'err') {
+          return Err(Object.assign(new AdapterError(), { kind: 'io', message: loaded.error.message }));
+        }
+        const actualHash: string = await hashStylesheet(loaded.value);
+        if (actualHash !== expectedBaseHash) {
+          return Err(Object.assign(new AdapterError(), { kind: 'stale', message: 'The stylesheet changed externally' }));
+        }
+      }
       if ('showSaveFilePicker' in window) {
         await this.saveViaFsa(text);
       } else {
         this.saveViaDownload(text);
       }
       return Ok(undefined);
+    } catch (e: unknown) {
+      return Err(toAdapterError(e));
+    }
+  }
+
+  async stat(): Promise<Result<FileStamp, AdapterError>> {
+    try {
+      if (this.styleHandle === null) {
+        return Err(Object.assign(new AdapterError(), { kind: 'unsupported', message: 'No file to stat' }));
+      }
+      const file: File = await this.styleHandle.getFile();
+      return Ok({ lastModified: file.lastModified, size: file.size });
     } catch (e: unknown) {
       return Err(toAdapterError(e));
     }
@@ -63,7 +93,11 @@ export class BrowserFsAdapter implements HostAdapter {
         const stylesheet: Stylesheet | undefined = await this.loadOptionalHandle(styleHandle);
         this.diagHandle = diagHandle;
         this.styleHandle = styleHandle;
-        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet });
+        const baseHash: string = stylesheet === undefined ? '' : await hashStylesheet(stylesheet);
+        const stamp: FileStamp | undefined = styleHandle === null
+          ? undefined
+          : await this.fileStamp(styleHandle);
+        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
       } else {
         throw new Error(diagResult.error.message);
       }
@@ -89,6 +123,11 @@ export class BrowserFsAdapter implements HostAdapter {
     }
   }
 
+  private async fileStamp(handle: FileSystemFileHandle): Promise<FileStamp> {
+    const file: File = await handle.getFile();
+    return { lastModified: file.lastModified, size: file.size };
+  }
+
   private async loadViaInput(): Promise<LoadResult> {
     const files: File[] = await pickFilesViaInput();
     const diagFile: File | null = files.find(
@@ -102,7 +141,11 @@ export class BrowserFsAdapter implements HostAdapter {
       const diagResult: Result<Diagram, LoadError> = await loadDiagram(diagText);
       if (diagResult.kind !== 'err') {
         const stylesheet: Stylesheet | undefined = await loadOptionalFile(styleFile);
-        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet });
+        const baseHash: string = stylesheet === undefined ? '' : await hashStylesheet(stylesheet);
+        const stamp: FileStamp | undefined = styleFile === null
+          ? undefined
+          : { lastModified: styleFile.lastModified, size: styleFile.size };
+        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
       } else {
         throw new Error(diagResult.error.message);
       }

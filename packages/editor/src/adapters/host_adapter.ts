@@ -17,7 +17,8 @@ export class AdapterError {
 export interface HostAdapter {
   canSave(): boolean;
   load(): Promise<Result<LoadResult, AdapterError>>;
-  save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>>;
+  save(stylesheet: Stylesheet, expectedBaseHash?: string): Promise<Result<void, AdapterError>>;
+  stat(): Promise<Result<FileStamp, AdapterError>>;
 }
 export interface FileStamp {
   lastModified: number;

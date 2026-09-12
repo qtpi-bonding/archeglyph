@@ -7,7 +7,12 @@ export function moveUpdate(session: MoveSession, geometry: SceneGeometry, curren
   throw new Error('not implemented');
 }
 export function marqueeUpdate(session: MarqueeSession, current: Vec2): Bounds {
-  throw new Error('not implemented');
+  return {
+    minX: Math.min(session.origin.x, current.x),
+    minY: Math.min(session.origin.y, current.y),
+    maxX: Math.max(session.origin.x, current.x),
+    maxY: Math.max(session.origin.y, current.y),
+  };
 }
 export function marqueeCommit(geometry: SceneGeometry, marquee: Bounds): Array<ElementRef> {
   throw new Error('not implemented');

@@ -7,9 +7,11 @@ import {
   AnnotationEntrySchema,
   StyleEdit,
   Stylesheet,
-  Vec2
+  Vec2,
+  Vec2Schema
 } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
+import { newAnnotationId } from './annotation_defaults';
 import { annotationChange, styleEdit } from './edit_builder';
 import { patchAnnotationEntry } from './entry_patch';
 
@@ -68,6 +70,24 @@ export function addAnnotationEdit(stylesheet: Stylesheet, id: string, position: 
 export function deleteAnnotationEdit(stylesheet: Stylesheet, id: string): StyleEdit {
   return styleEdit({
     annotationChanges: [annotationChange(id)],
+  });
+}
+
+export function duplicateAnnotationEdit(stylesheet: Stylesheet, id: string): StyleEdit {
+  const existing = stylesheet.annotations[id];
+  const duplicateId = newAnnotationId(stylesheet, id);
+  const position = existing?.layout?.position;
+  const duplicate = patchAnnotationEntry(existing, {
+    id: duplicateId,
+    position: create(Vec2Schema, {
+      x: (position?.x ?? 0) + 16,
+      y: (position?.y ?? 0) + 16,
+    }),
+  });
+
+  return styleEdit({
+    annotationChanges: [annotationChange(duplicateId, duplicate)],
+    description: 'Duplicate annotation',
   });
 }
 

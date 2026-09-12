@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Component, createEffect, createMemo, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
+import { create } from '@bufbuild/protobuf';
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
-import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import { Bounds } from '@archeglyph/core/geometry/bounds';
@@ -22,6 +23,12 @@ import { handleKeyDown } from '../gestures/keyboard_handler';
 import { EditorState } from '../state/editor_state';
 import { ScenePreview } from '../scene/preview';
 import { elementKey } from '../scene/element_key';
+import { anchorGripAt } from '../scene/anchor_grip';
+import { calloutPreviews } from '../scene/callout_preview';
+import { AnchorSession, anchorCommit, anchorUpdate } from '../gestures/anchor_machine';
+import { addAnnotationEdit, setAnnotationTextEdit } from '../state/edits/annotation';
+import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../state/edits/annotation_defaults';
+import { TextEditor } from './text_editor';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = PointerEvent | WheelEvent;
@@ -30,6 +37,7 @@ type GestureSession =
   | { kind: 'pan'; session: PanSession }
   | { kind: 'move'; session: MoveSession }
   | { kind: 'resize'; session: ResizeSession }
+  | { kind: 'anchor'; session: AnchorSession }
   | { kind: 'marquee'; session: MarqueeSession };
 
 export interface CanvasProps {
@@ -64,6 +72,8 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   const [preview, setPreview] = createSignal<ScenePreview | undefined>(undefined);
   const [marquee, setMarquee] = createSignal<Bounds | undefined>(undefined);
   const [handle, setHandle] = createSignal<Handle | undefined>(undefined);
+  const [anchorLine, setAnchorLine] = createSignal<Array<Vec2> | undefined>(undefined);
+  const [editorFallback, setEditorFallback] = createSignal<Bounds | undefined>(undefined);
   let containerRef!: HTMLDivElement;
   let pointerId: number | undefined;
 
@@ -105,15 +115,24 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
 
   function onPointerDown(event: PointerEvent): void {
     event.preventDefault();
-    containerRef.setPointerCapture(event.pointerId);
-    pointerId = event.pointerId;
-    const hit: ElementRef | undefined = hitAt(event);
     const screen: Vec2 = pointFromEvent(event);
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
+    const hit: ElementRef | undefined = hitAt(event);
+    if (event.detail === 2 && hit?.kind === 'annotation') {
+      setGesture(undefined);
+      props.ui.setSelection([hit]);
+      props.ui.setTextEditTarget(hit);
+      return;
+    }
+    containerRef.setPointerCapture(event.pointerId);
+    pointerId = event.pointerId;
     const currentGeometry: SceneGeometry | undefined = geometry();
     const onHandle: Handle | undefined = currentGeometry === undefined
       ? undefined
       : handleAtPoint(currentGeometry, props.ui.selection(), diagram, 8 / props.ui.viewport().zoom);
+    const onAnchorGrip: ElementRef | undefined = currentGeometry === undefined
+      ? undefined
+      : anchorGripAt(currentGeometry, props.ui.selection(), diagram, 8 / props.ui.viewport().zoom);
     const decision: GestureDecision = routePress({
       point: diagram,
       hit,
@@ -121,6 +140,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       button: event.button,
       additive: event.shiftKey || event.metaKey,
       onHandle,
+      onAnchorGrip,
     }, props.ui.selection());
     // Selecting does NOT move keyboard focus into the inspector. Focus
     // belongs to the canvas so arrow keys nudge and the chords reach
@@ -130,6 +150,16 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     // the whole drag -- so its stale X/Y was written back on the next blur.
     if (decision.selection !== undefined) {
       props.ui.setSelection(decision.selection);
+    }
+    if (decision.kind === 'create-annotation') {
+      const id: string = newAnnotationId(props.stylesheet, 'annotation');
+      const ref: ElementRef = { kind: 'annotation', id };
+      props.state.applyStyleEdit(addAnnotationEdit(props.stylesheet, id, create(Vec2Schema, diagram), NEW_ANNOTATION_TEXT));
+      props.ui.setSelection([ref]);
+      setEditorFallback({ minX: diagram.x, minY: diagram.y, maxX: diagram.x + NEW_ANNOTATION_SIZE.x, maxY: diagram.y + NEW_ANNOTATION_SIZE.y });
+      props.ui.setTextEditTarget(ref);
+      setGesture(undefined);
+      return;
     }
     if (decision.kind !== 'none') {
       setGesture({ kind: 'pending', decision, originScreen: screen, originDiagram: diagram });
@@ -160,6 +190,10 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
         setGesture({ kind: 'resize', session });
         setHandle(session.handle);
         active = { kind: 'resize', session };
+      } else if (decision.kind === 'anchor' && decision.ref !== undefined) {
+        const session: AnchorSession = Object.assign(new AnchorSession(), { ref: decision.ref });
+        setGesture({ kind: 'anchor', session });
+        active = { kind: 'anchor', session };
       } else if (decision.kind === 'marquee') {
         const session: MarqueeSession = { origin: currentGesture.originDiagram };
         setGesture({ kind: 'marquee', session });
@@ -177,6 +211,14 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     if (active?.kind === 'resize') {
       const currentGeometry: SceneGeometry | undefined = geometry();
       if (currentGeometry !== undefined) { setPreview(resizeUpdate(active.session, currentGeometry, currentDiagram, event.shiftKey)); }
+      return;
+    }
+    if (active?.kind === 'anchor') {
+      const currentGeometry: SceneGeometry | undefined = geometry();
+      if (currentGeometry !== undefined) {
+        const hit: ElementRef | undefined = hitAt(event);
+        setAnchorLine(anchorUpdate(active.session, currentGeometry, currentDiagram, hit));
+      }
       return;
     }
     if (active?.kind === 'marquee') { setMarquee(marqueeUpdate(active.session, currentDiagram)); return; }
@@ -204,12 +246,16 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     } else if (active?.kind === 'resize' && currentGeometry !== undefined) {
       const edit = resizeCommit(active.session, currentGeometry, props.stylesheet, currentDiagram, event.shiftKey);
       if (edit !== undefined) { props.state.applyStyleEdit(edit); }
+    } else if (active?.kind === 'anchor') {
+      const hit: ElementRef | undefined = hitAt(event);
+      props.state.applyStyleEdit(anchorCommit(active.session, props.stylesheet, hit));
     } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
       const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));
       props.ui.setSelection(selected);
     }
     setGesture(undefined);
     setPreview(undefined);
+    setAnchorLine(undefined);
     setMarquee(undefined);
     setPanning(false);
     setHandle(undefined);
@@ -224,14 +270,52 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     }));
   }
 
+  function annotationText(ref: ElementRef): string {
+    return props.stylesheet.annotations[ref.id]?.content.find((entry) => entry.locale === 'en')?.source ?? NEW_ANNOTATION_TEXT;
+  }
+
+  function editorBounds(ref: ElementRef): Bounds | undefined {
+    return geometry()?.byKey[elementKey(ref)]?.bounds ?? editorFallback();
+  }
+
+  function dimmedRefs(): Array<ElementRef> {
+    const current = gesture();
+    const refs: Array<ElementRef> = current?.kind === 'move'
+      ? current.session.refs.slice()
+      : current?.kind === 'resize'
+        ? [current.session.ref]
+        : [];
+    const currentGeometry = geometry();
+    const currentPreview = preview();
+    if (currentGeometry !== undefined && currentPreview !== undefined) {
+      for (const edge of calloutPreviews(currentGeometry, currentPreview.bounds)) {
+        const ref: ElementRef = { kind: 'annotation', id: edge.id };
+        if (!refs.some((candidate) => elementKey(candidate) === elementKey(ref))) { refs.push(ref); }
+      }
+    }
+    return refs;
+  }
+
   onMount((): void => {
     refreshRect();
     const observer: ResizeObserver = new ResizeObserver(refreshRect);
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
     const beginTextEdit = (ref: ElementRef): void => {
+      setEditorFallback(undefined);
       const currentGeometry: SceneGeometry | undefined = geometry();
       const entry = currentGeometry?.byKey[elementKey(ref)];
+      if (entry === undefined && ref.kind === 'annotation') {
+        const position = props.stylesheet.annotations[ref.id]?.position;
+        if (position !== undefined) {
+          setEditorFallback({
+            minX: position.x,
+            minY: position.y,
+            maxX: position.x + NEW_ANNOTATION_SIZE.x,
+            maxY: position.y + NEW_ANNOTATION_SIZE.y,
+          });
+        }
+      }
       if (entry !== undefined) {
         const viewport = props.ui.viewport();
         const minX: number = entry.bounds.minX * viewport.zoom + viewport.panX;
@@ -304,9 +388,21 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
           <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} theme={props.theme} layoutEngine={props.layoutEngine} />
-          <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={gesture()?.kind === 'move' ? (gesture() as { kind: 'move'; session: MoveSession }).session.refs : []} />
+          <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
           <Show when={geometry() !== undefined}>
-            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={preview()} marquee={marquee()} />
+            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={preview()} anchorLine={anchorLine()} marquee={marquee()} />
+          </Show>
+          <Show when={props.ui.textEditTarget() !== undefined && editorBounds(props.ui.textEditTarget()!) !== undefined}>
+            <TextEditor
+              text={annotationText(props.ui.textEditTarget()!)}
+              bounds={editorBounds(props.ui.textEditTarget()!)!}
+              onCommit={(text: string): void => {
+                const target = props.ui.textEditTarget();
+                if (target !== undefined) { props.state.applyStyleEdit(setAnnotationTextEdit(props.stylesheet, target.id, text)); }
+                props.ui.setTextEditTarget(undefined);
+              }}
+              onCancel={(): void => { props.ui.setTextEditTarget(undefined); }}
+            />
           </Show>
         </g>
       </svg>

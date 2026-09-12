@@ -10,17 +10,33 @@ export class LoadResult {
   baseHash!: string;
   stamp?: FileStamp;
 }
+
+/** Error returned when a host operation cannot be completed safely. */
 export class AdapterError {
   kind?: 'io' | 'stale' | 'unsupported';
   message!: string;
 }
 export interface HostAdapter {
+  /** True when a stylesheet can be written back to the current host. */
   canSave(): boolean;
+
+  /** Load the diagram and, when available, its stylesheet and file stamp. */
   load(): Promise<Result<LoadResult, AdapterError>>;
+
+  /**
+   * Save a stylesheet only if the readable host still has expectedBaseHash.
+   * Hosts that cannot perform that read-before-write check must return an
+   * unsupported error rather than risk overwriting an external change.
+   */
   save(stylesheet: Stylesheet, expectedBaseHash?: string): Promise<Result<void, AdapterError>>;
+
+  /** Return the current file stamp without loading or parsing its contents. */
   stat(): Promise<Result<FileStamp, AdapterError>>;
 }
 export interface FileStamp {
+  /** Host-provided modification time, in milliseconds since the epoch. */
   lastModified: number;
+
+  /** Host-reported size of the stylesheet file, in bytes. */
   size: number;
 }

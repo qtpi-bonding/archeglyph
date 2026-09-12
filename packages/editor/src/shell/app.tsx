@@ -15,7 +15,6 @@ import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { Canvas } from '../canvas/canvas';
-import { ElementKind, SelectedElement, SelectionContext, SelectionState } from '../canvas/selection';
 import { TopBar } from './top_bar';
 import { Inspector } from '../inspector/inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
@@ -61,29 +60,12 @@ export const App: Component<{}> = (): JSX.Element => {
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
-  const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
-  const selection: SelectionState = {
-    selected: (): SelectedElement | null => {
-      const selected = getSelected();
-      if (selected === null) { return null; }
-      return selected;
-    },
-    setSelected: (element: SelectedElement | null): void => {
-      setSelectedSignal(element);
-    },
-  };
-  createEffect((): void => {
-    const selected = ui.selection()[0];
-    if (selected === undefined) {
-      selection.setSelected(null);
-      return;
-    }
-    const kind = selected.kind === 'node' ? ElementKind.NODE
-      : selected.kind === 'group' ? ElementKind.GROUP
-      : selected.kind === 'edge' ? ElementKind.EDGE
-      : ElementKind.ANNOTATION;
-    selection.setSelected({ id: selected.id, kind });
-  });
+
+  // This wrapper is stable, while the inspector supplies its target after
+  // mounting. Resolve the target when the callback is called, not here.
+  function onFocusInspector(): void {
+    focusInspector?.();
+  }
 
   function installState(nextState: EditorState): void {
     saveController()?.dispose();
@@ -137,14 +119,6 @@ export const App: Component<{}> = (): JSX.Element => {
 
   onMount((): void => {
     if (autoLoad) { pair.adapter.load().then(loadFrom); }
-    function onKeyDown(e: KeyboardEvent): void {
-      const currentState: EditorState | null = state();
-      if (currentState === null) { return; }
-      if (e.metaKey && e.shiftKey && e.key === 'z') { currentState.redo(); }
-      else if (e.metaKey && e.key === 'z') { currentState.undo(); }
-    }
-    document.addEventListener('keydown', onKeyDown);
-    onCleanup((): void => document.removeEventListener('keydown', onKeyDown));
     onCleanup((): void => {
       saveController()?.dispose();
       fileSync?.stop();
@@ -152,7 +126,6 @@ export const App: Component<{}> = (): JSX.Element => {
   });
 
   return (
-    <SelectionContext.Provider value={selection}>
       <div style={{ display: 'flex', 'flex-direction': 'column', height: '100%' }}>
         <Show when={state() !== null} fallback={
           <Show when={!autoLoad}>
@@ -173,7 +146,7 @@ export const App: Component<{}> = (): JSX.Element => {
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
               <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={(): void => focusInspector?.()} />
+                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} />
               </Show>
             </Resizable.Panel>
             <Resizable.Handle />
@@ -193,6 +166,5 @@ export const App: Component<{}> = (): JSX.Element => {
           </Resizable>
         </Show>
       </div>
-    </SelectionContext.Provider>
   );
 };

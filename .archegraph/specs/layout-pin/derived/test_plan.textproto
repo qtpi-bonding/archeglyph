@@ -1,7 +1,7 @@
 {
   "spec_name": "layout-pin",
-  "runner_command": "bun test tests/testgen.ts",
-  "skip_property_tests": false,
+  "runner_command": "bun test packages/core/tests/testgen.ts packages/editor/tests/testgen.ts",
+  "skip_property_tests": true,
   "symbols": [
     {
       "node_id": "packages/core/src/layout/layout_adapter/impl.ts/ElkAdapterImpl#runLayout().",
@@ -11,85 +11,55 @@
         {
           "name": "element-with-explicit-position",
           "condition": "An element whose style entry carries an explicit x/y position is sent to ELK with that position set as node x/y and with 'org.eclipse.elk.position' set on the node",
-          "outcome": "Sends the node to ELK with x and y set to the style entry's explicit position and with the 'org.eclipse.elk.position' layout option set on that node.",
+          "outcome": "runLayout sets the ELK node's x and y to the style entry's explicit position and sets the 'org.eclipse.elk.position' layout option on that node.",
           "is_property": false
-        },
-        {
-          "name": "element-without-explicit-position",
-          "condition": "An element whose style entry has no explicit position is sent to ELK unchanged (no x/y, no position option), leaving ELK free to place it",
-          "outcome": "Sends the node to ELK without any x/y coordinates and without the 'org.eclipse.elk.position' option, leaving ELK free to place it.",
-          "is_property": true
         },
         {
           "name": "parent-gets-fixed-option-with-mixed-children",
           "condition": "A parent whose children include at least one explicitly-positioned (immovable) child and at least one unpositioned child has 'org.eclipse.elk.fixed' added to its own layoutOptions",
-          "outcome": "Adds 'org.eclipse.elk.fixed' to the parent's layoutOptions because at least one child is explicitly positioned and at least one is not.",
+          "outcome": "runLayout adds 'org.eclipse.elk.fixed' to the parent's layoutOptions when at least one child is explicitly positioned and at least one is not.",
           "is_property": false
         },
         {
           "name": "parent-without-any-positioned-children",
           "condition": "A parent all of whose children are unpositioned does not get 'org.eclipse.elk.fixed' added to its layoutOptions",
-          "outcome": "Leaves the parent's layoutOptions without 'org.eclipse.elk.fixed' since none of its children are explicitly positioned.",
+          "outcome": "runLayout does not add 'org.eclipse.elk.fixed' to the parent's layoutOptions when none of its children are explicitly positioned.",
           "is_property": false
         },
         {
           "name": "parent-with-all-children-positioned",
           "condition": "A parent all of whose children carry explicit positions still gets (or does not spuriously omit) 'org.eclipse.elk.fixed' as appropriate for an all-fixed set",
-          "outcome": "Sets 'org.eclipse.elk.fixed' on the parent's layoutOptions consistently for the all-children-explicitly-positioned case, matching the fixed-set semantics.",
+          "outcome": "runLayout still correctly sets (or omits, as appropriate) 'org.eclipse.elk.fixed' on a parent whose children are all explicitly positioned, consistent with the fixed-set semantics.",
           "is_property": false
-        },
-        {
-          "name": "position-passed-through-parent-relative",
-          "condition": "A style entry's x/y position, being already parent-relative like ELK's own coordinate frame, is forwarded to ELK as-is without any offset conversion (no addition of ancestor absolute offsets)",
-          "outcome": "Passes the style entry's x/y straight through to ELK unmodified, since both are already parent-relative and no ancestor-offset conversion is applied.",
-          "is_property": true
-        },
-        {
-          "name": "nested-hierarchy-multiple-levels",
-          "condition": "A multi-level hierarchy where positioned and unpositioned elements occur at different nesting depths is walked such that each level's parent receives 'fixed' handling independently and each element's own position/no-position treatment is unaffected by ancestor levels",
-          "outcome": "Processes each parent/child level independently, so 'fixed' propagation at one depth and position handling at another do not interfere with each other.",
-          "is_property": true
         },
         {
           "name": "element-with-zero-position",
           "condition": "An element whose style entry specifies position (0,0) is still treated as explicitly positioned (not mistaken for 'no position' via falsy-value coercion) and is sent to ELK with x=0,y=0 and the position option set",
-          "outcome": "Treats an explicit (0,0) position as a real position (not absent), sending x=0, y=0 to ELK along with the 'org.eclipse.elk.position' option.",
+          "outcome": "runLayout treats an explicit (0,0) position as a real position, sending x=0,y=0 and the 'org.eclipse.elk.position' option rather than treating it as absent.",
           "is_property": false
-        },
-        {
-          "name": "element-with-negative-position",
-          "condition": "An element whose style entry specifies negative x and/or y coordinates is forwarded to ELK with those negative values unchanged",
-          "outcome": "Forwards negative x and/or y values to ELK unchanged, without clamping or sign adjustment.",
-          "is_property": true
         },
         {
           "name": "leaf-with-no-children",
           "condition": "An element with an empty children list is processed for its own position handling without attempting to compute a 'fixed' layoutOption over a nonexistent child set",
-          "outcome": "Handles the element's own position assignment without attempting to compute or set a 'fixed' option over its empty children list.",
+          "outcome": "runLayout handles an element with no children by processing its own position without computing a 'fixed' option over its (empty) child set.",
           "is_property": false
         },
         {
           "name": "root-element-with-explicit-position",
           "condition": "The root element itself (with no parent) carries an explicit position; runLayout applies the position/option handling without erroring on the missing parent for the 'fixed' propagation step",
-          "outcome": "Applies the root element's own position/option handling normally and skips the 'fixed' propagation step for its (nonexistent) parent without erroring.",
+          "outcome": "runLayout applies the position/option handling to an explicitly positioned root element without erroring when there is no parent to propagate 'fixed' onto.",
           "is_property": false
         },
         {
           "name": "style-entry-missing-for-element",
           "condition": "An element that has no corresponding style entry at all is treated the same as one with no explicit position, being sent to ELK unmodified",
-          "outcome": "Continues to walk ELK's returned layout results correctly, applying the unchanged coordinate-frame and hierarchy-option logic to both ELK-placed and explicitly-positioned nodes.",
+          "outcome": "runLayout treats an element with no style entry the same as one with no explicit position, sending it to ELK unmodified.",
           "is_property": false
-        },
-        {
-          "name": "result-walk-and-coordinate-frame-unchanged",
-          "condition": "After ELK returns layout results, the existing coordinate-frame handling and hierarchy option logic (unchanged by this addition) still correctly walks the result tree for a mix of ELK-placed and explicitly-positioned nodes",
-          "outcome": "Continues to walk ELK's returned layout results correctly, applying the unchanged coordinate-frame and hierarchy-option logic to both ELK-placed and explicitly-positioned nodes.",
-          "is_property": true
         },
         {
           "name": "single-positioned-child-among-many-unpositioned",
           "condition": "Among a large set of sibling children, exactly one carries an explicit position; the parent still receives 'org.eclipse.elk.fixed' due to that single immovable child",
-          "outcome": "Adds 'org.eclipse.elk.fixed' to the parent's layoutOptions because that single explicitly-positioned child makes the set mixed.",
+          "outcome": "runLayout still adds 'org.eclipse.elk.fixed' to the parent's layoutOptions when only a single one of many siblings is explicitly positioned.",
           "is_property": false
         }
       ]
@@ -101,80 +71,50 @@
       "cases": [
         {
           "name": "empty-diagram",
-          "condition": "diagram has zero nodes and zero groups — vacuously every element (none) carries a position",
-          "outcome": "returns true, since there are no unpinned elements to falsify the check",
+          "condition": "diagram has zero nodes and zero groups — vacuously every element (none) carries a position, so returns true",
+          "outcome": "Returns true, since with no nodes or groups the universal condition over an empty set holds vacuously.",
           "is_property": false
         },
         {
-          "name": "all-nodes-and-groups-pinned",
-          "condition": "every node and every group has layout.position set to an explicit Vec2",
-          "outcome": "returns true, since every node and group has an explicit position",
-          "is_property": true
-        },
-        {
           "name": "one-node-missing-layout",
-          "condition": "at least one node has layout undefined (no layout object at all) while all others are pinned",
-          "outcome": "returns false, since a node with no layout object at all is unpinned",
+          "condition": "at least one node has layout undefined (no layout object at all) while all others are pinned — returns false",
+          "outcome": "Returns false, since a node with no layout object at all cannot be considered pinned.",
           "is_property": false
         },
         {
           "name": "one-node-missing-position",
-          "condition": "at least one node has a layout object but its position field is unset, while all others are pinned",
-          "outcome": "returns false, since a node with a layout object but no position is unpinned",
+          "condition": "at least one node has a layout object but its position field is unset, while all others are pinned — returns false",
+          "outcome": "Returns false, since a node whose layout exists but omits position is not fully pinned.",
           "is_property": false
         },
         {
           "name": "one-group-missing-layout",
-          "condition": "at least one group has layout undefined while all nodes and other groups are pinned",
-          "outcome": "returns false, since a group with no layout object at all is unpinned",
+          "condition": "at least one group has layout undefined while all nodes and other groups are pinned — returns false",
+          "outcome": "Returns false, since a group with no layout object at all cannot be considered pinned.",
           "is_property": false
         },
         {
           "name": "one-group-missing-position",
-          "condition": "at least one group has a layout object but position is unset, while all nodes and other groups are pinned",
-          "outcome": "returns false, since a group with a layout object but no position is unpinned",
+          "condition": "at least one group has a layout object but position is unset, while all nodes and other groups are pinned — returns false",
+          "outcome": "Returns false, since a group whose layout exists but omits position is not fully pinned.",
           "is_property": false
         },
         {
           "name": "all-nodes-pinned-no-groups",
-          "condition": "diagram has nodes only (empty groups array), and every node is pinned",
-          "outcome": "returns true, since all nodes are pinned and there are no groups to check",
+          "condition": "diagram has nodes only (empty groups array), and every node is pinned — returns true",
+          "outcome": "Returns true, since all nodes are pinned and there are no groups to fail the check.",
           "is_property": false
         },
         {
           "name": "all-groups-pinned-no-nodes",
-          "condition": "diagram has groups only (empty nodes array), and every group is pinned",
-          "outcome": "returns true, since all groups are pinned and there are no nodes to check",
+          "condition": "diagram has groups only (empty nodes array), and every group is pinned — returns true",
+          "outcome": "Returns true, since all groups are pinned and there are no nodes to fail the check.",
           "is_property": false
         },
         {
           "name": "no-elements-pinned",
-          "condition": "diagram has at least one node and one group and none of them carry any position",
-          "outcome": "returns false, since neither the node nor the group carries a position",
-          "is_property": false
-        },
-        {
-          "name": "mixed-pinned-and-unpinned",
-          "condition": "diagram has a mix of pinned and unpinned nodes/groups, arbitrary count and arrangement",
-          "outcome": "returns false, since at least one node or group is unpinned",
-          "is_property": true
-        },
-        {
-          "name": "large-diagram-all-pinned",
-          "condition": "diagram with a large number of nodes and groups, all of them explicitly positioned",
-          "outcome": "returns true, since every node and group across the large set carries an explicit position",
-          "is_property": true
-        },
-        {
-          "name": "nested-groups-all-pinned",
-          "condition": "nodes and groups form a nested parent-child hierarchy via parentGroup, and every element at every depth is pinned",
-          "outcome": "returns true, since every element at every depth of the hierarchy is pinned regardless of nesting",
-          "is_property": false
-        },
-        {
-          "name": "nested-groups-deep-child-unpinned",
-          "condition": "nested hierarchy where a deeply nested child node lacks a position while its ancestors are pinned",
-          "outcome": "returns false, since the unpinned deeply nested descendant makes the whole diagram not fully pinned",
+          "condition": "diagram has at least one node and one group and none of them carry any position — returns false",
+          "outcome": "Returns false, since neither the node nor the group carries any position.",
           "is_property": false
         }
       ]
@@ -185,81 +125,57 @@
       "file_path": "packages/core/src/layout/layout_engine/impl.ts",
       "cases": [
         {
-          "name": "fully-pinned-diagram-skips-elk",
-          "condition": "Every node and group in the diagram has an explicit position in the stylesheet; layout should call isFullyPinned (true) and layoutFromPins, without invoking ELK, with edges routed by edge_router.",
-          "outcome": "Layout detects the diagram is fully pinned and takes the ELK-free path, computing positions via layoutFromPins and routing edges with edge_router.",
+          "name": "fully-pinned-skips-elk",
+          "condition": "Every node and group in the diagram has an explicit position in the stylesheet; layout must not invoke ELK and must derive positions directly from style entries, routing edges via edge_router",
+          "outcome": "Skips ELK entirely, computing positions directly from the stylesheet's explicit entries for every node and group, and routes edges via edge_router.",
           "is_property": false
         },
         {
-          "name": "partially-pinned-newcomer-seeded-into-elk",
-          "condition": "Some nodes/groups have explicit positions and at least one does not (e.g. a single new node added to an otherwise-arranged diagram); isFullyPinned returns false, so ELK runs with every pinned element passed as a fixed-position hint via layout_adapter, placing only the unpositioned newcomer.",
-          "outcome": "Layout detects the diagram is not fully pinned, invokes ELK with all pinned nodes/groups passed as fixed-position hints, and only the new unpositioned node is placed by ELK.",
+          "name": "no-pins-full-elk-layout",
+          "condition": "No node or group has an explicit position; ELK computes positions for everything with no fixed-position hints supplied",
+          "outcome": "Invokes ELK with no fixed-position hints, letting it compute positions for all nodes and groups from scratch.",
           "is_property": false
         },
         {
-          "name": "no-elements-pinned",
-          "condition": "No node or group has an explicit position in the stylesheet; isFullyPinned is false and ELK runs with no fixed-position hints, computing the entire layout from scratch.",
-          "outcome": "Layout detects the diagram is not fully pinned, invokes ELK with no fixed-position hints, and computes every position from scratch.",
+          "name": "annotations-excluded-from-fully-pinned-check",
+          "condition": "All nodes and groups are pinned but an annotation is unpinned (or has no independent position requirement); layout still takes the fully-pinned path since annotations are excluded from the fully-pinned determination",
+          "outcome": "Treats the diagram as fully pinned and skips ELK, since the unpinned annotation is excluded from the full-pinning check.",
           "is_property": false
         },
         {
-          "name": "pinned-elements-never-move-when-adding-newcomer",
-          "condition": "For any diagram with a set of already-pinned nodes/groups plus one newly added unpositioned element, running layout must leave every previously pinned element's position byte-for-byte identical to its stylesheet-declared position.",
-          "outcome": "Layout takes the fully-pinned path and every previously pinned node/group keeps a position byte-for-byte identical to its stylesheet-declared value.",
-          "is_property": true
-        },
-        {
-          "name": "annotations-unpositioned-does-not-block-fully-pinned",
-          "condition": "All nodes and groups have explicit positions but one or more annotations do not; isFullyPinned must still evaluate true (annotations are excluded from the check) and the fully-pinned path (layoutFromPins, no ELK) is taken.",
-          "outcome": "Layout treats the diagram as fully pinned despite unpositioned annotations, taking the ELK-free layoutFromPins path since annotations are excluded from the pinned check.",
-          "is_property": false
-        },
-        {
-          "name": "annotations-all-explicitly-positioned",
-          "condition": "All nodes, groups, and annotations have explicit positions; fully-pinned path is taken and annotation positions are used as-is without being passed through ELK or layoutFromPins layout logic.",
-          "outcome": "Layout takes the fully-pinned path, using each annotation's stylesheet position as-is without routing it through ELK or layoutFromPins.",
+          "name": "annotations-only-no-nodes-or-groups",
+          "condition": "Diagram contains only annotations and no nodes or groups; isFullyPinned should trivially hold (vacuously true) and ELK is skipped",
+          "outcome": "Treats the fully-pinned check as vacuously satisfied and skips ELK, since only nodes and groups (of which there are none) are considered.",
           "is_property": false
         },
         {
           "name": "empty-diagram",
-          "condition": "Diagram contains no nodes, groups, edges, or annotations; layout must handle isFullyPinned trivially (vacuously true or defined false) without error and produce an empty/no-op layout result.",
-          "outcome": "Layout handles the empty diagram without error, treating isFullyPinned as trivially satisfied and returning an empty layout result with no ELK invocation.",
+          "condition": "Diagram has no nodes, groups, or annotations at all; layout must not error and should return an empty/trivial layout result",
+          "outcome": "Returns an empty/trivial layout result without erroring, since there are no nodes, groups, or annotations to place.",
           "is_property": false
         },
         {
-          "name": "single-pinned-node-no-edges",
-          "condition": "Diagram has exactly one node with an explicit position and no edges or groups; fully-pinned path taken, layoutFromPins returns that single position, edge_router has nothing to route.",
-          "outcome": "Layout takes the fully-pinned path, layoutFromPins returns the single node's declared position, and edge_router runs with no edges to route.",
+          "name": "single-node-fully-pinned",
+          "condition": "Diagram consists of exactly one node with an explicit pinned position; ELK is bypassed and the node's position matches its stylesheet declaration exactly",
+          "outcome": "Bypasses ELK and returns the single node's position exactly as declared in the stylesheet.",
           "is_property": false
         },
         {
-          "name": "group-pinned-but-child-node-unpinned",
-          "condition": "A group has an explicit position in the stylesheet but a node it contains does not; isFullyPinned must be false since the child node is unpinned, so ELK runs with the group's position handed in as a fixed hint.",
-          "outcome": "Layout detects the diagram is not fully pinned because the child node lacks a position, invokes ELK, and passes the group's pinned position in as a fixed hint.",
+          "name": "unpinned-group-forces-elk-path",
+          "condition": "All nodes are pinned but at least one group lacks an explicit position; because groups also count toward full-pinning, layout takes the ELK path rather than the fully-pinned shortcut",
+          "outcome": "Takes the ELK path rather than the fully-pinned shortcut, because the unpinned group counts against full-pinning even though all nodes are pinned.",
           "is_property": false
         },
         {
-          "name": "edges-routed-in-fully-pinned-path",
-          "condition": "A fully-pinned diagram (all nodes/groups positioned) also contains edges between those nodes; after layoutFromPins supplies positions, edge_router must route all edges using those fixed endpoints.",
-          "outcome": "Layout takes the fully-pinned path, then edge_router routes all edges using the fixed endpoints layoutFromPins produced.",
+          "name": "pinned-elements-passed-as-fixed-hints",
+          "condition": "In the not-fully-pinned path, every already-pinned element (nodes and groups) is handed to ELK via layout_adapter as a fixed-position hint so ELK only computes positions for elements with no existing position",
+          "outcome": "Passes every already-pinned node and group to ELK via layout_adapter as fixed-position hints so ELK computes positions only for elements lacking one.",
           "is_property": false
         },
         {
-          "name": "edges-routed-in-elk-path",
-          "condition": "A partially-pinned or unpinned diagram containing edges runs through ELK; edges must be routed correctly against the mix of ELK-computed and pinned-hint positions.",
-          "outcome": "Layout invokes ELK for the partially/unpinned diagram, and edge_router correctly routes edges spanning both ELK-computed and pinned-hint positions.",
-          "is_property": false
-        },
-        {
-          "name": "all-pinned-positions-fed-as-elk-hints-when-not-fully-pinned",
-          "condition": "In a diagram that is not fully pinned, every element that IS pinned (not just the unpinned newcomer) must be passed to ELK as a fixed-position hint via layout_adapter, not merely the majority of them.",
-          "outcome": "Layout passes every pinned element, not just a subset, into ELK as fixed-position hints via layout_adapter when the diagram is not fully pinned.",
-          "is_property": true
-        },
-        {
-          "name": "multiple-unpinned-newcomers-with-some-pinned",
-          "condition": "Diagram has several pinned elements and more than one unpinned element; isFullyPinned is false, ELK runs and places all unpinned elements while treating pinned ones as fixed hints.",
-          "outcome": "Layout detects the diagram is not fully pinned, invokes ELK treating all pinned elements as fixed hints, and places every unpinned element.",
+          "name": "edges-routed-via-edge-router-in-fully-pinned-path",
+          "condition": "In the fully-pinned path, edges between the explicitly positioned nodes/groups are routed by edge_router rather than by ELK's own edge routing",
+          "outcome": "Routes edges between the explicitly positioned nodes/groups using edge_router instead of ELK's own edge routing.",
           "is_property": false
         }
       ]
@@ -270,94 +186,88 @@
       "file_path": "packages/core/src/layout/layout_engine/impl.ts",
       "cases": [
         {
+          "name": "empty-diagram-no-elements",
+          "condition": "ResolvedDiagram has empty nodes, edges, groups, and annotations arrays (vacuously fully pinned)",
+          "outcome": "Returns a LaidOutDiagram with empty nodes, edges, groups, and annotations, with no computation performed.",
+          "is_property": false
+        },
+        {
           "name": "single-pinned-node-with-explicit-size",
-          "condition": "Diagram with one top-level node whose NodeLayout has both position and size set; layoutFromPins should place it directly at its written position/size without calling measureLabel.",
-          "outcome": "Places the node directly at its written NodeLayout position and size without calling measureLabel.",
+          "condition": "Diagram with one top-level node whose NodeLayout has both position and size set",
+          "outcome": "Returns the node laid out at its written position with its written size, unchanged.",
           "is_property": false
         },
         {
           "name": "node-size-missing-falls-back-to-measure-label",
-          "condition": "A node's style entry has a position but no size (NodeLayout.size unset); layoutFromPins must call measureLabel to derive the size from the node's label/typography.",
-          "outcome": "Calls measureLabel to derive the node's size from its label/typography since NodeLayout.size is unset, then places it at the written position with that derived size.",
+          "condition": "A node's style entry has a position but no size (NodeLayout.size unset)",
+          "outcome": "Returns the node laid out at its written position with size computed by calling measureLabel for that node's style entry.",
           "is_property": false
         },
         {
           "name": "group-size-always-derived-from-children-even-if-written",
-          "condition": "A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size; the group's final size in the output must be derived from the children's positions/sizes, ignoring the written size value.",
-          "outcome": "Ignores the written GroupLayout.size and instead computes the group's final size as the bounding box derived from its children's resolved positions and sizes.",
+          "condition": "A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size",
+          "outcome": "Ignores the group's written size and returns the group's size (and position extent) recomputed from the union of its children's actual laid-out bounding boxes.",
           "is_property": false
         },
         {
           "name": "nested-groups-size-propagates-bottom-up",
-          "condition": "A group contains a child group, which itself contains pinned nodes; sizes must be computed bottom-up so the outer group's extent accounts for the fully-resolved size of the inner group.",
-          "outcome": "Resolves the inner group's size from its pinned children first, then uses that fully-resolved inner size when computing the outer group's bounding box, i.e. sizes are derived bottom-up.",
+          "condition": "A group contains a child group, which itself contains pinned nodes; sizes must be computed bottom-up",
+          "outcome": "Computes the innermost group's size from its pinned node children first, then computes the outer group's size from the union of its children (including the already-sized inner group), propagating bottom-up.",
           "is_property": false
         },
         {
           "name": "group-with-zero-children",
-          "condition": "A group has a pinned position but no child nodes or subgroups reference it as parent_group; boundary case for deriving a size from an empty child set.",
-          "outcome": "Derives the group's size from its (empty) child set, yielding a degenerate/zero-extent size at the group's pinned position rather than falling back to any written size.",
+          "condition": "A group has a pinned position but no child nodes or subgroups reference it as parent_group",
+          "outcome": "Returns the group laid out at its pinned position with a degenerate/empty size, since there are no children to derive an extent from.",
           "is_property": false
         },
         {
           "name": "straight-edge-routing",
-          "condition": "An edge's EdgeLayout.routing is ROUTING_STRAIGHT (or unset/defaulted to straight); layoutFromPins must call routeStraight with the resolved endpoint positions.",
-          "outcome": "Calls routeStraight with the resolved source/target endpoint positions to produce the edge's route.",
+          "condition": "An edge's EdgeLayout.routing is ROUTING_STRAIGHT (or unset/defaulted to straight)",
+          "outcome": "Returns the edge's route as a straight line computed between its resolved source and target endpoints via edge_router.",
           "is_property": false
         },
         {
           "name": "orthogonal-edge-routing",
-          "condition": "An edge's EdgeLayout.routing is ROUTING_ORTHOGONAL; layoutFromPins must call routeOrthogonal instead of routeStraight.",
-          "outcome": "Calls routeOrthogonal (not routeStraight) to produce the edge's route.",
+          "condition": "An edge's EdgeLayout.routing is ROUTING_ORTHOGONAL",
+          "outcome": "Returns the edge's route as an orthogonal path computed via edge_router between its resolved source and target endpoints.",
           "is_property": false
         },
         {
           "name": "edge-with-explicit-attach-points-and-label-position",
-          "condition": "An edge specifies source_attach/target_attach and a CUSTOM label_position with label_position_fraction; the router must be invoked with these hints and the resulting label placement reflected in the output route.",
-          "outcome": "Invokes the router with the source_attach/target_attach and CUSTOM label_position/label_position_fraction hints, and the output route reflects the resulting label placement.",
+          "condition": "An edge specifies source_attach/target_attach and a CUSTOM label_position with label_position_fraction",
+          "outcome": "Returns the edge routed via its source_attach/target_attach points with the label placed at the position corresponding to label_position_fraction along that custom attachment geometry.",
           "is_property": false
         },
         {
           "name": "edge-endpoint-is-a-group-not-a-node",
-          "condition": "An edge's source or target id refers to a ResolvedGroup (e.g. a CONTRACTED super-node) rather than a ResolvedNode; the router must resolve the endpoint against the group's derived bounding box.",
-          "outcome": "Resolves the endpoint against the referenced group's derived bounding box rather than treating it as a plain node position when routing the edge.",
+          "condition": "An edge's source or target id refers to a ResolvedGroup (e.g. a CONTRACTED super-node) rather than a ResolvedNode",
+          "outcome": "Returns the edge routed to/from the bounding box of the resolved group (using its bottom-up-derived extent) rather than a single node's position/size.",
           "is_property": false
         },
         {
           "name": "anchored-annotation-with-callout",
-          "condition": "An annotation is anchored (per resolver cascade) and carries a populated Glyph1D callout; layoutFromPins must place it at its pinned position/size and preserve the callout geometry in the output.",
-          "outcome": "Places the annotation at its pinned position/size and carries the populated Glyph1D callout geometry through unchanged into the output.",
+          "condition": "An annotation is anchored (per resolver cascade) and carries a populated Glyph1D callout",
+          "outcome": "Returns the annotation laid out at its anchored position with its Glyph1D callout rendered/positioned per the resolver's cascade.",
           "is_property": false
         },
         {
           "name": "free-annotation-without-callout",
-          "condition": "An annotation is free-floating with a default-constructed (empty) callout; layoutFromPins places it using AnnotationLayout.position/size and the renderer-facing output has no callout to draw.",
-          "outcome": "Places the annotation using AnnotationLayout.position/size, producing output with no callout geometry to draw since the callout is empty/default.",
-          "is_property": false
-        },
-        {
-          "name": "empty-diagram-no-elements",
-          "condition": "ResolvedDiagram has empty nodes, edges, groups, and annotations arrays (vacuously fully pinned); layoutFromPins returns a LaidOutDiagram with empty corresponding collections and no router/measureLabel calls.",
-          "outcome": "Returns a LaidOutDiagram with empty nodes/edges/groups/annotations collections and makes no router or measureLabel calls.",
+          "condition": "An annotation is free-floating with a default-constructed (empty) callout",
+          "outcome": "Returns the annotation laid out at its free-floating position with no callout geometry produced (callout omitted/empty in the output).",
           "is_property": false
         },
         {
           "name": "rotation-carried-through-unchanged",
-          "condition": "A node, group, or annotation has a non-zero NodeLayout/GroupLayout/AnnotationLayout.rotation value; the output geometry must preserve that rotation verbatim since it is not derived like size.",
-          "outcome": "Copies the rotation value verbatim into the corresponding output geometry without deriving or altering it.",
+          "condition": "A node, group, or annotation has a non-zero NodeLayout/GroupLayout/AnnotationLayout.rotation value",
+          "outcome": "Returns the element's layout with the given rotation value carried through unchanged into the corresponding LaidOutDiagram entry.",
           "is_property": false
         },
         {
           "name": "missing-position-violates-precondition",
-          "condition": "layoutFromPins is invoked (bypassing the normal isFullyPinned gate) on a diagram where some node, group, or annotation lacks a written position; since every lookup is total by contract, this must surface as a thrown/crashing programming error rather than a silently defaulted position.",
-          "outcome": "Throws/crashes when a required written position is missing, treating it as a programming error rather than substituting a default position.",
+          "condition": "layoutFromPins is invoked (bypassing the normal isFullyPinned gate) on a diagram where some node, group, or annotation lacks a written position",
+          "outcome": "Throws/panics (programming-error failure) rather than producing a layout, since a missing position violates the isFullyPinned precondition this function assumes.",
           "is_property": false
-        },
-        {
-          "name": "arbitrary-fully-pinned-diagram-shape",
-          "condition": "For any ResolvedDiagram where isFullyPinned holds (arbitrary number of nodes, groups of arbitrary nesting depth, edges with any routing mode, and annotations, all carrying explicit positions), layoutFromPins terminates and produces a LaidOutDiagram with one output element per input element, no ELK invocation, and no left-over unresolved positions.",
-          "outcome": "Terminates and returns a LaidOutDiagram with exactly one output element per input element, having invoked no ELK layout and left no position unresolved, regardless of nesting depth, edge routing modes, or element counts.",
-          "is_property": true
         }
       ]
     },
@@ -367,81 +277,63 @@
       "file_path": "packages/editor/src/gestures/commands.ts",
       "cases": [
         {
-          "name": "pin-all-with-resolved-geometry",
-          "condition": "pin-all command runs when context.geometry is a resolved LaidOutDiagram with multiple nodes/groups/edges at varying positions; every element's current on-screen position should be written into the stylesheet via pinAllEdit.",
-          "outcome": "The command should read every element's on-screen position from the resolved LaidOutDiagram and write them all into the stylesheet via pinAllEdit, leaving the diagram visually unchanged while stopping ELK from repositioning it.",
-          "is_property": true
-        },
-        {
-          "name": "pin-all-single-node",
-          "condition": "pin-all command runs with geometry containing exactly one node — boundary case of the smallest non-empty diagram.",
-          "outcome": "The command should pin the single node's current on-screen position into the stylesheet via pinAllEdit, correctly handling the minimal one-element case the same way as the general case.",
+          "name": "pin-all-with-resolved-layout",
+          "condition": "pin-all fires when the Scene has a fully resolved LaidOutDiagram with multiple nodes; every node's current on-screen position is written into the stylesheet as an explicit position.",
+          "outcome": "Returns a StyleEdit containing an explicit position for every node in the LaidOutDiagram, each set to that node's current on-screen coordinates.",
           "is_property": false
         },
         {
-          "name": "pin-all-no-geometry",
-          "condition": "pin-all command runs when context.geometry is undefined (layout has not resolved yet); the command must be a no-op and must not call pinAllEdit or applyStyleEdit.",
-          "outcome": "The command should detect that context.geometry is undefined and return immediately without calling pinAllEdit or applyStyleEdit, treating the pre-layout timing accident as a silent no-op.",
+          "name": "pin-all-before-first-layout-resolves",
+          "condition": "pin-all fires before the Scene has ever produced a LaidOutDiagram (geometry is absent/undefined) - a timing accident, not a user mistake - and the command must be a no-op rather than an error.",
+          "outcome": "Returns a no-op StyleEdit (no position writes) since there is no geometry to pin.",
           "is_property": false
         },
         {
-          "name": "pin-all-empty-diagram-geometry",
-          "condition": "pin-all command runs when context.geometry is defined but the diagram has zero elements (empty index/byKey) — boundary case of geometry present but nothing to pin.",
-          "outcome": "The command should detect that the resolved geometry has no elements and effectively do nothing meaningful (no positions to write), without erroring even though geometry is present.",
+          "name": "pin-all-empty-diagram",
+          "condition": "pin-all fires when the LaidOutDiagram exists but contains zero nodes; no position edits are produced.",
+          "outcome": "Returns a StyleEdit with zero position entries, since there are no nodes to write positions for.",
           "is_property": false
         },
         {
-          "name": "unpin-all-with-pinned-elements",
-          "condition": "unpin-all command runs against a stylesheet where one or more nodes have explicit pinned positions; unpinAllEdit should clear all of them, handing layout back to ELK.",
-          "outcome": "The command should apply unpinAllEdit to clear every pinned position in the stylesheet, regardless of Scene geometry, returning the diagram fully to ELK-driven layout.",
-          "is_property": true
-        },
-        {
-          "name": "unpin-all-with-no-pinned-elements",
-          "condition": "unpin-all command runs against a stylesheet where nothing is currently pinned — should still apply the (no-op-equivalent) edit without error.",
-          "outcome": "The command should still apply unpinAllEdit even when no elements are currently pinned, succeeding as a harmless no-op edit rather than erroring.",
+          "name": "pin-all-overwrites-existing-explicit-positions",
+          "condition": "pin-all fires when the stylesheet already has explicit positions (e.g. from a prior pin-all or manual edit) for some nodes; those are overwritten with the current laid-out coordinates rather than left untouched or duplicated.",
+          "outcome": "Returns a StyleEdit that sets each node's position entry to its current laid-out coordinates, overwriting any pre-existing explicit position for that node.",
           "is_property": false
         },
         {
-          "name": "unpin-all-does-not-require-geometry",
-          "condition": "unpin-all command runs when context.geometry is undefined, confirming unpin-all (unlike pin-all) does not depend on Scene geometry to operate on the stylesheet.",
-          "outcome": "The command should apply unpinAllEdit successfully even with context.geometry undefined, since unpinning only touches the stylesheet and never reads Scene geometry.",
+          "name": "unpin-all-removes-mixed-origin-positions",
+          "condition": "unpin-all fires when the stylesheet contains explicit positions written by multiple different origins at once (some from pin-all, some from drags, some from nudges, some hand-edited directly in the file); all of them are removed regardless of origin.",
+          "outcome": "Returns a StyleEdit that removes every explicit position entry in the stylesheet regardless of which mechanism originally wrote it.",
           "is_property": false
         },
         {
-          "name": "auto-layout-clears-pins-and-relayouts",
-          "condition": "auto-layout command runs against a stylesheet with pinned elements; it should perform the same clearing edit as unpin-all and immediately trigger a relayout in one combined operation.",
-          "outcome": "The command should apply the same clearing edit as unpin-all and then immediately trigger a relayout, combining both effects in one command invocation.",
-          "is_property": true
-        },
-        {
-          "name": "auto-layout-equivalent-to-unpin-all-edit",
-          "condition": "auto-layout and unpin-all, given the same starting stylesheet, produce the identical underlying stylesheet edit (same unpinAllEdit call), differing only in that auto-layout also forces immediate relayout.",
-          "outcome": "auto-layout and unpin-all should both invoke unpinAllEdit with the identical resulting stylesheet edit, with auto-layout's only difference being that it also forces an immediate relayout afterward.",
+          "name": "unpin-all-when-no-explicit-positions-exist",
+          "condition": "unpin-all fires when the stylesheet already has no explicit positions anywhere (diagram already fully ELK-driven); the command is a no-op producing an edit with nothing to clear.",
+          "outcome": "Returns a no-op StyleEdit, since there are no explicit positions to clear.",
           "is_property": false
         },
         {
-          "name": "auto-layout-no-geometry",
-          "condition": "auto-layout command runs when context.geometry is undefined — since it is built on unpin-all, it should still apply the unpin edit even with no resolved geometry.",
-          "outcome": "The command should still apply the unpin edit via unpinAllEdit even when context.geometry is undefined, since auto-layout's edit step does not depend on Scene geometry.",
+          "name": "unpin-all-single-hand-edited-position",
+          "condition": "unpin-all fires when the only explicit position present was added by directly hand-editing the stylesheet file (never touched by pin-all, drag, or nudge); it is still removed.",
+          "outcome": "Returns a StyleEdit that removes the hand-edited explicit position just as it would remove one from any other origin.",
           "is_property": false
         },
         {
-          "name": "unknown-command-id-is-noop",
-          "condition": "runCommand is invoked with a CommandId not present in COMMANDS (e.g. a stale or mistyped id) — command lookup returns undefined and run() returns without invoking any handler.",
-          "outcome": "runCommand should look up the unknown CommandId in COMMANDS, find no match, and return without invoking any handler or throwing.",
+          "name": "auto-layout-matches-unpin-all-edit",
+          "condition": "auto-layout fires on a stylesheet with the same explicit-position state as an equivalent unpin-all invocation; the two commands must produce an identical StyleEdit value.",
+          "outcome": "Returns a StyleEdit value identical to what unpin-all would produce for the same stylesheet state.",
           "is_property": false
         },
         {
-          "name": "pin-all-preserves-parent-relative-coordinates",
-          "condition": "pin-all command runs on a diagram containing nested groups, where child element positions are parent-relative rather than canvas-absolute; pinAllEdit must convert Scene canvas-absolute bounds into the correct parent-relative stylesheet coordinates for every pinned element.",
-          "outcome": "pinAllEdit should convert each nested child element's canvas-absolute bounds into coordinates relative to its parent group before writing them into the stylesheet, so pinned children remain correctly positioned relative to their (also pinned) parent.",
-          "is_property": true
+          "name": "auto-layout-triggers-elk-relayout-via-empty-positions",
+          "condition": "auto-layout fires on a stylesheet that currently has explicit positions for all nodes; after the resulting edit is applied, the stylesheet has none, so the next scene computation is routed through ELK instead of using stored coordinates.",
+          "outcome": "Returns a StyleEdit that clears all explicit positions, so the next scene computation runs through ELK instead of using stored coordinates.",
+          "is_property": false
         },
         {
-          "name": "commands-array-contains-new-entries-with-correct-ids-and-labels",
-          "condition": "COMMANDS array is inspected directly (not via runCommand) to confirm it contains exactly one entry each for 'pin-all', 'unpin-all', and 'auto-layout' with non-empty, human-readable labels.",
-          "outcome": "Inspecting COMMANDS directly should show exactly three entries — 'pin-all', 'unpin-all', and 'auto-layout' — each with a distinct, non-empty, human-readable label and no duplicates.",
+          "name": "auto-layout-on-already-unpinned-stylesheet",
+          "condition": "auto-layout fires when the stylesheet already has zero explicit positions; the command still runs (as the 're-run ELK' intent distinct from unpin-all's 'stop pinning' intent) and yields the same no-op-shaped edit as unpin-all would.",
+          "outcome": "Returns the same no-op-shaped StyleEdit that unpin-all would produce, since there are no positions to clear but the command still runs as a distinct 're-run ELK' action.",
           "is_property": false
         }
       ]

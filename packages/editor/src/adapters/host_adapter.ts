@@ -11,6 +11,7 @@ export class LoadResult {
   stamp?: FileStamp;
 }
 export class AdapterError {
+  kind?: 'io' | 'stale' | 'unsupported';
   message!: string;
 }
 export interface HostAdapter {

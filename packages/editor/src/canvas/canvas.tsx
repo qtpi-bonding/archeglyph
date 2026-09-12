@@ -161,7 +161,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const currentDiagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), pointFromEvent(event));
     const currentGeometry: SceneGeometry | undefined = geometry();
     if (active?.kind === 'move' && currentGeometry !== undefined) {
-      const edit = moveCommit(active.session, currentGeometry, props.stylesheet, currentDiagram, props.ui.viewport().zoom);
+      const edit = moveCommit(active.session, currentGeometry, props.stylesheet, currentDiagram);
       if (edit !== undefined) { props.state.applyStyleEdit(edit); }
     } else if (active?.kind === 'marquee' && currentGeometry !== undefined) {
       const selected = marqueeCommit(currentGeometry, marqueeUpdate(active.session, currentDiagram));

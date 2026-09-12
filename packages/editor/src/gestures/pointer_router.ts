@@ -25,15 +25,19 @@ export function routePress(context: PressContext, current: Array<ElementRef>): G
     return { kind: 'pan' };
   }
 
-  // The annotation tool has its own press semantics.  A press on the empty
-  // canvas (or on another element) creates a new annotation at the press
-  // point.  Pressing an existing annotation is reserved for dragging its
-  // callout anchor; it must not turn into a move of the annotation itself.
+  // The annotation tool has its own press semantics.  A press creates a new
+  // annotation at the press point, even when another element is underneath.
+  // Clear the selection before the handle and hit branches can claim it.
   if (context.tool === 'annotation') {
-    if (context.hit?.kind === 'annotation') {
-      return { kind: 'anchor', ref: context.hit };
-    }
-    return { kind: 'create-annotation' };
+    return { kind: 'create-annotation', selection: clearSelection() };
+  }
+
+  // The anchor grip is the specific affordance for dragging the selected
+  // annotation.  It wins over resize handles if the affordances ever
+  // coincide; anchorGripAt only supplies a value for a valid single
+  // annotation selection.
+  if (context.onAnchorGrip !== undefined) {
+    return { kind: 'anchor', ref: context.onAnchorGrip };
   }
 
   // A handle is meaningful only in the context of an existing selection.  Do

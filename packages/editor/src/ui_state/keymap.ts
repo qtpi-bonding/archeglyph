@@ -8,7 +8,7 @@ export interface Chord {
 export type CommandId = 'undo' | 'redo' | 'delete' |
   'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |
   'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |
-  'auto-layout' | 'reset-size' | 'save';
+  'auto-layout' | 'reset-size' | 'save' | 'focus-inspector';
 
 export interface KeymapEntry {
   chord: Chord;
@@ -28,6 +28,7 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 's' }, command: 'ring-next' },
   { chord: { key: 's', shift: true }, command: 'ring-prev' },
   { chord: { key: 's', meta: true }, command: 'save' },
+  { chord: { key: 'i', meta: true }, command: 'focus-inspector' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {

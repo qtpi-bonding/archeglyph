@@ -14,7 +14,14 @@ node_modules/
 .archegraph/server.port
 
 # Spec-level derived/ artifacts (regenerable from .spec.textproto via `archegraph plan`; NOT tracked):
-.archegraph/specs/*/derived/
+.archegraph/specs/*/derived/*
+# ...except the testgen plan, which is NOT regenerable for free: it costs three
+# LLM passes per symbol and is non-deterministic, so regenerating gives you
+# different tests rather than the same ones back. The premise of the rule above
+# does not hold for it. Note the trailing /* on the rule above: git cannot
+# re-include a file whose parent DIRECTORY is excluded, so the exclusion has to
+# name the contents.
+!.archegraph/specs/*/derived/test_plan.textproto
 # Legacy top-level derived artifacts (pre-derived/ convention) — still ignored:
 .archegraph/specs/*/gcontract.pb
 .archegraph/specs/*/gbuild_delta.pb

@@ -133,6 +133,24 @@ function findAnnotationComponent(theme: Theme | undefined, name: string): Annota
   }
 }
 
+/**
+ * The component name to look up, or undefined to skip the theme layer.
+ *
+ * The resolver applies ONLY what the stylesheet says, per design.md §5:
+ * "If `component` is unset, no theme component applies — the element starts
+ * unstyled." It was previously hardcoding `?? 'glyph'`, which meant no theme
+ * could define a component called "glyph" for a specific purpose without it
+ * silently capturing every unbound element in the diagram.
+ *
+ * A diagram with no stylesheet still renders, but by being SEEDED with real
+ * bindings (see seed_bindings) rather than by anything being assumed here.
+ * Those bindings are ordinary stylesheet rows: visible in the inspector,
+ * editable, removable, and saved to the file like anything the user wrote.
+ */
+function componentNameFor(explicit: string | undefined): string | undefined {
+  return explicit !== undefined && explicit !== '' ? explicit : undefined;
+}
+
 export class StyleCascadeImpl implements StyleCascade {
   cascade(request: CascadeRequest): Result<ResolvedDiagram, ResolveError> {
     const filtered: FilteredDiagram = request.filtered;
@@ -154,8 +172,8 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));
     for (const node of sortedNodes) {
       const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
-      const componentName: string = entry?.component ?? 'glyph';
-      const themeComponent: NodeComponent | undefined = findNodeComponent(theme, componentName);
+      const componentName: string | undefined = componentNameFor(entry?.component);
+      const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findNodeComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `node ${node.id}: theme component '${componentName}' not found` }));
       }
@@ -180,8 +198,8 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedEdges.sort((a: FilteredEdge, b: FilteredEdge): number => compareIds(a.id, b.id));
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
-      const componentName: string = entry?.component ?? 'glyph';
-      const themeComponent: EdgeComponent | undefined = findEdgeComponent(theme, componentName);
+      const componentName: string | undefined = componentNameFor(entry?.component);
+      const themeComponent: EdgeComponent | undefined = componentName === undefined ? undefined : findEdgeComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `edge ${edge.id}: theme component '${componentName}' not found` }));
       }
@@ -207,8 +225,8 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedGroups.sort((a: FilteredGroup, b: FilteredGroup): number => compareIds(a.id, b.id));
     for (const group of sortedGroups) {
       const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
-      const componentName: string = entry?.component ?? 'glyph';
-      const themeComponent: NodeComponent | undefined = findGroupComponent(theme, componentName);
+      const componentName: string | undefined = componentNameFor(entry?.component);
+      const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findGroupComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `group ${group.id}: theme component '${componentName}' not found` }));
       }
@@ -235,8 +253,8 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedAnnotations.sort((a: FilteredAnnotation, b: FilteredAnnotation): number => compareIds(a.id, b.id));
     for (const annotation of sortedAnnotations) {
       const entry: AnnotationEntry = annotation.entry;
-      const componentName: string = entry.component ?? 'glyph';
-      const themeComponent: AnnotationComponent | undefined = findAnnotationComponent(theme, componentName);
+      const componentName: string | undefined = componentNameFor(entry.component);
+      const themeComponent: AnnotationComponent | undefined = componentName === undefined ? undefined : findAnnotationComponent(theme, componentName);
       if (entry.component !== undefined && entry.component !== '' && themeComponent === undefined) {
         return Err(Object.assign(new ResolveError(), { message: `annotation ${annotation.id}: theme component '${componentName}' not found` }));
       }

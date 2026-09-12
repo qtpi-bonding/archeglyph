@@ -11,6 +11,7 @@ import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
+import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { Canvas } from '../canvas/canvas';
 import { ElementKind, SelectedElement, SelectionContext, SelectionState } from '../canvas/selection';
 import { TopBar } from './top_bar';
@@ -66,7 +67,14 @@ export const App: Component<{}> = (): JSX.Element => {
       console.error(`archeglyph: failed to load diagram: ${result.error.message}`);
       return;
     }
-    const stylesheet: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, {});
+    // A diagram authored without a style file gets the theme's starting
+    // components written in as real bindings, rather than the resolver
+    // assuming them. They show up in the inspector as ordinary entries the
+    // user can change or remove, and they save to the style file like
+    // anything else -- which is the whole point of seeding rather than
+    // defaulting.
+    const loaded: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 });
+    const stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
     installState(createEditorState(result.value.diagram, stylesheet));
   }
 

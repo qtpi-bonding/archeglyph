@@ -23,6 +23,21 @@ message Theme {
   repeated NodeComponent       group_components = 8;       // groups use NodeComponent
   repeated AnnotationComponent annotation_components = 9;
 
+  // The component each element type falls back to when its style entry names
+  // none. Binding stays explicit — the RESOLVER never guesses a name; the
+  // THEME states its own default here, and a theme that omits these leaves
+  // unbound elements unstyled, which is what design.md §5 describes.
+  //
+  // This exists because a diagram with no stylesheet at all is the normal
+  // starting point, and it must still render. Before these fields the resolver
+  // hardcoded the name "glyph", which meant no theme could define a component
+  // called "glyph" without it silently capturing every unbound element.
+  // The bundled themes set these to "glyph"; the name is now ordinary.
+  optional string default_node_component       = 10;
+  optional string default_edge_component       = 11;
+  optional string default_group_component      = 12;
+  optional string default_annotation_component = 13;
+
   // No canvas field on Theme. Canvas is per-document data, lives in Stylesheet.
   // Theme can express its canvas-related defaults via tokens — e.g.,
   //   theme.tokens.colors["background"] = "#1a1a1a"

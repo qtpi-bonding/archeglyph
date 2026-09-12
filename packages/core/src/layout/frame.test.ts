@@ -29,6 +29,7 @@ import { StylesheetSchema, Vec2 } from '@archeglyph/proto/gen/style_pb';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
+import { seedComponentBindings } from '../resolver/seed_bindings';
 import { layoutPipeline } from '../pipeline';
 import { SvgRendererImpl } from '../renderer/svg_renderer';
 import { LaidOutDiagram } from './laid_out_diagram';
@@ -63,9 +64,10 @@ async function layout(json: unknown): Promise<LaidOutDiagram> {
     workerUrl: require_.resolve('elkjs/lib/elk-worker.min.js'),
     workerFactory: (url: string) => new Worker(url),
   });
+  const parsed = fromJson(DiagramSchema, JSON.stringify(json));
   const result = await layoutPipeline(
-    fromJson(DiagramSchema, JSON.stringify(json)),
-    create(StylesheetSchema, { schemaVersion: 1 }),
+    parsed,
+    seedComponentBindings(parsed, create(StylesheetSchema, { schemaVersion: 1 }), blueprintTheme()),
     blueprintTheme(),
     new LayoutEngineImpl(new ElkAdapterImpl(elk)),
   );

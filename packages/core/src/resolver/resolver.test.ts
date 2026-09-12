@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { blueprintTheme } from '@archeglyph/themes';
+import { seedComponentBindings } from './seed_bindings';
+
 // Tests for the style resolver pillar: visibility_filter, style_cascade,
 // token_resolver, and the request/result types around them.
 //
@@ -763,5 +766,63 @@ describe('resolvePipeline end-to-end', () => {
     if (result.kind === 'ok') {
       expect(result.value.nodes[0].layout?.rotation).toBe(45);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Seeding. The contract has two halves and both must hold, so both are pinned:
+// the resolver assumes no binding of its own, AND a diagram authored without a
+// style file still renders, because something wrote real bindings into the
+// stylesheet first. Losing either half is a regression -- the first back to
+// magic in the engine, the second to an invisible diagram.
+// ---------------------------------------------------------------------------
+describe('seedComponentBindings', () => {
+  const graphOf = () => create(DiagramSchema, {
+    schemaVersion: 1,
+    id: 'd',
+    graph: {
+      nodes: { n1: { id: 'n1' } },
+      edges: {},
+      groups: { g1: { id: 'g1' } },
+    },
+  });
+
+  test('writes the theme default as an ordinary stylesheet entry', () => {
+    const seeded = seedComponentBindings(
+      graphOf(),
+      create(StylesheetSchema, { schemaVersion: 1 }),
+      blueprintTheme(),
+    );
+    expect(seeded.nodes.n1?.component).toBe('glyph');
+    expect(seeded.groups.g1?.component).toBe('glyph');
+  });
+
+  test('never overwrites a binding the user already chose', () => {
+    const authored = create(StylesheetSchema, {
+      schemaVersion: 1,
+      nodes: { n1: create(NodeStyleEntrySchema, { component: 'mine' }) },
+    });
+    expect(seedComponentBindings(graphOf(), authored, blueprintTheme()).nodes.n1?.component)
+      .toBe('mine');
+  });
+
+  test('is idempotent', () => {
+    const once = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 1 }), blueprintTheme());
+    const twice = seedComponentBindings(graphOf(), once, blueprintTheme());
+    expect(twice.nodes.n1?.component).toBe(once.nodes.n1?.component);
+    expect(Object.keys(twice.nodes)).toEqual(Object.keys(once.nodes));
+  });
+
+  test('a theme that declares no default seeds nothing', () => {
+    // The name "glyph" is not privileged anywhere. A theme can define a
+    // component called glyph for a specific purpose without it capturing every
+    // unbound element -- which is exactly what the old hardcoded default did.
+    const noDefault = create(ThemeSchema, {
+      schemaVersion: 1,
+      name: 'no-default',
+      nodeComponents: [create(NodeComponentSchema, { name: 'glyph' })],
+    });
+    const seeded = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 1 }), noDefault);
+    expect(seeded.nodes.n1?.component).toBeUndefined();
   });
 });

@@ -28,12 +28,14 @@ import {
   GroupRenderMode,
   GroupStyleEntrySchema,
   StrokeSchema,
+  type Stylesheet,
   StylesheetSchema,
   Vec2,
 } from '@archeglyph/proto/gen/style_pb';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
+import { seedComponentBindings } from '../resolver/seed_bindings';
 import { layoutPipeline } from '../pipeline';
 import { SvgRendererImpl } from '../renderer/svg_renderer';
 import { LaidOutDiagram } from './laid_out_diagram';
@@ -49,11 +51,23 @@ function newElk(): unknown {
   });
 }
 
-async function layout(json: unknown, stylesheet = create(StylesheetSchema, { schemaVersion: 1 })): Promise<LaidOutDiagram> {
+// Component bindings are seeded from the theme's declared defaults before the
+// pipeline runs -- the same step the CLI ops and the editor perform on load.
+// The resolver assumes no binding of its own, so rendering a diagram against a
+// literally empty stylesheet is not a configuration any caller produces; the
+// "unseeded renders unstyled" case is pinned explicitly below instead.
+async function layout(json: unknown, stylesheet?: Stylesheet): Promise<LaidOutDiagram> {
+  const diagram = fromJson(DiagramSchema, JSON.stringify(json));
+  const theme = blueprintTheme();
+  const seeded = seedComponentBindings(
+    diagram,
+    stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }),
+    theme,
+  );
   const result = await layoutPipeline(
-    fromJson(DiagramSchema, JSON.stringify(json)),
-    stylesheet,
-    blueprintTheme(),
+    diagram,
+    seeded,
+    theme,
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
   );
   if (result.kind === 'err') {

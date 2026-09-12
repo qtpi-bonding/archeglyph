@@ -8,6 +8,9 @@ import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { renderPipeline } from '@archeglyph/core/pipeline';
+import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
+import { create } from '@bufbuild/protobuf';
+import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createNodeElk } from '@archeglyph/core/layout/elk_host_node';
@@ -73,8 +76,12 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       }
     }
 
+    // Fill any missing component bindings from the theme's declared defaults,
+    // so a diagram with no style file renders the same here as it does in the
+    // editor. The resolver itself assumes nothing.
+    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), theme);
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
-    const pipelineResult = await renderPipeline(diagramResult.value, stylesheet, theme, layoutEngine);
+    const pipelineResult = await renderPipeline(diagramResult.value, seeded, theme, layoutEngine);
     if (pipelineResult.kind === 'err') {
       throw Object.assign(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }

@@ -55,6 +55,9 @@ export function createSaveController(
       return;
     }
 
+    // Only advance the optimistic-concurrency base after the adapter has
+    // confirmed that the write succeeded.  In particular, do not advance it
+    // for an I/O error or a stale-write rejection.
     baseHash = await hashStylesheet(stylesheet);
     setErrorMessage(undefined);
     setStatus('saved');

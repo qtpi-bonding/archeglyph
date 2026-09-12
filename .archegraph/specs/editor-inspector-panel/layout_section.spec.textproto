@@ -1,0 +1,50 @@
+# Wave 5. One section per schema message, in its own file, as
+# docs/editor-ui-review.md §8 specifies. An earlier draft inlined both
+# sections into Inspector itself; that is the same collapse that produced the
+# six-decl fields.tsx the build could not converge, and it would have left no
+# seam for the four remaining sections to arrive without rewriting Inspector.
+
+file: "packages/editor/src/inspector/sections/layout_section.tsx"
+doc: "The Layout section: x, y, width and height for a node, group or annotation selection."
+
+structs: [
+  { name: "LayoutSectionProps"
+    fields: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "LayoutSection"
+    doc:
+      "Four NumberFieldInputs over layoutModel's four NumberFields.\n"
+      "\n"
+      "Each field's onCommit calls commitLayout for that field name and hands\n"
+      "the result to state.applyStyleEdit, dropping an undefined edit.\n"
+      "commitLayout already decides what a value means -- a move, a resize, a\n"
+      "clear, or nothing -- so this component chooses nothing and computes\n"
+      "nothing.\n"
+      "\n"
+      "SOLID: read layoutModel inside a memo or accessor, never in the\n"
+      "component body. A body runs once, so a model read there freezes at the\n"
+      "mount-time selection.\n"
+      "\n"
+      "All four fields are rendered for all three kinds this section serves,\n"
+      "and all four are settable on all three.\n"
+      "\n"
+      "CLEARING has exactly one restriction, and it is narrow: clearing X or\n"
+      "Y on an ANNOTATION does nothing. commitLayout returns undefined for\n"
+      "that one combination rather than writing an edit with no changes in\n"
+      "it, because an annotation has no auto-layout position to fall back to.\n"
+      "\n"
+      "Everything else clears normally, annotations included: clearing an\n"
+      "annotation's WIDTH or HEIGHT works and returns it to its measured\n"
+      "size, via clearAnnotationSizeEdit."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<LayoutSectionProps>" } }
+    uses: ["layoutModel", "commitLayout", "NumberFieldInput"]
+  }
+]

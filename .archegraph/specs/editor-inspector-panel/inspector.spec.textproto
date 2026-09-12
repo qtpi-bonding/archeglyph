@@ -1,53 +1,88 @@
-# Wave 5. The panel itself: routes by selection, renders the sections the
-# model names, and hands each field's commit to state.applyStyleEdit.
+# Wave 5. The panel: route by selection, render the sections it has, hand
+# focus registration back to the shell. It renders; it decides nothing.
 #
-# This REPLACES packages/editor/src/shell/inspector.tsx, which is deleted in
-# the same build. The old one reads selection from canvas/selection.ts -- the
-# single-element SelectionContext that wave 3 was supposed to retire and that
-# app.tsx still maintains a bridge for solely to keep it alive.
+# SCOPE, stated because it is smaller than wave 5's row promises. That row
+# names seven sections and five field kinds. This pillar ships TWO sections --
+# layout and typography -- and THREE field kinds -- number, colour and token.
+# Shape, line, group, annotation, enum_field and component_picker are a
+# follow-on pillar. Layout and typography are first because between them they
+# exercise every field kind here and both edit-builder families, which leaves
+# the remaining sections mechanical.
+#
+# The consequence is visible and has to be handled rather than hidden:
+# inspectorModel already names all six SectionIds, so it will hand this panel
+# section names it cannot render yet. See Inspector's doc.
+#
+# The field components live one per file under inspector/fields/ -- see
+# number_field.spec.textproto for the commit rule they share.
+#
+# This REPLACES packages/editor/src/shell/inspector.tsx, which is deleted by
+# hand after the build; removing a whole file is not a decl edit.
 
 file: "packages/editor/src/inspector/inspector.tsx"
-doc: "The inspector panel: selection -> sections -> fields -> one StyleEdit per commit."
-
-constants: [
-  { name: "Inspector"
-    doc:
-      "Reads ui.selection() and the scene, builds an InspectorModel, and\n"
-      "renders the sections it names. No selection, or a mixed-kind one,\n"
-      "shows a line of text rather than an empty form.\n"
-      "\n"
-      "Every commit goes through state.applyStyleEdit with the edit from\n"
-      "commitLayout or commitTypography, and an undefined edit is dropped.\n"
-      "One commit, one undo entry.\n"
-      "\n"
-      "SOLID: the model must be a memo or an accessor called in the JSX, not\n"
-      "a value computed in the component body. A component body runs once, so\n"
-      "a model read there would freeze at the mount-time selection -- the\n"
-      "mistake overlay_layer's handle code documents.\n"
-      "\n"
-      "Focus: the root is focusable and the first field carries a ref the\n"
-      "focus-inspector command uses. Escape anywhere in the panel returns\n"
-      "focus to the canvas WITHOUT clearing the selection, which is the\n"
-      "difference between leaving the inspector and deselecting. Inside a\n"
-      "field that same keypress also restores the field's pre-focus value\n"
-      "first; see NumberFieldInput, which owns that half."
-    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<InspectorProps>" } }
-    uses: [
-      "inspectorModel", "layoutModel", "typographyModel", "commitLayout",
-      "commitTypography", "NumberFieldInput", "ColorFieldInput", "TokenFieldInput"
-    ]
-  }
-]
+doc: "The inspector panel: routes a selection to the sections that can render it."
 
 structs: [
   { name: "InspectorProps"
-    doc: "The three things the panel reads. `theme` supplies the token names TokenFieldInput offers."
+    doc:
+      "`geometry` is optional because the scene has none until the first\n"
+      "layout resolves.\n"
+      "\n"
+      "`registerFocus` is how Cmd/Ctrl+I reaches a DOM node. The panel calls\n"
+      "it once on mount with a function that focuses its first field; the\n"
+      "shell keeps that function and hands it to Canvas as onFocusInspector.\n"
+      "It goes to Canvas specifically because Canvas is the only component in\n"
+      "the editor that constructs a CommandContext. Without this prop\n"
+      "the chord resolves to a command that calls undefined and does nothing,\n"
+      "which is the state main is in right now."
     fields: [
       { name: "state", type: { named: { symbol: "EditorState" } } },
       { name: "ui", type: { named: { symbol: "UiState" } } },
       { name: "geometry", type: { named: { symbol: "SceneGeometry" } }, is_optional: true },
-      { name: "theme", type: { named: { symbol: "Theme" } } }
+      { name: "theme", type: { named: { symbol: "Theme" } } },
+      { name: "registerFocus", type: { arrow: { inputs: [{ arrow: { inputs: [], output: { primitive: VOID } } }], output: { primitive: VOID } } }, is_optional: true }
     ]
     typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Inspector"
+    doc:
+      "Reads ui.selection(), builds an InspectorModel, and renders a section\n"
+      "component per entry in model.sections.\n"
+      "\n"
+      "IT RENDERS ONLY THE SECTIONS IT HAS. renderableSections decides which\n"
+      "those are; this component does not filter for itself. The four it does\n"
+      "not ship -- 'shape', 'line', 'group', 'annotation' -- are SKIPPED\n"
+      "SILENTLY: no placeholder, no 'coming soon' row. A section that cannot\n"
+      "be edited is not information the user can act on, and a panel\n"
+      "advertising four inert headings reads as broken rather than as\n"
+      "incomplete.\n"
+      "\n"
+      "No selection, or a mixed-kind one, shows a line of text rather than an\n"
+      "empty form -- inspectorModel returns undefined for both.\n"
+      "\n"
+      "The panel itself applies no edits and constructs no StyleEdit. Each\n"
+      "section owns its own commits.\n"
+      "\n"
+      "SOLID: the model must be a memo or an accessor called in the JSX, not\n"
+      "a value computed in the component body. A body runs once, so a model\n"
+      "read there would freeze at the mount-time selection -- the mistake\n"
+      "overlay_layer's handle code documents.\n"
+      "\n"
+      "FOCUS. Several sections render at once, so \"the first field\" needs\n"
+      "saying precisely: on mount, call props.registerFocus with a function\n"
+      "that focuses the first field of the FIRST section in\n"
+      "renderableSections order. For a node that is Layout's x; for an edge,\n"
+      "which has no Layout section, it is Typography's size. With no\n"
+      "renderable sections the registered function focuses nothing and does\n"
+      "not throw. Escape anywhere in the\n"
+      "panel returns focus to the canvas WITHOUT clearing the selection,\n"
+      "which is the difference between leaving the inspector and deselecting.\n"
+      "Inside a field that same keypress also restores the field's pre-focus\n"
+      "value first; see NumberFieldInput, which owns that half."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<InspectorProps>" } }
+    uses: ["inspectorModel", "renderableSections", "LayoutSection", "TypographySection"]
   }
 ]

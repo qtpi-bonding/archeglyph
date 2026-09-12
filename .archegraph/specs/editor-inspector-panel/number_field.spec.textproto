@@ -1,0 +1,58 @@
+# Wave 5. One field component per file, as docs/editor-ui-review.md §8
+# specified all along. An earlier draft collapsed all three into one
+# fields.tsx; six decls in one file is what the build's convergence step could
+# not merge, and it produced two complete competing implementations instead.
+#
+# The commit rule is the reason this pillar exists. The old inspector called
+# applyStyleEdit from onInput, i.e. per character, so typing "120" ran ELK
+# three times, replaced the whole SVG three times and left three undo entries
+# -- Cmd+Z rewound one character at a time (review §2.5).
+
+file: "packages/editor/src/inspector/fields/number_field.tsx"
+doc: "A numeric inspector field. Commits on blur and Enter, never on input."
+
+structs: [
+  { name: "NumberFieldProps"
+    fields: [
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "field", type: { named: { symbol: "NumberField" } } },
+      { name: "onCommit", type: { arrow: { inputs: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "number | undefined" } }], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "NumberFieldInput"
+    doc:
+      "Renders field.override as the input's value and field.effective as its\n"
+      "placeholder, so an unset field shows the real number greyed rather\n"
+      "than a zero.\n"
+      "\n"
+      "THE LOCAL-STATE RULE, which is easy to get subtly wrong: the input is\n"
+      "driven by a local signal holding the TEXT the user has typed. onInput\n"
+      "updates that signal and does nothing else. onBlur and Enter pass the\n"
+      "CURRENT value of that signal to onCommit. An onBlur that calls\n"
+      "onCommit with a constant, or an onInput that reads the event's value\n"
+      "without storing it, both typecheck and both destroy the field's\n"
+      "contents on every blur.\n"
+      "\n"
+      "An empty string commits undefined, which is what clears an override.\n"
+      "A value that does not parse as a finite number commits nothing and\n"
+      "restores the pre-focus text.\n"
+      "\n"
+      "ESCAPE is one keypress with one outcome: restore the pre-focus text,\n"
+      "do NOT commit, and move focus to the canvas. The document keyboard\n"
+      "handler does not also see it -- shouldIgnoreKey returns true for an\n"
+      "input -- so Escape here cannot additionally clear the selection.\n"
+      "\n"
+      "When field.mixed, the value is empty and the placeholder reads\n"
+      "'Mixed'. Typing into a mixed field and committing sets every selected\n"
+      "element to that one value.\n"
+      "\n"
+      "ArrowUp and ArrowDown step by 1, and by 10 with Shift, committing each\n"
+      "step. Steps pass a coalesce key so a held arrow is one undo entry, the\n"
+      "way nudge already does."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<NumberFieldProps>" } }
+  }
+]

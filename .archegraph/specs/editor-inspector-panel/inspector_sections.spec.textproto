@@ -1,0 +1,53 @@
+# Wave 5. Which sections this panel can actually render, as data.
+#
+# inspectorModel emits all six SectionIds because six is what the DOMAIN has.
+# This pillar ships two components. The gap between those two facts is a
+# decision -- skip what has no component -- and decisions belong in a pure
+# function rather than inside JSX, for the same reason every other rule in
+# this pillar does: there is no DOM harness in this repo, so a rule inside a
+# component is a rule nothing checks.
+#
+# It also gives the follow-on pillar a one-line change: add the SectionId
+# here, add its component to the map in inspector.tsx.
+
+file: "packages/editor/src/inspector/inspector_sections.ts"
+doc: "The SectionIds this panel has components for, and the filter that applies them."
+
+constants: [
+  { name: "SECTION_IDS"
+    doc:
+      "Exactly the sections this pillar ships: 'layout' and 'typography'.\n"
+      "\n"
+      "Order here is NOT display order -- the model owns that. This is a\n"
+      "membership set that happens to be written as an array so it can be\n"
+      "iterated and asserted against.\n"
+      "\n"
+      "Typed as Array<SectionId> rather than string, so a typo is a compile\n"
+      "error instead of a section that silently never matches."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "SectionId" } }] } }
+  }
+]
+
+methods: [
+  { name: "renderableSections"
+    doc:
+      "model.sections filtered to those in SECTION_IDS, IN THE MODEL'S ORDER.\n"
+      "\n"
+      "Order comes from the model because the model is what knows the display\n"
+      "order for a kind; filtering must not reorder. A node whose model says\n"
+      "['layout', 'shape', 'typography'] yields ['layout', 'typography'] --\n"
+      "layout still before typography.\n"
+      "\n"
+      "An edge yields ['typography'] alone, since its only other section is\n"
+      "'line', which this pillar does not ship. That is a one-section panel\n"
+      "and is correct, not a bug.\n"
+      "\n"
+      "Never returns undefined; a model with no renderable sections yields an\n"
+      "empty array, and the panel renders its empty-state line for that."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "SectionId" } }] } }
+    uses: ["SECTION_IDS"]
+  }
+]

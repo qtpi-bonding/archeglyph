@@ -1,0 +1,42 @@
+# Wave 5. The colour field. Same commit rule as number_field; see that file's
+# NumberFieldInput doc for the local-state rule, which governs all three field
+# components and is stated there once in full.
+
+file: "packages/editor/src/inspector/fields/color_field.tsx"
+doc: "A colour inspector field: the value as written, plus a swatch of the resolved colour."
+
+structs: [
+  { name: "TextFieldProps"
+    doc: "Shared by the colour and token fields; token_field.tsx extends it rather than redeclaring it."
+    fields: [
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "field", type: { named: { symbol: "TextField" } } },
+      { name: "onCommit", type: { arrow: { inputs: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } }], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "ColorFieldInput"
+    doc:
+      "A text input beside a swatch. Commit on blur and Enter, Escape\n"
+      "restores and leaves, mixed shows 'Mixed' -- identical to\n"
+      "NumberFieldInput, whose doc states those rules in full. The local\n"
+      "signal holds typed text and onInput only updates it.\n"
+      "\n"
+      "TEXT, not <input type=color>. The value may be a token reference such\n"
+      "as '$colors.accent', and a native colour input cannot hold one --\n"
+      "using it would rewrite every themed colour to a literal on first\n"
+      "touch, which defeats what the tokens are for.\n"
+      "\n"
+      "The input shows field.override, the string as written and NOT\n"
+      "expanded. The swatch and the placeholder show field.effective, the\n"
+      "resolved colour. So '$colors.accent' in the box above '#7ab8ff' in the\n"
+      "swatch is the correct display, not a contradiction.\n"
+      "\n"
+      "An effective value that is not a colour the browser can parse shows no\n"
+      "swatch rather than a wrong one."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TextFieldProps>" } }
+  }
+]

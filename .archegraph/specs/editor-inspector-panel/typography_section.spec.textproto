@@ -1,0 +1,46 @@
+# Wave 5. The Typography section. Same shape as layout_section: read one
+# model, render fields, hand each commit straight to applyStyleEdit.
+
+file: "packages/editor/src/inspector/sections/typography_section.tsx"
+doc: "The Typography section: size, colour and font for any selection kind."
+
+structs: [
+  { name: "TypographySectionProps"
+    fields: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "theme", type: { named: { symbol: "Theme" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "TypographySection"
+    doc:
+      "A NumberFieldInput for size, a ColorFieldInput for colour and a\n"
+      "TokenFieldInput for font, over typographyModel's three fields.\n"
+      "\n"
+      "Every kind has typography, edges included, so this is the one section\n"
+      "that appears for all four selection kinds.\n"
+      "\n"
+      "The font field's token list comes from the theme prop: the keys of\n"
+      "theme.tokens.fonts, each PREFIXED with '$fonts.' so the offered string\n"
+      "is directly usable as a value. A theme defining a font named 'heading'\n"
+      "offers '$fonts.heading', not 'heading' -- the bare key is not a valid\n"
+      "Typography.font reference. Resolving a token to its value is\n"
+      "neither this component's job nor TokenFieldInput's: both show what is\n"
+      "written, and the placeholder carries what it resolves to.\n"
+      "\n"
+      "Each onCommit calls commitTypography and hands the result to\n"
+      "state.applyStyleEdit, dropping an undefined edit. commitTypography is\n"
+      "what preserves the rest of the Typography message, so this component\n"
+      "passes one field name and one value and nothing else.\n"
+      "\n"
+      "SOLID: read typographyModel inside a memo or accessor, never in the\n"
+      "component body."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TypographySectionProps>" } }
+    uses: ["typographyModel", "commitTypography", "NumberFieldInput", "ColorFieldInput", "TokenFieldInput"]
+  }
+]

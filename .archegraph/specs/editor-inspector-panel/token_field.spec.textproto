@@ -1,0 +1,33 @@
+# Wave 5. The token field. Same commit rule as number_field; see that file's
+# NumberFieldInput doc for the local-state rule.
+
+file: "packages/editor/src/inspector/fields/token_field.tsx"
+doc: "A text field offering the theme's token names first, while still accepting a literal."
+
+structs: [
+  { name: "TokenFieldProps"
+    doc: "TextFieldProps plus the token names to offer. Extends it; does not restate its fields."
+    fields: [
+      { name: "tokens", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } }
+    ]
+    extends: [{ named: { symbol: "TextFieldProps" } }]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "TokenFieldInput"
+    doc:
+      "A text input wired to a <datalist> of props.tokens, so tokens are\n"
+      "offered first and a literal stays typeable. Commit on blur and Enter,\n"
+      "Escape restores and leaves, mixed shows 'Mixed'.\n"
+      "\n"
+      "The local signal holds typed text; onInput updates it and nothing\n"
+      "else; onBlur commits that signal's current value. An onBlur that\n"
+      "commits a constant would clear the field every time focus left it.\n"
+      "\n"
+      "The token list arrives as a prop. This file renders; it does not read\n"
+      "a theme or resolve anything."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<TokenFieldProps>" } }
+  }
+]

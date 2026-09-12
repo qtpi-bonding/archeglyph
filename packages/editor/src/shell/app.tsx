@@ -7,6 +7,7 @@ import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
+import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
 import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
@@ -28,7 +29,26 @@ const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk())
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = new URLSearchParams(window.location.search);
   const pair: AdapterPair = selectAdapters(params);
+  // The DOCUMENT's palette — part of the style file, and what
+  // `archeglyph render` uses. Independent of the chrome below.
   const theme: Theme = getBundledTheme('blueprint');
+
+  // The APPLICATION's palette. An editor preference, never document data:
+  // it is not written to the diagram or the style file, and the two are free
+  // to disagree (dark chrome around a light document is a normal thing to
+  // want). Persisted per browser; a stored name that no longer exists falls
+  // back rather than leaving the chrome unstyled.
+  const storedChrome: string | null = (() => {
+    try { return localStorage.getItem('archeglyph.editorTheme'); } catch { return null; }
+  })();
+  const [chrome, setChrome] = createSignal(
+    findEditorTheme(storedChrome ?? DEFAULT_EDITOR_THEME) ?? EDITOR_THEMES[0],
+  );
+  createEffect((): void => {
+    const active = chrome();
+    applyEditorTheme(active, document.documentElement);
+    try { localStorage.setItem('archeglyph.editorTheme', active.name); } catch { /* private window */ }
+  });
   const ui = createUiState();
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
@@ -108,7 +128,12 @@ export const App: Component<{}> = (): JSX.Element => {
             </div>
           </Show>
         }>
-          <TopBar state={state()!} adapter={pair.adapter} />
+          <TopBar
+            state={state()!}
+            adapter={pair.adapter}
+            editorTheme={chrome().name}
+            onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
+          />
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
               <Show when={scene() !== null}>

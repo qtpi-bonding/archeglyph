@@ -12,11 +12,15 @@ import {
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { EditorState } from '../state/editor_state';
+import { EDITOR_THEMES } from './editor_theme';
 import { HostAdapter } from '../adapters/host_adapter';
 
 export interface TopBarProps {
   state: EditorState;
   adapter: HostAdapter;
+  /** Active chrome palette name, and a setter. Wave 6's toolbar takes this over. */
+  editorTheme: string;
+  onEditorTheme: (name: string) => void;
 }
 
 type SaveStatus = 'saved' | 'saving' | 'error';
@@ -85,6 +89,19 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
       <button disabled={!props.state.canUndo()} onClick={onUndo}>Undo</button>
       <button disabled={!props.state.canRedo()} onClick={onRedo}>Redo</button>
       <button onClick={onAddAnnotation}>+ Annotation</button>
+      {/* Chrome palette. Deliberately separate from the diagram's theme —
+          this styles the application, not the document, and is never written
+          to the style file. A placeholder until wave 6's toolbar. */}
+      <select
+        aria-label="Editor theme"
+        value={props.editorTheme}
+        onChange={(event): void => { props.onEditorTheme(event.currentTarget.value); }}
+        style={{ 'margin-left': '8px' }}
+      >
+        {EDITOR_THEMES.map((theme) => (
+          <option value={theme.name}>{theme.label}</option>
+        ))}
+      </select>
     </div>
   );
 };

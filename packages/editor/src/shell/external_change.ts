@@ -67,6 +67,7 @@ export async function checkForExternalChange(
     return undefined;
   }
 
+  // Only load after the stamp differs so unchanged focus events remain cheap.
   const loadResult: Result<LoadResult, AdapterError> = await adapter.load();
   if (loadResult.kind === 'err' || loadResult.value.stylesheet === undefined) {
     return undefined;

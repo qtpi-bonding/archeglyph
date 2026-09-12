@@ -148,8 +148,20 @@ execution:
     # orchestrator commits" rule. UNVALIDATED against a real archegraph
     # per-node build as of authoring — sanity-check with a single-node build
     # (or --render-prompts dry run) before trusting this on a full run.
+    # TEMPORARY (2026-09-12): swapped from gait/gpt-luna to `claude -p` on
+    # Haiku 4.5, because the gait provider account hit its usage limit
+    # mid-build ("HTTP 429 usage_limit_reached", plan_type plus). Revert by
+    # swapping the two `command:` lines back -- the gait line below is intact
+    # and unchanged.
+    #
+    # `cd {{working_dir}}` puts claude in THIS node's worktree, which is what
+    # --codebase did for gait. bypassPermissions is the equivalent of gait's
+    # --auto-approve plus its --allow patterns. No git flags: archegraph's own
+    # git.commit_template still does the per-node commit after this exits.
     - attempts: 4
-      command: 'gait --gait-dir $HOME/Documents/gait-trace --codebase {{working_dir}} --auto-approve --allow "read:*" --allow "write:*" --allow "apply_patch:*" --allow "shell:*" --allow "glob:*" --allow "grep:*" --allow "ls:*" --inference gpt-luna "$(cat {{config_file}})"'
+      command: 'cd {{working_dir}} && claude -p "$(cat {{config_file}})" --model claude-haiku-4-5-20251001 --permission-mode bypassPermissions --allowedTools "Read,Write,Edit,Bash,Glob,Grep"'
+    # - attempts: 4
+    #   command: 'gait --gait-dir $HOME/Documents/gait-trace --codebase {{working_dir}} --auto-approve --allow "read:*" --allow "write:*" --allow "apply_patch:*" --allow "shell:*" --allow "glob:*" --allow "grep:*" --allow "ls:*" --inference gpt-luna "$(cat {{config_file}})"'
 
   # Cross-archegraph-boundary type imports. archegraph's TS codegen needs
   # to know how to spell the import for a foreign-namespace proto package

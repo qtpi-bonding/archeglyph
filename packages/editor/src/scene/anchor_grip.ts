@@ -2,6 +2,10 @@
 
 import { boundsCentre, boundsProjectToEdge, type Bounds } from '@archeglyph/core/geometry/bounds';
 import { type Vec2 } from '@archeglyph/core/geometry/vec2';
+import { RefKind } from '@archeglyph/proto/gen/style_pb';
+import type { ElementRef } from '../ui_state/ui_state';
+import { elementKey } from './element_key';
+import type { SceneGeometry } from './scene';
 
 /**
  * How far OUTSIDE the annotation's outline the grip centre sits, in
@@ -34,5 +38,35 @@ export function anchorGripPoint(bounds: Bounds, towardCentre?: Vec2): Vec2 {
   };
 }
 export function anchorGripAt(geometry: SceneGeometry, selection: Array<ElementRef>, point: Vec2, radius: number): ElementRef | undefined {
-  throw new Error('not implemented');
+  if (selection.length !== 1 || selection[0].kind !== 'annotation') {
+    return undefined;
+  }
+
+  const annotation = selection[0];
+  const annotationEntry = geometry.byKey[elementKey(annotation)];
+  if (annotationEntry === undefined) {
+    return undefined;
+  }
+
+  const laidOutAnnotation = geometry.diagram.annotations.find((candidate) => candidate.id === annotation.id);
+  let towardCentre: Vec2 | undefined;
+  const anchor = laidOutAnnotation?.anchor;
+  if (anchor !== undefined) {
+    const targetKind = anchor.refKind === RefKind.NODE
+      ? 'node'
+      : anchor.refKind === RefKind.GROUP
+        ? 'group'
+        : undefined;
+    if (targetKind !== undefined) {
+      const targetEntry = geometry.byKey[elementKey({ kind: targetKind, id: anchor.refId })];
+      if (targetEntry !== undefined) {
+        towardCentre = boundsCentre(targetEntry.bounds);
+      }
+    }
+  }
+
+  const grip = anchorGripPoint(annotationEntry.bounds, towardCentre);
+  const dx = grip.x - point.x;
+  const dy = grip.y - point.y;
+  return dx * dx + dy * dy <= radius * radius ? annotation : undefined;
 }

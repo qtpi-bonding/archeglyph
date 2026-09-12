@@ -13,6 +13,9 @@ export function watchOnFocus(adapter: HostAdapter, currentStylesheet: () => Styl
   let hasLastStamp: boolean = false;
   let lastStamp: FileStamp;
 
+  // Focus can fire repeatedly while an asynchronous check is in flight. Keep
+  // the listener synchronous and serialize the checks instead of queueing
+  // stale stylesheet snapshots.
   const check: () => void = (): void => {
     if (checking || disposed) {
       return;

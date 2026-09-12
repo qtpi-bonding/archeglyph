@@ -227,7 +227,15 @@ execution:
   #
   # Same relative depth as the post_dag link: .archebuild/worktrees/<name>/ is
   # three levels below the project root either way.
-  pre_node:
+  # KEY NAME MATTERS: `pre_node_defaults`, not `pre_node`. The config struct
+  # is `ExecutionConfig.pre_node_defaults: Vec<PreNodeDefaultConfig>`
+  # (archegraph crates/build-core/src/config.rs:118), composed into every
+  # `Node.pre_node` list. There is no `deny_unknown_fields` on that struct, so
+  # a top-level `pre_node:` block parses, is dropped silently, and the step
+  # never runs. This file carried exactly that for a while and it cost a
+  # 27-node build: every node's test gate failed on unresolved imports while
+  # the block sat here looking correct.
+  pre_node_defaults:
     - label: link-node-modules
       command: |
         [ -e node_modules ] || ln -s ../../../node_modules node_modules

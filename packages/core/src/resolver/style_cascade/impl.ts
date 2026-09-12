@@ -271,6 +271,7 @@ export class StyleCascadeImpl implements StyleCascade {
       }
       const resolved: ResolvedAnnotation = Object.assign(new ResolvedAnnotation(), {
         id: annotation.id,
+        anchor: entry.anchor,
         shape,
         typography,
         callout,

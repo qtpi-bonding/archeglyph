@@ -388,6 +388,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         const size: Vec2 = ann.layout?.size ?? vec2(measuredWidth, measuredHeight);
         return Object.assign(new LaidOutAnnotation(), {
           id: ann.id,
+          anchor: ann.anchor,
           position: ann.layout?.position ?? vec2(0, 0),
           size,
           shape: ann.shape,

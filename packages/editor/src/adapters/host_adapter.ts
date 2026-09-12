@@ -7,6 +7,8 @@ import { Result } from '@archeglyph/proto/util/result';
 export class LoadResult {
   diagram!: Diagram;
   stylesheet?: Stylesheet;
+  baseHash!: string;
+  stamp?: FileStamp;
 }
 export class AdapterError {
   message!: string;

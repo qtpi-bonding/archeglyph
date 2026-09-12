@@ -24,6 +24,17 @@ export function routePress(context: PressContext, current: Array<ElementRef>): G
     return { kind: 'pan' };
   }
 
+  // The annotation tool has its own press semantics.  A press on the empty
+  // canvas (or on another element) creates a new annotation at the press
+  // point.  Pressing an existing annotation is reserved for dragging its
+  // callout anchor; it must not turn into a move of the annotation itself.
+  if (context.tool === 'annotation') {
+    if (context.hit?.kind === 'annotation') {
+      return { kind: 'anchor', ref: context.hit };
+    }
+    return { kind: 'create-annotation' };
+  }
+
   // A handle is meaningful only in the context of an existing selection.  Do
   // not let a stale handle hit turn an empty selection into a resize.
   if (context.onHandle !== undefined && current.length > 0) {
@@ -60,9 +71,10 @@ export function routePress(context: PressContext, current: Array<ElementRef>): G
 }
 
 export interface GestureDecision {
-  kind: 'pan' | 'move' | 'marquee' | 'resize' | 'none';
+  kind: 'pan' | 'move' | 'marquee' | 'resize' | 'create-annotation' | 'anchor' | 'none';
   selection?: Array<ElementRef>;
   handle?: Handle;
+  ref?: ElementRef;
 }
 export function exceedsThreshold(origin: Vec2, current: Vec2): boolean {
   const dx = current.x - origin.x;

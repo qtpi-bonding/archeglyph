@@ -192,6 +192,17 @@ export class ElkAdapterImpl implements LayoutAdapter {
         // or out of a group is exactly that case.
         'org.eclipse.elk.hierarchyHandling': 'INCLUDE_CHILDREN',
       };
+      // Root children are laid out by the root graph itself.  As with a
+      // compound group's layoutOptions above, fixed belongs to that parent
+      // graph rather than to the pinned child.
+      const hasPositionedRootChild = diagram.groups.some(group =>
+        group.parentGroup === undefined && group.layout?.position !== undefined,
+      ) || diagram.nodes.some(node =>
+        node.parentGroup === undefined && node.layout?.position !== undefined,
+      );
+      if (hasPositionedRootChild) {
+        layoutOptions['org.eclipse.elk.fixed'] = 'true';
+      }
       if (diagram.canvas?.nodeSpacing !== undefined) {
         layoutOptions['org.eclipse.elk.spacing.nodeNode'] = String(diagram.canvas.nodeSpacing);
       }

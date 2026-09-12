@@ -142,9 +142,9 @@ export const COMMANDS: Array<Command> = [
   { id: 'nudge-right', label: 'Nudge right', run: (context: CommandContext): void => runNudge(context, 1, 0) },
   { id: 'ring-next', label: 'Next element', run: (context: CommandContext): void => runRing(context, 'next') },
   { id: 'ring-prev', label: 'Previous element', run: (context: CommandContext): void => runRing(context, 'prev') },
-  { id: 'pin-all' as CommandId, label: 'Pin all', run: runPinAll },
-  { id: 'unpin-all' as CommandId, label: 'Unpin all', run: runUnpinAll },
-  { id: 'auto-layout' as CommandId, label: 'Auto layout', run: runUnpinAll },
+  { id: 'pin-all', label: 'Pin all', run: runPinAll },
+  { id: 'unpin-all', label: 'Unpin all', run: runUnpinAll },
+  { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
 ];
 

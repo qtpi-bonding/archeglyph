@@ -5,7 +5,10 @@ export interface Chord {
   meta?: boolean;
   shift?: boolean;
 }
-export type CommandId = 'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'save';
+export type CommandId = 'undo' | 'redo' | 'delete' |
+  'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' |
+  'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |
+  'auto-layout' | 'reset-size' | 'save';
 
 export interface KeymapEntry {
   chord: Chord;

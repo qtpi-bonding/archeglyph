@@ -4,7 +4,8 @@ import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { fromJson, toJson } from '@archeglyph/proto/util/json';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
-import { AdapterError, HostAdapter, LoadResult } from './host_adapter';
+import { AdapterError, FileStamp, HostAdapter, LoadResult } from './host_adapter';
+import { hashStylesheet } from '../state/stylesheet_hash';
 
 function toAdapterError(e: unknown): AdapterError {
   return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
@@ -58,9 +59,10 @@ export class UrlParamAdapter implements HostAdapter {
         if (stylesheetB64 !== null) {
           const stylesheetJson: string = atob(stylesheetB64);
           const stylesheet: Stylesheet = fromJson(StylesheetSchema, stylesheetJson);
-          return Ok(Object.assign(new LoadResult(), { diagram, stylesheet }));
+          const baseHash: string = await hashStylesheet(stylesheet);
+          return Ok(Object.assign(new LoadResult(), { diagram, stylesheet, baseHash }));
         } else {
-          return Ok(Object.assign(new LoadResult(), { diagram }));
+          return Ok(Object.assign(new LoadResult(), { diagram, baseHash: '' }));
         }
       } else {
         const url: string = this.remoteUrl ?? '';
@@ -68,20 +70,36 @@ export class UrlParamAdapter implements HostAdapter {
         const diagJson: string = await response.text();
         const diagram: Diagram = fromJson(DiagramSchema, diagJson);
         this.loadedDiagram = diagram;
-        return Ok(Object.assign(new LoadResult(), { diagram }));
+        return Ok(Object.assign(new LoadResult(), { diagram, baseHash: '' }));
       }
     } catch (e: unknown) {
       return Err(toAdapterError(e));
     }
   }
 
-  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
+  async save(stylesheet: Stylesheet, _expectedBaseHash?: string): Promise<Result<void, AdapterError>> {
     try {
       // Remote diagrams are deliberately read-only.  `loadedDiagram` is also
       // populated for remote loads, so checking it alone would accidentally
       // allow a caller to mutate the URL despite canSave() being false.
       if (!this.canSave()) {
         return Ok(undefined);
+      }
+      if (_expectedBaseHash !== undefined && this.inlineStyleB64 === null) {
+        return Err(Object.assign(new AdapterError(), {
+          kind: 'unsupported',
+          message: 'The current host cannot verify the file before saving',
+        }));
+      }
+      if (_expectedBaseHash !== undefined && this.inlineStyleB64 !== null) {
+        const current: Stylesheet = fromJson(StylesheetSchema, atob(this.inlineStyleB64));
+        const actualHash: string = await hashStylesheet(current);
+        if (actualHash !== _expectedBaseHash) {
+          return Err(Object.assign(new AdapterError(), {
+            kind: 'stale',
+            message: 'The stylesheet changed externally',
+          }));
+        }
       }
       const diagram: Diagram | null = this.loadedDiagram;
       if (diagram !== null) {
@@ -98,6 +116,13 @@ export class UrlParamAdapter implements HostAdapter {
     } catch (e: unknown) {
       return Err(toAdapterError(e));
     }
+  }
+
+  async stat(): Promise<Result<FileStamp, AdapterError>> {
+    return Err(Object.assign(new AdapterError(), {
+      kind: 'unsupported',
+      message: 'The URL host has no file to stat',
+    }));
   }
 }
 

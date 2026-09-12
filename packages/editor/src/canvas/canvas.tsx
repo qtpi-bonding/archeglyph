@@ -245,6 +245,8 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   return (
     <div
       ref={containerRef}
+      data-archeglyph-canvas="true"
+      tabIndex={-1}
       style={{
         position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
         'background-color': background(),

@@ -17,7 +17,7 @@ import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { Canvas } from '../canvas/canvas';
 import { ElementKind, SelectedElement, SelectionContext, SelectionState } from '../canvas/selection';
 import { TopBar } from './top_bar';
-import { Inspector } from './inspector';
+import { Inspector } from '../inspector/inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
 import { createUiState } from '../ui_state/ui_state';
 import { Scene, createScene } from '../scene/scene';
@@ -58,6 +58,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
+  let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
   const [getSelected, setSelectedSignal] = createSignal<SelectedElement | null>(null);
@@ -172,12 +173,22 @@ export const App: Component<{}> = (): JSX.Element => {
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
               <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} />
+                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={(): void => focusInspector?.()} />
               </Show>
             </Resizable.Panel>
             <Resizable.Handle />
             <Resizable.Panel initialSize={'280px'} minSize={'200px'} style={{ height: '100%', overflow: 'hidden' }}>
-              <Inspector state={state()!} />
+              <Show when={scene()?.geometry()}>
+                {(geometry) => (
+                  <Inspector
+                    state={state()!}
+                    ui={ui}
+                    geometry={geometry()}
+                    theme={theme}
+                    registerFocus={(focus: () => void): void => { focusInspector = focus; }}
+                  />
+                )}
+              </Show>
             </Resizable.Panel>
           </Resizable>
         </Show>

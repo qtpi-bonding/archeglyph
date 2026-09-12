@@ -111,6 +111,6 @@ constants: [
       "non-annotation. There is no surface for a hint until the editor-shell\n"
       "status island exists, so Delete on a node is silent for now."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Array<Command>" } }
-    uses: ["Command", "CommandContext", "deleteAnnotationEdit", "duplicateAnnotationEdit", "addAnnotationEdit", "setNodesHiddenEdit", "newAnnotationId", "NEW_ANNOTATION_TEXT", "clearSelection", "elementKey"]
+    uses: ["Command", "CommandContext", "deleteAnnotationEdit", "duplicateAnnotationEdit", "addAnnotationEdit", "setNodesHiddenEdit", "newAnnotationId", "NEW_ANNOTATION_TEXT", "NEW_ANNOTATION_SIZE", "clearSelection", "elementKey"]
   }
 ]

@@ -49,19 +49,63 @@ export function routeEdgeBetween(
   return routeStraight(sourceBounds, targetBounds, sourceAttach, targetAttach);
 }
 
-export function resizeBounds(bounds: Bounds, handle: Handle, delta: Vec2): Bounds {
+export function resizeBounds(bounds: Bounds, handle: Handle, delta: Vec2, keepAspect: boolean = false): Bounds {
   const minimumSize = 1;
   const movesMinX = handle === 'nw' || handle === 'w' || handle === 'sw';
   const movesMaxX = handle === 'ne' || handle === 'e' || handle === 'se';
   const movesMinY = handle === 'nw' || handle === 'n' || handle === 'ne';
   const movesMaxY = handle === 'sw' || handle === 's' || handle === 'se';
 
-  return {
+  const free = {
     minX: movesMinX ? Math.min(bounds.maxX - minimumSize, bounds.minX + delta.x) : bounds.minX,
     minY: movesMinY ? Math.min(bounds.maxY - minimumSize, bounds.minY + delta.y) : bounds.minY,
     maxX: movesMaxX ? Math.max(bounds.minX + minimumSize, bounds.maxX + delta.x) : bounds.maxX,
     maxY: movesMaxY ? Math.max(bounds.minY + minimumSize, bounds.maxY + delta.y) : bounds.maxY,
   };
+
+  const width = bounds.maxX - bounds.minX;
+  const height = bounds.maxY - bounds.minY;
+  if (!keepAspect || height === 0 || width === 0) {
+    return free;
+  }
+
+  const ratio = width / height;
+  const widthChange = Math.abs((free.maxX - free.minX - width) / width);
+  const heightChange = Math.abs((free.maxY - free.minY - height) / height);
+  const widthDrives = widthChange >= heightChange;
+  const targetWidth = widthDrives
+    ? Math.max(free.maxX - free.minX, minimumSize, ratio * minimumSize)
+    : (free.maxY - free.minY) * ratio;
+  const targetHeight = widthDrives
+    ? targetWidth / ratio
+    : Math.max(free.maxY - free.minY, minimumSize, minimumSize / ratio);
+
+  let minX = free.minX;
+  let minY = free.minY;
+  let maxX = free.maxX;
+  let maxY = free.maxY;
+
+  if (movesMinX) {
+    minX = maxX - targetWidth;
+  } else if (movesMaxX) {
+    maxX = minX + targetWidth;
+  } else {
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    minX = centerX - targetWidth / 2;
+    maxX = centerX + targetWidth / 2;
+  }
+
+  if (movesMinY) {
+    minY = maxY - targetHeight;
+  } else if (movesMaxY) {
+    maxY = minY + targetHeight;
+  } else {
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    minY = centerY - targetHeight / 2;
+    maxY = centerY + targetHeight / 2;
+  }
+
+  return { minX, minY, maxX, maxY };
 }
 
 function shifted(bounds: Bounds, delta: Vec2): Bounds {

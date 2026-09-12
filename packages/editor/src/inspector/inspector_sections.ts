@@ -4,7 +4,7 @@
 import type { InspectorModel, SectionId } from './model';
 
 /**
- * Exactly the sections this pillar ships: 'layout' and 'typography'.
+ * Exactly the sections this pillar ships: 'layout', 'shape', 'line', and 'typography'.
  *
  * Order here is NOT display order -- the model owns that. This is a
  * membership set that happens to be written as an array so it can be
@@ -13,7 +13,7 @@ import type { InspectorModel, SectionId } from './model';
  * Typed as Array<SectionId> rather than string, so a typo is a compile
  * error instead of a section that silently never matches.
  */
-export const SECTION_IDS: Array<SectionId> = ['layout', 'typography'];
+export const SECTION_IDS: Array<SectionId> = ['layout', 'shape', 'line', 'typography'];
 
 /**
  * Return the sections this pillar can render, preserving the model's order.

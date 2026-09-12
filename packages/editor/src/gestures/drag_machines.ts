@@ -5,6 +5,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { create } from '@bufbuild/protobuf';
 import { StyleEdit, Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { elementKey } from '../scene/element_key';
+import { Handle } from '../scene/hit_test';
 import { ScenePreview, previewMove, previewResize, resizeBounds } from '../scene/preview';
 import { SceneGeometry } from '../scene/scene';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
@@ -104,10 +105,6 @@ export function panUpdate(session: PanSession, current: Vec2): Viewport {
     zoom: session.viewport.zoom,
   };
 }
-import { ElementRef } from '../element_ref';
-import { Handle } from '../handle';
-import { Vec2 } from '../vec2';
-
 export interface ResizeSession {
   ref: ElementRef;
   handle: Handle;

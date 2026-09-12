@@ -4,6 +4,8 @@
 import {
   AnnotationEntrySchema,
   AnnotationLayoutSchema,
+  GroupLayoutSchema,
+  GroupStyleEntrySchema,
   NodeLayoutSchema,
   NodeStyleEntrySchema,
   StyleEdit,
@@ -20,6 +22,29 @@ export function resizeGroupEdit(stylesheet: Stylesheet, groupId: string, positio
     groupChanges: [
       groupChange(groupId, patchGroupEntry(existing, { position, size })),
     ],
+  });
+}
+
+export function clearGroupSizeEdit(stylesheet: Stylesheet, groupId: string): StyleEdit {
+  const existing = stylesheet.groups[groupId];
+  const after =
+    existing === undefined
+      ? undefined
+      : create(GroupStyleEntrySchema, {
+          ...existing,
+          ...(existing.layout === undefined
+            ? {}
+            : {
+                layout: create(GroupLayoutSchema, {
+                  ...existing.layout,
+                  size: undefined,
+                }),
+              }),
+        });
+
+  return styleEdit({
+    groupChanges: [groupChange(groupId, after)],
+    description: 'Clear group size override',
   });
 }
 

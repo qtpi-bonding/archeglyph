@@ -159,7 +159,7 @@ export class UrlParamAdapter implements HostAdapter {
     }
   }
 
-  async save(stylesheet: Stylesheet, _expectedBaseHash?: string): Promise<Result<void, AdapterError>> {
+  async save(stylesheet: Stylesheet): Promise<Result<void, AdapterError>> {
     try {
       // Remote diagrams are deliberately read-only.  `loadedDiagram` is also
       // populated for remote loads, so checking it alone would accidentally
@@ -167,31 +167,25 @@ export class UrlParamAdapter implements HostAdapter {
       if (!this.canSave()) {
         return Ok(undefined);
       }
-      if (_expectedBaseHash !== undefined && this.inlineStyleB64 === null) {
-        return Err(Object.assign(new AdapterError(), {
-          kind: 'unsupported',
-          message: 'The current host cannot verify the file before saving',
-        }));
-      }
-      if (_expectedBaseHash !== undefined && this.inlineStyleB64 !== null) {
-        const current: Stylesheet = fromJson(StylesheetSchema, atob(this.inlineStyleB64));
-        const actualHash: string = await hashStylesheet(current);
-        if (actualHash !== _expectedBaseHash) {
-          return Err(Object.assign(new AdapterError(), {
-            kind: 'stale',
-            message: 'The stylesheet changed externally',
-          }));
-        }
-      }
       const diagram: Diagram | null = this.loadedDiagram;
       if (diagram !== null) {
-        const diagJson: string = toJson(DiagramSchema, diagram);
-        const stylesheetJson: string = toJson(StylesheetSchema, stylesheet);
-        const diagB64: string = btoa(diagJson);
-        const styleB64: string = btoa(stylesheetJson);
+        // Saving here does not write to any repository -- it rewrites this
+        // page's address so the link itself carries the edit.
+        //
+        // Into the FRAGMENT, never the query. The browser transmits a query
+        // string and strips a fragment, so a diagram in the query reaches the
+        // static host, its proxies, its access logs, and any third party the
+        // page contacts via Referer. This is the write half of that rule; the
+        // read half lives in shell/url_params. Getting one right and not the
+        // other leaves the content in the query anyway, which is what happened
+        // the first time.
         const url: URL = new URL(window.location.href);
-        url.searchParams.set('d', diagB64);
-        url.searchParams.set('s', styleB64);
+        const fragment: URLSearchParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+        fragment.set('d', btoa(toJson(DiagramSchema, diagram)));
+        fragment.set('s', btoa(toJson(StylesheetSchema, stylesheet)));
+        url.searchParams.delete('d');
+        url.searchParams.delete('s');
+        url.hash = fragment.toString();
         history.replaceState(null, '', url.toString());
       }
       return Ok(undefined);

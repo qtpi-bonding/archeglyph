@@ -8,6 +8,8 @@
 // here rather than left to be rediscovered.
 
 import { describe, expect, test } from 'bun:test';
+import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
+import { fromJson } from '@archeglyph/proto/util/json';
 import { buildGitHubUrl, UrlParamAdapter } from './url_param_adapter';
 
 const DIAGRAM = JSON.stringify({
@@ -113,5 +115,72 @@ describe('buildGitHubUrl', () => {
       repo: 'me/repo', path: 'docs/arch.diag.json', ref: 'abc123',
     });
     expect(url).not.toContain('#');
+  });
+});
+
+// Saving an inline diagram rewrites this page's address so the link carries
+// the edit. It must write to the fragment for the same reason reading does:
+// the browser transmits a query string and strips a fragment. The read half
+// was fixed first and the write half was not, which put the content straight
+// back in the query -- so both halves are pinned.
+describe('inline save writes to the fragment', () => {
+  const b64 = (value: string): string => btoa(value);
+
+  /**
+   * Stub the browser globals `save()` touches. It reads `window.location.href`
+   * and calls `history.replaceState`, neither of which bun provides, so both
+   * are installed for the duration of the call and the resulting href handed
+   * back for inspection.
+   */
+  async function savedHref(startHref: string, run: () => Promise<unknown>): Promise<string> {
+    let current: string = startHref;
+    const g = globalThis as Record<string, unknown>;
+    const priorWindow = g['window'];
+    const priorHistory = g['history'];
+    g['window'] = { location: { get href(): string { return current; } } };
+    g['history'] = { replaceState: (_a: unknown, _b: unknown, next: string): void => { current = next; } };
+    try {
+      await run();
+      return current;
+    } finally {
+      g['window'] = priorWindow;
+      g['history'] = priorHistory;
+    }
+  }
+
+  test('puts d and s after the # and leaves none in the query', async () => {
+    const adapter = new UrlParamAdapter(b64(DIAGRAM), b64(STYLE), null);
+    await adapter.load();
+    const saved = new URL(await savedHref(
+      'https://archeglyph.com/?pr=42',
+      () => adapter.save(fromJson(StylesheetSchema, STYLE)),
+    ));
+    expect(saved.searchParams.get('d')).toBeNull();
+    expect(saved.searchParams.get('s')).toBeNull();
+    expect(saved.hash).toContain('d=');
+    expect(saved.hash).toContain('s=');
+  });
+
+  test('keeps locators in the query', async () => {
+    const adapter = new UrlParamAdapter(b64(DIAGRAM), b64(STYLE), null);
+    await adapter.load();
+    const saved = new URL(await savedHref(
+      'https://archeglyph.com/?pr=42',
+      () => adapter.save(fromJson(StylesheetSchema, STYLE)),
+    ));
+    expect(saved.searchParams.get('pr')).toBe('42');
+  });
+
+  test('clears a stale d from the query left by an older link', async () => {
+    // An old ?d= link that gets edited must not keep the old content in the
+    // query alongside the new content in the fragment.
+    const adapter = new UrlParamAdapter(b64(DIAGRAM), b64(STYLE), null);
+    await adapter.load();
+    const saved = new URL(await savedHref(
+      'https://archeglyph.com/?d=OLD&s=OLD',
+      () => adapter.save(fromJson(StylesheetSchema, STYLE)),
+    ));
+    expect(saved.search).not.toContain('OLD');
+    expect(saved.hash).toContain('d=');
   });
 });

@@ -99,6 +99,18 @@ export function syncToFile(
     return { stop: (): void => { observer.disconnect(); } };
   }
 
-  const timer: ReturnType<typeof setInterval> = setInterval((): void => { void tick(); }, POLL_INTERVAL_MS);
-  return { stop: (): void => { clearInterval(timer); } };
+  // Nothing to follow when the host cannot report a stamp. A diagram loaded
+  // from a URL is the clear case: a link pinned to a commit is immutable by
+  // construction, so there is nothing to poll for, and a timer ticking
+  // uselessly for the lifetime of the page is worse than no timer. Probe once
+  // rather than trusting the adapter's type -- the answer can depend on how it
+  // was constructed.
+  let timer: ReturnType<typeof setInterval> | undefined;
+  void adapter.stat().then((probe): void => {
+    if (probe.kind === 'err') {
+      return;
+    }
+    timer = setInterval((): void => { void tick(); }, POLL_INTERVAL_MS);
+  });
+  return { stop: (): void => { if (timer !== undefined) { clearInterval(timer); } } };
 }

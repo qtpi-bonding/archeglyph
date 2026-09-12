@@ -1,0 +1,17 @@
+# Wave 5 follow-on. The line vocabularies, alone in their own file. See
+# shape_names for why the names are explicit tables rather than derived, and
+# why the file holds nothing else.
+
+file: "packages/editor/src/inspector/models/line_names.ts"
+doc: "The display-name tables for StrokePattern and ArrowheadVariant."
+
+constants: [
+  { name: "PATTERN_TABLE"
+    doc: "Pairs of { name, value } for StrokePattern in enum order: solid, dashed, dotted. Excludes the zero value. Note the generated members here are UNSPECIFIED, SOLID, DASHED, DOTTED -- protobuf-es DID strip this enum's prefix, because STROKE_PATTERN_ matches StrokePattern."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ReadonlyArray<{ name: string; value: StrokePattern }>" } }
+  },
+  { name: "ARROWHEAD_TABLE"
+    doc: "Pairs of { name, value } for ArrowheadVariant in enum order: none, open, filled, diamond, circle, tee. Excludes the zero value. The generated members KEEP their prefix -- ArrowheadVariant.ARROWHEAD_NONE -- because ARROWHEAD_ does not match ArrowheadVariant; the display name drops it."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ReadonlyArray<{ name: string; value: ArrowheadVariant }>" } }
+  }
+]

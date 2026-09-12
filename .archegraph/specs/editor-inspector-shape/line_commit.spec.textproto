@@ -1,0 +1,45 @@
+# Wave 5 follow-on. The Line section's WRITE half, alone in its file.
+
+file: "packages/editor/src/inspector/models/line_commit.ts"
+doc: "Builds the StyleEdit for one Line field across a selection."
+
+methods: [
+  { name: "commitLine"
+    doc:
+      "One StyleEdit for one Line field across the WHOLE selection, or\n"
+      "undefined when nothing should be written. Multi-select applies to both\n"
+      "kinds; do not special-case a single id.\n"
+      "\n"
+      "  edge        writes `connection`, via edgeChange + patchEdgeEntry\n"
+      "  annotation  writes `callout`, via annotationChange +\n"
+      "              patchAnnotationEntry\n"
+      "Both take the whole Glyph1D, so read the existing one and replace a\n"
+      "single field rather than sending a fresh message.\n"
+      "\n"
+      "THERE IS NO SEPARATE 'ADD A CALLOUT' ACTION. Committing any one of the\n"
+      "five fields on an annotation that has no callout CREATES the callout,\n"
+      "holding that one field and nothing else.\n"
+      "\n"
+      "Arrowheads are a nested message: writing arrowStart or arrowEnd\n"
+      "rebuilds Arrowheads with the OTHER variant and `size` preserved.\n"
+      "Writing one and dropping the other is the exact failure the builder\n"
+      "tests exist to catch, one level deeper.\n"
+      "\n"
+      "PAINT AND DASHING ARE ONEOFS: write `paint: { case: 'color', value: {\n"
+      "value: <string> } }` and `dashing: { case: 'pattern', value: <enum> }`,\n"
+      "never bare `color` or `pattern` fields. Writing a colour discards a\n"
+      "gradient that paint held, as in commitShape.\n"
+      "\n"
+      "Display names map back through PATTERN_TABLE and ARROWHEAD_TABLE; an\n"
+      "unrecognised name commits nothing rather than writing the UNSPECIFIED\n"
+      "zero value. Same no-op rule as commitShape."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'strokeColor' | 'strokeWidth' | 'pattern' | 'arrowStart' | 'arrowEnd'" } } },
+      { name: "value", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | number | undefined" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["PATTERN_TABLE", "ARROWHEAD_TABLE", "styleEdit", "edgeChange", "annotationChange", "patchEdgeEntry", "patchAnnotationEntry"]
+  }
+]

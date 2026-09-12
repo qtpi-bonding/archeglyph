@@ -19,15 +19,17 @@ structs: [
 constants: [
   { name: "ShapeSection"
     doc:
-      "IMPORT, DO NOT REDECLARE. shapeModel, commitShape, SHAPE_NAMES and the ShapeModel type\n"
-      "are being created by sibling nodes in THIS SAME BUILD at\n"
-      "packages/editor/src/inspector/models/shape_model.ts -- they will not exist on disk when this\n"
+      "IMPORT, DO NOT REDECLARE. shapeModel and ShapeModel come from\n"
+      "../models/shape_model, commitShape from ../models/shape_commit, and\n"
+      "SHAPE_TABLE from ../models/shape_names. All three files are being\n"
+      "created by sibling nodes in THIS SAME BUILD and will not exist on disk when this\n"
       "node starts. Import them from there. A parallel node that could not\n"
       "see its sibling has already produced a duplicate interface under a\n"
       "second name once in this project; the result compiles, passes tests\n"
       "and is caught only by verify.\n"
       "\n"
-      "An EnumFieldInput for shape over SHAPE_NAMES, NumberFieldInputs for\n"
+      "An EnumFieldInput for shape whose options are SHAPE_TABLE mapped to\n"
+      "its names, NumberFieldInputs for\n"
       "corner radius and stroke width, and ColorFieldInputs for fill and\n"
       "stroke colour.\n"
       "\n"
@@ -42,6 +44,6 @@ constants: [
       "SOLID: read shapeModel inside a memo or accessor, never in the\n"
       "component body."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<ShapeSectionProps>" } }
-    uses: ["shapeModel", "commitShape", "SHAPE_NAMES", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
+    uses: ["shapeModel", "commitShape", "SHAPE_TABLE", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
   }
 ]

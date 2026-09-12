@@ -1,0 +1,36 @@
+# Wave 5 follow-on. The shape vocabulary, alone in its own file.
+#
+# Alone because a build node is per DECL while a merge is per FILE, and this
+# project has now had four convergence failures, every one on a file carrying
+# several decls. The two model files in the first attempt at this pillar held
+# five and four, and neither could be merged.
+#
+# It is also the better shape regardless: one table, read in both directions,
+# is what makes "an unrecognised name commits nothing" enforceable.
+
+file: "packages/editor/src/inspector/models/shape_names.ts"
+doc: "The display-name-to-ShapeType table, and the single source for both directions of the mapping."
+
+constants: [
+  { name: "SHAPE_TABLE"
+    doc:
+      "Pairs of { name, value } in the enum's declaration order: triangle,\n"
+      "rect, pentagon, hexagon, heptagon, octagon, nonagon, decagon, ellipse,\n"
+      "cylinder. Excludes SHAPE_UNSPECIFIED, whose meaning -- 'renderer\n"
+      "picks' -- is the same thing an absent override already means.\n"
+      "\n"
+      "DO NOT DERIVE THESE NAMES BY STRIPPING A PREFIX. protobuf-es strips an\n"
+      "enum's prefix only when it matches that enum's own name, so the\n"
+      "generated members are not uniformly shaped:\n"
+      "  ShapeType.SHAPE_RECT            prefix KEPT\n"
+      "  StrokePattern.DASHED            prefix STRIPPED\n"
+      "  ArrowheadVariant.ARROWHEAD_NONE prefix KEPT\n"
+      "A single strip-the-prefix rule is wrong for some of the three, and\n"
+      "wrong by producing a plausible name rather than an error.\n"
+      "\n"
+      "Both directions read THIS table: name-to-value for commitShape,\n"
+      "value-to-name for shapeModel. A name absent from it is unrecognised,\n"
+      "which is what commitShape's reject-unknown rule tests against."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ReadonlyArray<{ name: string; value: ShapeType }>" } }
+  }
+]

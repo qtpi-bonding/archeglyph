@@ -17,9 +17,11 @@ structs: [
 constants: [
   { name: "LineSection"
     doc:
-      "IMPORT, DO NOT REDECLARE. lineModel, commitLine, PATTERN_NAMES, ARROWHEAD_NAMES and the LineModel type\n"
-      "are being created by sibling nodes in THIS SAME BUILD at\n"
-      "packages/editor/src/inspector/models/line_model.ts -- they will not exist on disk when this\n"
+      "IMPORT, DO NOT REDECLARE. lineModel and LineModel come from\n"
+      "../models/line_model, commitLine from ../models/line_commit, and\n"
+      "PATTERN_TABLE and ARROWHEAD_TABLE from ../models/line_names. All\n"
+      "three files are being created by sibling nodes in THIS SAME BUILD and\n"
+      "will not exist on disk when this\n"
       "node starts. Import them from there. A parallel node that could not\n"
       "see its sibling has already produced a duplicate interface under a\n"
       "second name once in this project; the result compiles, passes tests\n"
@@ -41,6 +43,6 @@ constants: [
       "SOLID: read lineModel inside a memo or accessor, never in the\n"
       "component body."
     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<LineSectionProps>" } }
-    uses: ["lineModel", "commitLine", "PATTERN_NAMES", "ARROWHEAD_NAMES", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
+    uses: ["lineModel", "commitLine", "PATTERN_TABLE", "ARROWHEAD_TABLE", "EnumFieldInput", "NumberFieldInput", "ColorFieldInput"]
   }
 ]

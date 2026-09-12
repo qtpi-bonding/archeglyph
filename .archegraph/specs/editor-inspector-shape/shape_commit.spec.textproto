@@ -1,0 +1,53 @@
+# Wave 5 follow-on. The Shape section's WRITE half, alone in its file.
+
+file: "packages/editor/src/inspector/models/shape_commit.ts"
+doc: "Builds the StyleEdit for one Shape field across a selection."
+
+methods: [
+  { name: "commitShape"
+    doc:
+      "One StyleEdit for one Shape field across the WHOLE selection, or\n"
+      "undefined when nothing should be written.\n"
+      "\n"
+      "MULTI-SELECT APPLIES TO EVERY KIND. Three selected nodes given a fill\n"
+      "is one edit with three changes; so is three selected groups, and three\n"
+      "annotations. Do not special-case a single id.\n"
+      "\n"
+      "Build the changes with nodeChange/groupChange/annotationChange from\n"
+      "state/edits/edit_builder, paired with patchNodeEntry/patchGroupEntry/\n"
+      "patchAnnotationEntry from state/edits/entry_patch, and combine them\n"
+      "into ONE styleEdit. Deliberately NOT setGroupGlyphEdit or\n"
+      "setAnnotationGlyphEdit: those take a single id, so a multi-select\n"
+      "group edit cannot go through them as one edit. The patch helpers are\n"
+      "what preserve the rest of the entry, which is the property that\n"
+      "matters.\n"
+      "\n"
+      "The builders take a WHOLE Glyph2D, so read each element's existing\n"
+      "shape and replace the one field. A fresh Glyph2D would silently clear\n"
+      "stroke, fill, glow and decorations at once.\n"
+      "\n"
+      "PAINT IS A ONEOF: write `paint: { case: 'color', value: { value: <the\n"
+      "string> } }`, never a bare `color` field, which does not exist. Doing\n"
+      "so DISCARDS any gradient that paint currently held -- the schema's\n"
+      "doing, not this code's, but it means the edit is not reversible by\n"
+      "clearing the field afterwards. Undo is.\n"
+      "\n"
+      "'shape' arrives as a display name and maps back through SHAPE_TABLE.\n"
+      "An unrecognised name commits nothing rather than writing\n"
+      "SHAPE_UNSPECIFIED, which would look like a successful edit and\n"
+      "silently reset the shape.\n"
+      "\n"
+      "An undefined `value` clears that one field, leaving the rest of the\n"
+      "Glyph2D alone. Returns undefined when the value equals the existing\n"
+      "override for every id, so a select re-chosen at its current setting\n"
+      "writes nothing."
+    inputs: [
+      { name: "model", type: { named: { symbol: "InspectorModel" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "field", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'shape' | 'cornerRadius' | 'fill' | 'strokeColor' | 'strokeWidth'" } } },
+      { name: "value", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | number | undefined" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "StyleEdit | undefined" } }
+    uses: ["SHAPE_TABLE", "styleEdit", "nodeChange", "groupChange", "annotationChange", "patchNodeEntry", "patchGroupEntry", "patchAnnotationEntry"]
+  }
+]

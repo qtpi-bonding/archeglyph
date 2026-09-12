@@ -33,8 +33,13 @@ import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { buildSceneGeometry, type SceneGeometry } from '../scene/scene';
 import type { ElementRef } from '../ui_state/ui_state';
 import { inspectorModel } from './model';
-import { SHAPE_NAMES, commitShape, shapeModel } from './models/shape_model';
-import { ARROWHEAD_NAMES, PATTERN_NAMES } from './models/line_model';
+import { SHAPE_TABLE } from './models/shape_names';
+import { shapeModel } from './models/shape_model';
+import { commitShape } from './models/shape_commit';
+import { ARROWHEAD_TABLE, PATTERN_TABLE } from './models/line_names';
+
+const namesOf = (table: ReadonlyArray<{ name: string }>): string[] =>
+  table.map((entry) => entry.name);
 
 const vec = (x: number, y: number): Vec2 => ({ x, y });
 
@@ -92,6 +97,17 @@ describe('commitShape', () => {
     expect(after.shape?.shapeKind.value).toBe(ShapeType.SHAPE_HEXAGON);
     expect(after.shape?.cornerRadius).toBe(4);
     expect(after.shape?.stroke?.width).toBe(3);
+  });
+
+  test('every table name maps to the enum value the table pairs it with', () => {
+    // The table is the single source for both directions, so this is the
+    // property that makes reject-unknown-name meaningful.
+    for (const entry of SHAPE_TABLE) {
+      const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+      const model = inspectorModel(refs('node', 'n1'))!;
+      const after = commitShape(model, sheet, 'shape', entry.name)!.nodeChanges[0].after!;
+      expect(after.shape?.shapeKind.value).toBe(entry.value);
+    }
   });
 
   test('a shape name round-trips to its enum value', () => {
@@ -172,22 +188,22 @@ describe('shapeModel', () => {
   });
 });
 
-describe('enum name lists', () => {
+describe('enum name tables', () => {
   test('shape names offer rect and ellipse and exclude the unspecified zero value', () => {
-    const names = SHAPE_NAMES();
+    const names = namesOf(SHAPE_TABLE);
     expect(names).toContain('rect');
     expect(names).toContain('ellipse');
     expect(names.some((n) => n.includes('unspecified'))).toBe(false);
   });
 
   test('pattern names are the three dash styles', () => {
-    expect(PATTERN_NAMES().sort()).toEqual(['dashed', 'dotted', 'solid']);
+    expect(namesOf(PATTERN_TABLE).sort()).toEqual(['dashed', 'dotted', 'solid']);
   });
 
   test('arrowhead names drop the ARROWHEAD_ prefix that protobuf-es keeps', () => {
     // ArrowheadVariant members are ARROWHEAD_NONE etc -- the prefix is NOT
     // stripped by codegen, because it does not match the enum's own name.
-    const names = ARROWHEAD_NAMES();
+    const names = namesOf(ARROWHEAD_TABLE);
     expect(names).toContain('none');
     expect(names).toContain('filled');
     expect(names.some((n) => n.startsWith('arrowhead'))).toBe(false);

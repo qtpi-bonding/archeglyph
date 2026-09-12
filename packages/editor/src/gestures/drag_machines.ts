@@ -6,6 +6,7 @@ import { moveElementsEdit } from '../state/edits/move';
 import type { ElementMove } from '../state/edits/move';
 import { elementKey } from '../scene/element_key';
 import type { SceneGeometry } from '../scene/scene';
+import { previewMove } from '../scene/preview';
 import type { ScenePreview } from '../scene/preview';
 import type { ElementRef, Viewport } from '../ui_state/ui_state';
 import type { Bounds } from '@archeglyph/core/geometry/bounds';
@@ -68,7 +69,11 @@ export function moveCommit(session: MoveSession, geometry: SceneGeometry, styles
   return moves.length === 0 ? undefined : moveElementsEdit(stylesheet, moves);
 }
 export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2, zoom: number): ScenePreview {
-  throw new Error('not implemented');
+  const delta = {
+    x: (current.x - session.origin.x) / zoom,
+    y: (current.y - session.origin.y) / zoom,
+  };
+  return previewMove(geometry, { refs: session.refs, delta });
 }
 export function marqueeUpdate(session: MarqueeSession, current: Vec2): Bounds {
   throw new Error('not implemented');

@@ -75,15 +75,15 @@ export function resizeBounds(
 
   const width = bounds.maxX - bounds.minX;
   const height = bounds.maxY - bounds.minY;
+  if (width <= 0 || height <= 0) {
+    return resized;
+  }
   const aspect = width / height;
   const changesWidth = movesMinX || movesMaxX;
   const changesHeight = movesMinY || movesMaxY;
   const requestedWidth = resized.maxX - resized.minX;
   const requestedHeight = resized.maxY - resized.minY;
 
-  // For a corner, use the axis for which the pointer moved furthest relative
-  // to the original size.  This makes the other axis follow the pointer,
-  // rather than letting a small amount of jitter on it change the scale.
   let nextWidth = requestedWidth;
   let nextHeight = requestedHeight;
   if (changesWidth && changesHeight) {
@@ -98,7 +98,12 @@ export function resizeBounds(
     nextWidth = nextHeight * aspect;
   }
 
-  const scale = Math.max(nextWidth / width, nextHeight / height, minimumSize / width, minimumSize / height);
+  const scale = Math.max(
+    nextWidth / width,
+    nextHeight / height,
+    minimumSize / width,
+    minimumSize / height,
+  );
   nextWidth = width * scale;
   nextHeight = height * scale;
 
@@ -135,9 +140,6 @@ export function resizeBounds(
     };
   }
 
-  // Cardinal handles keep the opposite edge fixed and keep the perpendicular
-  // dimension centred, which is the least surprising interpretation of an
-  // aspect-locked edge resize.
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
   return {
@@ -224,7 +226,7 @@ export function previewResize(geometry: SceneGeometry, intent: ResizeIntent): Sc
     return { bounds: [], edges: [] };
   }
 
-  const next = resizeBounds(target.bounds, intent.handle, intent.delta, intent.keepAspect ?? false);
+  const next = resizeBounds(target.bounds, intent.handle, intent.delta, intent.keepAspect);
   // Resizing is deliberately single-element: unlike previewMove, a group
   // resize changes only the group's container and leaves its members where
   // they are.

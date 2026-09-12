@@ -5,16 +5,17 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { create } from '@bufbuild/protobuf';
 import { StyleEdit, Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { elementKey } from '../scene/element_key';
-import { ScenePreview, previewMove } from '../scene/preview';
+import { ScenePreview, previewMove, previewResize, resizeBounds } from '../scene/preview';
 import { SceneGeometry } from '../scene/scene';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
+import { resizeAnnotationEdit, resizeGroupEdit, resizeNodeEdit } from '../state/edits/resize';
 import { selectInRect } from '../ui_state/selection_ops';
 import { ElementRef, Viewport } from '../ui_state/ui_state';
 
-export function moveCommit(session: MoveSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2, zoom: number): StyleEdit | undefined {
+export function moveCommit(session: MoveSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2): StyleEdit | undefined {
   const delta = {
-    x: (current.x - session.origin.x) / zoom,
-    y: (current.y - session.origin.y) / zoom,
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
   };
   if (delta.x === 0 && delta.y === 0) {
     return undefined;
@@ -68,10 +69,10 @@ export function moveCommit(session: MoveSession, geometry: SceneGeometry, styles
 
   return moves.length === 0 ? undefined : moveElementsEdit(stylesheet, moves);
 }
-export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2, zoom: number): ScenePreview {
+export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2): ScenePreview {
   const delta = {
-    x: (current.x - session.origin.x) / zoom,
-    y: (current.y - session.origin.y) / zoom,
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
   };
   return previewMove(geometry, { refs: session.refs, delta });
 }
@@ -80,12 +81,6 @@ export function marqueeUpdate(session: MarqueeSession, current: Vec2): Bounds {
     x: current.x - session.origin.x,
     y: current.y - session.origin.y,
   });
-  return {
-    minX: Math.min(session.origin.x, current.x),
-    minY: Math.min(session.origin.y, current.y),
-    maxX: Math.max(session.origin.x, current.x),
-    maxY: Math.max(session.origin.y, current.y),
-  };
 }
 export function marqueeCommit(geometry: SceneGeometry, marquee: Bounds): Array<ElementRef> {
   return selectInRect(geometry.index, marquee);
@@ -119,8 +114,53 @@ export interface ResizeSession {
   origin: Vec2;
 }
 export function resizeUpdate(session: ResizeSession, geometry: SceneGeometry, current: Vec2, keepAspect: boolean): ScenePreview {
-  throw new Error('not implemented');
+  const delta = {
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
+  };
+  return previewResize(geometry, {
+    ref: session.ref,
+    handle: session.handle,
+    delta,
+    keepAspect,
+  });
 }
 export function resizeCommit(session: ResizeSession, geometry: SceneGeometry, stylesheet: Stylesheet, current: Vec2, keepAspect: boolean): StyleEdit | undefined {
-  throw new Error('not implemented');
+  const delta = {
+    x: current.x - session.origin.x,
+    y: current.y - session.origin.y,
+  };
+  if (delta.x === 0 && delta.y === 0) {
+    return undefined;
+  }
+
+  if (session.ref.kind === 'edge') {
+    return undefined;
+  }
+  const target = geometry.byKey[elementKey(session.ref)];
+  if (target === undefined) {
+    return undefined;
+  }
+
+  const resized = resizeBounds(target.bounds, session.handle, delta, keepAspect);
+  const parent = target.parentGroup === undefined
+    ? undefined
+    : geometry.byKey[elementKey({ kind: 'group', id: target.parentGroup })];
+  const position = create(Vec2Schema, {
+    x: resized.minX - (parent?.bounds.minX ?? 0),
+    y: resized.minY - (parent?.bounds.minY ?? 0),
+  });
+  const size = create(Vec2Schema, {
+    x: resized.maxX - resized.minX,
+    y: resized.maxY - resized.minY,
+  });
+
+  switch (session.ref.kind) {
+    case 'node':
+      return resizeNodeEdit(stylesheet, session.ref.id, position, size);
+    case 'group':
+      return resizeGroupEdit(stylesheet, session.ref.id, position, size);
+    case 'annotation':
+      return resizeAnnotationEdit(stylesheet, session.ref.id, position, size);
+  }
 }

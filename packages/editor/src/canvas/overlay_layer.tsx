@@ -17,6 +17,7 @@ export interface OverlayLayerProps {
   hover?: ElementRef;
   zoom: number;
   preview?: ScenePreview;
+  anchorLine?: Array<Vec2>;
   marquee?: Bounds;
 }
 
@@ -87,6 +88,20 @@ function previewEdges(preview: ScenePreview, zoom: number): Array<JSX.Element> {
   ));
 }
 
+function anchorLineElement(points: Array<Vec2>): JSX.Element {
+  return (
+    <polyline
+      class="anchor-line"
+      points={pointsAttribute(points)}
+      fill="none"
+      stroke="var(--ag-blue)"
+      stroke-width={2}
+      stroke-dasharray="4 4"
+      vector-effect="non-scaling-stroke"
+    />
+  );
+}
+
 export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerProps): JSX.Element => {
   // These must be functions, not values computed in the component body: a
   // Solid component body runs once, so reading props there would freeze the
@@ -126,6 +141,7 @@ export const OverlayLayer: Component<OverlayLayerProps> = (props: OverlayLayerPr
       )}
       {props.preview === undefined ? null : previewBounds(props.preview.bounds, props.zoom)}
       {props.preview === undefined ? null : previewEdges(props.preview, props.zoom)}
+      {props.anchorLine === undefined ? null : anchorLineElement(props.anchorLine)}
       {handleElements()}
       {props.marquee === undefined ? null : boundsRect(props.marquee, 'marquee', props.zoom)}
     </g>

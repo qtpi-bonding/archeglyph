@@ -1,0 +1,48 @@
+# Wave 4b, and the half that makes this worth doing rather than just a
+# refusal-to-save.
+#
+# When the file has changed underneath an open editor, the useless answer is
+# "reload?" — that discards whatever the user was in the middle of. The useful
+# answer is to turn the external change into exactly what the design already
+# has a channel for: a PENDING StyleEdit in Stylesheet.pending_edits, which
+# ghost_layer already renders as a dimmed overlay and state/edits/pending
+# already knows how to accept or reject.
+#
+# So an agent editing the file while you work does not interrupt you. Its
+# changes arrive as ghosts you approve, which is what the pending-edit design
+# was for in the first place; it just never had a producer other than MCP.
+
+file: "packages/editor/src/state/stylesheet_diff.ts"
+doc: "Turns an externally-changed stylesheet into a reviewable pending edit."
+
+methods: [
+  { name: "diffStylesheets"
+    doc:
+      "A StyleEdit describing how `incoming` differs from `base`, or undefined\n"
+      "when they carry the same content.\n"
+      "\n"
+      "Entry-level, not field-level: a changed entry becomes one MODIFIED\n"
+      "change carrying the whole new entry, an added one likewise, and an\n"
+      "entry present in base but absent from incoming becomes DELETED with no\n"
+      "`after`. That granularity matches what a StyleChange can express —\n"
+      "there is no working field-level unset (see editor-edits, unset_paths is\n"
+      "declared and unimplemented).\n"
+      "\n"
+      "state is PENDING and author names the source, so the panel can say\n"
+      "where a proposal came from. base_hash is the caller's to stamp; this\n"
+      "function does not hash.\n"
+      "\n"
+      "Compares entries by value, not by reference — the two stylesheets come\n"
+      "from different parses and share nothing."
+    inputs: [
+      { name: "base", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "incoming", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "author", type: { primitive: CHARACTER } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
+    uses: [
+      "archeglyph.style.v1.StyleEdit", "archeglyph.style.v1.StyleEditState",
+      "nodeChange", "edgeChange", "groupChange", "annotationChange"
+    ]
+  }
+]

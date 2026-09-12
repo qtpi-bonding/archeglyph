@@ -1,0 +1,83 @@
+# Wave 4b, brownfield. HostAdapter has no concept of file identity or
+# freshness — the whole contract is canSave / load / save(stylesheet) — so
+# there is nowhere to ask "has this changed?" and nothing carries a version.
+# That absence is the actual reason the editor silently overwrites external
+# edits, and extending this interface is the real work; the detection logic on
+# top is small.
+
+file: "packages/editor/src/adapters/host_adapter.ts"
+doc: "The host boundary: loading, saving, and now file identity for staleness detection."
+
+structs: [
+  { name: "LoadResult"
+    change_type: MODIFIED
+    doc: "Gains `baseHash`, the hash of the stylesheet as loaded, and `stamp`, whatever the host can cheaply observe to notice a change without re-reading."
+    fields: [
+      { name: "baseHash", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "stamp", type: { named: { symbol: "FileStamp" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_CLASS }
+  },
+  { name: "FileStamp"
+    doc:
+      "A cheap change indicator. lastModified plus size is what the File\n"
+      "System Access API can give without reading the file, and is enough to\n"
+      "decide WHETHER to re-read; the hash decides whether anything actually\n"
+      "differs. Two separate questions, deliberately — stat is cheap enough to\n"
+      "run on every window focus, hashing is not."
+    fields: [
+      { name: "lastModified", type: { primitive: REAL } },
+      { name: "size", type: { primitive: REAL } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  },
+  { name: "AdapterError"
+    change_type: MODIFIED
+    doc: "Gains `kind`, so a caller can tell a failed write from a refused one. 'stale' must be distinguishable: the UI for 'the disk is full' and 'someone else edited this' are not the same UI."
+    fields: [
+      { name: "kind", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'io' | 'stale' | 'unsupported'" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_CLASS }
+  }
+]
+
+interfaces: [
+  { name: "HostAdapter"
+    change_type: MODIFIED
+    doc:
+      "save() gains an expected base hash. An adapter that can read the file\n"
+      "back MUST re-read and compare before writing, and return an AdapterError\n"
+      "with kind 'stale' rather than overwriting. That check is the whole point\n"
+      "of the change: making a stale save impossible rather than merely\n"
+      "noticing it afterwards.\n"
+      "\n"
+      "stat() returns the current FileStamp without reading contents, or an\n"
+      "error where the host cannot observe one — the download fallback has no\n"
+      "file to stat, and must not pretend otherwise."
+    methods: [
+      { name: "canSave" output: { primitive: BOOLEAN } },
+      { name: "load"
+        is_async: true
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "LoadResult" } }, { named: { symbol: "AdapterError" } }
+        ]}}
+      },
+      { name: "save"
+        is_async: true
+        inputs: [
+          { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+          { name: "expectedBaseHash", type: { primitive: CHARACTER }, is_optional: true }
+        ]
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { primitive: VOID }, { named: { symbol: "AdapterError" } }
+        ]}}
+      },
+      { name: "stat"
+        is_async: true
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "FileStamp" } }, { named: { symbol: "AdapterError" } }
+        ]}}
+      }
+    ]
+  }
+]

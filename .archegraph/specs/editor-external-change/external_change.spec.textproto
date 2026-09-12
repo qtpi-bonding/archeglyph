@@ -1,0 +1,59 @@
+# Wave 4b. Notices that the file moved under us, and offers the change as
+# something to review rather than something that already happened.
+#
+# Polling on window focus rather than on a timer: the File System Access API
+# gives no change events at all, and focus is when the user has plausibly just
+# come back from whatever edited the file. A timer would burn work while the
+# tab sits idle, which is most of the time.
+
+file: "packages/editor/src/shell/external_change.ts"
+doc: "Detects that the open file changed on disk and turns the change into reviewable pending edits."
+
+structs: [
+  { name: "ExternalChange"
+    doc: "`edit` is absent when the file was rewritten with identical content — a stamp can move without the content differing, and that must not raise a prompt."
+    fields: [
+      { name: "edit", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "baseHash", type: { primitive: CHARACTER } },
+      { name: "stamp", type: { named: { symbol: "FileStamp" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "checkForExternalChange"
+    doc:
+      "Two-stage on purpose: stat first, and only re-read and hash when the\n"
+      "stamp moved. Returns undefined when nothing changed.\n"
+      "\n"
+      "The returned edit is PENDING, so applying it appends a reviewable ghost\n"
+      "rather than replacing the document. That is what lets an agent edit the\n"
+      "file while the user is mid-drag without either of them losing work —\n"
+      "the whole reason this is worth more than a reload prompt."
+    is_async: true
+    inputs: [
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } },
+      { name: "loaded", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "lastStamp", type: { named: { symbol: "FileStamp" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Promise<ExternalChange | undefined>" } }
+    uses: ["hashStylesheet", "diffStylesheets", "ExternalChange"]
+  },
+  { name: "watchOnFocus"
+    doc:
+      "Runs the check whenever the window regains focus, and hands any change\n"
+      "to `onChange`. Returns a disposer.\n"
+      "\n"
+      "Overlapping runs are suppressed — a slow read must not queue a second\n"
+      "check behind it and report the same change twice."
+    inputs: [
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } },
+      { name: "currentStylesheet", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => Stylesheet" } } },
+      { name: "onChange", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(change: ExternalChange) => void" } } }
+    ]
+    output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "() => void" } }
+    uses: ["checkForExternalChange"]
+  }
+]

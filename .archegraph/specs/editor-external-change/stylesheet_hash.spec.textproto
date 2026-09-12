@@ -1,0 +1,38 @@
+# Wave 4b. The identity a stale-save check compares against.
+#
+# proto/style.proto documents StyleEdit.base_hash as "Hash of the stylesheet
+# this edit was authored against (for staleness check)" and StyleEdit.id as a
+# "deterministic 16-char hex prefix of sha256 over canonical contents".
+# Nothing in the repo ever computed either. This is that function, and it
+# serves both: the same hash names a stylesheet and stamps an edit.
+#
+# Async because the browser's only sha256 is crypto.subtle, which is. That is
+# fine here and was not for the edit builders — save and load are already
+# async, whereas making every arrow-key nudge async to stamp a field nothing
+# read would have been a poor trade (see editor-edits/edit_builder).
+
+file: "packages/editor/src/state/stylesheet_hash.ts"
+doc: "Deterministic content hash of a stylesheet, for staleness detection and edit identity."
+
+methods: [
+  { name: "hashStylesheet"
+    doc:
+      "16-char lowercase hex prefix of sha256 over the stylesheet's canonical\n"
+      "JSON, matching the convention proto/style.proto documents for\n"
+      "StyleEdit.id.\n"
+      "\n"
+      "Canonical means the SAME BYTES for the same content regardless of map\n"
+      "insertion order — protobuf maps have no inherent order, and two\n"
+      "stylesheets that differ only in the order entries were added must hash\n"
+      "the same or every save would look stale. Sort keys at every level.\n"
+      "\n"
+      "pendingEdits are EXCLUDED. A proposal that has not been accepted is not\n"
+      "part of the document's committed state, and including it would mean an\n"
+      "agent appending a proposal makes the user's in-flight save look stale."
+    is_async: true
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

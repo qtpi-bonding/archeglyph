@@ -29,6 +29,7 @@ export interface CommandContext {
   geometry?: SceneGeometry;
   rect: ContainerRect;
   save: () => void;
+  focusInspector?: () => void;
 }
 
 function selectedElements(context: CommandContext): ElementRef[] {

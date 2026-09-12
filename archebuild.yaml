@@ -1,5 +1,9 @@
-server:
-  db_path: "./archebuild.db"
+# NOTE: no `server:` block. It held `db_path: "./archebuild.db"` for the
+# pre-Tier-3 archebuild-server daemon, which no longer exists -- build state
+# lives on disk in FileSink under .archegraph/specs/<spec>/builds/<id>/. There
+# is no `server` field on the config struct, so the block was being silently
+# dropped; once archegraph ships deny_unknown_fields it would have failed the
+# parse outright and blocked every build.
 
 orchestrator:
   enabled: true

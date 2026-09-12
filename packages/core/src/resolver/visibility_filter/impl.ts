@@ -218,6 +218,17 @@ export class VisibilityFilterImpl implements VisibilityFilter {
         const tRoot = contractedRoot.get(edge.target);
         const source: string = sRoot !== undefined ? sRoot : edge.source;
         const target: string = tRoot !== undefined ? tRoot : edge.target;
+        if (source === target && sRoot !== undefined && tRoot !== undefined) {
+          // Both endpoints collapsed into the SAME super-node, so this edge was
+          // internal to the contracted group. design.md §5.1 promises that
+          // CONTRACTED hides the children and that CROSS-BOUNDARY edges
+          // terminate at the super-node; an edge between two hidden children is
+          // neither, and re-pointing it produces a self-loop on the super-node
+          // that was never in the diagram. Drop it. An author's genuine
+          // self-loop on a single node is untouched: its endpoints are the same
+          // node, not two different ones sharing a root.
+          continue;
+        }
         const fe = new FilteredEdge();
         fe.id = id;
         fe.source = source;

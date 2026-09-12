@@ -26,6 +26,33 @@ export class ValidatorImpl implements Validator {
 
     const violations: Violation[] = [];
 
+    // Check 0: every element's own id agrees with the map key it is filed
+    // under. proto/content.proto says "MUST equal the key" for all three
+    // element types, and the rest of the system takes that at its word: the
+    // graph is keyed by id, edges reference nodes by id, stylesheets are keyed
+    // by id, and the renderer emits `node.id` as data-element-id. A mismatch
+    // therefore does not fail loudly -- the element renders, but its styles
+    // never apply and it cannot be selected, because half the system looks it
+    // up under one name and half under the other.
+    const checkIdKey = (
+      map: { [k: string]: { id: string } },
+      kindLabel: string,
+    ): void => {
+      for (const key of sortedKeys(map)) {
+        const declared = map[key].id;
+        if (declared !== key) {
+          violations.push(Object.assign(new Violation(), {
+            kind: ViolationKind.ID_KEY_MISMATCH,
+            location: key,
+            message: `${kindLabel} filed under key '${key}' declares id '${declared}'; they must match`,
+          }));
+        }
+      }
+    };
+    checkIdKey(nodesMap, 'node');
+    checkIdKey(edgesMap, 'edge');
+    checkIdKey(groupsMap, 'group');
+
     // Check 1: Edge source/target reference existing nodes.
     const sortedEdgeIds = sortedKeys(edgesMap);
     for (const id of sortedEdgeIds) {

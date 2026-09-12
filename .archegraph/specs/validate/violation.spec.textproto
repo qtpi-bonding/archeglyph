@@ -9,6 +9,8 @@ enums: [
       "appear in JSON-shaped MCP output and CLI text, both need to read cleanly."
     values: [
       { name: "GROUP_CYCLE" },
+      # Added 2026-09-11 after a blind test suite found the rule unenforced.
+      { name: "ID_KEY_MISMATCH" },
       { name: "EDGE_SOURCE_MISSING" },
       { name: "EDGE_TARGET_MISSING" },
       { name: "NODE_PARENT_GROUP_MISSING" },

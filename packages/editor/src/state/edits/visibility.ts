@@ -5,7 +5,13 @@ import { nodeChange, styleEdit } from './edit_builder';
 import { patchNodeEntry } from './entry_patch';
 
 export function showAllEdit(stylesheet: Stylesheet): StyleEdit {
-  return setNodesHiddenEdit(stylesheet, Object.keys(stylesheet.nodes), false);
+  // Only the nodes that are actually hidden. Passing every id would stamp an
+  // explicit UNSPECIFIED onto entries whose visibility was absent, rewriting
+  // elements the command was never about.
+  const hidden = Object.keys(stylesheet.nodes).filter(
+    (nodeId) => stylesheet.nodes[nodeId].visibility === NodeVisibility.HIDDEN,
+  );
+  return setNodesHiddenEdit(stylesheet, hidden, false);
 }
 
 export function setNodeHiddenEdit(stylesheet: Stylesheet, nodeId: string, hidden: boolean): StyleEdit {

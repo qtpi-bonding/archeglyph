@@ -21,10 +21,19 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
 
+// NOTE: every *StyleChange carries `unset_paths` (proto/style.proto:514,
+// "explicit field-clearing"), and NOTHING in this repo implements it --
+// applyMapChanges ignores the field entirely. Do not reach for it to clear a
+// field; build an entry that lacks the field instead (see layout_command's
+// withoutNodePosition). The empty arrays below are only there because the
+// generated code wrote them.
 export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleChange {
   return create(EdgeStyleChangeSchema, {
     edgeId,
-    changeType: StyleChangeType.MODIFIED,
+    // An absent `after` means "drop this entry", which the schema spells
+    // DELETED -- applyMapChanges only removes on that change type, so a
+    // MODIFIED change with no entry is a silent no-op.
+    changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
     unsetPaths: [],
     kinds: [],
@@ -34,7 +43,10 @@ export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleCha
 export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleChange {
   return create(NodeStyleChangeSchema, {
     nodeId,
-    changeType: StyleChangeType.MODIFIED,
+    // An absent `after` means "drop this entry", which the schema spells
+    // DELETED -- applyMapChanges only removes on that change type, so a
+    // MODIFIED change with no entry is a silent no-op.
+    changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
     unsetPaths: [],
     kinds: [],
@@ -54,7 +66,10 @@ export function annotationChange(annotationId: string, after?: AnnotationEntry):
 export function groupChange(groupId: string, after?: GroupStyleEntry): GroupStyleChange {
   return create(GroupStyleChangeSchema, {
     groupId,
-    changeType: StyleChangeType.MODIFIED,
+    // An absent `after` means "drop this entry", which the schema spells
+    // DELETED -- applyMapChanges only removes on that change type, so a
+    // MODIFIED change with no entry is a silent no-op.
+    changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
     unsetPaths: [],
     kinds: [],

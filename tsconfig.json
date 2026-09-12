@@ -9,31 +9,79 @@
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "baseUrl": ".",
     "paths": {
-      "@archeglyph/proto": ["./packages/proto/src/index.ts"],
-      "@archeglyph/proto/util/result": ["./packages/proto/src/util/result.ts"],
-      "@archeglyph/proto/util/json": ["./packages/proto/src/util/json.ts"],
-      "@archeglyph/proto/gen/*": ["./packages/proto/src/gen/*.ts"],
-      "@archeglyph/ops": ["./packages/ops/src/index.ts"],
-      "@archeglyph/ops/op": ["./packages/ops/src/op.ts"],
-      "@archeglyph/ops/registry": ["./packages/ops/src/registry.ts"],
-      "@archeglyph/ops/zod_argv": ["./packages/ops/src/zod_argv.ts"],
-      "@archeglyph/core/loaders": ["./packages/core/src/loaders/index.ts"],
-      "@archeglyph/core/resolver/*": ["./packages/core/src/resolver/*/index.ts"],
-      "@archeglyph/core/layout/*": ["./packages/core/src/layout/*/index.ts"],
-      "@archeglyph/core/renderer/*": ["./packages/core/src/renderer/*/index.ts"],
-      "@archeglyph/core/validator/*": ["./packages/core/src/validator/*/index.ts"],
-      "@archeglyph/cli": ["./packages/cli/src/main.ts"],
-      "@archeglyph/cli/mcp_server": ["./packages/cli/src/mcp_server.ts"],
-      "@archeglyph/themes": ["./packages/themes/src/index.ts"],
-      "@archeglyph/core/pipeline": ["./packages/core/src/pipeline/index.ts"],
-      "@archeglyph/editor/state": ["./packages/editor/src/state/index.ts"],
-      "@archeglyph/editor/adapters": ["./packages/editor/src/adapters/index.ts"]
-    }
+      "@archeglyph/proto": [
+        "./packages/proto/src/index.ts"
+      ],
+      "@archeglyph/proto/util/result": [
+        "./packages/proto/src/util/result.ts"
+      ],
+      "@archeglyph/proto/util/json": [
+        "./packages/proto/src/util/json.ts"
+      ],
+      "@archeglyph/proto/gen/*": [
+        "./packages/proto/src/gen/*.ts"
+      ],
+      "@archeglyph/ops": [
+        "./packages/ops/src/index.ts"
+      ],
+      "@archeglyph/ops/op": [
+        "./packages/ops/src/op.ts"
+      ],
+      "@archeglyph/ops/registry": [
+        "./packages/ops/src/registry.ts"
+      ],
+      "@archeglyph/ops/zod_argv": [
+        "./packages/ops/src/zod_argv.ts"
+      ],
+      "@archeglyph/core/loaders": [
+        "./packages/core/src/loaders/index.ts"
+      ],
+      "@archeglyph/core/resolver/*": [
+        "./packages/core/src/resolver/*/index.ts"
+      ],
+      "@archeglyph/core/layout/*": [
+        "./packages/core/src/layout/*/index.ts"
+      ],
+      "@archeglyph/core/renderer/*": [
+        "./packages/core/src/renderer/*/index.ts"
+      ],
+      "@archeglyph/core/validator/*": [
+        "./packages/core/src/validator/*/index.ts"
+      ],
+      "@archeglyph/cli": [
+        "./packages/cli/src/main.ts"
+      ],
+      "@archeglyph/cli/mcp_server": [
+        "./packages/cli/src/mcp_server.ts"
+      ],
+      "@archeglyph/themes": [
+        "./packages/themes/src/index.ts"
+      ],
+      "@archeglyph/core/pipeline": [
+        "./packages/core/src/pipeline/index.ts"
+      ],
+      "@archeglyph/editor/state": [
+        "./packages/editor/src/state/index.ts"
+      ],
+      "@archeglyph/editor/adapters": [
+        "./packages/editor/src/adapters/index.ts"
+      ]
+    },
+    "types": [
+      "bun",
+      "wicg-file-system-access"
+    ]
   },
-  "include": ["packages/**/*.ts", "packages/**/*.tsx"]
+  "include": [
+    "packages/**/*.ts",
+    "packages/**/*.tsx"
+  ]
 }

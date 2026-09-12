@@ -67,6 +67,13 @@ function resolveRef(value: string, tokens: Tokens): string {
 function lookup(tokens: Tokens, table: string, key: string): string | number | undefined {
   switch (table) {
     case 'colors': return tokens.colors[key];
+    // Tokens.fonts holds a structured FontSpec, but every consumer of a font
+    // token is a string field (Typography.font). The family is the only part
+    // that can be substituted into one, so that is what $fonts.<name> means.
+    // design.md §4 lists fonts as a token namespace and gives $fonts.heading
+    // as its canonical example; without this case the reference was left
+    // verbatim in the output.
+    case 'fonts': return tokens.fonts[key]?.family;
     case 'sizes': return tokens.sizes[key];
     case 'spacings': return tokens.spacings[key];
     case 'dashes': return tokens.dashes[key];

@@ -4,7 +4,16 @@ export function numberField(overrides: Array<number | undefined>, effectives: Ar
   throw new Error('not implemented');
 }
 export function textField(overrides: Array<string | undefined>, effectives: Array<string | undefined>): TextField {
-  throw new Error('not implemented');
+  const firstOverride = overrides[0];
+  const overrideAgrees = overrides.every((override) => override === firstOverride);
+  const firstEffective = effectives[0];
+  const effectiveAgrees = effectives.every((effective) => effective === firstEffective);
+
+  return {
+    override: overrideAgrees ? firstOverride : undefined,
+    effective: effectiveAgrees ? firstEffective : undefined,
+    mixed: !overrideAgrees,
+  };
 }
 export interface NumberField {
   override?: number;

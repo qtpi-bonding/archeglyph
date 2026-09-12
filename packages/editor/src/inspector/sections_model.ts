@@ -7,10 +7,126 @@ export function commitTypography(model: InspectorModel, stylesheet: Stylesheet, 
   throw new Error('not implemented');
 }
 export function commitLayout(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet, field: 'x' | 'y' | 'width' | 'height', value: number | undefined): StyleEdit | undefined {
-  throw new Error('not implemented');
+  if (model.kind === 'edge' || model.ids.length === 0) {
+    return undefined;
+  }
+
+  // A cleared annotation position is intentionally not passed to
+  // unpinElementsEdit.  Unlike nodes and groups, annotations have no derived
+  // position to return to.
+  if (value === undefined && (field === 'x' || field === 'y') && model.kind === 'annotation') {
+    return undefined;
+  }
+
+  const isSize = field === 'width' || field === 'height';
+  const overrideValue = (id: string): number | undefined => {
+    const entry = model.kind === 'node'
+      ? stylesheet.nodes[id]
+      : model.kind === 'group'
+        ? stylesheet.groups[id]
+        : stylesheet.annotations[id];
+    if (entry?.layout === undefined) {
+      return undefined;
+    }
+    if (field === 'x' || field === 'y') {
+      const position = entry.layout.position;
+      return position === undefined ? undefined : field === 'x' ? position.x : position.y;
+    }
+    const size = entry.layout.size;
+    return size === undefined ? undefined : field === 'width' ? size.x : size.y;
+  };
+
+  if (model.ids.every((id) => overrideValue(id) === value)) {
+    return undefined;
+  }
+
+  const refs: Array<ElementMove> = model.ids.map((id) => ({
+    kind: model.kind,
+    id,
+    // unpinElementsEdit only uses kind and id; the position is part of the
+    // shared move reference type and is deliberately ignored for unpinning.
+    position: create(Vec2Schema, { x: 0, y: 0 }),
+  }));
+  if (!isSize && value === undefined) {
+    return unpinElementsEdit(stylesheet, refs);
+  }
+
+  if (isSize && value === undefined) {
+    const edits = model.ids.map((id) => {
+      if (model.kind === 'node') return clearNodeSizeEdit(stylesheet, id);
+      if (model.kind === 'group') return clearGroupSizeEdit(stylesheet, id);
+      return clearAnnotationSizeEdit(stylesheet, id);
+    });
+    return styleEdit({
+      nodeChanges: edits.flatMap((edit) => edit.nodeChanges),
+      groupChanges: edits.flatMap((edit) => edit.groupChanges),
+      annotationChanges: edits.flatMap((edit) => edit.annotationChanges),
+      description: 'Clear selected size override',
+    });
+  }
+
+  const edits = model.ids.map((id) => {
+    const bounds = geometry.byKey[elementKey({ kind: model.kind, id })]?.bounds;
+    if (bounds === undefined) {
+      return undefined;
+    }
+    const parentId = geometry.byKey[elementKey({ kind: model.kind, id })]?.parentGroup;
+    const parent = parentId === undefined
+      ? undefined
+      : geometry.byKey[elementKey({ kind: 'group', id: parentId })];
+    const position = create(Vec2Schema, {
+      x: bounds.minX - (parent?.bounds.minX ?? 0),
+      y: bounds.minY - (parent?.bounds.minY ?? 0),
+    });
+    if (!isSize) {
+      return moveElementsEdit(stylesheet, [{
+        kind: model.kind,
+        id,
+        position: create(Vec2Schema, {
+          x: field === 'x' ? value ?? position.x : position.x,
+          y: field === 'y' ? value ?? position.y : position.y,
+        }),
+      }]);
+    }
+    const size = create(Vec2Schema, {
+      x: field === 'width' ? value as number : bounds.maxX - bounds.minX,
+      y: field === 'height' ? value as number : bounds.maxY - bounds.minY,
+    });
+    if (model.kind === 'node') return resizeNodeEdit(stylesheet, id, position, size);
+    if (model.kind === 'group') return resizeGroupEdit(stylesheet, id, position, size);
+    return resizeAnnotationEdit(stylesheet, id, position, size);
+  }).filter((edit): edit is StyleEdit => edit !== undefined);
+
+  if (edits.length === 0) {
+    return undefined;
+  }
+  return styleEdit({
+    nodeChanges: edits.flatMap((edit) => edit.nodeChanges),
+    groupChanges: edits.flatMap((edit) => edit.groupChanges),
+    annotationChanges: edits.flatMap((edit) => edit.annotationChanges),
+    description: 'Edit selected layout',
+  });
 }
+import { Typography } from '@archeglyph/proto/gen/style_pb';
+import { StyleEdit, Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
+import { InspectorModel } from './model';
+import { SceneGeometry } from '../scene/scene';
+import { numberField, textField } from './field_value';
 import { NumberField } from './field_value';
 import { TextField } from './field_value';
+import { elementKey } from '../scene/element_key';
+import { ElementMove, moveElementsEdit } from '../state/edits/move';
+import { unpinElementsEdit } from '../state/edits/layout_command';
+import {
+  clearAnnotationSizeEdit,
+  clearGroupSizeEdit,
+  clearNodeSizeEdit,
+  resizeAnnotationEdit,
+  resizeGroupEdit,
+  resizeNodeEdit,
+} from '../state/edits/resize';
+import { styleEdit } from '../state/edits/edit_builder';
 
 export interface TypographyModel {
   size: NumberField;
@@ -26,5 +142,38 @@ export interface LayoutModel {
   height: NumberField;
 }
 export function typographyModel(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet): TypographyModel {
-  throw new Error('not implemented');
+  const overrideTypography = (id: string): Typography | undefined => {
+    switch (model.kind) {
+      case 'node': return stylesheet.nodes[id]?.typography;
+      case 'edge': return stylesheet.edges[id]?.typography;
+      case 'group': return stylesheet.groups[id]?.typography;
+      case 'annotation': return stylesheet.annotations[id]?.typography;
+    }
+  };
+
+  const effectiveTypography = (id: string): Typography | undefined => {
+    switch (model.kind) {
+      case 'node': return geometry.diagram.nodes.find((entry) => entry.id === id)?.typography;
+      case 'edge': return geometry.diagram.edges.find((entry) => entry.id === id)?.typography;
+      case 'group': return geometry.diagram.groups.find((entry) => entry.id === id)?.typography;
+      case 'annotation': return geometry.diagram.annotations.find((entry) => entry.id === id)?.typography;
+    }
+  };
+
+  const overrides = model.ids.map(overrideTypography);
+  const effectives = model.ids.map(effectiveTypography);
+  return {
+    size: numberField(
+      overrides.map((typography) => typography?.size),
+      effectives.map((typography) => typography?.size),
+    ),
+    color: textField(
+      overrides.map((typography) => typography?.color?.value),
+      effectives.map((typography) => typography?.color?.value),
+    ),
+    font: textField(
+      overrides.map((typography) => typography?.font),
+      effectives.map((typography) => typography?.font),
+    ),
+  };
 }

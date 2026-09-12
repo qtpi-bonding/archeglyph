@@ -3,12 +3,19 @@
 
 import {
 <<<<<<< HEAD
+<<<<<<< HEAD
   GroupLayoutSchema,
   GroupStyleEntrySchema,
 =======
   AnnotationEntrySchema,
   AnnotationLayoutSchema,
 >>>>>>> ec8e065e2c80cfd4bde607ec647105e396df18bb
+=======
+  AnnotationEntrySchema,
+  AnnotationLayoutSchema,
+  GroupLayoutSchema,
+  GroupStyleEntrySchema,
+>>>>>>> 602b6630f989abd461c7d872188be9f87e2d8f8d
   NodeLayoutSchema,
   NodeStyleEntrySchema,
   StyleEdit,

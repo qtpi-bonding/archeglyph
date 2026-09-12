@@ -5,6 +5,7 @@ import { Bounds, boundsContains } from '@archeglyph/core/geometry/bounds';
 import { distance } from '@archeglyph/core/geometry/vec2';
 import { distanceToPolyline } from '@archeglyph/core/geometry/polyline';
 import { ElementRef } from '../ui_state/ui_state';
+import { elementKey } from './element_key';
 import { SceneGeometry } from './scene';
 
 export interface HandlePoint {
@@ -77,5 +78,14 @@ export function hitTestHandle(bounds: Bounds, point: Vec2, radius: number): Hand
   return nearest;
 }
 export function handleAtPoint(geometry: SceneGeometry, selection: Array<ElementRef>, point: Vec2, radius: number): Handle | undefined {
-  throw new Error('not implemented');
+  if (selection.length !== 1 || selection[0].kind === 'edge') {
+    return undefined;
+  }
+
+  const entry = geometry.byKey[elementKey(selection[0])];
+  if (entry === undefined) {
+    return undefined;
+  }
+
+  return hitTestHandle(entry.bounds, point, radius);
 }

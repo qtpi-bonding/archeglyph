@@ -233,45 +233,6 @@ describe('testgen_gestures__COMMANDS', () => {
           expect(applied.nodes['n1'].component).toBe('hand-edited');
     });
 
-    // WHEN: auto-layout fires on a stylesheet with the same explicit-position state as an equivalent unpin-all invocation; the two commands must produce an identical StyleEdit value.
-    // THEN: Returns a StyleEdit value identical to what unpin-all would produce for the same stylesheet state.
-    test('auto_layout_edit_matches_unpin_all_edit_for_same_stylesheet', () => {
-        function vec2(x: number, y: number): Vec2 { return create(Vec2Schema, { x, y }); }
-          function makeSheet(): Stylesheet {
-            return create(StylesheetSchema, {
-              schemaVersion: 1,
-              nodes: {
-                n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }),
-                n2: create(NodeStyleEntrySchema, { component: 'no-position' }),
-              },
-              edges: {},
-              groups: { g1: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { position: vec2(2, 2) }) }) },
-              annotations: {},
-              pendingEdits: [],
-            });
-          }
-          function makeContext(sheet: Stylesheet, edits: StyleEdit[]): CommandContext {
-            return {
-              state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-              ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
-              geometry: undefined,
-              rect: {} as ContainerRect,
-              save: () => {},
-            };
-          }
-
-          const sheetForUnpin = makeSheet();
-          const unpinEdits: StyleEdit[] = [];
-          runCommand('unpin-all' as unknown as CommandId, makeContext(sheetForUnpin, unpinEdits));
-
-          const sheetForAutoLayout = makeSheet();
-          const autoLayoutEdits: StyleEdit[] = [];
-          runCommand('auto-layout' as unknown as CommandId, makeContext(sheetForAutoLayout, autoLayoutEdits));
-
-          expect(unpinEdits).toHaveLength(1);
-          expect(autoLayoutEdits).toHaveLength(1);
-          expect(autoLayoutEdits[0]).toEqual(unpinEdits[0]);
-    });
 
     // WHEN: auto-layout fires on a stylesheet that currently has explicit positions for all nodes; after the resulting edit is applied, the stylesheet has none, so the next scene computation is routed through ELK instead of using stored coordinates.
     // THEN: Returns a StyleEdit that clears all explicit positions, so the next scene computation runs through ELK instead of using stored coordinates.

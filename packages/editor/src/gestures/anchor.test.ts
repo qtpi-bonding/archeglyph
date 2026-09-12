@@ -30,7 +30,7 @@ import { layoutPipeline } from '@archeglyph/core/pipeline';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
-import { applyStyleEdit } from '../state/apply_style_edit';
+import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import { anchorCommit } from './anchor_machine';
 import type { ElementRef } from '../ui_state/ui_state';
 
@@ -89,20 +89,20 @@ describe('the anchor gesture reaches a painted callout', () => {
     expect(await calloutPathCount(before)).toBe(0);
 
     const edit = anchorCommit({ ref: noteRef }, before, targetRef);
-    const after = applyStyleEdit(before, edit);
+    const after = applyStyleEditToStylesheet(before, edit);
 
     expect(after.annotations['note']?.anchor?.refId).toBe('target');
     expect(await calloutPathCount(after)).toBe(1);
   });
 
   test('releasing over empty canvas clears an existing anchor', async () => {
-    const anchored = applyStyleEdit(
+    const anchored = applyStyleEditToStylesheet(
       baseStylesheet(),
       anchorCommit({ ref: noteRef }, baseStylesheet(), targetRef),
     );
     expect(await calloutPathCount(anchored)).toBe(1);
 
-    const cleared = applyStyleEdit(anchored, anchorCommit({ ref: noteRef }, anchored, undefined));
+    const cleared = applyStyleEditToStylesheet(anchored, anchorCommit({ ref: noteRef }, anchored, undefined));
 
     expect(cleared.annotations['note']?.anchor).toBeUndefined();
     expect(await calloutPathCount(cleared)).toBe(0);
@@ -114,7 +114,7 @@ describe('the anchor gesture reaches a painted callout', () => {
     // downstream can read.
     const before = baseStylesheet();
     const edit = anchorCommit({ ref: noteRef }, before, { kind: 'annotation', id: 'other' });
-    const after = applyStyleEdit(before, edit);
+    const after = applyStyleEditToStylesheet(before, edit);
 
     expect(after.annotations['note']?.anchor).toBeUndefined();
   });

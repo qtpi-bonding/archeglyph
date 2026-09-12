@@ -14,7 +14,7 @@ import { deleteAnnotationEdit } from '../state/edits/annotation';
 import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
-import { pinAllEdit, unpinAllEdit } from '../state/edits/layout_command';
+import { pinAllEdit, unpinAllEdit, withLayoutMaterialized } from '../state/edits/layout_command';
 import { clearNodeSizeEdit } from '../state/edits/resize';
 
 export interface Command {
@@ -90,7 +90,14 @@ function runNudge(context: CommandContext, dx: number, dy: number): void {
   if (moves.length > 0) {
     // Coalesced under one key so holding an arrow key is one undo entry, not
     // one per repeat.
-    context.state.applyStyleEdit(moveElementsEdit(context.state.stylesheet(), moves), 'nudge');
+    context.state.applyStyleEdit(
+      withLayoutMaterialized(
+        context.state.stylesheet(),
+        geometry.diagram,
+        moveElementsEdit(context.state.stylesheet(), moves),
+      ),
+      'nudge',
+    );
   }
 }
 

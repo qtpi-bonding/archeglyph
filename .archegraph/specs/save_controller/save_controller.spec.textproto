@@ -37,14 +37,20 @@
 #   nothing having changed. Use the same
 #   `let isFirstRun = true; if (isFirstRun) { isFirstRun = false; return; }`
 #   pattern top_bar.tsx already uses for exactly this reason.
-# - The debounce ONLY arms when adapter.canSave() is true at the time
-#   version() changes — an adapter with no save target yet (e.g.
-#   BrowserFsAdapter before any file handle exists) should not spin up a
-#   silent no-op timer.
+# - The debounce ONLY arms when adapter.canAutosave() is true at the time
+#   version() changes — NOT canSave(). A host that can save only behind a
+#   picker or a download must wait to be asked: showSaveFilePicker needs
+#   transient activation a timer does not have, and the download fallback
+#   raises a dialog every single time. Gating this on canSave() is what
+#   made the editor prompt after every drag. When canAutosave() is false
+#   but there are edits, set status 'unsaved' and arm nothing; the explicit
+#   Save (which runs under a real click, so the picker works and the handle
+#   sticks) is what gets autosave started.
 # - The internal save routine: re-checks adapter.canSave() (it may have
 #   changed since the timer was armed — e.g. a save target became
 #   available then unavailable, though today's adapters don't retract
-#   canSave once true), sets status to 'saving', calls
+#   canSave once true) — canSave, not canAutosave: an explicit Save is
+#   allowed to prompt — sets status to 'saving', calls
 #   `await adapter.save(state.stylesheet())`, and on the Result: 'err' ->
 #   errorMessage = result.error.message, status = 'error'; success ->
 #   errorMessage = undefined, status = 'saved'.
@@ -65,8 +71,10 @@ doc: "Standalone debounced-autosave + explicit-save controller. No UI; a future 
 
 structs: [
   { name: "SaveStatus"
-    doc: "Emit exactly: export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';"
-    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'idle' | 'saving' | 'saved' | 'error'" } }
+    doc: "Emit exactly: export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';\n"
+         "'unsaved' is the state of a host that CAN save but cannot autosave — "
+         "there are edits and only an explicit Save will write them."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'idle' | 'unsaved' | 'saving' | 'saved' | 'error'" } }
     typescript: {}
   },
   { name: "SaveController"

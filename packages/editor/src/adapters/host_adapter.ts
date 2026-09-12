@@ -21,6 +21,18 @@ export interface HostAdapter {
   /** True when a stylesheet can be written back to the current host. */
   canSave(): boolean;
 
+  /**
+   * True when save() writes without any user-facing prompt.
+   *
+   * Separate from canSave() because a host can be saveable and still need a
+   * gesture: the File System Access picker and the download fallback both put
+   * a dialog in front of the user, and showSaveFilePicker additionally
+   * requires transient activation, which a debounce timer does not have.
+   * Background saving is gated on this; an explicit Save is gated on
+   * canSave().
+   */
+  canAutosave(): boolean;
+
   /** Load the diagram and, when available, its stylesheet and file stamp. */
   load(): Promise<Result<LoadResult, AdapterError>>;
 

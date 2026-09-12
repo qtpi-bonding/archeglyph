@@ -20,6 +20,13 @@ export class BrowserFsAdapter implements HostAdapter {
     return this.styleHandle !== null || this.diagHandle !== null;
   }
 
+  // Only a handle we already hold writes silently. Without one, save() has to
+  // raise showSaveFilePicker (or fall back to a download), and doing that on
+  // a debounce timer means a dialog after every drag.
+  canAutosave(): boolean {
+    return this.styleHandle !== null;
+  }
+
   async load(): Promise<Result<LoadResult, AdapterError>> {
     try {
       const result: LoadResult = 'showOpenFilePicker' in window

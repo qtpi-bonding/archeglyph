@@ -14,7 +14,7 @@ import {
 import { EditorState } from '../state/editor_state';
 import { EDITOR_THEMES } from './editor_theme';
 import { HostAdapter } from '../adapters/host_adapter';
-import { SaveController } from './save_controller';
+import { SaveController, SaveStatus } from './save_controller';
 
 export interface TopBarProps {
   state: EditorState;
@@ -55,13 +55,22 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
     props.state.applyStyleEdit(edit);
   }
 
+  function onSave(): void {
+    void props.saveController?.saveNow();
+  }
+
   return (
     <div style={{ display: 'flex', 'align-items': 'center', padding: '0 8px', height: '40px', background: 'var(--ag-panel)', 'border-bottom': '1px solid var(--ag-edge)' }}>
       <span style={{ flex: '1', 'font-size': '14px' }}>{fileName}</span>
       <Show when={props.adapter.canSave()}>
         <span style={{ 'margin-right': '8px', 'font-size': '12px', color: props.saveController?.status() === 'error' ? 'var(--ag-danger)' : 'var(--ag-fg-3)' }}>
-          {props.saveController?.status() === 'saving' ? 'Saving…' : props.saveController?.status() === 'saved' ? 'Saved' : props.saveController?.status() === 'error' ? 'Save failed' : ''}
+          {statusLabel(props.saveController?.status())}
         </span>
+        {/* An explicit Save exists because autosave cannot start itself: the
+            first write has to raise showSaveFilePicker, which needs the
+            transient activation only a real click carries. After one save the
+            handle is held and the debounce takes over silently. */}
+        <button onClick={onSave}>Save</button>
       </Show>
       <button disabled={!props.state.canUndo()} onClick={onUndo}>Undo</button>
       <button disabled={!props.state.canRedo()} onClick={onRedo}>Redo</button>
@@ -82,3 +91,13 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
     </div>
   );
 };
+
+function statusLabel(status: SaveStatus | undefined): string {
+  switch (status) {
+    case 'unsaved': return 'Unsaved';
+    case 'saving': return 'Saving…';
+    case 'saved': return 'Saved';
+    case 'error': return 'Save failed';
+    default: return '';
+  }
+}

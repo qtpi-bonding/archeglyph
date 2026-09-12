@@ -104,6 +104,11 @@ export class UrlParamAdapter implements HostAdapter {
     return this.inlineDiagramB64 !== null;
   }
 
+  // Writing the URL never prompts.
+  canAutosave(): boolean {
+    return this.canSave();
+  }
+
   async load(): Promise<Result<LoadResult, AdapterError>> {
     try {
       const b64: string | null = this.inlineDiagramB64;

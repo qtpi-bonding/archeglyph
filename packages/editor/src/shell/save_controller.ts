@@ -57,7 +57,10 @@ export function createSaveController(
       return;
     }
     clearDebounce();
-    if (!adapter.canSave()) {
+    // canAutosave, not canSave: a host that can only save behind a picker or
+    // a download must wait for the user to ask, or every edit raises a dialog.
+    if (!adapter.canAutosave()) {
+      setStatus('unsaved');
       return;
     }
     debounceTimer = setTimeout((): void => {
@@ -85,4 +88,4 @@ export interface SaveController {
   saveNow(): Promise<void>;
   dispose(): void;
 }
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';

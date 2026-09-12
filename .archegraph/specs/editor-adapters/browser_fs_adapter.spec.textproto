@@ -38,6 +38,13 @@ structs: [
         doc: "`this.styleHandle !== null || this.diagHandle !== null` — true once ANY real file handle exists."
         output: { primitive: BOOLEAN }
       },
+      { name: "canAutosave"
+        doc:
+          "`this.styleHandle !== null`. Only a handle already held writes\n"
+          "silently; without one, save() has to raise showSaveFilePicker or\n"
+          "fall back to a download, and neither belongs on a debounce timer."
+        output: { primitive: BOOLEAN }
+      },
       { name: "load"
         doc: "Wrap the existing dispatch-to-loadViaFsa/loadViaInput body in try/catch; return Result."
         is_async: true

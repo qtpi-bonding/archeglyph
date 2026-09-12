@@ -34,6 +34,34 @@ methods: [
     output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
     uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "styleEdit"]
   },
+  { name: "withLayoutMaterialized"
+    doc:
+      "Pin-on-touch (docs/editor-ui-review.md §5.2). Returns `edit` with a\n"
+      "position written for every node and group that has none yet, taken\n"
+      "from where the layout currently puts them.\n"
+      "\n"
+      "Why this is not optional: an un-pinned diagram is arranged by ELK, but\n"
+      "the moment ONE element gets a position the layout engine stops asking\n"
+      "ELK for placement and seeds the rest beside the pinned one instead. So\n"
+      "without this, dragging a single node rearranges the whole diagram\n"
+      "under the user. Every builder that writes a position — move, resize,\n"
+      "nudge — must route through here.\n"
+      "\n"
+      "The materialized changes come FIRST, so the caller's own changes win\n"
+      "for any element they also touch (applyMapChanges takes the last change\n"
+      "per id). One edit, so it is one undo entry.\n"
+      "\n"
+      "Elements that already carry a position in the stylesheet are skipped,\n"
+      "which makes this a no-op from the second gesture onwards; when nothing\n"
+      "needs pinning it returns `edit` unchanged."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } },
+      { name: "edit", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+    uses: ["patchNodeEntry", "patchGroupEntry", "nodeChange", "groupChange", "initOf"]
+  },
   { name: "unpinAllEdit"
     doc: "Clears every NodeLayout/GroupLayout position, handing the diagram back to ELK. Keeps the rest of each entry — unpinning must not reset anyone's colours."
     inputs: [

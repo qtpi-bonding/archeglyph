@@ -41,6 +41,9 @@ export interface CanvasProps {
   state: EditorState;
   /** Called by the shell after a canvas interaction changes the selection. */
   onFocusInspector?: () => void;
+  /** Called for the Save command. The canvas owns the keydown listener, so
+      Cmd/Ctrl+S is dead without it. */
+  onSave?: () => void;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -222,7 +225,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
     const onKeyDown = (event: KeyboardEvent): void => {
-      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => undefined, focusInspector: props.onFocusInspector });
+      const handled: boolean = handleKeyDown(event, { state: props.state, ui: props.ui, geometry: geometry(), rect: containerRect(), save: (): void => { props.onSave?.(); }, focusInspector: props.onFocusInspector });
       if (handled) { event.preventDefault(); }
     };
     document.addEventListener('keydown', onKeyDown);

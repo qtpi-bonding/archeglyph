@@ -3,12 +3,15 @@
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import {
   GroupLayoutSchema,
+  GroupStyleChange,
   GroupStyleEntry,
   GroupStyleEntrySchema,
   NodeLayoutSchema,
+  NodeStyleChange,
   NodeStyleEntry,
   NodeStyleEntrySchema,
   StyleEdit,
+  StyleEditSchema,
   Stylesheet,
   Vec2,
   Vec2Schema
@@ -78,24 +81,35 @@ export function unpinElementsEdit(stylesheet: Stylesheet, refs: Array<ElementMov
   });
 }
 
+/**
+ * Parent-relative position for an element the layout placed at `position`.
+ *
+ * Layout coordinates are canvas-absolute while style positions are relative
+ * to the immediate parent group, so every pin has to be converted back before
+ * it is written to the stylesheet.
+ */
+function parentRelative(
+  groupsById: Map<string, { position: Vec2 }>,
+  position: Vec2,
+  parentId: string | undefined,
+): Vec2 {
+  const parent = parentId === undefined ? undefined : groupsById.get(parentId);
+  return parent === undefined
+    ? create(Vec2Schema, { x: position.x, y: position.y })
+    : create(Vec2Schema, {
+        x: position.x - parent.position.x,
+        y: position.y - parent.position.y,
+      });
+}
+
 export function pinAllEdit(stylesheet: Stylesheet, diagram: LaidOutDiagram): StyleEdit {
   const groupsById = new Map(diagram.groups.map((group) => [group.id, group]));
-
-  const parentRelativePosition = (position: Vec2, parentId: string | undefined): Vec2 => {
-    const parent = parentId === undefined ? undefined : groupsById.get(parentId);
-    return parent === undefined
-      ? create(Vec2Schema, { x: position.x, y: position.y })
-      : create(Vec2Schema, {
-          x: position.x - parent.position.x,
-          y: position.y - parent.position.y,
-        });
-  };
 
   const nodeChanges = diagram.nodes.map((node) =>
     nodeChange(
       node.id,
       patchNodeEntry(stylesheet.nodes[node.id], {
-        position: parentRelativePosition(node.position, node.parentGroup),
+        position: parentRelative(groupsById, node.position, node.parentGroup),
       }),
     ),
   );
@@ -103,7 +117,7 @@ export function pinAllEdit(stylesheet: Stylesheet, diagram: LaidOutDiagram): Sty
     groupChange(
       group.id,
       patchGroupEntry(stylesheet.groups[group.id], {
-        position: parentRelativePosition(group.position, group.parentGroup),
+        position: parentRelative(groupsById, group.position, group.parentGroup),
       }),
     ),
   );
@@ -115,3 +129,59 @@ export function pinAllEdit(stylesheet: Stylesheet, diagram: LaidOutDiagram): Sty
   });
 }
 
+/**
+ * `edit` with a position written for every node and group that does not have
+ * one yet, taken from where the layout currently puts them.
+ *
+ * This is pin-on-touch (editor-ui-review.md §5.2). A diagram with no explicit
+ * positions is arranged by ELK; the moment one element gets a position, the
+ * layout engine stops calling ELK for placement and seeds the rest beside the
+ * pinned one instead -- so moving a single node would rearrange the whole
+ * diagram. Materializing the current arrangement into the SAME edit keeps
+ * everything else exactly where the user sees it, and keeps it to one undo
+ * entry.
+ *
+ * The materialized changes come FIRST so the caller's own changes win for any
+ * element they also touch: applyMapChanges takes the last change per id.
+ *
+ * Elements already carrying a position in the stylesheet are skipped, so this
+ * is a no-op from the second gesture onwards.
+ */
+export function withLayoutMaterialized(
+  stylesheet: Stylesheet,
+  diagram: LaidOutDiagram,
+  edit: StyleEdit,
+): StyleEdit {
+  const groupsById = new Map(diagram.groups.map((group) => [group.id, group]));
+
+  const nodePins: Array<NodeStyleChange> = diagram.nodes
+    .filter((node) => stylesheet.nodes[node.id]?.layout?.position === undefined)
+    .map((node) =>
+      nodeChange(
+        node.id,
+        patchNodeEntry(stylesheet.nodes[node.id], {
+          position: parentRelative(groupsById, node.position, node.parentGroup),
+        }),
+      ),
+    );
+  const groupPins: Array<GroupStyleChange> = diagram.groups
+    .filter((group) => stylesheet.groups[group.id]?.layout?.position === undefined)
+    .map((group) =>
+      groupChange(
+        group.id,
+        patchGroupEntry(stylesheet.groups[group.id], {
+          position: parentRelative(groupsById, group.position, group.parentGroup),
+        }),
+      ),
+    );
+
+  if (nodePins.length === 0 && groupPins.length === 0) {
+    return edit;
+  }
+
+  return create(StyleEditSchema, {
+    ...initOf(edit),
+    nodeChanges: [...nodePins, ...edit.nodeChanges],
+    groupChanges: [...groupPins, ...edit.groupChanges],
+  });
+}

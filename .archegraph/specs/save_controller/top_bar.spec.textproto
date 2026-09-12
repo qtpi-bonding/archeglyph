@@ -1,0 +1,16 @@
+# Wave 5 fix. Autosave cannot bootstrap itself: the first write has to raise
+# showSaveFilePicker, and that needs the transient activation only a real
+# click carries. Without a Save control there was no click anywhere in the
+# app, so the debounce was the only save path -- and it prompted every time.
+
+file: "packages/editor/src/shell/top_bar.tsx"
+doc: "The placeholder chrome bar. Retired by wave 6's toolbar; carries file name, save state, undo/redo and the editor-theme picker until then."
+
+methods: [
+  { name: "statusLabel"
+    doc: "SaveStatus -> the short string shown beside the Save button. 'idle' renders as nothing: a freshly loaded document with no edits should say nothing at all, not 'Saved'."
+    inputs: [{ name: "status", type: { named: { symbol: "SaveStatus" } }, is_optional: true }]
+    output: { primitive: CHARACTER }
+    uses: ["SaveStatus"]
+  }
+]

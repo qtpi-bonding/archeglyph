@@ -205,7 +205,43 @@ describe('dragging a handle resizes the element under it', () => {
     );
 
     expect(after.groups.g1.layout?.size).toMatchObject({ x: 250, y: 250 });
-    expect(after.nodes.c1).toBeUndefined();
+    // The child is pinned by the same edit (pin-on-touch materializes the
+    // whole layout), but pinned exactly where it already was.
+    expect(after.nodes.c1.layout?.position).toMatchObject({ x: 20, y: 20 });
+  });
+});
+
+describe('pin-on-touch', () => {
+  // The bug this guards: an un-pinned diagram is arranged by ELK, but the
+  // moment ONE element gets a position the layout engine stops calling ELK
+  // for placement and seeds the rest beside the pinned one -- so dragging a
+  // single node rearranged the whole diagram under the user.
+  test('the first move pins every other element where it already is', () => {
+    const dragged = node('n1', vec2(10, 20), vec2(100, 50));
+    const bystander = node('n2', vec2(300, 400), vec2(100, 50));
+    const geometry = geometryFrom({ nodes: [dragged, bystander] });
+    const session: MoveSession = { refs: [{ id: 'n1', kind: 'node' }], origin: vec2(0, 0) };
+
+    const before = create(StylesheetSchema, { schemaVersion: 1 });
+    const after = applyStyleEditToStylesheet(
+      before,
+      moveCommit(session, geometry, before, vec2(15, 5))!,
+    );
+
+    expect(after.nodes.n1.layout?.position).toMatchObject({ x: 25, y: 25 });
+    expect(after.nodes.n2.layout?.position).toMatchObject({ x: 300, y: 400 });
+  });
+
+  test('a later move does not re-pin what is already pinned', () => {
+    const n1 = node('n1', vec2(10, 20), vec2(100, 50));
+    const n2 = node('n2', vec2(300, 20), vec2(100, 50));
+    const geometry = geometryFrom({ nodes: [n1, n2] });
+    const session: MoveSession = { refs: [{ id: 'n1', kind: 'node' }], origin: vec2(0, 0) };
+
+    // sheet() has explicit positions for both.
+    const edit = moveCommit(session, geometry, sheet(), vec2(5, 0))!;
+
+    expect(edit.nodeChanges.map((change) => change.nodeId)).toEqual(['n1']);
   });
 });
 

@@ -21,6 +21,10 @@ structs: [
       { name: "canSave"
         output: { primitive: BOOLEAN }
       },
+      { name: "canAutosave"
+        doc: "Same as canSave — writing the URL never prompts."
+        output: { primitive: BOOLEAN }
+      },
       { name: "load"
         doc: "Wrap the existing inline-base64/remote-fetch body in try/catch; return Result."
         is_async: true

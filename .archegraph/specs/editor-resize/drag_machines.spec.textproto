@@ -95,7 +95,7 @@ methods: [
       { name: "keepAspect", type: { primitive: BOOLEAN } }
     ]
     output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
-    uses: ["resizeBounds", "resizeNodeEdit", "resizeGroupEdit", "resizeAnnotationEdit", "elementKey"]
+    uses: ["resizeBounds", "resizeNodeEdit", "resizeGroupEdit", "resizeAnnotationEdit", "withLayoutMaterialized", "elementKey"]
   },
   { name: "moveUpdate"
     change_type: MODIFIED
@@ -140,7 +140,7 @@ methods: [
       { name: "current", type: { named: { symbol: "Vec2" } } }
     ]
     output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
-    uses: ["moveElementsEdit", "elementKey"]
+    uses: ["moveElementsEdit", "withLayoutMaterialized", "elementKey"]
   },
   { name: "marqueeUpdate"
     change_type: MODIFIED

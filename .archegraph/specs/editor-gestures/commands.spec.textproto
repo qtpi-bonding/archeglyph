@@ -46,7 +46,10 @@ methods: [
       "  escape — clears the selection; wave 6 extends it to leave a mode.\n"
       "  nudge-* — moves the selection by one diagram unit, ten with shift,\n"
       "    through the same move_edit path a drag uses, so the two coalesce\n"
-      "    into one undo entry when repeated.\n"
+      "    into one undo entry when repeated. Like a drag, it must route the\n"
+      "    edit through withLayoutMaterialized: a nudge writes a position, and\n"
+      "    a position pins, so every other element has to be pinned in the\n"
+      "    same edit or the layout engine re-seeds them all around it.\n"
       "  ring-next / ring-prev — D6's navigation on `s`, over the Scene's own\n"
       "    element order so the ring matches what is on screen."
     inputs: [

@@ -49,6 +49,18 @@ interfaces: [
         doc: "True if this adapter supports writing stylesheet changes back RIGHT NOW."
         output: { primitive: BOOLEAN }
       },
+      { name: "canAutosave"
+        doc:
+          "True when save() writes with NO user-facing prompt.\n"
+          "\n"
+          "Deliberately separate from canSave: a host can be perfectly\n"
+          "saveable and still need a gesture. showSaveFilePicker requires\n"
+          "transient activation, which a debounce timer does not have, and the\n"
+          "download fallback puts a dialog in front of the user every time. The\n"
+          "save controller gates BACKGROUND saving on this and an explicit\n"
+          "Save on canSave; conflating them means a dialog after every drag."
+        output: { primitive: BOOLEAN }
+      },
       { name: "load"
         doc: "Fetch diagram and optionally stylesheet. stylesheet absent = undefined. Boundary method: never throws."
         is_async: true

@@ -90,7 +90,7 @@ methods: [
       { name: "zoom", type: { primitive: REAL } }
     ]
     output: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "StyleEdit | undefined" } }
-    uses: ["moveElementsEdit", "elementKey", "archeglyph.style.v1.StyleEdit"]
+    uses: ["moveElementsEdit", "withLayoutMaterialized", "elementKey", "archeglyph.style.v1.StyleEdit"]
   },
   { name: "marqueeUpdate"
     doc: "The rectangle between the press point and the pointer, in diagram units, normalised so dragging up-left gives the same rect as down-right."

@@ -8,6 +8,7 @@ import { elementKey } from '../scene/element_key';
 import { Handle } from '../scene/hit_test';
 import { ScenePreview, previewMove, previewResize, resizeBounds } from '../scene/preview';
 import { SceneGeometry } from '../scene/scene';
+import { withLayoutMaterialized } from '../state/edits/layout_command';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { resizeAnnotationEdit, resizeGroupEdit, resizeNodeEdit } from '../state/edits/resize';
 import { selectInRect } from '../ui_state/selection_ops';
@@ -68,7 +69,10 @@ export function moveCommit(session: MoveSession, geometry: SceneGeometry, styles
     });
   }
 
-  return moves.length === 0 ? undefined : moveElementsEdit(stylesheet, moves);
+  if (moves.length === 0) {
+    return undefined;
+  }
+  return withLayoutMaterialized(stylesheet, geometry.diagram, moveElementsEdit(stylesheet, moves));
 }
 export function moveUpdate(session: MoveSession, geometry: SceneGeometry, current: Vec2): ScenePreview {
   const delta = {
@@ -152,12 +156,17 @@ export function resizeCommit(session: ResizeSession, geometry: SceneGeometry, st
     y: resized.maxY - resized.minY,
   });
 
+  // Resize writes a position too, so it pins just as a move does and needs
+  // the same materialization of everything else.
+  const materialize = (edit: StyleEdit): StyleEdit =>
+    withLayoutMaterialized(stylesheet, geometry.diagram, edit);
+
   switch (session.ref.kind) {
     case 'node':
-      return resizeNodeEdit(stylesheet, session.ref.id, position, size);
+      return materialize(resizeNodeEdit(stylesheet, session.ref.id, position, size));
     case 'group':
-      return resizeGroupEdit(stylesheet, session.ref.id, position, size);
+      return materialize(resizeGroupEdit(stylesheet, session.ref.id, position, size));
     case 'annotation':
-      return resizeAnnotationEdit(stylesheet, session.ref.id, position, size);
+      return materialize(resizeAnnotationEdit(stylesheet, session.ref.id, position, size));
   }
 }

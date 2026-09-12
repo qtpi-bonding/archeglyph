@@ -1,0 +1,30 @@
+# Wave 5 fix. The canvas owns the only keydown listener in the app (the
+# shell's duplicate was removed in the inspector wave), so it is the only
+# place Cmd/Ctrl+S can reach the save controller.
+#
+# It was passing `save: () => undefined` into CommandContext, which meant the
+# keymap resolved the chord, the command table found 'save', and the runner
+# called a function that did nothing. Exactly the focus-inspector shape: a
+# caller on paper, a dead wire in fact.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The single SVG scene; a thin adapter feeding pointer and wheel events to the gesture layer."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc: "Gains `onSave`, which the shell supplies and the canvas only forwards into CommandContext. Optional, like onFocusInspector: the canvas renders without a host that can save."
+    fields: [
+      { name: "diagram", type: { named: { symbol: "Diagram" } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } },
+      { name: "scene", type: { named: { symbol: "Scene" } } },
+      { name: "stylesheet", type: { named: { symbol: "Stylesheet" } } },
+      { name: "theme", type: { named: { symbol: "Theme" } } },
+      { name: "ui", type: { named: { symbol: "UiState" } } },
+      { name: "state", type: { named: { symbol: "EditorState" } } },
+      { name: "onFocusInspector", type: { arrow: { inputs: [], output: { primitive: VOID } } }, is_optional: true },
+      { name: "onSave", type: { arrow: { inputs: [], output: { primitive: VOID } } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

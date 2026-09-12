@@ -63,6 +63,9 @@ export const App: Component<{}> = (): JSX.Element => {
 
   // This wrapper is stable, while the inspector supplies its target after
   // mounting. Resolve the target when the callback is called, not here.
+  function onSave(): void {
+    void saveController()?.saveNow();
+  }
   function onFocusInspector(): void {
     focusInspector?.();
   }
@@ -146,7 +149,7 @@ export const App: Component<{}> = (): JSX.Element => {
           <Resizable style={{ flex: '1', overflow: 'hidden' }}>
             <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
               <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} />
+                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} onSave={onSave} />
               </Show>
             </Resizable.Panel>
             <Resizable.Handle />

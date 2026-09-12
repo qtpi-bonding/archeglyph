@@ -36,5 +36,9 @@ export interface MarqueeSession {
   origin: Vec2;
 }
 export function panUpdate(session: PanSession, current: Vec2): Viewport {
-  throw new Error('not implemented');
+  return {
+    panX: session.viewport.panX + current.x - session.origin.x,
+    panY: session.viewport.panY + current.y - session.origin.y,
+    zoom: session.viewport.zoom,
+  };
 }

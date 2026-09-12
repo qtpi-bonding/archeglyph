@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { create } from '@bufbuild/protobuf';
+import { initOf } from '../../state/edits/entry_patch';
 import {
   Arrowheads,
   ArrowheadsSchema,
@@ -56,9 +57,9 @@ function commitLineForEdge(
         return undefined;
       }
       newGlyph1D = create(Glyph1DSchema, {
-        ...existingConnection,
+        ...initOf(existingConnection),
         stroke: create(StrokeSchema, {
-          ...existingStroke,
+          ...initOf(existingStroke),
           paint: { case: 'color', value: create(ColorSchema, { value }) },
         }),
       });
@@ -67,9 +68,9 @@ function commitLineForEdge(
         return undefined;
       }
       newGlyph1D = create(Glyph1DSchema, {
-        ...existingConnection,
+        ...initOf(existingConnection),
         stroke: create(StrokeSchema, {
-          ...existingStroke,
+          ...initOf(existingStroke),
           width: value,
         }),
       });
@@ -82,9 +83,9 @@ function commitLineForEdge(
         return undefined;
       }
       newGlyph1D = create(Glyph1DSchema, {
-        ...existingConnection,
+        ...initOf(existingConnection),
         stroke: create(StrokeSchema, {
-          ...existingStroke,
+          ...initOf(existingStroke),
           dashing: { case: 'pattern', value: patternEntry.value },
         }),
       });
@@ -109,7 +110,7 @@ function commitLineForEdge(
         size: existingArrowheads?.size,
       });
       newGlyph1D = create(Glyph1DSchema, {
-        ...existingConnection,
+        ...initOf(existingConnection),
         arrowheads: newArrowheads,
       });
     }
@@ -154,7 +155,7 @@ function commitLineForAnnotation(
         newGlyph1D = create(Glyph1DSchema, {
           ...existingCallout,
           stroke: create(StrokeSchema, {
-            ...existingStroke,
+            ...initOf(existingStroke),
             paint: { case: 'color', value: create(ColorSchema, { value }) },
           }),
         });
@@ -165,7 +166,7 @@ function commitLineForAnnotation(
         newGlyph1D = create(Glyph1DSchema, {
           ...existingCallout,
           stroke: create(StrokeSchema, {
-            ...existingStroke,
+            ...initOf(existingStroke),
             width: value,
           }),
         });
@@ -180,7 +181,7 @@ function commitLineForAnnotation(
         newGlyph1D = create(Glyph1DSchema, {
           ...existingCallout,
           stroke: create(StrokeSchema, {
-            ...existingStroke,
+            ...initOf(existingStroke),
             dashing: { case: 'pattern', value: patternEntry.value },
           }),
         });

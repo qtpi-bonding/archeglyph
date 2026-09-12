@@ -57,7 +57,7 @@ describe('commitLine', () => {
       expect(result?.edgeChanges).toHaveLength(1);
       expect(result!.edgeChanges[0].edgeId).toBe('e1');
       expect(result!.edgeChanges[0].after?.connection?.stroke?.paint.case).toBe('color');
-      expect(result!.edgeChanges[0].after?.connection?.stroke?.paint.value.value).toBe('#FF0000');
+      expect((result!.edgeChanges[0].after?.connection?.stroke?.paint.value as { value?: string } | undefined)?.value).toBe('#FF0000');
     });
 
     it('returns undefined when strokeColor value is not a string', () => {
@@ -132,7 +132,7 @@ describe('commitLine', () => {
 
       expect(result).toBeDefined();
       expect(result?.edgeChanges[0].after?.connection?.stroke?.dashing.case).toBe('pattern');
-      expect(result?.edgeChanges[0].after?.connection?.stroke?.dashing.value).toBe(StrokePattern.STROKE_PATTERN_DASHED);
+      expect(result?.edgeChanges[0].after?.connection?.stroke?.dashing.value).toBe(StrokePattern.DASHED);
     });
 
     it('returns undefined for unrecognized pattern name', () => {

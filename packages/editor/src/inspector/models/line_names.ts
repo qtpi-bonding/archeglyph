@@ -6,9 +6,9 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 
 export const PATTERN_TABLE: ReadonlyArray<{ name: string; value: StrokePattern }> = [
-  { name: 'solid', value: StrokePattern.STROKE_PATTERN_SOLID },
-  { name: 'dashed', value: StrokePattern.STROKE_PATTERN_DASHED },
-  { name: 'dotted', value: StrokePattern.STROKE_PATTERN_DOTTED },
+  { name: 'solid', value: StrokePattern.SOLID },
+  { name: 'dashed', value: StrokePattern.DASHED },
+  { name: 'dotted', value: StrokePattern.DOTTED },
 ];
 
 export const ARROWHEAD_TABLE: ReadonlyArray<{

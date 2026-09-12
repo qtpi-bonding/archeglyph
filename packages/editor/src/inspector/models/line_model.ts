@@ -93,8 +93,8 @@ export function lineModel(model: InspectorModel, geometry: SceneGeometry, styles
     arrowEnd: textField(arrowEndOverrides, arrowEndEffectives),
   };
 }
-import { NumberField } from '../number_field';
-import { TextField } from '../text_field';
+import { NumberField } from '../field_value';
+import { TextField } from '../field_value';
 
 export interface LineModel {
   strokeColor: TextField;

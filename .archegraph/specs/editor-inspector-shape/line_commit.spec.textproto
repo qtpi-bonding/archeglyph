@@ -40,6 +40,14 @@ methods: [
       { name: "value", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | number | undefined" } } }
     ]
     output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "StyleEdit | undefined" } }
-    uses: ["PATTERN_TABLE", "ARROWHEAD_TABLE", "styleEdit", "edgeChange", "annotationChange", "patchEdgeEntry", "patchAnnotationEntry"]
+    uses: ["PATTERN_TABLE", "ARROWHEAD_TABLE"]
+    # The builder edges are deliberately absent. commitLine dispatches on kind
+    # to two file-local helpers, and THEY call styleEdit, edgeChange,
+    # annotationChange, patchEdgeEntry and patchAnnotationEntry -- so those
+    # edges belong to the helpers, not to this decl. `uses:` names what a
+    # decl's own body references; listing a helper's calls here produces
+    # permanent MISSING drift on correct code, which is what happened on the
+    # first verify of this pillar. Same shape as the pin commands in
+    # gestures/commands.ts.
   }
 ]

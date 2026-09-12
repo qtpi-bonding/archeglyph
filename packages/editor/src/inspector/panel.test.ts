@@ -19,25 +19,26 @@ const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>
   ids.map((id) => ({ id, kind }));
 
 describe('renderableSections', () => {
-  test('a node renders layout and typography, and drops shape', () => {
+  test('a node renders all three of its sections', () => {
     const model = inspectorModel(refs('node', 'n1'))!;
-    expect(model.sections).toContain('shape');
-    expect(renderableSections(model)).toEqual(['layout', 'typography']);
+    expect(renderableSections(model)).toEqual(['layout', 'shape', 'typography']);
   });
 
-  test('a group drops both group and shape, keeping the two that exist', () => {
+  test('a group drops its container section, which is not shipped', () => {
     const model = inspectorModel(refs('group', 'g1'))!;
-    expect(renderableSections(model)).toEqual(['layout', 'typography']);
+    expect(model.sections).toContain('group');
+    expect(renderableSections(model)).toEqual(['layout', 'shape', 'typography']);
   });
 
-  test('an edge renders typography only, since line is not shipped', () => {
+  test('an edge renders line and typography', () => {
     const model = inspectorModel(refs('edge', 'e1'))!;
-    expect(renderableSections(model)).toEqual(['typography']);
+    expect(renderableSections(model)).toEqual(['line', 'typography']);
   });
 
-  test('an annotation keeps layout and typography', () => {
+  test('an annotation drops only its own content section', () => {
     const model = inspectorModel(refs('annotation', 'a1'))!;
-    expect(renderableSections(model)).toEqual(['layout', 'typography']);
+    expect(model.sections).toContain('annotation');
+    expect(renderableSections(model)).toEqual(['layout', 'shape', 'line', 'typography']);
   });
 
   test('display order follows the model, not the registry', () => {
@@ -58,6 +59,6 @@ describe('renderableSections', () => {
   test('the registry is exactly what this pillar ships', () => {
     // This is the line the follow-on pillar edits. If it drifts without the
     // components existing, the panel renders a section that cannot commit.
-    expect([...SECTION_IDS].sort()).toEqual(['layout', 'typography']);
+    expect([...SECTION_IDS].sort()).toEqual(['layout', 'line', 'shape', 'typography']);
   });
 });

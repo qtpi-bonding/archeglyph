@@ -9,21 +9,21 @@ import { lineModel, LineModel } from '../models/line_model';
 import { commitLine } from '../models/line_commit';
 import { PATTERN_TABLE, ARROWHEAD_TABLE } from '../models/line_names';
 import { EditorState } from '../../state/editor_state';
+import { SceneGeometry } from '../../scene/scene';
 
 export interface LineSectionProps {
   state: EditorState;
   model: InspectorModel;
-  geometry?: unknown;
-  theme?: unknown;
+  geometry: SceneGeometry;
 }
 
-type LineField = 'stroke' | 'strokeWidth' | 'pattern' | 'startArrowhead' | 'endArrowhead';
+type LineField = 'strokeColor' | 'strokeWidth' | 'pattern' | 'arrowStart' | 'arrowEnd';
 
 export const LineSection: Component<LineSectionProps> = (
   props: LineSectionProps,
 ): JSX.Element => {
   const fields = createMemo<LineModel>(() => (
-    lineModel(props.model, props.state.stylesheet())
+    lineModel(props.model, props.geometry, props.state.stylesheet())
   ));
 
   const commit = (field: LineField): ((value: string | number | undefined) => void) => (
@@ -47,8 +47,8 @@ export const LineSection: Component<LineSectionProps> = (
     <section>
       <ColorFieldInput
         label="Stroke"
-        field={fields().stroke}
-        onCommit={commit('stroke')}
+        field={fields().strokeColor}
+        onCommit={commit('strokeColor')}
       />
       <NumberFieldInput
         label="Stroke Width"
@@ -63,15 +63,15 @@ export const LineSection: Component<LineSectionProps> = (
       />
       <EnumFieldInput
         label="Start"
-        field={fields().startArrowhead}
+        field={fields().arrowStart}
         options={arrowheadOptions}
-        onCommit={commit('startArrowhead')}
+        onCommit={commit('arrowStart')}
       />
       <EnumFieldInput
         label="End"
-        field={fields().endArrowhead}
+        field={fields().arrowEnd}
         options={arrowheadOptions}
-        onCommit={commit('endArrowhead')}
+        onCommit={commit('arrowEnd')}
       />
     </section>
   );

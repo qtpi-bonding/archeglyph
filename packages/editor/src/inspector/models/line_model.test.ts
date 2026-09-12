@@ -58,8 +58,8 @@ const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>
 
 describe('lineModel', () => {
   test('PATTERN_TABLE contains the expected values', () => {
-    expect(PATTERN_TABLE.find((e) => e.name === 'dashed')?.value).toBe(StrokePattern.STROKE_PATTERN_DASHED);
-    expect(PATTERN_TABLE.find((e) => e.name === 'solid')?.value).toBe(StrokePattern.STROKE_PATTERN_SOLID);
+    expect(PATTERN_TABLE.find((e) => e.name === 'dashed')?.value).toBe(StrokePattern.DASHED);
+    expect(PATTERN_TABLE.find((e) => e.name === 'solid')?.value).toBe(StrokePattern.SOLID);
   });
 
   test('edge with solid stroke reads color and width as effective values', () => {

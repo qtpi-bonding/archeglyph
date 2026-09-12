@@ -24,6 +24,7 @@ export interface ResizeIntent {
   ref: ElementRef;
   handle: Handle;
   delta: Vec2;
+  keepAspect?: boolean;
 }
 
 export interface ScenePreview {
@@ -49,63 +50,104 @@ export function routeEdgeBetween(
   return routeStraight(sourceBounds, targetBounds, sourceAttach, targetAttach);
 }
 
-export function resizeBounds(bounds: Bounds, handle: Handle, delta: Vec2, keepAspect: boolean = false): Bounds {
+export function resizeBounds(
+  bounds: Bounds,
+  handle: Handle,
+  delta: Vec2,
+  keepAspect: boolean = false,
+): Bounds {
   const minimumSize = 1;
   const movesMinX = handle === 'nw' || handle === 'w' || handle === 'sw';
   const movesMaxX = handle === 'ne' || handle === 'e' || handle === 'se';
   const movesMinY = handle === 'nw' || handle === 'n' || handle === 'ne';
   const movesMaxY = handle === 'sw' || handle === 's' || handle === 'se';
 
-  const free = {
+  const resized: Bounds = {
     minX: movesMinX ? Math.min(bounds.maxX - minimumSize, bounds.minX + delta.x) : bounds.minX,
     minY: movesMinY ? Math.min(bounds.maxY - minimumSize, bounds.minY + delta.y) : bounds.minY,
     maxX: movesMaxX ? Math.max(bounds.minX + minimumSize, bounds.maxX + delta.x) : bounds.maxX,
     maxY: movesMaxY ? Math.max(bounds.minY + minimumSize, bounds.maxY + delta.y) : bounds.maxY,
   };
 
+  if (!keepAspect) {
+    return resized;
+  }
+
   const width = bounds.maxX - bounds.minX;
   const height = bounds.maxY - bounds.minY;
-  if (!keepAspect || height === 0 || width === 0) {
-    return free;
+  if (width <= 0 || height <= 0) {
+    return resized;
+  }
+  const aspect = width / height;
+  const changesWidth = movesMinX || movesMaxX;
+  const changesHeight = movesMinY || movesMaxY;
+  const requestedWidth = resized.maxX - resized.minX;
+  const requestedHeight = resized.maxY - resized.minY;
+
+  let nextWidth = requestedWidth;
+  let nextHeight = requestedHeight;
+  if (changesWidth && changesHeight) {
+    if (Math.abs(delta.x) / width >= Math.abs(delta.y) / height) {
+      nextHeight = nextWidth / aspect;
+    } else {
+      nextWidth = nextHeight * aspect;
+    }
+  } else if (changesWidth) {
+    nextHeight = nextWidth / aspect;
+  } else if (changesHeight) {
+    nextWidth = nextHeight * aspect;
   }
 
-  const ratio = width / height;
-  const widthChange = Math.abs((free.maxX - free.minX - width) / width);
-  const heightChange = Math.abs((free.maxY - free.minY - height) / height);
-  const widthDrives = widthChange >= heightChange;
-  const targetWidth = widthDrives
-    ? Math.max(free.maxX - free.minX, minimumSize, ratio * minimumSize)
-    : (free.maxY - free.minY) * ratio;
-  const targetHeight = widthDrives
-    ? targetWidth / ratio
-    : Math.max(free.maxY - free.minY, minimumSize, minimumSize / ratio);
+  const scale = Math.max(
+    nextWidth / width,
+    nextHeight / height,
+    minimumSize / width,
+    minimumSize / height,
+  );
+  nextWidth = width * scale;
+  nextHeight = height * scale;
 
-  let minX = free.minX;
-  let minY = free.minY;
-  let maxX = free.maxX;
-  let maxY = free.maxY;
-
-  if (movesMinX) {
-    minX = maxX - targetWidth;
-  } else if (movesMaxX) {
-    maxX = minX + targetWidth;
-  } else {
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    minX = centerX - targetWidth / 2;
-    maxX = centerX + targetWidth / 2;
+  if (movesMinX && movesMaxY) {
+    return {
+      minX: bounds.maxX - nextWidth,
+      minY: bounds.minY,
+      maxX: bounds.maxX,
+      maxY: bounds.minY + nextHeight,
+    };
+  }
+  if (movesMinX && movesMinY) {
+    return {
+      minX: bounds.maxX - nextWidth,
+      minY: bounds.maxY - nextHeight,
+      maxX: bounds.maxX,
+      maxY: bounds.maxY,
+    };
+  }
+  if (movesMaxX && movesMaxY) {
+    return {
+      minX: bounds.minX,
+      minY: bounds.minY,
+      maxX: bounds.minX + nextWidth,
+      maxY: bounds.minY + nextHeight,
+    };
+  }
+  if (movesMaxX && movesMinY) {
+    return {
+      minX: bounds.minX,
+      minY: bounds.maxY - nextHeight,
+      maxX: bounds.minX + nextWidth,
+      maxY: bounds.maxY,
+    };
   }
 
-  if (movesMinY) {
-    minY = maxY - targetHeight;
-  } else if (movesMaxY) {
-    maxY = minY + targetHeight;
-  } else {
-    const centerY = (bounds.minY + bounds.maxY) / 2;
-    minY = centerY - targetHeight / 2;
-    maxY = centerY + targetHeight / 2;
-  }
-
-  return { minX, minY, maxX, maxY };
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  return {
+    minX: movesMinX ? bounds.maxX - nextWidth : changesWidth ? bounds.minX : centerX - nextWidth / 2,
+    minY: movesMinY ? bounds.maxY - nextHeight : changesHeight ? bounds.minY : centerY - nextHeight / 2,
+    maxX: movesMaxX ? bounds.minX + nextWidth : changesWidth ? bounds.maxX : centerX + nextWidth / 2,
+    maxY: movesMaxY ? bounds.minY + nextHeight : changesHeight ? bounds.maxY : centerY + nextHeight / 2,
+  };
 }
 
 function shifted(bounds: Bounds, delta: Vec2): Bounds {
@@ -184,7 +226,7 @@ export function previewResize(geometry: SceneGeometry, intent: ResizeIntent): Sc
     return { bounds: [], edges: [] };
   }
 
-  const next = resizeBounds(target.bounds, intent.handle, intent.delta);
+  const next = resizeBounds(target.bounds, intent.handle, intent.delta, intent.keepAspect ?? false);
   // Resizing is deliberately single-element: unlike previewMove, a group
   // resize changes only the group's container and leaves its members where
   // they are.

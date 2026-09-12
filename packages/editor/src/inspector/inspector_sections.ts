@@ -15,6 +15,9 @@ import type { InspectorModel, SectionId } from './model';
  */
 export const SECTION_IDS: Array<SectionId> = ['layout', 'typography'];
 
+/**
+ * Return the sections this pillar can render, preserving the model's order.
+ */
 export function renderableSections(model: InspectorModel): Array<SectionId> {
   return model.sections.filter((section) => SECTION_IDS.includes(section));
 }

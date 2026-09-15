@@ -1,0 +1,49 @@
+# Wave 6, editor-shell v2a. Bottom-left island -- §8.2's zoom cluster, and the
+# zoom readout that the rejected status bar would have carried.
+
+file: "packages/editor/src/shell/zoom_island.tsx"
+doc: "Bottom-left island: zoom out, percentage readout, zoom in, fit."
+
+structs: [
+  { name: "ZoomIslandProps"
+    change_type: ADDED
+    doc:
+      "`zoom` is the raw viewport scale (1 = 100%), not a formatted string --\n"
+      "the island owns its own formatting so the caller cannot hand it a\n"
+      "percentage that disagrees with the viewport.\n"
+      "\n"
+      "Dispatches through onCommand like every other island; there is no\n"
+      "direct setViewport here."
+    fields: [
+      { name: "zoom",      type: { primitive: REAL } },
+      { name: "onCommand", type: { arrow: { inputs: [ { named: { symbol: "CommandId" } } ], output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "ZoomIsland"
+    change_type: ADDED
+    doc:
+      "Minus, readout, plus, then a separated Fit.\n"
+      "\n"
+      "Its root element carries `class=\"ag-island\"`; focus suppression is the\n"
+      "frame's rule (IslandFrame), and the readout is exempt from it only in\n"
+      "the sense that it is a real button -- see below.\n"
+      "\n"
+      "The readout is `Math.round(zoom * 100)` followed by a percent sign, in\n"
+      "--ag-font-mono at a fixed 4ch width. Monospace and fixed width together are\n"
+      "what stop the plus button sliding sideways as the number goes 90 -> 100\n"
+      "-> 110 during a pinch, which makes it impossible to click twice.\n"
+      "\n"
+      "The readout is a <button>, not a span: clicking it runs `zoom-reset`,\n"
+      "which is the obvious gesture and costs nothing to support, and making\n"
+      "it a real button is what gets it keyboard focus and a focus ring for\n"
+      "free. Style the button flat so it reads as text.\n"
+      "\n"
+      "Fit uses --ag-purple. D12 gives purple 'secondary controls (fit)' by\n"
+      "name, so this is the one place it appears in the chrome."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<ZoomIslandProps>" } }
+    uses: ["ZoomIslandProps"]
+  }
+]

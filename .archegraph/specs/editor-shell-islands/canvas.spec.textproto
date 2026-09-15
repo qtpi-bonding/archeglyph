@@ -1,0 +1,97 @@
+# Wave 6, editor-shell v2a. Two changes to the canvas that the islands force.
+#
+# Both are consequences of chrome moving OUT of the canvas and onto islands
+# that float over it, and neither is optional: without the first, the toolbar
+# and the keyboard would zoom about different points; without the second, the
+# error banner draws across the three top islands.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc:
+  "The one SVG surface: pan/zoom group, three layers, and the pointer and\n"
+  "keyboard entry points.\n"
+  "\n"
+  "Two changes here, both forced by chrome moving OUT of the canvas onto\n"
+  "islands that float over it. Without the first, the toolbar and the keyboard\n"
+  "zoom about different points; without the second, the error banner draws\n"
+  "across the three top islands."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc:
+      "Gains `registerCommandContext`, called once on mount with an accessor\n"
+      "that returns the live CommandContext.\n"
+      "\n"
+      "Why it has to exist at all: the islands dispatch commands, and a\n"
+      "command needs a CommandContext. Canvas already builds one for its\n"
+      "keydown listener, and three of its seven fields are Canvas-private --\n"
+      "`rect` is the containerRect signal, `geometry` is a Canvas-local memo,\n"
+      "and `beginTextEdit` is a Canvas-local closure that scrolls the target\n"
+      "into view and focuses the editor. The shell can reach none of them.\n"
+      "\n"
+      "The alternative is that app.tsx builds a SECOND context, and that is\n"
+      "specifically what must not happen. The zoom commands anchor on\n"
+      "`rect`; two contexts means two rects, so clicking + in the zoom island\n"
+      "and pressing = would zoom about different points. Nothing would look\n"
+      "broken -- it would just drift, which is the expensive kind.\n"
+      "\n"
+      "An ACCESSOR, not a value: `rect` and `geometry` change on every resize\n"
+      "and every scene rebuild, so a context captured once would go stale and\n"
+      "the islands would command against an old viewport.\n"
+      "\n"
+      "This mirrors `registerFocus` on InspectorProps, which is the\n"
+      "established way a child hands the shell a handle into itself.\n"
+      "\n"
+      "REQUIRED, unlike `onFocusInspector` and `onSave` beside it. There is\n"
+      "exactly one call site, so requiring it costs nothing, and the failure\n"
+      "if it is optional and app.tsx\'s node lands without wiring it is that\n"
+      "every island button is permanently dead with no error anywhere -- the\n"
+      "precise shape of the focus-inspector incident that\n"
+      "command_wiring.test.ts exists to catch. A required prop makes that a\n"
+      "compile error instead."
+    fields: [
+      { name: "diagram",                type: { named: { symbol: "Diagram" } } },
+      { name: "layoutEngine",           type: { named: { symbol: "LayoutEngine" } } },
+      { name: "scene",                  type: { named: { symbol: "Scene" } } },
+      { name: "stylesheet",             type: { named: { symbol: "Stylesheet" } } },
+      { name: "theme",                  type: { named: { symbol: "Theme" } } },
+      { name: "ui",                     type: { named: { symbol: "UiState" } } },
+      { name: "state",                  type: { named: { symbol: "EditorState" } } },
+      { name: "onFocusInspector",       type: { arrow: { output: { primitive: VOID } } }, is_optional: true },
+      { name: "onSave",                 type: { arrow: { output: { primitive: VOID } } }, is_optional: true },
+      { name: "registerCommandContext", type: { arrow: { inputs: [ { arrow: { output: { named: { symbol: "CommandContext" } } } } ], output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Two changes. Everything else -- the pan/zoom group, the three layers,\n"
+      "the pointer router wiring, the wheel handler, the keydown listener, the\n"
+      "text editor, fit-on-load -- is untouched.\n"
+      "\n"
+      "1. On mount, call props.registerCommandContext with an accessor\n"
+      "   returning the same context object shape the keydown listener builds.\n"
+      "   Build it in ONE place and have both the listener and the accessor\n"
+      "   read that, rather than writing the literal twice; two literals is\n"
+      "   how the two paths drift.\n"
+      "\n"
+      "2. The `errorVisible` signal, the createEffect that sets it from\n"
+      "   scene.error(), and the absolutely-positioned error banner in the\n"
+      "   returned JSX are all DELETED.\n"
+      "\n"
+      "   That banner is at top 8px, left 8px, right 8px -- full width across\n"
+      "   the top of the canvas. D13 puts the inspector island at top-left,\n"
+      "   the toolbar top-centre and the file island top-right, so the banner\n"
+      "   now draws over all three. StateIsland takes the job, bottom-centre,\n"
+      "   where nothing else lives.\n"
+      "\n"
+      "   Deleting it rather than leaving it is the point: app.tsx wires\n"
+      "   StateIsland to the same scene.error() signal in this build, so\n"
+      "   keeping both means every scene error appears twice."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<CanvasProps>" } }
+    uses: ["CanvasProps", "CommandContext"]
+  }
+]

@@ -1,0 +1,87 @@
+# Wave 6, editor-shell v2a. The start screen -- §8.2 `shell/start_screen`.
+#
+# Replaces the inline fallback block in app.tsx, which offers "Open file..."
+# and "New diagram" side by side. The second contradicts D11 directly: there
+# is no New. archeglyph edits a diagram that already exists, because an empty
+# diagram has no content to separate from its style.
+#
+# DELIBERATELY NARROWER than §8.2, which also asks for recents and a
+# paste-a-URL field. Both were specced here and then cut, because neither is a
+# shell concern:
+#
+#   - Recents needs a document identity to key on. LoadResult
+#     (adapters/host_adapter.ts) carries diagram, stylesheet, baseHash and
+#     stamp -- no name, no path, no URL. BrowserFsAdapter keeps its
+#     FileSystemFileHandle private and `handle.name` never escapes it. A
+#     recents list built on what the shell can see today would key every local
+#     file as "Untitled" and collapse them all into one entry.
+#
+#   - Paste-a-URL needs the adapter to be re-selectable at runtime.
+#     app.tsx binds `const pair = selectAdapters(params)` once, from the
+#     CURRENT url, so there is no path from a pasted string to a
+#     UrlParamAdapter for it without either making the pair a signal or a
+#     full location.assign + reload.
+#
+# Both want the same change -- document identity on LoadResult plus a
+# re-selectable adapter pair -- and that belongs to an adapters pillar. Doing
+# it here would mean this pillar owning four adapter files to add one list.
+# Shipping them unbacked would mean a recents row that reopens an arbitrary
+# file, which is worse than no row.
+
+file: "packages/editor/src/shell/start_screen.tsx"
+doc:
+  "Shown when no document is loaded: open a file. There is no New (D11), and\n"
+  "no recents list and no paste-a-URL field -- both were specced and cut\n"
+  "because neither is a shell concern. Recents needs a document identity to\n"
+  "key on and LoadResult carries none (diagram, stylesheet, baseHash, stamp --\n"
+  "no name or path), so a list built on what the shell can see would key every\n"
+  "local file as 'Untitled' and collapse them into one row. Paste-a-URL needs\n"
+  "a re-selectable adapter, and app.tsx binds its adapter pair once from the\n"
+  "CURRENT url. Both want the same adapters change and belong to an adapters\n"
+  "pillar."
+
+structs: [
+  { name: "StartScreenProps"
+    change_type: ADDED
+    doc:
+      "`loading` is true while a URL-param load is in flight. The screen then\n"
+      "shows progress INSTEAD of the action -- without it, a slow fetch looks\n"
+      "identical to a finished one that found nothing, and the user opens a\n"
+      "second file on top of the one arriving.\n"
+      "\n"
+      "`error` reports a load that failed. Today app.tsx console.errors this\n"
+      "and renders nothing, so a bad URL is a blank screen with the reason in\n"
+      "devtools. This is the smaller half of the editor's error surface: a\n"
+      "load that fails before there is a document belongs here, and a scene\n"
+      "error after one exists belongs to StateIsland."
+    fields: [
+      { name: "loading", type: { primitive: BOOLEAN } },
+      { name: "error",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "onOpen",  type: { arrow: { output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "StartScreen"
+    change_type: ADDED
+    doc:
+      "Wordmark, then 'Open file...', then the error when there is one.\n"
+      "\n"
+      "DO NOT ADD: a 'New diagram' button (D11 -- an empty diagram has no\n"
+      "content to separate from its style), a recents list, or a paste-a-URL\n"
+      "field. The absence of the last two is deliberate and is explained in\n"
+      "this module's doc; neither can be backed by anything the shell can\n"
+      "reach today, and a recents row that reopens an arbitrary file is worse\n"
+      "than no row.\n"
+      "\n"
+      "Renders on the --ag-bg ground so opening a file changes what is on the\n"
+      "table rather than replacing the room. It does NOT draw the drafting\n"
+      "grid: the grid is computed from ui.viewport() inside Canvas, and Canvas\n"
+      "is not mounted when this screen is. A static grid here would be a\n"
+      "second definition of it that could not track the viewport once a\n"
+      "document loaded."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<StartScreenProps>" } }
+    uses: ["StartScreenProps"]
+  }
+]

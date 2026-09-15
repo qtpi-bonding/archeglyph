@@ -1,0 +1,44 @@
+# Wave 6, editor-shell v2a. Bottom-right island -- undo and redo.
+#
+# D13 puts these in their own island rather than in the toolbar. They are the
+# only chrome whose availability changes on every edit, and separating them
+# keeps the toolbar's enabled state static.
+
+file: "packages/editor/src/shell/undo_island.tsx"
+doc: "Bottom-right island: undo and redo, enabled from the document's history depth."
+
+structs: [
+  { name: "UndoIslandProps"
+    change_type: ADDED
+    doc:
+      "`canUndo` and `canRedo` are values, not the EditorState, so this island\n"
+      "cannot reach past history into the document.\n"
+      "\n"
+      "Dispatch goes through onCommand -- the `undo` and `redo` commands\n"
+      "already exist in the registry and are what Cmd+Z runs."
+    fields: [
+      { name: "canUndo",   type: { primitive: BOOLEAN } },
+      { name: "canRedo",   type: { primitive: BOOLEAN } },
+      { name: "onCommand", type: { arrow: { inputs: [ { named: { symbol: "CommandId" } } ], output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "UndoIsland"
+    change_type: ADDED
+    doc:
+      "Two icon buttons, disabled rather than hidden when unavailable -- the\n"
+      "island must not change width as history fills, or it walks across the\n"
+      "corner during a run of edits.\n"
+      "\n"
+      "Button text and tooltip LABEL come from Command.label in the registry;\n"
+      "KEYMAP supplies only the chord. A tooltip is `<label> (<key>)` built\n"
+      "from both, and a command with no chord shows the label alone.\n"
+      "\n"
+      "preventDefault on mousedown, for the same reason as the toolbar: a\n"
+      "focused button swallows Space and Enter."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<UndoIslandProps>" } }
+    uses: ["UndoIslandProps", "KEYMAP", "COMMANDS"]
+  }
+]

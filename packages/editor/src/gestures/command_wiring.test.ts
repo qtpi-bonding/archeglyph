@@ -172,4 +172,60 @@ describe('no command is inert', () => {
     runCommand('focus-inspector' as CommandId, spy.context);
     expect(spy.calls).toEqual(['focusInspector']);
   });
+
+  // --- editor-shell v2a (RED until the islands pillar builds) ---
+  //
+  // The islands are dispatchers over this registry, so every island button
+  // must have a command behind it. These assert the five the toolbar and the
+  // zoom island need, BEFORE the components that click them exist -- a button
+  // wired to a missing command id is the dead-wire bug this file is named for,
+  // and it is invisible until someone clicks it.
+
+  test('the zoom island and hand tool have commands to dispatch', () => {
+    const ids = COMMANDS.map((command) => command.id as string);
+    for (const required of ['tool-hand', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit']) {
+      expect(ids).toContain(required);
+    }
+  });
+
+  test('every command carries a label, since islands render their text from it', () => {
+    // Toolbar, UndoIsland and the state island's mode all read Command.label
+    // rather than hardcoding strings, so that the same tool cannot be called
+    // two different things in two places.
+    for (const command of COMMANDS) {
+      expect(command.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('zoom-in then zoom-out returns to the starting zoom', () => {
+    // Not bit-exact and not asserted as such: the step is multiplicative so
+    // the round trip is floating-point. Away from the clamps it holds to 1e-9.
+    let viewport = { panX: 0, panY: 0, zoom: 1 };
+    const calls: string[] = [];
+    const spy = spyContext([]);
+    const context: CommandContext = Object.assign({}, spy.context, {
+      ui: Object.assign({}, spy.context.ui, {
+        viewport: () => viewport,
+        setViewport: (next: typeof viewport): void => {
+          viewport = typeof next === 'function' ? (next as (v: typeof viewport) => typeof viewport)(viewport) : next;
+          calls.push('setViewport');
+        },
+      }),
+    });
+
+    runCommand('zoom-in' as CommandId, context);
+    expect(viewport.zoom).toBeGreaterThan(1);
+    runCommand('zoom-out' as CommandId, context);
+    expect(viewport.zoom).toBeCloseTo(1, 9);
+  });
+
+  test('zoom-fit does not move the viewport when there is nothing to fit', () => {
+    // contentBounds for an empty index is {0,0,0,0}, not undefined, so an
+    // undefined check does not guard this. fitBoundsToRect special-cases
+    // non-positive extent to zoom 1, which means an unguarded zoom-fit on an
+    // empty diagram silently throws away wherever the user had panned to.
+    const spy = spyContext([]);
+    runCommand('zoom-fit' as CommandId, spy.context);
+    expect(spy.calls).not.toContain('setViewport');
+  });
 });

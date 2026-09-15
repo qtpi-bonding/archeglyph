@@ -1,0 +1,70 @@
+# Wave 6, editor-shell v2a. Top-right island -- file identity and save state.
+#
+# Takes over the left and middle thirds of the retired top_bar: the file name,
+# the save status text, and the explicit Save button. The editor-theme picker
+# comes with it, because a chrome preference has no other home and top-right
+# is where an application settings affordance is looked for.
+
+file: "packages/editor/src/shell/file_island.tsx"
+doc: "Top-right island: file name, dirty dot, save status, and the chrome palette picker."
+
+structs: [
+  { name: "FileIslandProps"
+    change_type: ADDED
+    doc:
+      "`canSave` is passed as a value rather than the adapter, so the island\n"
+      "cannot call load() or save() itself -- those go through onSave.\n"
+      "\n"
+      "`status` is undefined when no save controller exists yet (a document\n"
+      "loaded from a URL with no write handle). The island then shows the name\n"
+      "and no status text at all, rather than inventing a 'Saved' that is not\n"
+      "true."
+    fields: [
+      { name: "fileName",       type: { primitive: CHARACTER } },
+      { name: "dirty",          type: { primitive: BOOLEAN } },
+      { name: "canSave",        type: { primitive: BOOLEAN } },
+      { name: "status",         type: { named: { symbol: "SaveStatus" } }, is_optional: true },
+      { name: "errorMessage",   type: { primitive: CHARACTER }, is_optional: true },
+      { name: "onSave",         type: { arrow: { output: { primitive: VOID } } } },
+      { name: "editorTheme",    type: { primitive: CHARACTER } },
+      { name: "onEditorTheme",  type: { arrow: { inputs: [ { primitive: CHARACTER } ], output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "FileIsland"
+    change_type: ADDED
+    doc:
+      "File name, then a dirty dot, then the status text, then Save, then the\n"
+      "palette picker.\n"
+      "\n"
+      "Local `statusLabel(status)`, four lines, carried here and NOT imported:\n"
+      "  idle -> ''   saving -> 'Saving...'   saved -> 'Saved'\n"
+      "  unsaved -> 'Unsaved'   error -> 'Save failed'\n"
+      "top_bar.tsx has an identical helper and is DELETED in this same build,\n"
+      "so importing it would break on a file that no longer exists. Copy it.\n"
+      "\n"
+      "The dirty dot is --ag-teal and shows only while `dirty` is true; D12\n"
+      "assigns teal 'hover and status accents'. When `dirty` is true and\n"
+      "`status` is 'saving' or 'saved', STATUS WINS for the text and the dot\n"
+      "still shows -- the document is genuinely both (a save in flight does\n"
+      "not make pending edits unpending), and hiding the dot mid-save makes it\n"
+      "flicker on every autosave. An 'error' status uses\n"
+      "--ag-danger and replaces the dot -- a failed save is the one piece of\n"
+      "chrome allowed to shout.\n"
+      "\n"
+      "Save renders only when `canSave`, and this is not cosmetic. Autosave\n"
+      "cannot start itself: the first write raises showSaveFilePicker, which\n"
+      "needs the transient activation only a real click carries. After one\n"
+      "save the handle is held and the debounce takes over. That reasoning is\n"
+      "inherited verbatim from top_bar.tsx and is the reason the button\n"
+      "outlived the bar around it.\n"
+      "\n"
+      "The picker lists EDITOR_THEMES by label. Changing it must not mark the\n"
+      "document dirty -- chrome palette is a browser preference and is never\n"
+      "written to the diagram or the style file (D12c)."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<FileIslandProps>" } }
+    uses: ["FileIslandProps", "EDITOR_THEMES"]
+  }
+]

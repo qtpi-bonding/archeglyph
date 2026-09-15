@@ -1,0 +1,139 @@
+# Wave 6, editor-shell v2a. The positioning frame for D13's floating islands.
+#
+# D13 rejected the docked variant standing today: app.tsx uses a full-width
+# TopBar above a Resizable split whose right panel holds the inspector. That
+# is the `.docked` frame in docs/design/editor-directions.html, kept for
+# comparison and now retired.
+#
+# The islands float OVER the canvas rather than taking space from it, which is
+# the whole point -- the diagram is the document and chrome should not shrink
+# it. That makes the frame a pure positioning concern with no state.
+
+file: "packages/editor/src/shell/island_frame.tsx"
+doc:
+  "Absolute-positions the six chrome islands over a full-bleed canvas (D13).\n"
+  "\n"
+  "Replaces the docked variant D13 rejected: a full-width TopBar above a\n"
+  "Resizable split whose right panel held the inspector. Islands float OVER\n"
+  "the canvas rather than taking space from it, which is the point -- the\n"
+  "diagram is the document and chrome should not shrink it. That makes this a\n"
+  "pure positioning concern that holds no state."
+
+structs: [
+  { name: "IslandFrameProps"
+    change_type: ADDED
+    doc:
+      "One slot per island anchor, plus `canvas` for the layer underneath.\n"
+      "\n"
+      "Slots are JSX.Element rather than component references so the frame\n"
+      "never constructs its children and therefore never needs their props.\n"
+      "That is what keeps it ignorant of the three stores: app.tsx builds each\n"
+      "island with the state it needs and hands the frame finished elements.\n"
+      "\n"
+      "`inspector` is a slot like any other even though inspector/ is a\n"
+      "separate pillar. The frame owns WHERE it sits, not what it is.\n"
+      "\n"
+      "Every slot except `canvas` is optional. The state island is absent most\n"
+      "of the time by design, and the start screen renders with none of them."
+    fields: [
+      { name: "canvas",    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } } },
+      { name: "toolbar",   type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true },
+      { name: "inspector", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true },
+      { name: "file",      type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true },
+      { name: "zoom",      type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true },
+      { name: "undo",      type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true },
+      { name: "state",     type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "JSX.Element" } }, is_optional: true }
+    ]
+  }
+]
+
+constants: [
+  { name: "IslandFrame"
+    change_type: ADDED
+    doc:
+      "A position:relative container holding the canvas at full bleed, with\n"
+      "each present slot absolutely positioned per D13:\n"
+      "  toolbar   top-centre       inspector  top-left\n"
+      "  file      top-right        zoom       bottom-left\n"
+      "  undo      bottom-right     state      bottom-centre\n"
+      "\n"
+      "There is deliberately no status bar. D12/D13 (2026-09-11) supersede the\n"
+      "`shell/status_bar` module listed in editor-ui-review.md §8.2, which was\n"
+      "written a day earlier: its four jobs are split across the file island\n"
+      "(save state), the zoom island (zoom readout) and the state island\n"
+      "(mode, errors). D12 names five islands; the state island is a sixth,\n"
+      "and it is not the rejected bottom bar because it is absent whenever it\n"
+      "has nothing to say.\n"
+      "\n"
+      "THE FRAME IS MOUNTED ONLY WHEN A DOCUMENT IS LOADED. It is not a\n"
+      "general page shell: app.tsx renders StartScreen instead of it, not\n"
+      "inside it, so the `canvas` slot always holds the real Canvas and never\n"
+      "the start screen.\n"
+      "\n"
+      "Three rules this component owns outright, because the six islands\n"
+      "cannot each be trusted to reinvent them consistently:\n"
+      "\n"
+      "1. POINTER EVENTS. The absolutely-positioned slot wrappers form an\n"
+      "   overlay over the canvas. Every wrapper is pointer-events:none and\n"
+      "   positioning-only -- it carries no class, no background, no padding\n"
+      "   and no scrolling. Each island component\'s own root element carries\n"
+      "   `class=\"ag-island\"`, and that class is what sets\n"
+      "   pointer-events:auto along with the --ag-panel ground, --ag-radius,\n"
+      "   --ag-shadow and 1px --ag-edge border.\n"
+      "\n"
+      "   Putting pointer-events:auto or overflow on the WRAPPER instead is\n"
+      "   the bug this rule exists to prevent: a wrapper is much larger than\n"
+      "   the island inside it, so an invisible div then eats pans and\n"
+      "   marquees started on empty canvas, and a scrolling wrapper swallows\n"
+      "   wheel events meant for canvas zoom. The chrome looks perfect and\n"
+      "   only dragging on blank space reveals it.\n"
+      "\n"
+      "2. SIZING. No wrapper sets a definite height, so a `height:100%` inside\n"
+      "   a slot resolves to auto and the island is content-sized -- which is\n"
+      "   how the mockup draws them. This matters for the inspector, which\n"
+      "   sets height:100% for the resizable panel it lives in today and would\n"
+      "   otherwise stretch down the whole left edge and cover the zoom\n"
+      "   island. Top-anchored and bottom-anchored slots each get a max-height\n"
+      "   of half the viewport less twice ISLAND_INSET, so a tall island\n"
+      "   scrolls its own content rather than colliding with the island\n"
+      "   opposite it. A viewport-height budget would NOT prevent that\n"
+      "   collision -- it permits a top island to reach the bottom inset.\n"
+      "   Scrolling belongs to the island\'s own root, not the wrapper, per\n"
+      "   rule 1.\n"
+      "\n"
+      "3. FOCUS. Islands suppress focus-on-click -- preventDefault on\n"
+      "   mousedown -- because the keyboard handler lives on an ancestor and a\n"
+      "   focused button also swallows Space and Enter, so clicking any island\n"
+      "   button would silently break Enter-to-edit until the user clicked the\n"
+      "   canvas again. Genuine form controls are exempt and must not be\n"
+      "   suppressed: the theme `<select>` in the file island has to take\n"
+      "   focus to operate at all.\n"
+      "\n"
+      "Inset islands off the viewport edge by ISLAND_INSET rather than sitting\n"
+      "flush, so the shadow reads and the drafting grid shows around them.\n"
+      "\n"
+      "Error reporting is split across three surfaces and it is worth knowing\n"
+      "which is which: a load that fails before a document exists surfaces on\n"
+      "StartScreen; a scene error after one exists surfaces on StateIsland;\n"
+      "a failed save surfaces on FileIsland. The first two are mutually\n"
+      "exclusive. A save error can coexist with a scene error, and that is\n"
+      "fine -- they are different failures in different places."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<IslandFrameProps>" } }
+    uses: ["IslandFrameProps", "ISLAND_INSET"]
+  },
+  { name: "ISLAND_INSET"
+    change_type: ADDED
+    doc:
+      "Gap in CSS pixels between an island and the viewport edge. 12.\n"
+      "\n"
+      "Half the drafting grid cell, so island edges land on a half-cell and\n"
+      "read as placed rather than arbitrary.\n"
+      "\n"
+      "IslandFrame sets `--ag-island-inset` from this constant on its root\n"
+      "element, and styles.css references only that custom property, never a\n"
+      "literal 12px. Otherwise the TypeScript constant is dead -- a value with\n"
+      "no observable effect that the hand-maintained CSS silently shadows,\n"
+      "which is the failure the next person greps for and misreads."
+    type: { primitive: REAL }
+  }
+]

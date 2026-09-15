@@ -1,0 +1,55 @@
+# Wave 6, editor-shell v2a. The toolbar's and the zoom island's chords.
+#
+# editor-annotations deliberately left 'tool-hand' out of CommandId and said
+# why: "its chord belongs with the rest of the toolbar in the editor-shell
+# pillar". This is that pillar, so it lands here with the four zoom verbs the
+# zoom island dispatches.
+#
+# CommandId is deliberately absent from KEYMAP's `uses:`. It is the type of a
+# field inside each entry, not something the array initializer references;
+# verify reports it MISSING when declared.
+
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative chord to command-id table, and the resolver over it."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Gains five members: 'tool-hand', 'zoom-in', 'zoom-out', 'zoom-reset',\n"
+      "'zoom-fit'. Every existing member stays.\n"
+      "\n"
+      "'zoom-reset' and 'zoom-fit' are separate verbs and neither implies the\n"
+      "other. Reset goes to 100% and leaves the pan alone; fit changes both\n"
+      "zoom and pan to frame the whole diagram. A user who wants to read a\n"
+      "label at true size wants the first and would lose their place with the\n"
+      "second."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' | 'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' | 'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' | 'zoom-reset' | 'zoom-fit'" } }
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    change_type: MODIFIED
+    doc:
+      "Five entries added: `h` tool-hand, `=` zoom-in, `-` zoom-out, `0`\n"
+      "zoom-reset, `1` zoom-fit.\n"
+      "\n"
+      "Bare, not Cmd-prefixed. Cmd+= and Cmd+- are the browser's own page zoom\n"
+      "and cannot be taken reliably; a bare key is both available and what a\n"
+      "canvas tool is expected to use. The editable-target guard in\n"
+      "keyboard_handler is what keeps them from firing mid-typing, the same\n"
+      "protection `v`, `t` and `n` already rely on.\n"
+      "\n"
+      "`=` rather than `+`: KeyboardEvent.key reports the unshifted character\n"
+      "on that physical key, so binding `+` would require the user to hold\n"
+      "shift. Both the toolbar tooltip and the help sheet render whatever is\n"
+      "in this table, so the hint will read `=` and be correct.\n"
+      "\n"
+      "The zoom commands need a ContainerRect to zoom about the viewport\n"
+      "centre, which CommandContext already carries. No new context field."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeymapEntry[]" } }
+    uses: ["KeymapEntry", "Chord"]
+  }
+]

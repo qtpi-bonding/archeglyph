@@ -1,0 +1,60 @@
+# Wave 6, editor-shell v2a. Bottom-centre island -- the transient one.
+#
+# This is where the rejected status bar's remaining two jobs land: mode
+# indicator and error banner. A bar was rejected partly because both are
+# empty almost all the time, and a permanent strip of nothing costs a row of
+# canvas forever. An island that is absent when it has nothing to say costs
+# nothing.
+
+file: "packages/editor/src/shell/state_island.tsx"
+doc: "Bottom-centre island, present only while there is a mode or an error to report."
+
+structs: [
+  { name: "StateIslandProps"
+    change_type: ADDED
+    doc:
+      "Both fields optional, and when both are absent the component renders\n"
+      "nothing at all -- not an empty box. app.tsx may therefore always place\n"
+      "the island and let it decide, rather than duplicating the\n"
+      "is-there-anything-to-say test at the call site.\n"
+      "\n"
+      "`mode` is a short human string, not an enum. In v2a it is the active\n"
+      "tool when that is not 'select'; editor-shell v2b feeds it the modal\n"
+      "g/r gesture from UiState instead. Keeping it a string is what lets that\n"
+      "land as a caller change with no edit here.\n"
+      "\n"
+      "`onDismiss` clears the error. Absent for a mode-only island, since a\n"
+      "mode is left by pressing Escape, not by dismissing a message."
+    fields: [
+      { name: "mode",      type: { primitive: CHARACTER }, is_optional: true },
+      { name: "error",     type: { primitive: CHARACTER }, is_optional: true },
+      { name: "onDismiss", type: { arrow: { output: { primitive: VOID } } }, is_optional: true }
+    ]
+  }
+]
+
+constants: [
+  { name: "StateIsland"
+    change_type: ADDED
+    doc:
+      "An error wins over a mode when both are set -- a failed render is more\n"
+      "urgent than a reminder of which tool is active, and stacking two rows\n"
+      "makes the island jump.\n"
+      "\n"
+      "Its root element carries `class=\"ag-island\"`; focus suppression is\n"
+      "the frame's rule (IslandFrame).\n"
+      "\n"
+      "Error styling is --ag-error ground with --ag-error-text. The dismiss\n"
+      "control renders only when `onDismiss` is actually supplied, so the\n"
+      "button cannot exist with nothing behind it. Mode styling is the ordinary --ag-panel island with the label\n"
+      "in --ag-fg-2.\n"
+      "\n"
+      "The error text is shown in full and wraps; it must not be truncated to\n"
+      "one line. These strings come from the resolver and the layout engine\n"
+      "and name the element and field at fault, which is the only part worth\n"
+      "reading and is at the end. A missing annotation component under a theme\n"
+      "with no annotationComponents is the error most likely to appear here."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<StateIslandProps>" } }
+    uses: ["StateIslandProps"]
+  }
+]

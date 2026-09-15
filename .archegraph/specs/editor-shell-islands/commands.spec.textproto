@@ -1,0 +1,99 @@
+# Wave 6, editor-shell v2a. The registry gains the hand tool and the four zoom
+# verbs, so that every island button has a command behind it.
+#
+# This is the §8.2 rule the toolbar exists to honour: keymap, toolbar, context
+# menu and palette are dispatchers over ONE registry. A zoom button calling
+# setViewport directly would be a second definition of what zooming means, and
+# the chord and the button would drift apart exactly as the old top_bar's
+# annotation button drifted from addAnnotationEdit.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The one command registry every dispatcher — keymap, toolbar, context menu, palette — runs through."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "Five entries added: 'tool-hand', 'zoom-in', 'zoom-out', 'zoom-reset',\n"
+      "'zoom-fit'. Every existing entry stays, and every existing entry keeps\n"
+      "its `label` -- the islands render button text and tooltips from\n"
+      "Command.label, so this registry is the ONE source of a command's human\n"
+      "name. KEYMAP supplies only the chord half of a tooltip.\n"
+      "\n"
+      "'tool-hand' sets the tool, matching the two tool commands beside it.\n"
+      "\n"
+      "All four zoom verbs go through zoomAboutPoint anchored on the CENTRE of\n"
+      "context.rect, clamped by the MIN_ZOOM / MAX_ZOOM the wheel handler\n"
+      "already uses. Anchoring on the centre is what keeps the thing being\n"
+      "looked at on screen; anchoring on the origin walks the diagram off the\n"
+      "corner after three presses.\n"
+      "\n"
+      "  zoom-in     factor ZOOM_STEP\n"
+      "  zoom-out    factor 1 / ZOOM_STEP\n"
+      "  zoom-reset  whatever factor takes the current zoom to exactly 1\n"
+      "\n"
+      "'zoom-reset' therefore DOES rewrite panX/panY -- that is what holding\n"
+      "the centre point fixed requires, and is what zoomAboutPoint does. What\n"
+      "it does not do is return pan to the origin: the point under the middle\n"
+      "of the viewport stays where it is, at 100%. (An earlier draft of this\n"
+      "doc said 'does not reset pan', which read as 'leaves panX/panY\n"
+      "untouched' and is the opposite of correct.)\n"
+      "\n"
+      "'zoom-fit' is fitBoundsToRect(geometry.contentBounds, context.rect,\n"
+      "FIT_PADDING). Use SceneGeometry.contentBounds as it stands -- do NOT\n"
+      "recompute the union of index bounds. The Scene already publishes that\n"
+      "union and Canvas's fit-on-load already uses it; a second computation of\n"
+      "content extent is a second source of truth, and the two diverge the\n"
+      "moment buildSceneGeometry changes what it includes.\n"
+      "\n"
+      "Guards, and note which applies to which:\n"
+      "\n"
+      "  - ALL FOUR no-op when context.rect has zero width or height. That is\n"
+      "    the state before the container is first measured, and zooming about\n"
+      "    the centre of a zero rect puts the centre at 0,0.\n"
+      "  - zoom-fit ADDITIONALLY no-ops when geometry is undefined or\n"
+      "    geometry.index.length === 0. The length test is the load-bearing\n"
+      "    one and an undefined test does not substitute: contentBounds for an\n"
+      "    empty index is {0,0,0,0}, not undefined. Note what actually happens\n"
+      "    if it slips through -- fitBoundsToRect special-cases non-positive\n"
+      "    content extent to zoom 1, so the failure is not NaN, it is a silent\n"
+      "    jump to 100% centred on the origin with the user's viewport lost.\n"
+      "\n"
+      "Each of the five needs an assertion in\n"
+      "gestures/command_wiring.test.ts. That test exists because\n"
+      "'focus-inspector' shipped as a chord that resolved, dispatched, called\n"
+      "undefined and did nothing, and a zoom command that silently no-ops is\n"
+      "indistinguishable from one that works on an empty diagram."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Command[]" } }
+    uses: ["Command", "CommandContext", "zoomAboutPoint", "fitBoundsToRect", "ZOOM_STEP", "FIT_PADDING", "MIN_ZOOM", "MAX_ZOOM"]
+  },
+  { name: "ZOOM_STEP"
+    change_type: ADDED
+    doc:
+      "Multiplier for one zoom-in press. 1.2.\n"
+      "\n"
+      "Its reciprocal is zoom-out, so in-then-out returns to the starting\n"
+      "zoom. Not bit-exact, and a test must not assert exact equality: the\n"
+      "round trip is floating-point, and it does not hold at all when a clamp\n"
+      "intervened at MIN_ZOOM or MAX_ZOOM. Assert within 1e-9, away from the\n"
+      "clamps.\n"
+      "\n"
+      "Multiplicative rather than additive because an additive step does not\n"
+      "round-trip even in principle, and the drift is visible after a handful\n"
+      "of presses."
+    type: { primitive: REAL }
+  },
+  { name: "FIT_PADDING"
+    change_type: ADDED
+    doc:
+      "Margin left around the content by 'zoom-fit'. 40.\n"
+      "\n"
+      "CSS PIXELS OF THE VIEWPORT, not diagram units. fitBoundsToRect\n"
+      "subtracts it from containerRect.width and height before dividing, so\n"
+      "it is screen-space whatever the zoom. That is also the right unit for\n"
+      "the reason it exists: the thing being kept clear of the edge is a\n"
+      "selection outline and its resize handles, and those are drawn at a\n"
+      "constant screen size."
+    type: { primitive: REAL }
+  }
+]

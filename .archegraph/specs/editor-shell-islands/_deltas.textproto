@@ -1,0 +1,35 @@
+# Wave 6, editor-shell v2a. Retiring the docked top bar.
+#
+# top_bar.tsx is the `.docked` variant D13 rejected — a full-width bar above
+# the canvas. Its jobs are redistributed, not dropped: file name, dirty state,
+# Save and the chrome palette picker go to FileIsland; undo and redo to
+# UndoIsland; the tool affordances to Toolbar.
+#
+# editor-annotations already removed this file's '+ Annotation' button,
+# noting that the file itself "is retired wholesale by editor-shell v2".
+# This is that.
+#
+# The FILE node is deleted alongside its members, so compose drops the
+# file→symbol containment edges automatically and no edge_deltas: block is
+# needed (spec-reference, "Edge deltas — removing stranded edges").
+#
+# Worth reading before changing this: editor-canvas-v2 retired two files
+# through 11 parallel per-symbol DELETE nodes and convergence fanned them in
+# badly — drag_handler.ts landed with literal conflict markers committed into
+# it and viewport.ts was left half-deleted, both fixed by hand with `git rm`.
+# Its _deltas.textproto ends with the lesson: "Prefer retiring a whole file in
+# one node, or expect to clean up after convergence." This file is three
+# symbols in one file rather than eleven across two, so the same fan-in is
+# far less likely -- but if convergence does leave conflict markers in
+# top_bar.tsx, the resolution is `git rm`, which is what the spec means.
+#
+# FileIsland needs the same save-status-to-string mapping that the file-local
+# `statusLabel` helper provides, and should carry its own copy. It is four
+# lines, and sharing it would keep the retired file alive.
+
+node_deltas: [
+  { symbol: "file://packages/editor/src/shell/top_bar.tsx" change_type: DELETED },
+  { symbol: "packages/editor/src/shell/top_bar.tsx/TopBar."        change_type: DELETED },
+  { symbol: "packages/editor/src/shell/top_bar.tsx/TopBarProps#"   change_type: DELETED },
+  { symbol: "packages/editor/src/shell/top_bar.tsx/statusLabel()." change_type: DELETED }
+]

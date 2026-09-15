@@ -1,0 +1,57 @@
+# Wave 6, editor-shell v2a. The tool strip -- §8.2 `shell/toolbar`, D13
+# top-centre.
+#
+# Replaces top_bar.tsx's loose buttons. Every button dispatches through
+# gestures/commands, which is the §8.2 rule that makes keymap, toolbar,
+# context menu and palette four dispatchers over ONE registry rather than
+# four places that each know how to add an annotation. editor-annotations
+# already deleted one button that had drifted into being its own second
+# implementation; this is the structural fix for that class of bug.
+
+file: "packages/editor/src/shell/toolbar.tsx"
+doc: "Top-centre island: the three tools, plus the layout actions, over the command registry."
+
+structs: [
+  { name: "ToolbarProps"
+    change_type: ADDED
+    doc:
+      "`tool` is read for the active highlight; `onCommand` dispatches. The\n"
+      "toolbar never touches UiState directly -- setting the tool is the\n"
+      "`tool-select` / `tool-hand` / `tool-annotation` commands' job, so a\n"
+      "click and the `v` / `h` / `t` chords run the same code.\n"
+      "\n"
+      "`canUndo` and `canRedo` are absent on purpose: undo lives in its own\n"
+      "bottom-right island per D13."
+    fields: [
+      { name: "tool",      type: { named: { symbol: "Tool" } } },
+      { name: "onCommand", type: { arrow: { inputs: [ { named: { symbol: "CommandId" } } ], output: { primitive: VOID } } } }
+    ]
+  }
+]
+
+constants: [
+  { name: "Toolbar"
+    change_type: ADDED
+    doc:
+      "Two groups separated by a rule: the three tools (select, hand,\n"
+      "annotation), then the layout actions (auto-layout, pin-all,\n"
+      "unpin-all).\n"
+      "\n"
+      "The active tool gets --ag-blue and --ag-blue-soft; D12 gives blue\n"
+      "exactly one job, 'selection and active tool', so nothing else in this\n"
+      "island may use it.\n"
+      "\n"
+      "Button text and tooltips are assembled, never hand-written: the LABEL\n"
+      "comes from Command.label in the registry and the KEY from KEYMAP, as\n"
+      "`<label> (<key>)`. A command with no chord shows the label alone.\n"
+      "Neither half may be a literal in this file -- a hardcoded label lets\n"
+      "the toolbar's tool name disagree with the one the state island shows\n"
+      "for the same tool, and a hardcoded hint goes stale the first time a\n"
+      "chord moves.\n"
+      "\n"
+      "Its root element carries `class=\"ag-island\"`, and focus-on-click\n"
+      "suppression is the frame's rule -- see IslandFrame, which owns both."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<ToolbarProps>" } }
+    uses: ["ToolbarProps", "KEYMAP", "COMMANDS"]
+  }
+]

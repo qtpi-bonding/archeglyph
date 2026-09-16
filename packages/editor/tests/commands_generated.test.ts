@@ -314,10 +314,14 @@ describe('testgen_gestures__COMMANDS', () => {
           // Observed once here as 1789590334716n vs 1789590334715n.
           //
           // This is the SAME flake already repaired in auto_layout_edit.test.ts,
-          // whose header documents it failing about one run in three. That repair
-          // was promoted out; this copy was regenerated afterwards and brought the
-          // defect back -- exactly the hazard archetest.yaml warns about, that a
-          // repair left under a generated filename is one waiting to be reverted.
+          // whose header documents it failing about one run in three.
+          //
+          // How it survived, per `git log -S`: the assertion entered at 2d587ed,
+          // and 6b9f2b9 wrote the withoutTimestamp repair -- but only into the
+          // promoted file. This structurally identical copy was never touched.
+          // So it is an INCOMPLETE repair, not a regenerated-over one: promoting
+          // a fix does not go looking for its siblings. When repairing a
+          // generated case, grep the other generated suites for the same shape.
           const withoutTimestamp = (edit: StyleEdit): unknown => ({
             ...edit,
             timestampMs: undefined,

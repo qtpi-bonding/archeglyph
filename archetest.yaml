@@ -18,6 +18,23 @@ tests:
   # wherever it can be, rather than as a general property.
   #
   # Note also that testgen writes packages/<pkg>/tests/testgen.test.ts and
-  # will overwrite whatever is there without asking.
+  # will overwrite whatever is there without asking. The path is ONE PER
+  # PACKAGE, not one per spec, so a run for pillar B silently destroys the
+  # tests a run for pillar A left in the same package. Output does not
+  # accumulate.
+  #
+  # CONVENTION, so this stops being rediscovered: treat tests/testgen.test.ts
+  # as scratch that belongs to the most recent run. Anything worth keeping --
+  # a case you repaired, or coverage of something no hand-written test reaches
+  # -- gets PROMOTED to a permanent hand-maintained file named for what it
+  # covers, with the generated header replaced so nobody regenerates over it:
+  #
+  #   packages/core/tests/layout_pinning_generated.test.ts   (layout + pins)
+  #   packages/editor/tests/commands_generated.test.ts       (COMMANDS)
+  #   packages/editor/tests/auto_layout_edit.test.ts         (repaired cases)
+  #
+  # Promote BEFORE the next run, not after -- afterwards it is a git archaeology
+  # exercise instead of a git mv. See 6b9f2b9 for why a repair left under the
+  # generated filename is a repair waiting to be silently reverted.
   skip_property_tests: true
   language: typescript

@@ -24,7 +24,13 @@
 import { describe, expect, test } from 'bun:test';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 
-GlobalRegistrator.register();
+// Guarded: bun runs every test file in one process, so a second file that also
+// needs the DOM would throw here ("Happy DOM has already been globally
+// registered") and take this whole file down with it. Whoever gets there first
+// registers; everyone else reuses it.
+if (!(globalThis as { document?: unknown }).document) {
+  GlobalRegistrator.register();
+}
 
 const { render, fireEvent, cleanup } = await import('@solidjs/testing-library');
 const { createSignal } = await import('solid-js');

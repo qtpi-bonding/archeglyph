@@ -307,7 +307,22 @@ describe('testgen_gestures__COMMANDS', () => {
 
           expect(edits).toHaveLength(1);
           const unpinAllOnSameShape = unpinAllEdit(sheet);
-          expect(edits[0]).toEqual(unpinAllOnSameShape);
+          // Compare everything except the wall-clock stamp. styleEdit() stamps
+          // `timestampMs: BigInt(Date.now())`, and these are two separate calls
+          // -- they are equal only when both land in the same millisecond, so
+          // under load the assertion straddles one and fails by exactly 1ms.
+          // Observed once here as 1789590334716n vs 1789590334715n.
+          //
+          // This is the SAME flake already repaired in auto_layout_edit.test.ts,
+          // whose header documents it failing about one run in three. That repair
+          // was promoted out; this copy was regenerated afterwards and brought the
+          // defect back -- exactly the hazard archetest.yaml warns about, that a
+          // repair left under a generated filename is one waiting to be reverted.
+          const withoutTimestamp = (edit: StyleEdit): unknown => ({
+            ...edit,
+            timestampMs: undefined,
+          });
+          expect(withoutTimestamp(edits[0])).toEqual(withoutTimestamp(unpinAllOnSameShape));
     });
 
 });

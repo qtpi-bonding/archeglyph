@@ -1,46 +1,6 @@
 llm:
-  # gait, not `claude -p`. Measured on the same prompt, same schema, 2026-09-15:
-  #
-  #   claude -p (sonnet)   256,000 input tokens   23.9s   $0.166
-  #   gait -e   (luna)      ~1 step                fast    off the Claude window
-  #
-  # `claude -p` is an interactive agent, not a completion API. Every call
-  # shipped the full tool schema (67KB), both CLAUDE.md files (28KB), the
-  # 35-skill listing, and the xcodebuild MCP instructions -- then re-read all
-  # of it once per turn. ~37k tokens of irrelevant context per call, x6 turns,
-  # x183 calls for one spec. That exhausted a 5-hour usage window in two runs
-  # and produced nothing.
-  #
-  # `-e` is gait's hands-free mode: its only tool is structured_done, so it
-  # cannot read/grep/shell. That is now the RIGHT mode, because as of
-  # archegraph 81983978 every pass embeds the symbol's actual source text in
-  # the prompt. Before that fix the prompt named a symbol and a file path with
-  # no content, so a tool-capable model would go read the file itself -- 97,790
-  # tokens and 134s per symbol -- and a tool-less one had to invent signatures,
-  # which is the likeliest source of the malformed imports in the 2026-09-11
-  # and 2026-09-12 runs.
-  #
-  # If pass 3 output is still wrong, the next thing to try is NOT adding tools
-  # back: it is checking whether the embedded source is actually reaching the
-  # prompt. Adding `--allow 'glob:*' --allow 'grep:*'` measured 2.6x the tokens
-  # and 15x the wall clock for one better answer.
-  #
-  # `--result-schema-json` is a real contract as of the 2026-09-15 gait build,
-  # which added the flag. Before that gait had only `--result-schema` (a file
-  # path), so passing archegraph's inline `{schema}` did nothing and the JSON
-  # shape held only because the model followed the prompt. Schema conformance
-  # in the 2026-09-11 and 2026-09-12 runs was luck, not enforcement -- do not
-  # read those runs as evidence that the contract held.
-  #
-  # GAIT_DEBUG=1 is load-bearing for forensics, not just verbosity. Under `-e`
-  # gait builds a throwaway workspace under $TMPDIR and deletes it on exit, so
-  # a symbol that emits something strange leaves nothing behind to inspect --
-  # the configured --gait-dir is NOT where an ephemeral run writes. With
-  # GAIT_DEBUG=1 that temp workspace survives, which is the only way to read a
-  # specific symbol's transcript after the fact.
-  #
-  # Cost: those dirs accumulate and nothing prunes them. Clear them out after a
-  # debugging session rather than leaving a run's worth of workspaces behind.
+  # No --allow flags: the prompt already embeds the symbol's source.
+  # GAIT_DEBUG=1 keeps the workspace gait would delete; prune it.
   command: >-
     env GAIT_DEBUG=1
     gait
@@ -50,63 +10,28 @@ llm:
     -e {prompt}
 
 tests:
-  # CORRECTED 2026-09-16: an earlier version of this comment claimed cases
-  # flagged is_property "vanish from the emitted tests" when this is on. That
-  # is FALSE, and it was the stated reason for leaving the flag set. Verified
-  # against source: emitter.rs:864 renders a property-flagged case via
-  # emit_unit_test when the flag is on, and emitter.rs:416 tells pass 3 to
-  # write it as an ordinary example-based body. No case is dropped -- the flag
-  # changes a case's SHAPE, not whether it is covered. The CLI help text
-  # ("Skip property-based test cases at emit time") is what misled us.
-  #
-  # FLIPPED to false on 2026-09-16. The standing ask from 2026-09-12 was to
-  # retest with this FALSE once a run produced parseable output at all. The
-  # 2026-09-16 editor-shell-islands run (gait/gpt-luna) was the first to do so
-  # -- imports at top, .tsx extension, zero fast-check references, 23/23
-  # symbols through all three passes -- so the precondition is met.
-  #
-  # What this is testing: whether fc.property calls are now well-formed, and
-  # whether fast-check gets imported when a property case is actually emitted.
-  # On the 2026-09-11 layout-pin run, 19 of 72 emitted tests were property
-  # based and every one failed to parse.
   skip_property_tests: false
   language: typescript
 
-  # MUST be set. The derived default omits both flags this project cannot run
-  # tests without:
-  #
-  #   --conditions browser   Solid ships separate client and server builds.
-  #                          Under Bun default resolution the SERVER build
-  #                          wins, and there createEffect is a deliberate
-  #                          no-op. Reactive tests then pass while observing
-  #                          nothing -- green, and measuring nothing.
-  #   --preload              Solid JSX is a compile step, not a runtime call.
-  #                          Without test/solid_preload.ts the Babel transform
-  #                          never runs and no component test can mount.
-  #
-  # The "test" script in package.json already carries both, so deferring to it
-  # keeps the flag list in one place instead of duplicating it here.
-  #
-  # This runs the whole suite per node rather than only the generated file.
-  # That is deliberate: a node that makes its own tests pass while breaking a
-  # sibling package should not gate green.
+  # MUST be set. The derived default drops --conditions browser (Solid's server
+  # build wins, createEffect becomes a no-op, reactive tests pass while
+  # measuring nothing) and --preload (no JSX transform, no component mounts).
+  # package.json's "test" script carries both.
   runner_command: "bun run test"
 
-  # output_filename is deliberately unset. As of archegraph 81983978 the
-  # default is derived from the spec -- testgen_<spec>.test.ts -- so two specs
-  # sharing a package no longer overwrite each other. Before that it was a
-  # fixed tests/testgen.test.ts per package, which silently destroyed the
-  # previous pillar's tests on every run.
-  #
-  # CONVENTION, still worth keeping: treat generated files as belonging to the
-  # run that produced them. Anything worth keeping -- a case you repaired, or
-  # coverage no hand-written test reaches -- gets promoted to a permanent
-  # hand-maintained file named for what it covers, with the generated header
-  # replaced so nobody regenerates over it:
-  #
-  #   packages/core/tests/layout_pinning_generated.test.ts   (layout + pins)
-  #   packages/editor/tests/commands_generated.test.ts       (COMMANDS)
-  #   packages/editor/tests/auto_layout_edit.test.ts         (repaired cases)
-  #
-  # See 6b9f2b9 for why a repair left under a generated filename is a repair
-  # waiting to be silently reverted.
+  # Prompt-only: cannot add imports to the emitted header.
+  framework_notes: >-
+    The test file imports ONLY: `describe`, `expect`, `test` from 'bun:test';
+    `fc` from 'fast-check'; and the symbol under test plus the dependencies
+    shown above. No other identifier is in scope, and you cannot add imports --
+    you return only a body, never an import statement.
+    There is no `vi` and no `jest`: this runs on bun:test, not Vitest or Jest.
+    For a test double use `mock(() => ...)` and `spyOn(obj, 'name')`, which are
+    bun:test exports -- but only if they appear in the import list above;
+    otherwise write a plain local stub function that records its calls.
+    Do not call `render`, `screen`, `fireEvent`, `waitFor` or `cleanup`: no DOM
+    harness is imported and no DOM is registered, so a body that mounts a
+    component is a guaranteed ReferenceError.
+    If a case genuinely cannot be tested within these limits, write the
+    strongest assertion that can be made about the symbol's exported value,
+    type, or pure behaviour instead of reaching for an unavailable helper.

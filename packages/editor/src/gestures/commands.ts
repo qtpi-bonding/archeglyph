@@ -17,6 +17,35 @@ import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
 import { pinAllEdit, unpinAllEdit, withLayoutMaterialized } from '../state/edits/layout_command';
 import { clearNodeSizeEdit } from '../state/edits/resize';
+import { fitBoundsToRect, zoomAboutPoint } from '../ui_state/viewport_math';
+import { MIN_ZOOM, MAX_ZOOM } from './wheel_handler';
+
+/**
+ * Margin left around the content by 'zoom-fit'. 40.
+ *
+ * CSS PIXELS OF THE VIEWPORT, not diagram units. fitBoundsToRect
+ * subtracts it from containerRect.width and height before dividing, so
+ * it is screen-space whatever the zoom. That is also the right unit for
+ * the reason it exists: the thing being kept clear of the edge is a
+ * selection outline and its resize handles, and those are drawn at a
+ * constant screen size.
+ */
+export const FIT_PADDING: number = 40;
+
+/**
+ * Multiplier for one zoom-in press. 1.2.
+ *
+ * Its reciprocal is zoom-out, so in-then-out returns to the starting
+ * zoom. Not bit-exact, and a test must not assert exact equality: the
+ * round trip is floating-point, and it does not hold at all when a
+ * clamp intervened at MIN_ZOOM or MAX_ZOOM. Assert within 1e-9, away
+ * from the clamps.
+ *
+ * Multiplicative rather than additive because an additive step does not
+ * round-trip even in principle, and the drift is visible after a handful
+ * of presses.
+ */
+export const ZOOM_STEP: number = 1.2;
 
 export interface Command {
   id: CommandId;
@@ -208,12 +237,34 @@ function runResetSize(context: CommandContext): void {
   }
 }
 
+function runZoom(context: CommandContext, factor: number): void {
+  if (context.rect.width === 0 || context.rect.height === 0) {
+    return;
+  }
+  const centre = {
+    x: context.rect.left + context.rect.width / 2,
+    y: context.rect.top + context.rect.height / 2,
+  };
+  context.ui.setViewport(zoomAboutPoint(
+    context.ui.viewport(), centre, context.rect, factor, MIN_ZOOM, MAX_ZOOM,
+  ));
+}
+
+function runZoomFit(context: CommandContext): void {
+  if (context.rect.width === 0 || context.rect.height === 0
+    || context.geometry === undefined || context.geometry.index.length === 0) {
+    return;
+  }
+  context.ui.setViewport(fitBoundsToRect(context.geometry.contentBounds, context.rect, FIT_PADDING));
+}
+
 export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
   { id: 'delete', label: 'Delete', run: runDelete },
   { id: 'hide', label: 'Hide', run: runHide },
   { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => { ui.setTool('select'); } },
+  { id: 'tool-hand', label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); } },
   { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => { ui.setTool('annotation'); } },
   { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
   { id: 'edit-text', label: 'Edit text', run: runEditText },
@@ -242,6 +293,13 @@ export const COMMANDS: Array<Command> = [
   { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll },
   { id: 'reset-size', label: 'Reset size', run: runResetSize },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
+  { id: 'zoom-in', label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP) },
+  { id: 'zoom-out', label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP) },
+  { id: 'zoom-reset', label: 'Reset zoom', run: (context: CommandContext): void => {
+    const zoom = context.ui.viewport().zoom;
+    runZoom(context, 1 / zoom);
+  } },
+  { id: 'zoom-fit', label: 'Fit to screen', run: runZoomFit },
 ];
 
 export function runCommand(id: CommandId, context: CommandContext): void {

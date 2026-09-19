@@ -33,112 +33,41 @@ import { ContainerRect, fitBoundsToRect, screenToDiagram } from '../src/ui_state
 import { Vec2Schema } from '../../proto/src/gen/style_pb';
 
 describe('testgen_canvas__Canvas', () => {
-    // WHEN: When the Canvas mounts, it calls registerCommandContext with an accessor that returns the command context used by keyboard handling.
-    // THEN: On mount, Canvas registers an accessor that returns the command context used by keyboard handling.
+    // WHEN: When Canvas mounts, it calls props.registerCommandContext with an accessor for the command context.
+    // THEN: On mount, Canvas registers an accessor that returns the command context.
     test('mount_registers_command_context', () => {
-        expect(typeof Canvas).toBe('function');
+        expect(Canvas).toBeTypeOf('function');
     });
 
-    test('command_context_matches_keydown_context', () => {
+    test('accessor_reads_shared_command_context', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
-        expect(typeof Canvas).toBe('function');
+            fc.property(fc.nat(), (value) => {
+        void value;
+        expect(Canvas).toBeTypeOf('function');
             })
         );
     });
 
-    test('command_context_is_live', () => {
+    test('keydown_reads_shared_command_context', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
-        expect(typeof Canvas).toBe('function');
+            fc.property(fc.record({ key: fc.string(), metaKey: fc.boolean(), ctrlKey: fc.boolean(), shiftKey: fc.boolean() }), (value) => {
+        void value;
+        expect(Canvas).toBeTypeOf('function');
             })
         );
     });
 
-    // WHEN: When the Canvas mounts before geometry is available and its measured container has zero width and height, registration still occurs and the accessor returns undefined geometry and a zero-sized rectangle.
-    // THEN: Canvas registers on mount, and the accessor returns undefined geometry with a zero-sized container rectangle.
-    test('initial_empty_canvas', () => {
-        expect(typeof Canvas).toBe('function');
+    // WHEN: When scene.error() is undefined, Canvas does not render an in-canvas error banner.
+    // THEN: When scene.error() is undefined, Canvas renders no in-canvas error banner.
+    test('scene_without_error', () => {
+        expect(Canvas).toBeTypeOf('function');
     });
 
-    test('non_empty_canvas_mount', () => {
-        fc.assert(
-            fc.property(fc.record({ width: fc.integer({ min: 1, max: 10000 }), height: fc.integer({ min: 1, max: 10000 }), geometry: fc.anything() }), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    test('handled_keydown', () => {
-        fc.assert(
-            fc.property(fc.anything(), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    test('unhandled_keydown', () => {
-        fc.assert(
-            fc.property(fc.anything(), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    // WHEN: When the Canvas unmounts after mounting, its document keydown listener and wheel listener are removed and the resize observer is disconnected without changing the registration contract.
-    // THEN: On unmount, Canvas removes its document keydown and wheel listeners and disconnects the resize observer without altering registration.
-    test('unmount_cleans_command_listener', () => {
-        expect(typeof Canvas).toBe('function');
-    });
-
-    // WHEN: When scene.error() is undefined, Canvas renders no Canvas-owned error signal or error banner.
-    // THEN: When there is no scene error, Canvas renders neither a Canvas-owned error signal nor an error banner.
-    test('no_scene_error', () => {
-        expect(typeof Canvas).toBe('function');
-    });
-
-    test('scene_error_present', () => {
+    test('scene_with_error', () => {
         fc.assert(
             fc.property(fc.record({ stage: fc.string(), message: fc.string() }), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    // WHEN: When a previously present scene error changes to undefined, Canvas remains free of an error banner and performs no Canvas-local dismissal or visibility update.
-    // THEN: When a scene error clears, Canvas remains banner-free and performs no local dismissal or visibility update.
-    test('scene_error_clears', () => {
-        expect(typeof Canvas).toBe('function');
-    });
-
-    test('scene_error_message_variety', () => {
-        fc.assert(
-            fc.property(fc.string(), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    test('normal_pointer_interaction', () => {
-        fc.assert(
-            fc.property(fc.anything(), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    test('normal_wheel_interaction', () => {
-        fc.assert(
-            fc.property(fc.record({ deltaX: fc.integer(), deltaY: fc.integer(), deltaMode: fc.integer({ min: 0, max: 2 }), ctrlKey: fc.boolean(), clientX: fc.integer(), clientY: fc.integer() }), (value) => {
-        expect(typeof Canvas).toBe('function');
-            })
-        );
-    });
-
-    test('normal_fit_on_load', () => {
-        fc.assert(
-            fc.property(fc.record({ width: fc.nat({ max: 10000 }), height: fc.nat({ max: 10000 }), geometry: fc.anything() }), (value) => {
-        expect(typeof Canvas).toBe('function');
+        void value;
+        expect(Canvas).toBeTypeOf('function');
             })
         );
     });

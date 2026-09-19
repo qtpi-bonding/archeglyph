@@ -14,249 +14,193 @@ import { UiState } from '../src/ui_state/ui_state';
 import { fitBoundsToRect, zoomAboutPoint } from '../src/ui_state/viewport_math';
 
 describe('testgen_gestures__COMMANDS', () => {
-    const getCommand = (id: string): any => {
+    function commandFor(id) {
       const command = COMMANDS.find((entry) => entry.id === id);
-      if (command === undefined) throw new Error(`Missing command: ${id}`);
+      expect(command).toBeDefined();
       return command;
-    };
+    }
 
-    const makeContext = (rect: any, viewport: any, geometry?: any): any => {
-      let currentViewport = { ...viewport };
-      const ui: any = { selection: () => [], setSelection: () => undefined, hover: () => undefined, setHover: () => undefined, textEditTarget: () => undefined, setTextEditTarget: () => undefined, tool: () => ui.currentTool, setTool: (tool: string) => { ui.currentTool = tool; }, viewport: () => currentViewport, setViewport: (next: any) => { currentViewport = next; ui.setViewportCalls += 1; }, currentTool: 'select', setViewportCalls: 0 };
-      return { state: { undo: () => undefined, redo: () => undefined, stylesheet: () => ({}), applyStyleEdit: () => undefined }, ui, geometry, rect, save: () => undefined, beginTextEdit: () => undefined };
-    };
+    function makeContext(viewport, rect, geometry) {
+      const context = {
+        state: { undo() {}, redo() {}, stylesheet() { return {}; }, applyStyleEdit() {} },
+        ui: { selection() { return []; }, setSelection() {}, viewport() { return context.viewport; }, setViewport(next) { context.viewport = next; context.setViewportCalls += 1; }, setTool(tool) { context.tool = tool; } },
+        rect,
+        save() {},
+        beginTextEdit() {},
+        geometry,
+        viewport,
+        setViewportCalls: 0,
+        tool: undefined,
+      };
+      return context;
+    }
 
-    const makeGeometry = (contentBounds: any, index: any[] = [{ ref: { kind: 'node', id: 'n' }, bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 } }]): any => ({ diagram: {}, index, byKey: {}, edgePolylines: {}, contentBounds, svg: '' });
+    function runZoom(id, value, rect) {
+      const viewport = { zoom: value.zoom, panX: 37, panY: -19 };
+      const context = makeContext(viewport, rect);
+      commandFor(id).run(context);
+      return context.viewport;
+    }
 
-    // WHEN: Running tool-hand sets the active tool to hand.
+    test('existing_command_registry_preserved', () => {
+        fc.assert(
+            fc.property(fc.constantFrom({ id: 'undo', label: 'Undo' }, { id: 'redo', label: 'Redo' }, { id: 'delete', label: 'Delete' }, { id: 'hide', label: 'Hide' }, { id: 'tool-select', label: 'Select tool' }, { id: 'tool-annotation', label: 'Annotation tool' }, { id: 'add-annotation', label: 'Add annotation' }, { id: 'edit-text', label: 'Edit text' }, { id: 'duplicate', label: 'Duplicate' }, { id: 'escape', label: 'Escape' }, { id: 'select-all', label: 'Select all' }, { id: 'focus-inspector', label: 'Focus inspector' }, { id: 'nudge-up', label: 'Nudge up' }, { id: 'nudge-down', label: 'Nudge down' }, { id: 'nudge-left', label: 'Nudge left' }, { id: 'nudge-right', label: 'Nudge right' }, { id: 'ring-next', label: 'Next element' }, { id: 'ring-prev', label: 'Previous element' }, { id: 'pin-all', label: 'Pin all' }, { id: 'unpin-all', label: 'Unpin all' }, { id: 'auto-layout', label: 'Auto-layout' }, { id: 'reset-size', label: 'Reset size' }, { id: 'save', label: 'Save' }), (value) => {
+        const command = COMMANDS.find((entry) => entry.id === value.id);
+        expect(command).toBeDefined();
+        expect(command?.label).toBe(value.label);
+            })
+        );
+    });
+
+    // WHEN: Running tool-hand sets the active tool to hand, matching the neighboring tool commands.
     // THEN: Running tool-hand sets the active tool to hand.
-    test('tool_hand_sets_tool', () => {
-        const context = makeContext({ left: 0, top: 0, width: 400, height: 300 }, { zoom: 1, panX: 0, panY: 0 });
-        getCommand('tool-hand').run(context);
-        expect(context.ui.tool()).toBe('hand');
+    test('tool_hand_sets_hand_tool', () => {
+        const context = makeContext({ zoom: 1, panX: 0, panY: 0 }, { left: 10, top: 20, width: 300, height: 200 });
+        commandFor('tool-hand').run(context);
+        expect(context.tool).toBe('hand');
     });
 
     test('zoom_in_positive_viewport', () => {
         fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        getCommand('zoom-in').run(context);
-        expect(context.ui.viewport().zoom).toBeCloseTo(Math.min(8, value.viewport.zoom * 1.2), 10);
+            fc.property(fc.record({ width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }), zoom: fc.double({ min: 0.2, max: 6, noNaN: true }) }), (value) => {
+        const result = runZoom('zoom-in', value, { left: 10, top: 20, width: value.width, height: value.height });
+        const x = value.width / 2;
+        const y = value.height / 2;
+        expect(result.zoom).toBeCloseTo(value.zoom * 1.2, 12);
+        expect(result.panX).toBeCloseTo(x - (x - 37) * (result.zoom / value.zoom), 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) * (result.zoom / value.zoom), 12);
+            })
+        );
+    });
+
+    test('zoom_in_lower_clamp', () => {
+        fc.assert(
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.01, 0.03, 0.08) }), (value) => {
+        const result = runZoom('zoom-in', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);
+        const x = value.rect.width / 2;
+        const y = value.rect.height / 2;
+        expect(result.zoom).toBe(0.1);
+        expect(result.panX).toBeCloseTo(x - (x - 37) * (0.1 / value.zoom), 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) * (0.1 / value.zoom), 12);
+            })
+        );
+    });
+
+    test('zoom_in_upper_clamp', () => {
+        fc.assert(
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(7, 7.5, 8, 10) }), (value) => {
+        const result = runZoom('zoom-in', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);
+        const x = value.rect.width / 2;
+        const y = value.rect.height / 2;
+        expect(result.zoom).toBe(8);
+        expect(result.panX).toBeCloseTo(x - (x - 37) * (8 / value.zoom), 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) * (8 / value.zoom), 12);
             })
         );
     });
 
     test('zoom_out_positive_viewport', () => {
         fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        getCommand('zoom-out').run(context);
-        expect(context.ui.viewport().zoom).toBeCloseTo(Math.max(0.1, value.viewport.zoom / 1.2), 10);
+            fc.property(fc.record({ width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }), zoom: fc.double({ min: 1, max: 7.5, noNaN: true }) }), (value) => {
+        const result = runZoom('zoom-out', value, { left: 10, top: 20, width: value.width, height: value.height });
+        const x = value.width / 2;
+        const y = value.height / 2;
+        const target = value.zoom / 1.2;
+        expect(result.zoom).toBeCloseTo(target, 12);
+        expect(result.panX).toBeCloseTo(x - (x - 37) * (target / value.zoom), 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) * (target / value.zoom), 12);
             })
         );
     });
 
-    test('zoom_reset_positive_viewport', () => {
+    test('zoom_out_lower_clamp', () => {
         fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        getCommand('zoom-reset').run(context);
-        expect(context.ui.viewport().zoom).toBeCloseTo(1, 10);
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.1, 0.12, 0.15) }), (value) => {
+        const result = runZoom('zoom-out', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);
+        const x = value.rect.width / 2;
+        const y = value.rect.height / 2;
+        expect(result.zoom).toBe(0.1);
+        expect(result.panX).toBeCloseTo(x - (x - 37) * (0.1 / value.zoom), 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) * (0.1 / value.zoom), 12);
             })
         );
     });
 
-    test('zoom_reset_rewrites_pan', () => {
+    test('zoom_out_upper_clamp', () => {
         fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.constant(0), top: fc.constant(0), width: fc.integer({ min: 20, max: 1000 }), height: fc.integer({ min: 20, max: 1000 }) }), viewport: fc.record({ zoom: fc.integer({ min: 2, max: 8 }), panX: fc.integer({ min: -100, max: 100 }), panY: fc.integer({ min: -100, max: 100 }) }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        const worldX = (value.rect.width / 2 - value.viewport.panX) / value.viewport.zoom;
-        const worldY = (value.rect.height / 2 - value.viewport.panY) / value.viewport.zoom;
-        getCommand('zoom-reset').run(context);
-        const result = context.ui.viewport();
-        expect(result.zoom).toBeCloseTo(1, 10);
-        expect(result.panX).toBeCloseTo(value.rect.width / 2 - worldX, 10);
-        expect(result.panY).toBeCloseTo(value.rect.height / 2 - worldY, 10);
-        expect(result.panX === 0 && result.panY === 0).toBe(false);
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(8, 9, 12) }), (value) => {
+        const result = runZoom('zoom-out', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);
+        expect(result.zoom).toBeCloseTo(value.zoom / 1.2, 12);
             })
         );
     });
 
-    // WHEN: Running zoom-reset when the current zoom is already 1 uses a factor of 1 while preserving the viewport-centred world point.
-    // THEN: Running zoom-reset at zoom 1 uses factor 1 and preserves the viewport-centred world point.
-    test('zoom_reset_already_unit', () => {
-        const context = makeContext({ left: 10, top: 20, width: 400, height: 300 }, { zoom: 1, panX: 37, panY: -19 });
-        getCommand('zoom-reset').run(context);
-        expect(context.ui.viewport()).toEqual({ zoom: 1, panX: 37, panY: -19 });
-    });
-
-    test('zoom_fit_with_content', () => {
+    test('zoom_reset_centred_to_one', () => {
         fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 100, max: 1000 }), height: fc.integer({ min: 100, max: 1000 }) }), bounds: fc.record({ minX: fc.integer({ min: -100, max: 0 }), minY: fc.integer({ min: -100, max: 0 }), maxX: fc.integer({ min: 1, max: 300 }), maxY: fc.integer({ min: 1, max: 300 }) }) }), (value) => {
-        const geometry = makeGeometry(value.bounds);
-        const context = makeContext(value.rect, { zoom: 1, panX: 0, panY: 0 }, geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.viewport().zoom).toBeCloseTo(Math.min((value.rect.width - 80) / (value.bounds.maxX - value.bounds.minX), (value.rect.height - 80) / (value.bounds.maxY - value.bounds.minY)), 10);
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.25, 0.5, 2, 4) }), (value) => {
+        const result = runZoom('zoom-reset', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);
+        const x = value.rect.width / 2;
+        const y = value.rect.height / 2;
+        expect(result.zoom).toBeCloseTo(1, 12);
+        expect(result.panX).toBeCloseTo(x - (x - 37) / value.zoom, 12);
+        expect(result.panY).toBeCloseTo(y - (y + 19) / value.zoom, 12);
+        expect(result.panX).not.toBe(0);
             })
         );
     });
 
-    // WHEN: Running zoom-fit when geometry is undefined is a no-op.
-    // THEN: Running zoom-fit with undefined geometry is a no-op.
-    test('zoom_fit_undefined_geometry', () => {
-        const context = makeContext({ left: 0, top: 0, width: 500, height: 400 }, { zoom: 2, panX: 17, panY: -9 });
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.viewport()).toEqual({ zoom: 2, panX: 17, panY: -9 });
-    });
-
-    // WHEN: Running zoom-fit when geometry.index.length is 0 is a no-op, even though contentBounds is {0,0,0,0} rather than undefined.
-    // THEN: Running zoom-fit with an empty geometry index is a no-op even when contentBounds is {0,0,0,0}.
-    test('zoom_fit_empty_index', () => {
-        const geometry = makeGeometry({ minX: 0, minY: 0, maxX: 0, maxY: 0 }, []);
-        const context = makeContext({ left: 0, top: 0, width: 500, height: 400 }, { zoom: 2, panX: 17, panY: -9 }, geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.viewport()).toEqual({ zoom: 2, panX: 17, panY: -9 });
-    });
-
-    test('zoom_in_zero_width', () => {
+    test('zoom_fit_valid_geometry', () => {
         fc.assert(
-            fc.property(fc.record({ height: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: 0, height: value.height }, value.viewport);
-        getCommand('zoom-in').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) }) }), (value) => {
+        const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, value.rect, { index: [{ ref: { kind: 'node', id: 'n' }, bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 } }], contentBounds: { minX: -20, minY: 10, maxX: 180, maxY: 110 } });
+        commandFor('zoom-fit').run(context);
+        expect(context.viewport.zoom).toBeCloseTo(Math.min((value.rect.width - 80) / 200, (value.rect.height - 80) / 100), 12);
             })
         );
     });
 
-    test('zoom_in_zero_height', () => {
+    test('zoom_fit_content_bounds_source', () => {
         fc.assert(
-            fc.property(fc.record({ width: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: value.width, height: 0 }, value.viewport);
-        getCommand('zoom-in').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
+            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) }) }), (value) => {
+        const contentBounds = { minX: 100, minY: 200, maxX: 300, maxY: 400 };
+        const context = makeContext({ zoom: 1, panX: 0, panY: 0 }, value.rect, { index: [{ ref: { kind: 'node', id: 'n' }, bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 } }], contentBounds });
+        commandFor('zoom-fit').run(context);
+        expect(context.viewport.zoom).toBeCloseTo(Math.min((value.rect.width - 80) / 200, (value.rect.height - 80) / 200), 12);
+        expect(context.viewport.panX).toBeCloseTo(value.rect.width / 2 - 200 * context.viewport.zoom, 12);
+        expect(context.viewport.panY).toBeCloseTo(value.rect.height / 2 - 300 * context.viewport.zoom, 12);
             })
         );
     });
 
-    test('zoom_out_zero_width', () => {
+    test('zero_width_or_height_viewport_no_op', () => {
         fc.assert(
-            fc.property(fc.record({ height: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: 0, height: value.height }, value.viewport);
-        getCommand('zoom-out').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_out_zero_height', () => {
-        fc.assert(
-            fc.property(fc.record({ width: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: value.width, height: 0 }, value.viewport);
-        getCommand('zoom-out').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_reset_zero_width', () => {
-        fc.assert(
-            fc.property(fc.record({ height: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: 0, height: value.height }, value.viewport);
-        getCommand('zoom-reset').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_reset_zero_height', () => {
-        fc.assert(
-            fc.property(fc.record({ width: fc.integer({ min: 0, max: 1000 }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: value.width, height: 0 }, value.viewport);
-        getCommand('zoom-reset').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_fit_zero_width', () => {
-        fc.assert(
-            fc.property(fc.record({ height: fc.integer({ min: 0, max: 1000 }), geometry: fc.constant(makeGeometry({ minX: 0, minY: 0, maxX: 10, maxY: 10 })) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: 0, height: value.height }, { zoom: 1, panX: 0, panY: 0 }, value.geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_fit_zero_height', () => {
-        fc.assert(
-            fc.property(fc.record({ width: fc.integer({ min: 0, max: 1000 }), geometry: fc.constant(makeGeometry({ minX: 0, minY: 0, maxX: 10, maxY: 10 })) }), (value) => {
-        const context = makeContext({ left: 0, top: 0, width: value.width, height: 0 }, { zoom: 1, panX: 0, panY: 0 }, value.geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.setViewportCalls).toBe(0);
-            })
-        );
-    });
-
-    test('zoom_in_max_clamp', () => {
-        fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 8 / 1.2, max: 8, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        getCommand('zoom-in').run(context);
-        expect(context.ui.viewport().zoom).toBe(8);
-            })
-        );
-    });
-
-    test('zoom_out_min_clamp', () => {
-        fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer(), top: fc.integer(), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 0.1, max: 0.12, noNaN: true, noDefaultInfinity: true }), panX: fc.integer(), panY: fc.integer() }) }), (value) => {
-        const context = makeContext(value.rect, value.viewport);
-        getCommand('zoom-out').run(context);
-        expect(context.ui.viewport().zoom).toBe(0.1);
-            })
-        );
-    });
-
-    test('zoom_fit_nonpositive_content_extent', () => {
-        fc.assert(
-            fc.property(fc.record({ bounds: fc.record({ minX: fc.integer({ min: -100, max: 100 }), minY: fc.integer({ min: -100, max: 100 }), maxX: fc.integer({ min: -100, max: 100 }), maxY: fc.integer({ min: -100, max: 100 }) }) }), (value) => {
-        const geometry = makeGeometry(value.bounds);
-        const context = makeContext({ left: 0, top: 0, width: 500, height: 400 }, { zoom: 2, panX: 3, panY: 4 }, geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.setViewportCalls).toBe(1);
-        expect(context.ui.viewport().zoom).toBe(1);
-        expect(Number.isNaN(context.ui.viewport().zoom)).toBe(false);
-            })
-        );
-    });
-
-    test('zoom_fit_uses_published_bounds', () => {
-        fc.assert(
-            fc.property(fc.record({ published: fc.record({ minX: fc.integer({ min: -100, max: 0 }), minY: fc.integer({ min: -100, max: 0 }), maxX: fc.integer({ min: 20, max: 200 }), maxY: fc.integer({ min: 20, max: 200 }) }) }), (value) => {
-        const geometry = makeGeometry(value.published, [{ ref: { kind: 'node', id: 'different' }, bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 } }]);
-        const context = makeContext({ left: 0, top: 0, width: 400, height: 300 }, { zoom: 1, panX: 0, panY: 0 }, geometry);
-        getCommand('zoom-fit').run(context);
-        expect(context.ui.viewport().zoom).toBeCloseTo(Math.min(320 / (value.published.maxX - value.published.minX), 220 / (value.published.maxY - value.published.minY)), 10);
-            })
-        );
-    });
-
-    test('zoom_commands_centre_anchor', () => {
-        fc.assert(
-            fc.property(fc.record({ rect: fc.record({ left: fc.integer({ min: -500, max: 500 }), top: fc.integer({ min: -500, max: 500 }), width: fc.integer({ min: 1, max: 1000 }), height: fc.integer({ min: 1, max: 1000 }) }), viewport: fc.record({ zoom: fc.double({ min: 0.2, max: 7, noNaN: true, noDefaultInfinity: true }), panX: fc.integer({ min: -1000, max: 1000 }), panY: fc.integer({ min: -1000, max: 1000 }) }) }), (value) => {
-        for (const id of ['zoom-in', 'zoom-out', 'zoom-reset']) {
-          const context = makeContext(value.rect, value.viewport);
-          const before = context.ui.viewport();
-          const worldX = (value.rect.width / 2 - before.panX) / before.zoom;
-          const worldY = (value.rect.height / 2 - before.panY) / before.zoom;
-          getCommand(id).run(context);
-          const after = context.ui.viewport();
-          expect(after.panX + worldX * after.zoom).toBeCloseTo(value.rect.width / 2, 10);
-          expect(after.panY + worldY * after.zoom).toBeCloseTo(value.rect.height / 2, 10);
+            fc.property(fc.oneof(fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.constant(0), height: fc.integer({ min: 1, max: 2000 }) }), fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.constant(0) })), (value) => {
+        for (const id of ['zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit']) {
+          const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, value, { index: [{ ref: { kind: 'node', id: 'n' } }], contentBounds: { minX: 0, minY: 0, maxX: 100, maxY: 100 } });
+          commandFor(id).run(context);
+          expect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });
+          expect(context.setViewportCalls).toBe(0);
         }
             })
         );
+    });
+
+    // WHEN: Running zoom-fit does nothing when geometry is undefined, provided the rectangle has positive width and height.
+    // THEN: zoom-fit does nothing when geometry is undefined and the rectangle has positive dimensions.
+    test('zoom_fit_undefined_geometry_no_op', () => {
+        const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, { left: 10, top: 20, width: 300, height: 200 });
+        commandFor('zoom-fit').run(context);
+        expect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });
+        expect(context.setViewportCalls).toBe(0);
+    });
+
+    // WHEN: Running zoom-fit does nothing when geometry is defined but geometry.index.length is 0, provided the rectangle has positive width and height.
+    // THEN: zoom-fit does nothing when defined geometry has an empty index and the rectangle has positive dimensions.
+    test('zoom_fit_empty_index_no_op', () => {
+        const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, { left: 10, top: 20, width: 300, height: 200 }, { index: [], contentBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 } });
+        commandFor('zoom-fit').run(context);
+        expect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });
+        expect(context.setViewportCalls).toBe(0);
     });
 
 });

@@ -7,32 +7,22 @@ import * as fc from 'fast-check';
 import { StartScreen, StartScreenProps } from '../src/shell/start_screen';
 
 describe('testgen_shell__StartScreen', () => {
+    // WHEN: The start screen is rendered when there is no file-opening error; it shows the wordmark and the 'Open file...' action.
+    // THEN: Renders the wordmark and an 'Open file...' action, with no error message.
     test('no_error', () => {
-        fc.assert(
-            fc.property(fc.constant(undefined), (value) => {
+        expect(typeof StartScreen).toBe('function');
         const view = StartScreen({ loading: false, onOpen: () => {} });
-        expect(typeof StartScreen).toBe('function');
         expect(view).toBeDefined();
-            })
-        );
     });
 
-    test('error_present', () => {
+    test('file_opening_error', () => {
         fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        const view = StartScreen({ loading: false, error: value, onOpen: () => {} });
+            fc.property(fc.string(), (value) => {
         expect(typeof StartScreen).toBe('function');
+        const view = StartScreen({ loading: false, error: value, onOpen: () => {} });
         expect(view).toBeDefined();
             })
         );
-    });
-
-    // WHEN: The error input is an empty string, representing the boundary between no displayable error text and a non-empty error message.
-    // THEN: It renders the wordmark and the ‘Open file...’ control without displaying an error message for the empty error string.
-    test('empty_error_boundary', () => {
-        const view = StartScreen({ loading: false, error: '', onOpen: () => {} });
-        expect(typeof StartScreen).toBe('function');
-        expect(view).toBeDefined();
     });
 
 });

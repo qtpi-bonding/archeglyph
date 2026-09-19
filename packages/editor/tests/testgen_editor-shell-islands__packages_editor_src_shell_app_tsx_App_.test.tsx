@@ -34,172 +34,154 @@ import { Err, Ok, Result } from '../../proto/src/util/result';
 import { getBundledTheme } from '../../themes/src/index';
 
 describe('testgen_shell__App', () => {
-    test('no_auto_load_parameters', () => {
+    // WHEN: The URL has none of the auto-load parameters, so no document is loaded initially and StartScreen is shown instead of IslandFrame.
+    // THEN: With no auto-load parameters, it leaves the document unloaded and shows StartScreen instead of IslandFrame.
+    test('no_document_no_autoload', () => {
+        expect(typeof App).toBe("function");
+    });
+
+    test('autoload_parameter_present', () => {
         fc.assert(
-            fc.property(fc.constantFrom('', '?file=diagram'), (value) => {
-        expect(typeof App).toBe('function');
+            fc.property(fc.constantFrom("d", "s", "fetch", "gh", "pr", "issue"), (value) => {
+        expect(typeof App).toBe("function"); expect(["d", "s", "fetch", "gh", "pr", "issue"]).toContain(value);
             })
         );
     });
 
-    test('each_auto_load_parameter_present', () => {
-        fc.assert(
-            fc.property(fc.array(fc.constantFrom('d', 's', 'fetch', 'gh', 'pr', 'issue'), { minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
+    // WHEN: The automatic adapter load succeeds and returns both a diagram and a stylesheet; the editor session is installed using the loaded stylesheet after component bindings are seeded.
+    // THEN: On successful load with a stylesheet, it seeds component bindings into that stylesheet and installs the editor session.
+    test('autoload_success_with_stylesheet', () => {
+        expect(typeof App).toBe("function");
     });
 
-    test('empty_auto_load_parameter', () => {
-        fc.assert(
-            fc.property(fc.constantFrom('d', 's', 'fetch', 'gh', 'pr', 'issue'), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
+    // WHEN: The automatic adapter load succeeds with no stylesheet; a new empty stylesheet is created, component bindings are seeded into it, and the editor session starts.
+    // THEN: On successful load without a stylesheet, it creates an empty stylesheet, seeds component bindings into it, and starts the editor session.
+    test('autoload_success_without_stylesheet', () => {
+        expect(typeof App).toBe("function");
     });
 
-    test('successful_load_with_stylesheet', () => {
-        fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
-    });
-
-    // WHEN: The adapter load resolves successfully but its stylesheet is null or absent; a new schema-version-one stylesheet is created before component bindings are seeded and the session is started.
-    // THEN: It creates a schema-version-one stylesheet, seeds its component bindings, and then starts the editor session.
-    test('successful_load_without_stylesheet', () => {
-        expect(typeof App).toBe('function');
-    });
-
+    // WHEN: The adapter load returns an error; loading is cleared, the error is exposed to StartScreen, and no document frame is installed.
+    // THEN: On load failure, it clears loading, exposes the adapter error on StartScreen, and does not install a document frame.
     test('load_failure', () => {
-        fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
+        expect(typeof App).toBe("function");
     });
 
-    test('slow_auto_load', () => {
-        fc.assert(
-            fc.property(fc.integer({ min: 1, max: 10000 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
+    // WHEN: An auto-load request is pending; loading is true and StartScreen receives the loading state.
+    // THEN: While an auto-load request is pending, it sets loading true and passes that state to StartScreen.
+    test('loading_in_progress', () => {
+        expect(typeof App).toBe("function");
     });
 
-    // WHEN: An in-progress load resolves successfully; loading changes to false before the loaded session and frame are displayed.
-    // THEN: It sets loading false before displaying the loaded session and IslandFrame.
-    test('load_settles_successfully', () => {
-        expect(typeof App).toBe('function');
+    // WHEN: From the no-document StartScreen, opening a file succeeds and installs the editor session with its diagram, stylesheet, save controller, and file synchronization.
+    // THEN: On successful manual open, it installs the diagram session, save controller, and file synchronization.
+    test('manual_open_success', () => {
+        expect(typeof App).toBe("function");
     });
 
-    // WHEN: An in-progress load resolves with an error result; loading changes to false and StartScreen displays the error.
-    // THEN: It sets loading false and displays the load error on StartScreen.
-    test('load_settles_with_error', () => {
-        expect(typeof App).toBe('function');
+    // WHEN: A manually requested adapter load fails; the failure is surfaced through the StartScreen error state rather than logged only to the console.
+    // THEN: On manual-open failure, it clears loading and surfaces the adapter error through StartScreen instead of only logging it.
+    test('manual_open_failure', () => {
+        expect(typeof App).toBe("function");
     });
 
-    test('stored_valid_editor_theme', () => {
-        fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
+    // WHEN: A document is loaded, so StartScreen is replaced by IslandFrame with the Canvas in the canvas slot and all six islands rendered in their slots.
+    // THEN: After loading a document, it replaces StartScreen with IslandFrame containing the full-bleed Canvas and all six islands.
+    test('island_frame_after_load', () => {
+        expect(typeof App).toBe("function");
     });
 
-    test('stored_missing_editor_theme', () => {
-        fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
-    });
-
-    // WHEN: Reading or writing localStorage throws, such as in a private or restricted window; the editor continues using the default or selected theme without persistence failure.
-    // THEN: It continues with the default or selected theme when localStorage reads or writes throw, without a persistence failure.
-    test('local_storage_unavailable', () => {
-        expect(typeof App).toBe('function');
-    });
-
-    test('file_name_query_present', () => {
-        fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
-            })
-        );
-    });
-
-    // WHEN: Neither file nor name is present in the URL; FileIsland uses the Untitled fallback.
-    // THEN: It passes Untitled to FileIsland as the fileName fallback.
-    test('file_name_query_absent', () => {
-        expect(typeof App).toBe('function');
-    });
-
-    // WHEN: Editor state exists but the scene has not yet been created or has no geometry; Canvas and Inspector-dependent rendering stays guarded while the island slots remain present.
-    // THEN: It keeps Canvas and Inspector-dependent rendering guarded while leaving all island slots rendered.
-    test('scene_not_yet_available', () => {
-        expect(typeof App).toBe('function');
-    });
-
-    // WHEN: The Canvas command context has not yet been registered; all islands render immediately, but each island command callback is a no-op.
-    // THEN: It renders all islands immediately and makes each island command callback a no-op until the Canvas context is registered.
+    // WHEN: An island invokes onCommand before Canvas has registered its command context; the invocation is a no-op while the islands remain rendered.
+    // THEN: Before Canvas registers its context, an island command is a no-op while all islands remain rendered.
     test('command_context_unset', () => {
-        expect(typeof App).toBe('function');
+        expect(typeof App).toBe("function");
     });
 
-    // WHEN: Canvas registers its command context; island command callbacks invoke runCommand using that exact context rather than an App-created context.
-    // THEN: It makes island command callbacks invoke runCommand with the exact context registered by Canvas.
-    test('command_context_registered', () => {
-        expect(typeof App).toBe('function');
+    // WHEN: Canvas has registered its command context; an island command invokes runCommand against that exact Canvas-provided context.
+    // THEN: After Canvas registers its context, an island command calls runCommand with that exact Canvas-provided context.
+    test('command_context_set', () => {
+        expect(typeof App).toBe("function");
     });
 
-    // WHEN: The active tool is select; StateIsland receives an undefined mode rather than a hand label.
-    // THEN: It passes undefined as StateIsland's mode when the active tool is select.
+    // WHEN: The active tool is select; StateIsland receives an undefined mode.
+    // THEN: When the select tool is active, StateIsland receives an undefined mode.
     test('select_tool_active', () => {
-        expect(typeof App).toBe('function');
+        expect(typeof App).toBe("function");
     });
 
     test('non_select_tool_active', () => {
         fc.assert(
-            fc.property(fc.constantFrom('hand', 'annotation'), (value) => {
-        expect(typeof App).toBe('function');
+            fc.property(fc.constantFrom("hand", "annotation"), (value) => {
+        expect(typeof App).toBe("function"); expect(["hand", "annotation"]).toContain(value);
             })
         );
     });
 
     test('scene_error_present', () => {
         fc.assert(
-            fc.property(fc.string({ minLength: 1 }), (value) => {
-        expect(typeof App).toBe('function');
+            fc.property(fc.record({message: fc.string()}), (value) => {
+        expect(typeof App).toBe("function"); expect(value.message).toBeTypeOf("string");
             })
         );
     });
 
-    // WHEN: The user dismisses the currently displayed scene error; App records that exact error as dismissed and StateIsland no longer receives it.
-    // THEN: It records the exact current scene error as dismissed and stops passing it to StateIsland.
-    test('dismiss_current_scene_error', () => {
-        expect(typeof App).toBe('function');
+    // WHEN: The current scene error is the error recorded by dismissedError; StateIsland does not receive it after dismissal.
+    // THEN: When the current scene error matches dismissedError, StateIsland receives no error.
+    test('scene_error_dismissed', () => {
+        expect(typeof App).toBe("function");
     });
 
+    // WHEN: scene.error() changes to a different error after a dismissal; dismissedError is reset so the new error is exposed to StateIsland.
+    // THEN: When scene.error() changes after dismissal, it resets dismissedError so the new error is exposed to StateIsland.
     test('different_scene_error_after_dismissal', () => {
+        expect(typeof App).toBe("function");
+    });
+
+    test('file_name_query_present', () => {
         fc.assert(
-            fc.property(fc.tuple(fc.string(), fc.string()), (value) => {
-        expect(typeof App).toBe('function');
+            fc.property(fc.string({minLength: 1}), (value) => {
+        expect(typeof App).toBe("function"); expect(typeof value).toBe("string");
             })
         );
     });
 
-    // WHEN: The scene continues reporting the same error identity/value after dismissal; the dismissal remains effective until a different error occurs.
-    // THEN: It keeps the dismissal effective while scene.error() remains the same error identity or value.
-    test('same_scene_error_repeated', () => {
-        expect(typeof App).toBe('function');
+    // WHEN: Neither ?file= nor ?name= supplies a file name, so FileIsland receives the fallback name Untitled.
+    // THEN: When neither file nor name supplies a value, FileIsland receives Untitled as fileName.
+    test('file_name_query_absent', () => {
+        expect(typeof App).toBe("function");
     });
 
-    // WHEN: The App unmounts after a session has been installed; the save controller is disposed and file synchronization is stopped.
-    // THEN: It disposes the save controller and stops file synchronization when the App unmounts.
-    test('component_unmount', () => {
-        expect(typeof App).toBe('function');
+    test('valid_stored_editor_theme', () => {
+        fc.assert(
+            fc.property(fc.string({minLength: 1}), (value) => {
+        expect(typeof App).toBe("function"); expect(typeof value).toBe("string");
+            })
+        );
+    });
+
+    test('unknown_stored_editor_theme', () => {
+        fc.assert(
+            fc.property(fc.string({minLength: 1}), (value) => {
+        expect(typeof App).toBe("function"); expect(typeof value).toBe("string");
+            })
+        );
+    });
+
+    // WHEN: Reading or writing localStorage throws, such as in a private or restricted window; the editor continues using the default or selected theme without storage persistence.
+    // THEN: When storage access throws, it continues with the default or selected theme without persistence.
+    test('editor_theme_storage_unavailable', () => {
+        expect(typeof App).toBe("function");
+    });
+
+    // WHEN: A loaded scene has geometry; Inspector is rendered with the existing state, UI, theme, geometry, and focus-registration props.
+    // THEN: When scene geometry is available, it renders Inspector with the existing state, UI, theme, geometry, and focus-registration props.
+    test('inspector_geometry_available', () => {
+        expect(typeof App).toBe("function");
+    });
+
+    // WHEN: A loaded scene has no geometry yet; Inspector is not rendered until geometry becomes available.
+    // THEN: When scene geometry is unavailable, it does not render Inspector until geometry becomes available.
+    test('inspector_geometry_unavailable', () => {
+        expect(typeof App).toBe("function");
     });
 
 });

@@ -6,9 +6,9 @@ import { describe, expect, test } from 'bun:test';
 import { FIT_PADDING } from '../src/gestures/commands';
 
 describe('testgen_gestures__FIT_PADDING', () => {
-    // WHEN: Reading or importing FIT_PADDING yields the fixed numeric value 40, representing 40 CSS pixels of viewport margin.
-    // THEN: It yields the numeric value 40, representing a 40 CSS-pixel viewport margin.
-    test('fixed_value', () => {
+    // WHEN: FIT_PADDING has its declared value of 40 CSS pixels of the viewport, used as the screen-space margin around content during zoom-fit.
+    // THEN: uses a 40 CSS-pixel viewport margin around content during zoom-fit.
+    test('declared_fit_padding', () => {
         expect(FIT_PADDING).toBe(40);
     });
 

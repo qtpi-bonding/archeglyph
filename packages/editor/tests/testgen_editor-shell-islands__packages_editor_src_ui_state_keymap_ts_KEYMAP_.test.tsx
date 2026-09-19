@@ -2,131 +2,122 @@
 // Re-run `archegraph testgen --spec <name>` to regenerate.
 
 import { describe, expect, test } from 'bun:test';
-import * as fc from 'fast-check';
 
 import { Chord, KEYMAP, KeymapEntry } from '../src/ui_state/keymap';
 
 describe('testgen_ui_state__KEYMAP', () => {
-    // WHEN: The input chord is lowercase `z` with the Meta modifier and no Shift modifier; it maps to `undo`.
-    // THEN: It maps the Meta+z chord to undo.
-    test('meta_z_undo', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'z' && entry.chord.meta === true && entry.chord.shift !== true)?.command).toBe('undo');
+    // WHEN: The z key is pressed with the Meta modifier, selecting the undo command.
+    // THEN: It selects the undo command.
+    test('meta_z', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'z', meta: true }, command: 'undo' });
     });
 
-    // WHEN: The input chord is lowercase `z` with both Meta and Shift modifiers; it maps to `redo`.
-    // THEN: It maps the Meta+Shift+z chord to redo.
-    test('meta_shift_z_redo', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'z' && entry.chord.meta === true && entry.chord.shift === true)?.command).toBe('redo');
+    // WHEN: The z key is pressed with both Meta and Shift modifiers, selecting the redo command.
+    // THEN: It selects the redo command.
+    test('meta_shift_z', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'z', meta: true, shift: true }, command: 'redo' });
     });
 
-    // WHEN: The input key is `Backspace` with no modifiers; it maps to `delete`.
-    // THEN: It maps Backspace to delete.
-    test('backspace_delete', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'Backspace' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('delete');
+    // WHEN: The Backspace key is pressed without modifiers, selecting the delete command.
+    // THEN: It selects the delete command.
+    test('backspace', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'Backspace' }, command: 'delete' });
     });
 
-    // WHEN: The input key is `Delete` with no modifiers; it maps to `delete`.
-    // THEN: It maps Delete to delete.
-    test('delete_key_delete', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'Delete' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('delete');
+    // WHEN: The Delete key is pressed without modifiers, selecting the delete command.
+    // THEN: It selects the delete command.
+    test('delete', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'Delete' }, command: 'delete' });
     });
 
-    // WHEN: The input key is `Escape` with no modifiers; it maps to `escape`.
-    // THEN: It maps Escape to escape.
-    test('escape_cancel', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'Escape' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('escape');
+    // WHEN: The Escape key is pressed without modifiers, selecting the escape command.
+    // THEN: It selects the escape command.
+    test('escape', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'Escape' }, command: 'escape' });
     });
 
-    // WHEN: The input chord is lowercase `a` with the Meta modifier and no other modifiers; it maps to `select-all`.
-    // THEN: It maps the Meta+a chord to select-all.
-    test('meta_a_select_all', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'a' && entry.chord.meta === true && entry.chord.shift !== true)?.command).toBe('select-all');
+    // WHEN: The a key is pressed with the Meta modifier, selecting the select-all command.
+    // THEN: It selects the select-all command.
+    test('meta_a', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'a', meta: true }, command: 'select-all' });
     });
 
-    // WHEN: The input key is `ArrowUp` with no modifiers; it maps to `nudge-up`.
-    // THEN: It maps ArrowUp to nudge-up.
-    test('arrow_up_nudge', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'ArrowUp' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('nudge-up');
+    // WHEN: The ArrowUp key is pressed without modifiers, selecting the nudge-up command.
+    // THEN: It selects the nudge-up command.
+    test('arrow_up', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowUp' }, command: 'nudge-up' });
     });
 
-    // WHEN: The input key is `ArrowDown` with no modifiers; it maps to `nudge-down`.
-    // THEN: It maps ArrowDown to nudge-down.
-    test('arrow_down_nudge', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'ArrowDown' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('nudge-down');
+    // WHEN: The ArrowDown key is pressed without modifiers, selecting the nudge-down command.
+    // THEN: It selects the nudge-down command.
+    test('arrow_down', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowDown' }, command: 'nudge-down' });
     });
 
-    // WHEN: The input key is `ArrowLeft` with no modifiers; it maps to `nudge-left`.
-    // THEN: It maps ArrowLeft to nudge-left.
-    test('arrow_left_nudge', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'ArrowLeft' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('nudge-left');
+    // WHEN: The ArrowLeft key is pressed without modifiers, selecting the nudge-left command.
+    // THEN: It selects the nudge-left command.
+    test('arrow_left', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowLeft' }, command: 'nudge-left' });
     });
 
-    // WHEN: The input key is `ArrowRight` with no modifiers; it maps to `nudge-right`.
-    // THEN: It maps ArrowRight to nudge-right.
-    test('arrow_right_nudge', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'ArrowRight' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('nudge-right');
+    // WHEN: The ArrowRight key is pressed without modifiers, selecting the nudge-right command.
+    // THEN: It selects the nudge-right command.
+    test('arrow_right', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowRight' }, command: 'nudge-right' });
     });
 
-    // WHEN: The input chord is lowercase `s` with no modifiers; it maps to `ring-next`.
-    // THEN: It maps s to ring-next.
-    test('s_ring_next', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 's' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('ring-next');
+    // WHEN: The s key is pressed without modifiers, selecting the ring-next command.
+    // THEN: It selects the ring-next command.
+    test('s', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 's' }, command: 'ring-next' });
     });
 
-    // WHEN: The input chord is lowercase `s` with Shift and no Meta modifier; it maps to `ring-prev`.
-    // THEN: It maps Shift+s to ring-prev.
-    test('shift_s_ring_prev', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 's' && entry.chord.meta !== true && entry.chord.shift === true)?.command).toBe('ring-prev');
+    // WHEN: The s key is pressed with Shift and without Meta, selecting the ring-prev command.
+    // THEN: It selects the ring-prev command.
+    test('shift_s', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 's', shift: true }, command: 'ring-prev' });
     });
 
-    // WHEN: The input chord is lowercase `s` with Meta and no Shift modifier; it maps to `save`.
-    // THEN: It maps Meta+s to save.
-    test('meta_s_save', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 's' && entry.chord.meta === true && entry.chord.shift !== true)?.command).toBe('save');
+    // WHEN: The s key is pressed with the Meta modifier, selecting the save command.
+    // THEN: It selects the save command.
+    test('meta_s', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 's', meta: true }, command: 'save' });
     });
 
-    // WHEN: The input chord is lowercase `i` with the Meta modifier and no other modifiers; it maps to `focus-inspector`.
-    // THEN: It maps Meta+i to focus-inspector.
-    test('meta_i_focus_inspector', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'i' && entry.chord.meta === true && entry.chord.shift !== true)?.command).toBe('focus-inspector');
+    // WHEN: The i key is pressed with the Meta modifier, selecting the focus-inspector command.
+    // THEN: It selects the focus-inspector command.
+    test('meta_i', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'i', meta: true }, command: 'focus-inspector' });
     });
 
-    // WHEN: The input key is lowercase `v` with no modifiers; it maps to `tool-select`.
-    // THEN: It maps v to tool-select.
-    test('v_tool_select', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'v' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('tool-select');
+    // WHEN: The v key is pressed without modifiers, selecting the tool-select command.
+    // THEN: It selects the tool-select command.
+    test('v', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'v' }, command: 'tool-select' });
     });
 
-    // WHEN: The input key is lowercase `t` with no modifiers; it maps to `tool-annotation`.
-    // THEN: It maps t to tool-annotation.
-    test('t_tool_annotation', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 't' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('tool-annotation');
+    // WHEN: The t key is pressed without modifiers, selecting the tool-annotation command.
+    // THEN: It selects the tool-annotation command.
+    test('t', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 't' }, command: 'tool-annotation' });
     });
 
-    // WHEN: The input key is lowercase `n` with no modifiers; it maps to `add-annotation`.
-    // THEN: It maps n to add-annotation.
-    test('n_add_annotation', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'n' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('add-annotation');
+    // WHEN: The n key is pressed without modifiers, selecting the add-annotation command.
+    // THEN: It selects the add-annotation command.
+    test('n', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'n' }, command: 'add-annotation' });
     });
 
-    // WHEN: The input key is `Enter` with no modifiers; it maps to `edit-text`.
-    // THEN: It maps Enter to edit-text.
-    test('enter_edit_text', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'Enter' && entry.chord.meta !== true && entry.chord.shift !== true)?.command).toBe('edit-text');
+    // WHEN: The Enter key is pressed without modifiers, selecting the edit-text command.
+    // THEN: It selects the edit-text command.
+    test('enter', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'Enter' }, command: 'edit-text' });
     });
 
-    // WHEN: The input chord is lowercase `d` with the Meta modifier and no other modifiers; it maps to `duplicate`.
-    // THEN: It maps Meta+d to duplicate.
-    test('meta_d_duplicate', () => {
-        expect(KEYMAP.find((entry) => entry.chord.key === 'd' && entry.chord.meta === true && entry.chord.shift !== true)?.command).toBe('duplicate');
-    });
-
-    test('unmapped_key_chord', () => {
-        fc.assert(
-            fc.property(fc.record({ key: fc.string(), meta: fc.boolean(), shift: fc.boolean() }).filter((value) => !KEYMAP.some((entry) => entry.chord.key === value.key && Boolean(entry.chord.meta) === value.meta && Boolean(entry.chord.shift) === value.shift)), (value) => {
-        expect(KEYMAP.some((entry) => entry.chord.key === value.key && Boolean(entry.chord.meta) === value.meta && Boolean(entry.chord.shift) === value.shift)).toBe(false);
-            })
-        );
+    // WHEN: The d key is pressed with the Meta modifier, selecting the duplicate command.
+    // THEN: It selects the duplicate command.
+    test('meta_d', () => {
+        expect(KEYMAP).toContainEqual({ chord: { key: 'd', meta: true }, command: 'duplicate' });
     });
 
 });

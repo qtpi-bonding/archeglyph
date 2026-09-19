@@ -6,9 +6,9 @@ import { describe, expect, test } from 'bun:test';
 import { ISLAND_INSET } from '../src/shell/island_frame';
 
 describe('testgen_shell__ISLAND_INSET', () => {
-    // WHEN: The symbol is imported or evaluated; because it is a constant with no parameters, it always yields a 12 CSS-pixel viewport gap.
-    // THEN: Evaluating or importing the constant yields a fixed 12 CSS-pixel viewport gap.
-    test('fixed_twelve_pixel_inset', () => {
+    // WHEN: The constant has its declared value of 12 CSS pixels, representing the gap between an island and the viewport edge.
+    // THEN: The constant should equal 12 CSS pixels, defining the gap between an island and the viewport edge.
+    test('declared_inset_value', () => {
         expect(ISLAND_INSET).toBe(12);
     });
 

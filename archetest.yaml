@@ -17,11 +17,9 @@ tests:
   skip_property_tests: false
   language: typescript
 
-  # MUST be set. The derived default drops --conditions browser (Solid's server
-  # build wins, createEffect becomes a no-op, reactive tests pass while
-  # measuring nothing) and --preload (no JSX transform, no component mounts).
-  # package.json's "test" script carries both.
-  runner_command: "bun run test"
+  # runner_command unset: testgen reads package.json's "test" script and appends
+  # the node's own files, so per-node isolation keeps --conditions browser and
+  # --preload. Setting it here would override that with a whole-suite run.
 
   # Prompt-only: cannot add imports to the emitted header.
   framework_notes: >-

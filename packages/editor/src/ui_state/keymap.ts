@@ -10,7 +10,7 @@ export type CommandId = 'undo' | 'redo' | 'delete' |
   'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' |
   'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' |
-  'duplicate' | 'hide';
+  'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' | 'zoom-reset' | 'zoom-fit';
 
 export interface KeymapEntry {
   chord: Chord;

@@ -34,6 +34,11 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 'v' }, command: 'tool-select' },
   { chord: { key: 't' }, command: 'tool-annotation' },
   { chord: { key: 'n' }, command: 'add-annotation' },
+  { chord: { key: 'h' }, command: 'tool-hand' },
+  { chord: { key: '=' }, command: 'zoom-in' },
+  { chord: { key: '-' }, command: 'zoom-out' },
+  { chord: { key: '0' }, command: 'zoom-reset' },
+  { chord: { key: '1' }, command: 'zoom-fit' },
   { chord: { key: 'Enter' }, command: 'edit-text' },
   { chord: { key: 'd', meta: true }, command: 'duplicate' },
 ];

@@ -18,6 +18,21 @@ import { setNodesHiddenEdit } from '../state/edits/visibility';
 import { pinAllEdit, unpinAllEdit, withLayoutMaterialized } from '../state/edits/layout_command';
 import { clearNodeSizeEdit } from '../state/edits/resize';
 
+/**
+ * Multiplier for one zoom-in press. 1.2.
+ *
+ * Its reciprocal is zoom-out, so in-then-out returns to the starting
+ * zoom. Not bit-exact, and a test must not assert exact equality: the
+ * round trip is floating-point, and it does not hold at all when a
+ * clamp intervened at MIN_ZOOM or MAX_ZOOM. Assert within 1e-9, away
+ * from the clamps.
+ *
+ * Multiplicative rather than additive because an additive step does not
+ * round-trip even in principle, and the drift is visible after a handful
+ * of presses.
+ */
+export const ZOOM_STEP: number = 1.2;
+
 export interface Command {
   id: CommandId;
   label: string;

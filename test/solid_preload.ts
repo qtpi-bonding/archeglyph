@@ -30,6 +30,15 @@ import solid from 'babel-preset-solid';
 // @ts-expect-error -- babel presets ship no types
 import typescript from '@babel/preset-typescript';
 import { readFileSync } from 'node:fs';
+import { GlobalRegistrator } from '@happy-dom/global-registrator';
+
+// Importing a Solid component runs delegateEvents at module scope, which needs
+// `window` -- so a DOM must exist before any component import, not just before
+// a render. Guarded: bun runs every test file in one process and a second
+// register throws.
+if (!(globalThis as { document?: unknown }).document) {
+  GlobalRegistrator.register();
+}
 
 plugin({
   name: 'solid-jsx',

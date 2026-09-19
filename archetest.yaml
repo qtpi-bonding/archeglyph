@@ -9,6 +9,10 @@ llm:
     --result-schema-json {schema}
     -e {prompt}
 
+# Pause after the plan passes; `archegraph test proceed` runs code generation.
+gate:
+  enabled: true
+
 tests:
   skip_property_tests: false
   language: typescript

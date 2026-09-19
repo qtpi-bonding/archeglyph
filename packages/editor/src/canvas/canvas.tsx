@@ -335,13 +335,13 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       props.ui.setTextEditTarget(ref);
     };
     const commandContext = (): CommandContext => ({
-        state: props.state,
-        ui: props.ui,
-        geometry: geometry(),
-        rect: containerRect(),
-        save: (): void => { props.onSave?.(); },
-        focusInspector: props.onFocusInspector,
-        beginTextEdit,
+      state: props.state,
+      ui: props.ui,
+      geometry: geometry(),
+      rect: containerRect(),
+      save: (): void => { props.onSave?.(); },
+      focusInspector: props.onFocusInspector,
+      beginTextEdit,
     });
     props.registerCommandContext(commandContext);
     const onKeyDown = (event: KeyboardEvent): void => {

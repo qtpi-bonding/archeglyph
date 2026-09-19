@@ -241,13 +241,23 @@ execution:
   # the block sat here looking correct.
   pre_node_defaults:
     - label: link-node-modules
+      # bun keeps deps in packages/*/node_modules, not hoisted to root, so the
+      # root link alone leaves every workspace and third-party import unresolved.
       command: |
         [ -e node_modules ] || ln -s ../../../node_modules node_modules
+        for pkg in packages/*/; do
+          [ -e "$pkg/node_modules" ] || ln -s "../../../../../$pkg/node_modules" "$pkg/node_modules"
+        done
 
   post_dag:
     - label: link-node-modules
+      # bun keeps deps in packages/*/node_modules, not hoisted to root, so the
+      # root link alone leaves every workspace and third-party import unresolved.
       command: |
         [ -e node_modules ] || ln -s ../../../node_modules node_modules
+        for pkg in packages/*/; do
+          [ -e "$pkg/node_modules" ] || ln -s "../../../../../$pkg/node_modules" "$pkg/node_modules"
+        done
 
 retries:
   agent: 3

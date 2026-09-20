@@ -2,7 +2,7 @@
 
 import { Accessor, createSignal, Setter } from 'solid-js';
 import { Overlay } from './overlay';
-import { ModalGesture } from './modal_gesture';
+import type { ModalGesture } from './modal_gesture';
 
 export function createUiState(): UiState {
   const [selection, setSelection] = createSignal<ElementRef[]>([]);

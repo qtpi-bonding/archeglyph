@@ -15,7 +15,7 @@ describe('testgen_gestures__commitModalGesture', () => {
           parentGroup: undefined,
         };
       }
-      return { byKey, diagram: {} };
+      return { byKey, diagram: { nodes: {}, edges: {}, groups: {} } };
     };
 
     const makeRecordingContext = (geometry: unknown): any => {
@@ -28,7 +28,7 @@ describe('testgen_gestures__commitModalGesture', () => {
         save: (): void => {},
         beginTextEdit: (_ref: unknown): void => {},
         state: {
-          stylesheet: {},
+          stylesheet: (): unknown => ({ schemaVersion: 1, nodes: {}, groups: {}, edges: {}, annotations: {} }),
           applyStyleEdit: (...args: Array<unknown>): void => { calls.push(args); },
         },
       };
@@ -45,7 +45,7 @@ describe('testgen_gestures__commitModalGesture', () => {
     // WHEN: The gesture has an empty refs collection; the function returns without applying any edit.
     // THEN: Returns without applying any edit.
     test('empty_refs', () => {
-        const context: any = makeRecordingContext({ byKey: {}, diagram: {} });
+        const context: any = makeRecordingContext({ byKey: {}, diagram: { nodes: {}, edges: {}, groups: {} } });
         commitModalGesture({ kind: 'grab', refs: [], direction: 'right', digits: '1' }, context);
         expect(context.calls).toHaveLength(0);
     });
@@ -53,7 +53,7 @@ describe('testgen_gestures__commitModalGesture', () => {
     // WHEN: The gesture kind is 'resize' and modalHandle() is undefined; the function returns without applying any edit.
     // THEN: Returns without applying any edit.
     test('resize_missing_handle', () => {
-        const context: any = makeRecordingContext({ byKey: {}, diagram: {} });
+        const context: any = makeRecordingContext({ byKey: {}, diagram: { nodes: {}, edges: {}, groups: {} } });
         commitModalGesture({ kind: 'resize', refs: [{ kind: 'node', id: 'n' }], digits: '1' }, context);
         expect(context.calls).toHaveLength(0);
     });
@@ -62,7 +62,7 @@ describe('testgen_gestures__commitModalGesture', () => {
         fc.assert(
             fc.property(fc.array(fc.string(), { minLength: 2 }), (value) => {
         const refs: Array<any> = value.map((id: string) => ({ kind: 'node', id }));
-        const context: any = makeRecordingContext({ byKey: {}, diagram: {} });
+        const context: any = makeRecordingContext({ byKey: {}, diagram: { nodes: {}, edges: {}, groups: {} } });
         commitModalGesture({ kind: 'resize', refs, direction: 'right', digits: '1' }, context);
         expect(context.calls).toHaveLength(0);
             })
@@ -72,7 +72,7 @@ describe('testgen_gestures__commitModalGesture', () => {
     // WHEN: A valid move gesture produces a zero delta; moveCommit returns undefined, so applyStyleEdit is not called.
     // THEN: Does not call applyStyleEdit.
     test('move_zero_delta', () => {
-        const context: any = makeRecordingContext({ byKey: {}, diagram: {} });
+        const context: any = makeRecordingContext({ byKey: {}, diagram: { nodes: {}, edges: {}, groups: {} } });
         commitModalGesture({ kind: 'grab', refs: [{ kind: 'node', id: 'n' }], direction: undefined, digits: '' }, context);
         expect(context.calls).toHaveLength(0);
     });
@@ -80,7 +80,7 @@ describe('testgen_gestures__commitModalGesture', () => {
     // WHEN: A valid resize gesture produces a zero delta; resizeCommit returns undefined, so applyStyleEdit is not called.
     // THEN: Does not call applyStyleEdit.
     test('resize_zero_delta', () => {
-        const context: any = makeRecordingContext({ byKey: {}, diagram: {} });
+        const context: any = makeRecordingContext({ byKey: {}, diagram: { nodes: {}, edges: {}, groups: {} } });
         commitModalGesture({ kind: 'resize', refs: [{ kind: 'node', id: 'n' }], direction: 'right', digits: '' }, context);
         expect(context.calls).toHaveLength(0);
     });

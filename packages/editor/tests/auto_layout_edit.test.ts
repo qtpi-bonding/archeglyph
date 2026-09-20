@@ -56,7 +56,7 @@ describe('auto-layout and unpin-all produce the same edit (repaired testgen case
           function makeContext(sheet: Stylesheet, edits: StyleEdit[]): CommandContext {
             return {
               state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-              ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+              ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
               geometry: undefined,
               rect: {} as ContainerRect,
               save: () => {},

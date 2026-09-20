@@ -47,7 +47,7 @@ describe('testgen_gestures__COMMANDS', () => {
         fc.assert(
             fc.property(fc.record({ command: fc.constantFrom('enter-grab', 'enter-resize'), selection: fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() })) }), (value) => {
         expect(value.selection.length).toBeGreaterThanOrEqual(0);
-        expect(COMMANDS.find((command) => command.id === value.command)).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === value.command)).toBeDefined();
             })
         );
     });

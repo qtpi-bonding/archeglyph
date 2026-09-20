@@ -2,6 +2,7 @@
 
 import { Accessor, createSignal, Setter } from 'solid-js';
 import { Overlay } from './overlay';
+import type { ModalGesture } from './modal_gesture';
 
 export function createUiState(): UiState {
   const [selection, setSelection] = createSignal<ElementRef[]>([]);
@@ -14,6 +15,7 @@ export function createUiState(): UiState {
     zoom: 1,
   });
   const [overlay, setOverlay] = createSignal<Overlay | undefined>(undefined);
+  const [modalGesture, setModalGesture] = createSignal<ModalGesture | undefined>(undefined);
 
   return {
     selection,
@@ -28,6 +30,8 @@ export function createUiState(): UiState {
     setViewport,
     overlay,
     setOverlay,
+    modalGesture,
+    setModalGesture,
   };
 }
 export interface Viewport {
@@ -52,5 +56,7 @@ export interface UiState {
   setViewport: Setter<Viewport>;
   overlay: Accessor<Overlay | undefined>;
   setOverlay: Setter<Overlay | undefined>;
+  modalGesture: Accessor<ModalGesture | undefined>;
+  setModalGesture: Setter<ModalGesture | undefined>;
 }
 export type Tool = 'select' | 'hand' | 'annotation';

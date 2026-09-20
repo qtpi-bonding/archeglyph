@@ -72,9 +72,11 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
   let current: Array<ElementRef> = selection;
   let stylesheet: Stylesheet = sheet();
   // The `as unknown as UiState` cast below means nothing here is checked
-  // against UiState, so this pair must be present or every command that
-  // touches the overlay throws rather than failing an assertion.
+  // against UiState, so these pairs must be present or every command that
+  // touches the overlay -- or, since runCommand clears it, EVERY command at
+  // all -- throws rather than failing an assertion.
   let overlay: string | undefined = undefined;
+  let modalGesture: unknown = undefined;
 
   const state = {
     diagram: () => { throw new Error('not used'); },
@@ -108,6 +110,14 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
     setOverlay: (next: string | undefined): void => {
       overlay = next;
       calls.push('setOverlay');
+    },
+    modalGesture: (): unknown => modalGesture,
+    setModalGesture: (next: unknown): void => {
+      modalGesture = next;
+      // Only an OPEN is the command's own effect. runCommand clears the
+      // gesture before every dispatch, so recording that would make each
+      // command look observable and defeat the inertness check below.
+      if (next !== undefined) { calls.push('setModalGesture'); }
     },
   } as unknown as UiState;
 

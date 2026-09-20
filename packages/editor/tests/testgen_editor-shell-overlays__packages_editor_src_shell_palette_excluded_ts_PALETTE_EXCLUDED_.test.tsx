@@ -6,8 +6,8 @@ import { describe, expect, test } from 'bun:test';
 import { PALETTE_EXCLUDED } from '../src/shell/palette_excluded';
 
 describe('testgen_shell__PALETTE_EXCLUDED', () => {
-    // WHEN: The exported ReadonlySet contains exactly the nine excluded CommandId members: 'escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', and 'open-help'.
-    // THEN: Exports a ReadonlySet containing exactly the nine specified CommandId members: escape, the four nudge commands, the two ring commands, open-palette, and open-help.
+    // WHEN: The exported ReadonlySet contains exactly the eleven excluded CommandId members: 'escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', and 'open-help'.
+    // THEN: Exports a ReadonlySet containing exactly the eleven specified CommandId members: escape, the four nudge commands, the two ring commands, open-palette, open-help, and the two modal-entry commands.
     test('has_declared_value', () => {
         expect(PALETTE_EXCLUDED).toEqual(new Set([
           'escape',
@@ -19,6 +19,8 @@ describe('testgen_shell__PALETTE_EXCLUDED', () => {
           'ring-prev',
           'open-palette',
           'open-help',
+          'enter-grab',
+          'enter-resize',
         ]));
     });
 

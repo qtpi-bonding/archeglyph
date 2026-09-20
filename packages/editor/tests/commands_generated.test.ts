@@ -53,7 +53,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
@@ -79,7 +79,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
@@ -107,7 +107,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
@@ -143,7 +143,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry,
             rect: {} as ContainerRect,
             save: () => {},
@@ -179,7 +179,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
@@ -208,7 +208,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
@@ -236,7 +236,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
@@ -269,7 +269,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},
@@ -296,7 +296,7 @@ describe('testgen_gestures__COMMANDS', () => {
           const edits: StyleEdit[] = [];
           const context: CommandContext = {
             state: { stylesheet: () => sheet, applyStyleEdit: (edit: StyleEdit) => { edits.push(edit); }, undo: () => {}, redo: () => {} } as unknown as EditorState,
-            ui: { selection: () => [], setSelection: () => {} } as unknown as UiState,
+            ui: { selection: () => [], setSelection: () => {}, modalGesture: () => undefined, setModalGesture: () => {} } as unknown as UiState,
             geometry: undefined,
             rect: {} as ContainerRect,
             save: () => {},

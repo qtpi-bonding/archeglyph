@@ -101,14 +101,16 @@ describe('testgen_gestures__handleKeyDown', () => {
         );
     });
 
-    test('modal_ignore_matched_chord', () => {
+    test('modal_arrow_is_consumed_by_the_gesture', () => {
         fc.assert(
             fc.property(fc.constantFrom("ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"), (value) => {
-        const gesture = { kind: "move", refs: [], digits: "", direction: "up" };
+        const gesture = { kind: "grab" as const, refs: [], digits: "", direction: "up" as const };
         const contextFixture = makeContext(gesture);
         const event = makeEvent(value, nonEditingTarget());
+        // An arrow is consumed by the open gesture, so it re-aims it and never
+        // reaches resolveChord -- which is what keeps it from nudging instead.
         expect(handleKeyDown(event, contextFixture.context)).toBe(true);
-        expect(contextFixture.setValues).toHaveLength(0);
+        expect(contextFixture.setValues).toHaveLength(1);
             })
         );
     });

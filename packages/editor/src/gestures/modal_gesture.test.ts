@@ -15,7 +15,6 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
-import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { init } from '@archeglyph/proto/util/init';
 
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
@@ -26,9 +25,9 @@ import { beginModalGesture } from '../ui_state/modal_gesture';
 import { modalKeyDown } from '../ui_state/modal_step';
 import { modalDelta } from './modal_aim';
 
-const v = (x: number, y: number): Vec2 => create(Vec2Schema, { x, y });
+const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 
-function node(id: string, position: Vec2, size: Vec2): LaidOutNode {
+function node(id: string, position: ReturnType<typeof v>, size: ReturnType<typeof v>): LaidOutNode {
   return init(new LaidOutNode(), { id, position, size });
 }
 

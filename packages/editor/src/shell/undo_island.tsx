@@ -3,6 +3,7 @@
 import { Component, JSX } from 'solid-js';
 import { COMMANDS, Command } from '../gestures/commands';
 import { CommandId, KEYMAP } from '../ui_state/keymap';
+import { formatChord } from './chord_label';
 
 export class UndoIslandProps {
   canUndo!: boolean;
@@ -18,7 +19,7 @@ function commandLabel(commandId: CommandId): string {
 function commandTooltip(commandId: CommandId): string {
   const label: string = commandLabel(commandId);
   const keymapEntry = KEYMAP.find((entry): boolean => entry.command === commandId);
-  return keymapEntry === undefined ? label : `${label} (${keymapEntry.chord.key})`;
+  return keymapEntry === undefined ? label : `${label} (${formatChord(keymapEntry.chord)})`;
 }
 
 export const UndoIsland: Component<UndoIslandProps> = (props: UndoIslandProps): JSX.Element => {

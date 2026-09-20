@@ -99,7 +99,7 @@ function groupEntry(overrides: Partial<GroupStyleEntry> = {}): GroupStyleEntry {
 }
 
 function annotationEntry(overrides: Partial<Omit<AnnotationEntry, '$typeName' | '$unknown'>> = {}): AnnotationEntry {
-  return create(AnnotationEntrySchema, { id: 'a1', ...overrides });
+  return create(AnnotationEntrySchema, { ...overrides });
 }
 
 function laidOutNode(overrides: Partial<LaidOutNode> = {}): LaidOutNode {
@@ -227,19 +227,13 @@ describe('patchGroupEntry', () => {
 });
 
 describe('patchAnnotationEntry', () => {
-  test('id always comes from the patch, even if it differs from the existing entry id', () => {
-    const existing = annotationEntry({ id: 'old-id' });
-    const result = patchAnnotationEntry(existing, { id: 'new-id' });
-    expect(result.id).toBe('new-id');
-  });
-
   test('patching position preserves content, shape and component', () => {
     const existing = annotationEntry({
       content: [create(LocalizationSchema, { locale: 'en', source: 'hello' })],
       shape: create(Glyph2DSchema, { cornerRadius: 2 }),
       component: 'note',
     });
-    const result = patchAnnotationEntry(existing, { id: 'a1', position: vec2(4, 4) });
+    const result = patchAnnotationEntry(existing, { position: vec2(4, 4) });
     expect(result.layout?.position).toEqual(vec2(4, 4));
     expect(result.content).toEqual(existing.content);
     expect(result.shape?.cornerRadius).toBe(2);
@@ -688,7 +682,7 @@ describe('setAnnotationAnchorEdit', () => {
 
 describe('deleteAnnotationEdit', () => {
   test('really removes the annotation from the stylesheet (D3: the one true delete)', () => {
-    const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({}), a2: annotationEntry({ id: 'a2' }) } });
+    const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({}), a2: annotationEntry({}) } });
     const edit = deleteAnnotationEdit(sheet, 'a1');
     const applied = applyStyleEditToStylesheet(sheet, edit);
     expect(applied.annotations['a1']).toBeUndefined();

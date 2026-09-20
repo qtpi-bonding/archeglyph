@@ -33,7 +33,7 @@ export function anchorForElement(ref: ElementRef): AnnotationAnchor | undefined 
 
 export function setAnnotationAnchorEdit(stylesheet: Stylesheet, id: string, anchor?: AnnotationAnchor): StyleEdit {
   const existing = stylesheet.annotations[id];
-  const patched = patchAnnotationEntry(existing, { id, ...(anchor === undefined ? {} : { anchor }) });
+  const patched = patchAnnotationEntry(existing, anchor === undefined ? {} : { anchor });
   const after = anchor === undefined
     ? create(AnnotationEntrySchema, { ...patched, anchor: undefined })
     : patched;
@@ -65,14 +65,13 @@ export function setAnnotationTextEdit(stylesheet: Stylesheet, id: string, text: 
 
   return styleEdit({
     annotationChanges: [
-      annotationChange(id, patchAnnotationEntry(existing, { id, content })),
+      annotationChange(id, patchAnnotationEntry(existing, { content })),
     ],
   });
 }
 
 export function addAnnotationEdit(stylesheet: Stylesheet, id: string, position: Vec2, text: string): StyleEdit {
   const annotation = patchAnnotationEntry(undefined, {
-    id,
     content: localized(text),
     position,
   });
@@ -94,7 +93,6 @@ export function duplicateAnnotationEdit(stylesheet: Stylesheet, id: string): Sty
   const duplicateId = newAnnotationId(stylesheet, id);
   const position = existing?.layout?.position;
   const duplicate = patchAnnotationEntry(existing, {
-    id: duplicateId,
     position: create(Vec2Schema, {
       x: (position?.x ?? 0) + 16,
       y: (position?.y ?? 0) + 16,

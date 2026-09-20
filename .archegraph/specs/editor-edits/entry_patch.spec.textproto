@@ -52,7 +52,7 @@ methods: [
     uses: ["archeglyph.style.v1.GroupStyleEntry"]
   },
   { name: "patchAnnotationEntry"
-    doc: "AnnotationEntry carries its own `id`, unlike the other three. The id comes from the patch and is always written."
+    doc: "Identity is the stylesheet map key, so the patch carries no id -- same shape as the other three."
     inputs: [
       { name: "existing", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "AnnotationEntry | undefined" } } },
       { name: "patch", type: { named: { symbol: "AnnotationEntryPatch" } } }
@@ -102,7 +102,6 @@ structs: [
   },
   { name: "AnnotationEntryPatch"
     fields: [
-      { name: "id", type: { primitive: CHARACTER } },
       { name: "content", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.content.v1.Localization" } }] } }, is_optional: true },
       { name: "anchor", type: { named: { symbol: "archeglyph.style.v1.AnnotationAnchor" } }, is_optional: true },
       { name: "position", type: { named: { symbol: "archeglyph.style.v1.Vec2" } }, is_optional: true },

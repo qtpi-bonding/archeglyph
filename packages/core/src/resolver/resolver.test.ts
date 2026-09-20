@@ -84,8 +84,8 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {} }, b: { id: 'b', label: [], tags: {} } },
-        edges: { ab: { id: 'ab', source: 'a', target: 'b', label: [], ordinal: 0, tags: {} } },
+        nodes: { a: { label: [], tags: {} }, b: { label: [], tags: {} } },
+        edges: { ab: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} } },
         groups: {},
       },
     });
@@ -104,13 +104,13 @@ describe('visibility_filter', () => {
       id: 'd1',
       graph: {
         nodes: {
-          a: { id: 'a', label: [], tags: {} },
-          b: { id: 'b', label: [], tags: {} },
-          c: { id: 'c', label: [], tags: {} },
+          a: { label: [], tags: {} },
+          b: { label: [], tags: {} },
+          c: { label: [], tags: {} },
         },
         edges: {
-          ab: { id: 'ab', source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
-          bc: { id: 'bc', source: 'b', target: 'c', label: [], ordinal: 0, tags: {} },
+          ab: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
+          bc: { source: 'b', target: 'c', label: [], ordinal: 0, tags: {} },
         },
         groups: {},
       },
@@ -132,7 +132,7 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {} } },
+        nodes: { a: { label: [], tags: {} } },
         edges: {},
         groups: {},
       },
@@ -151,9 +151,9 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {}, parentGroup: 'g1' } },
+        nodes: { a: { label: [], tags: {}, parentGroup: 'g1' } },
         edges: {},
-        groups: { g1: { id: 'g1', label: [], tags: {} } }, // top-level, no parent
+        groups: { g1: { label: [], tags: {} } }, // top-level, no parent
       },
     });
     const stylesheet = create(StylesheetSchema, {
@@ -179,15 +179,15 @@ describe('visibility_filter', () => {
       id: 'd1',
       graph: {
         nodes: {
-          outside: { id: 'outside', label: [], tags: {} },
-          inner1: { id: 'inner1', label: [], tags: {}, parentGroup: 'g1' },
-          inner2: { id: 'inner2', label: [], tags: {}, parentGroup: 'g1' },
+          outside: { label: [], tags: {} },
+          inner1: { label: [], tags: {}, parentGroup: 'g1' },
+          inner2: { label: [], tags: {}, parentGroup: 'g1' },
         },
         edges: {
-          e1: { id: 'e1', source: 'outside', target: 'inner1', label: [], ordinal: 0, tags: {} },
-          e2: { id: 'e2', source: 'inner1', target: 'inner2', label: [], ordinal: 0, tags: {} },
+          e1: { source: 'outside', target: 'inner1', label: [], ordinal: 0, tags: {} },
+          e2: { source: 'inner1', target: 'inner2', label: [], ordinal: 0, tags: {} },
         },
-        groups: { g1: { id: 'g1', label: [], tags: {} } },
+        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
@@ -222,12 +222,12 @@ describe('visibility_filter', () => {
       id: 'd1',
       graph: {
         nodes: {
-          leaf: { id: 'leaf', label: [], tags: {}, parentGroup: 'inner' },
+          leaf: { label: [], tags: {}, parentGroup: 'inner' },
         },
         edges: {},
         groups: {
-          outer: { id: 'outer', label: [], tags: {} },
-          inner: { id: 'inner', label: [], tags: {}, parentGroup: 'outer' },
+          outer: { label: [], tags: {} },
+          inner: { label: [], tags: {}, parentGroup: 'outer' },
         },
       },
     });
@@ -257,7 +257,7 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {}, parentGroup: 'ghost' } },
+        nodes: { a: { label: [], tags: {}, parentGroup: 'ghost' } },
         edges: {},
         groups: {},
       },
@@ -273,7 +273,7 @@ describe('visibility_filter', () => {
     });
     const stylesheet = create(StylesheetSchema, {
       annotations: {
-        note1: create(AnnotationEntrySchema, { id: 'note1', content: [] }),
+        note1: create(AnnotationEntrySchema, { content: [] }),
       },
     });
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
@@ -303,7 +303,7 @@ describe('style_cascade', () => {
   test('per-element override wins over theme component for the SAME field (design.md: "Wins over the bound theme component for the same field")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
         undefined,
       ),
     );
@@ -353,7 +353,7 @@ describe('style_cascade', () => {
   test('element with an unset component starts unstyled, even if the theme happens to define components (design.md: "If component is unset, no theme component applies — the element starts unstyled")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
         undefined,
       ),
     );
@@ -390,7 +390,7 @@ describe('style_cascade', () => {
   test('component naming a theme component that does not exist is an error (design.md cascade step 1: component must match a theme component by name)', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
         undefined,
       ),
     );
@@ -411,7 +411,7 @@ describe('style_cascade', () => {
   test('absent theme: cascade starts from per-element override layer only, no error (spec: "absent theme -> cascade starts from per-element override layer (or empty)")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
         undefined,
       ),
     );
@@ -439,7 +439,7 @@ describe('style_cascade', () => {
   test('empty stylesheet and empty theme: element resolves to a defined-but-empty glyph, no crash', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
         undefined,
       ),
     );
@@ -464,7 +464,6 @@ describe('style_cascade', () => {
     const stylesheet = create(StylesheetSchema, {
       annotations: {
         note1: create(AnnotationEntrySchema, {
-          id: 'note1',
           content: [],
           // No anchor set.
           callout: create(Glyph1DSchema, {
@@ -491,12 +490,11 @@ describe('style_cascade', () => {
   test('annotation WITH an anchor gets its callout cascaded from the stylesheet override', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
-      graph: { nodes: { target: { id: 'target', label: [], tags: {} } }, edges: {}, groups: {} },
+      graph: { nodes: { target: { label: [], tags: {} } }, edges: {}, groups: {} },
     });
     const stylesheet = create(StylesheetSchema, {
       annotations: {
         note1: create(AnnotationEntrySchema, {
-          id: 'note1',
           content: [],
           anchor: create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.NODE }),
           callout: create(Glyph1DSchema, { stroke: create(StrokeSchema, { width: 3 }) }),
@@ -536,7 +534,7 @@ describe('style_cascade', () => {
 function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
   const diagram = create(DiagramSchema, {
     id: 'd1',
-    graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} },
+    graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
   });
   const stylesheet = nodeEntry !== undefined ? create(StylesheetSchema, { nodes: { a: nodeEntry } }) : undefined;
   const filtered = filterImpl.filter(filterReq(diagram, stylesheet));
@@ -692,15 +690,15 @@ describe('resolvePipeline end-to-end', () => {
       id: 'd1',
       graph: {
         nodes: {
-          visible: { id: 'visible', label: [], tags: {} },
-          hidden: { id: 'hidden', label: [], tags: {} },
-          contained: { id: 'contained', label: [], tags: {}, parentGroup: 'g1' },
+          visible: { label: [], tags: {} },
+          hidden: { label: [], tags: {} },
+          contained: { label: [], tags: {}, parentGroup: 'g1' },
         },
         edges: {
-          toHidden: { id: 'toHidden', source: 'visible', target: 'hidden', label: [], ordinal: 0, tags: {} },
-          toGroup: { id: 'toGroup', source: 'visible', target: 'contained', label: [], ordinal: 0, tags: {} },
+          toHidden: { source: 'visible', target: 'hidden', label: [], ordinal: 0, tags: {} },
+          toGroup: { source: 'visible', target: 'contained', label: [], ordinal: 0, tags: {} },
         },
-        groups: { g1: { id: 'g1', label: [], tags: {} } },
+        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
@@ -754,7 +752,7 @@ describe('resolvePipeline end-to-end', () => {
   test('empty theme + stylesheet with only layout hints: resolves without error, layout hints pass through verbatim', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
-      graph: { nodes: { a: { id: 'a', label: [], tags: {} } }, edges: {}, groups: {} },
+      graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
     });
     const stylesheet = create(StylesheetSchema, {
       nodes: { a: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { rotation: 45 }) }) },
@@ -781,9 +779,9 @@ describe('seedComponentBindings', () => {
     schemaVersion: 1,
     id: 'd',
     graph: {
-      nodes: { n1: { id: 'n1' } },
+      nodes: { n1: {} },
       edges: {},
-      groups: { g1: { id: 'g1' } },
+      groups: { g1: {} },
     },
   });
 

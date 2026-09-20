@@ -48,7 +48,7 @@ const CONTENT = {
   id: 'anchored',
   graph: {
     nodes: {
-      target: { id: 'target', label: [{ locale: 'en', source: 'target' }] },
+      target: { label: [{ locale: 'en', source: 'target' }] },
     },
   },
 };
@@ -57,7 +57,6 @@ const CONTENT = {
 // has a non-zero length whatever ELK does with the node.
 function stylesheetWith(anchored: boolean): Stylesheet {
   const annotation = create(AnnotationEntrySchema, {
-    id: 'note',
     content: [create(LocalizationSchema, { source: 'note' })],
     layout: create(AnnotationLayoutSchema, {
       position: create(Vec2Schema, { x: 400, y: 400 }),

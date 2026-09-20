@@ -37,7 +37,6 @@ export function fromArchegraph(view: Archeview, options?: ImportOptions): Diagra
     }
 
     nodes[id] = create(NodeSchema, {
-      id,
       label: [create(LocalizationSchema, { locale: 'en', source: vn.displayName })],
       tags: nodeTags,
     });
@@ -52,7 +51,6 @@ export function fromArchegraph(view: Archeview, options?: ImportOptions): Diagra
     }
 
     edges[id] = create(EdgeSchema, {
-      id,
       source: ve.source,
       target: ve.target,
       label: [create(LocalizationSchema, { locale: 'en', source: ve.kindLabel })],

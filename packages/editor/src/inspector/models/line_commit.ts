@@ -215,7 +215,7 @@ function commitLineForAnnotation(
         return undefined;
       }
 
-      const newEntry = patchAnnotationEntry(existing, { id: annotationId, callout: newGlyph1D });
+      const newEntry = patchAnnotationEntry(existing, { callout: newGlyph1D });
       return annotationChange(annotationId, newEntry);
     })
     .filter((c) => c !== undefined);

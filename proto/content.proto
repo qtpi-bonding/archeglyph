@@ -47,25 +47,24 @@ message DiagramMetadata {
 // ============================================================================
 
 message Graph {
-  // Nodes keyed by id. Map enforces uniqueness.
+  // Nodes keyed by id. The key is the node's identity; Node carries no id field.
   // Iteration during render: sorted lex by key.
   map<string, Node> nodes = 1;
 
-  // Edges keyed by id. Map enforces uniqueness.
+  // Edges keyed by id. The key is the edge's identity; Edge carries no id field.
+  // Convention: "<source>__<target>", optional "__<n>" suffix when multiple.
   // Multiple edges between same (source, target) supported via different ids.
   map<string, Edge> edges = 2;
 
-  // Groups keyed by id. Groups may nest (a group's parent_group references another group).
+  // Groups keyed by id. The key is the group's identity; Group carries no id field.
+  // Groups may nest (a group's parent_group references another group).
   map<string, Group> groups = 3;
 }
 
 message Node {
-  // Stable id. MUST equal the key in Graph.nodes.
-  string id = 1;
-
   // Display label (one Localization entry per locale).
   // Render picks based on --locale flag, falls back to canonical_locale's entry.
-  // If empty, renderer falls back to `id` for display.
+  // If empty, renderer falls back to the map key for display.
   repeated Localization label = 2;
 
   // Containing group (single physical containment; cross-cutting concerns use tags).
@@ -80,10 +79,6 @@ message Node {
 }
 
 message Edge {
-  // Stable id. MUST equal the key in Graph.edges.
-  // Convention: "<source>__<target>" with optional "__<n>" suffix when multiple.
-  string id = 1;
-
   // Source node id. Must reference an existing node.
   string source = 2;
 
@@ -101,9 +96,6 @@ message Edge {
 }
 
 message Group {
-  // Stable id. MUST equal the key in Graph.groups.
-  string id = 1;
-
   // Display label (localizable).
   repeated Localization label = 2;
 

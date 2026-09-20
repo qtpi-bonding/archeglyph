@@ -23,7 +23,7 @@ export function setAnnotationGlyphEdit(stylesheet: Stylesheet, annotationId: str
   const existing = stylesheet.annotations[annotationId];
   return styleEdit({
     annotationChanges: [
-      annotationChange(annotationId, patchAnnotationEntry(existing, { id: annotationId, ...patch })),
+      annotationChange(annotationId, patchAnnotationEntry(existing, patch)),
     ],
   });
 }

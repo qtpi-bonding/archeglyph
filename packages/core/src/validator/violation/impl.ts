@@ -2,7 +2,6 @@
 
 export enum ViolationKind {
   GROUP_CYCLE = 'GROUP_CYCLE',
-  ID_KEY_MISMATCH = 'ID_KEY_MISMATCH',
   EDGE_SOURCE_MISSING = 'EDGE_SOURCE_MISSING',
   EDGE_TARGET_MISSING = 'EDGE_TARGET_MISSING',
   NODE_PARENT_GROUP_MISSING = 'NODE_PARENT_GROUP_MISSING',
@@ -12,7 +11,6 @@ export enum ViolationKind {
 // Declaration order for deterministic violation sort. Mirrors the enum above.
 export const VIOLATION_KIND_ORDER: Record<ViolationKind, number> = {
   [ViolationKind.GROUP_CYCLE]: 0,
-  [ViolationKind.ID_KEY_MISMATCH]: 5,
   [ViolationKind.EDGE_SOURCE_MISSING]: 1,
   [ViolationKind.EDGE_TARGET_MISSING]: 2,
   [ViolationKind.NODE_PARENT_GROUP_MISSING]: 3,

@@ -44,17 +44,17 @@ const GROUPED = {
   id: 'grouped',
   graph: {
     nodes: {
-      outside: { id: 'outside', label: [{ locale: 'en', source: 'outside' }] },
-      inner_a: { id: 'inner_a', label: [{ locale: 'en', source: 'a' }], parentGroup: 'box' },
-      inner_b: { id: 'inner_b', label: [{ locale: 'en', source: 'b' }], parentGroup: 'box' },
+      outside: { label: [{ locale: 'en', source: 'outside' }] },
+      inner_a: { label: [{ locale: 'en', source: 'a' }], parentGroup: 'box' },
+      inner_b: { label: [{ locale: 'en', source: 'b' }], parentGroup: 'box' },
     },
     edges: {
       // crosses the group boundary — bug 2
-      crossing: { id: 'crossing', source: 'outside', target: 'inner_a' },
+      crossing: { source: 'outside', target: 'inner_a' },
       // lives entirely inside the group — bug 1
-      internal: { id: 'internal', source: 'inner_a', target: 'inner_b' },
+      internal: { source: 'inner_a', target: 'inner_b' },
     },
-    groups: { box: { id: 'box', label: [{ locale: 'en', source: 'box' }] } },
+    groups: { box: { label: [{ locale: 'en', source: 'box' }] } },
   },
   metadata: { canonicalLocale: 'en' },
 };

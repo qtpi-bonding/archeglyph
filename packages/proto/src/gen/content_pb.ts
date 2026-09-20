@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file content.proto.
  */
 export const file_content: GenFile = /*@__PURE__*/
-  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpQDCgVHcmFwaBI2CgVub2RlcxgBIAMoCzInLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5Ob2Rlc0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkSOAoGZ3JvdXBzGAMgAygLMiguYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkdyb3Vwc0VudHJ5GkkKCk5vZGVzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGU6AjgBGkkKCkVkZ2VzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2U6AjgBGksKC0dyb3Vwc0VudHJ5EgsKA2tleRgBIAEoCRIrCgV2YWx1ZRgCIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cDoCOAEi1AEKBE5vZGUSCgoCaWQYASABKAkSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhkKDHBhcmVudF9ncm91cBgDIAEoCUgAiAEBEjMKBHRhZ3MYBCADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuTm9kZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDwoNX3BhcmVudF9ncm91cCLZAQoERWRnZRIKCgJpZBgBIAEoCRIOCgZzb3VyY2UYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjIKBWxhYmVsGAQgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIPCgdvcmRpbmFsGAUgASgNEjMKBHRhZ3MYBiADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEi1gEKBUdyb3VwEgoKAmlkGAEgASgJEjIKBWxhYmVsGAIgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIZCgxwYXJlbnRfZ3JvdXAYAyABKAlIAIgBARI0CgR0YWdzGAQgAygLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIPCg1fcGFyZW50X2dyb3VwIrMBCgVEZWx0YRIWCg5zY2hlbWFfdmVyc2lvbhgBIAEoDRIQCghiYXNlX3JlZhgCIAEoCRISCgp0YXJnZXRfcmVmGAMgASgJEjUKC25vZGVfZGVsdGFzGAQgAygLMiAuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVEZWx0YRI1CgtlZGdlX2RlbHRhcxgFIAMoCzIgLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlRGVsdGEi9gEKCU5vZGVEZWx0YRIPCgdub2RlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5Ob2RlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24i9gEKCUVkZ2VEZWx0YRIPCgdlZGdlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2VIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24iLgoMTG9jYWxpemF0aW9uEg4KBmxvY2FsZRgBIAEoCRIOCgZzb3VyY2UYAiABKAkqXgoKQ2hhbmdlVHlwZRIbChdDSEFOR0VfVFlQRV9VTlNQRUNJRklFRBAAEg0KCVVOQ0hBTkdFRBABEgkKBUFEREVEEAISCwoHREVMRVRFRBADEgwKCE1PRElGSUVEEARiBnByb3RvMw");
+  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpQDCgVHcmFwaBI2CgVub2RlcxgBIAMoCzInLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5Ob2Rlc0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkSOAoGZ3JvdXBzGAMgAygLMiguYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkdyb3Vwc0VudHJ5GkkKCk5vZGVzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGU6AjgBGkkKCkVkZ2VzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2U6AjgBGksKC0dyb3Vwc0VudHJ5EgsKA2tleRgBIAEoCRIrCgV2YWx1ZRgCIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cDoCOAEiyAEKBE5vZGUSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhkKDHBhcmVudF9ncm91cBgDIAEoCUgAiAEBEjMKBHRhZ3MYBCADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuTm9kZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDwoNX3BhcmVudF9ncm91cCLNAQoERWRnZRIOCgZzb3VyY2UYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjIKBWxhYmVsGAQgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIPCgdvcmRpbmFsGAUgASgNEjMKBHRhZ3MYBiADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiygEKBUdyb3VwEjIKBWxhYmVsGAIgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIZCgxwYXJlbnRfZ3JvdXAYAyABKAlIAIgBARI0CgR0YWdzGAQgAygLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIPCg1fcGFyZW50X2dyb3VwIrMBCgVEZWx0YRIWCg5zY2hlbWFfdmVyc2lvbhgBIAEoDRIQCghiYXNlX3JlZhgCIAEoCRISCgp0YXJnZXRfcmVmGAMgASgJEjUKC25vZGVfZGVsdGFzGAQgAygLMiAuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVEZWx0YRI1CgtlZGdlX2RlbHRhcxgFIAMoCzIgLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlRGVsdGEi9gEKCU5vZGVEZWx0YRIPCgdub2RlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5Ob2RlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24i9gEKCUVkZ2VEZWx0YRIPCgdlZGdlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2VIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24iLgoMTG9jYWxpemF0aW9uEg4KBmxvY2FsZRgBIAEoCRIOCgZzb3VyY2UYAiABKAkqXgoKQ2hhbmdlVHlwZRIbChdDSEFOR0VfVFlQRV9VTlNQRUNJRklFRBAAEg0KCVVOQ0hBTkdFRBABEgkKBUFEREVEEAISCwoHREVMRVRFRBADEgwKCE1PRElGSUVEEARiBnByb3RvMw");
 
 /**
  * Diagram is the file-level artifact: a Graph + presentation envelope metadata.
@@ -115,7 +115,7 @@ export const DiagramMetadataSchema: GenMessage<DiagramMetadata> = /*@__PURE__*/
  */
 export type Graph = Message<"archeglyph.content.v1.Graph"> & {
   /**
-   * Nodes keyed by id. Map enforces uniqueness.
+   * Nodes keyed by id. The key is the node's identity; Node carries no id field.
    * Iteration during render: sorted lex by key.
    *
    * @generated from field: map<string, archeglyph.content.v1.Node> nodes = 1;
@@ -123,7 +123,8 @@ export type Graph = Message<"archeglyph.content.v1.Graph"> & {
   nodes: { [key: string]: Node };
 
   /**
-   * Edges keyed by id. Map enforces uniqueness.
+   * Edges keyed by id. The key is the edge's identity; Edge carries no id field.
+   * Convention: "<source>__<target>", optional "__<n>" suffix when multiple.
    * Multiple edges between same (source, target) supported via different ids.
    *
    * @generated from field: map<string, archeglyph.content.v1.Edge> edges = 2;
@@ -131,7 +132,8 @@ export type Graph = Message<"archeglyph.content.v1.Graph"> & {
   edges: { [key: string]: Edge };
 
   /**
-   * Groups keyed by id. Groups may nest (a group's parent_group references another group).
+   * Groups keyed by id. The key is the group's identity; Group carries no id field.
+   * Groups may nest (a group's parent_group references another group).
    *
    * @generated from field: map<string, archeglyph.content.v1.Group> groups = 3;
    */
@@ -150,16 +152,9 @@ export const GraphSchema: GenMessage<Graph> = /*@__PURE__*/
  */
 export type Node = Message<"archeglyph.content.v1.Node"> & {
   /**
-   * Stable id. MUST equal the key in Graph.nodes.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
    * Display label (one Localization entry per locale).
    * Render picks based on --locale flag, falls back to canonical_locale's entry.
-   * If empty, renderer falls back to `id` for display.
+   * If empty, renderer falls back to the map key for display.
    *
    * @generated from field: repeated archeglyph.content.v1.Localization label = 2;
    */
@@ -195,14 +190,6 @@ export const NodeSchema: GenMessage<Node> = /*@__PURE__*/
  * @generated from message archeglyph.content.v1.Edge
  */
 export type Edge = Message<"archeglyph.content.v1.Edge"> & {
-  /**
-   * Stable id. MUST equal the key in Graph.edges.
-   * Convention: "<source>__<target>" with optional "__<n>" suffix when multiple.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
   /**
    * Source node id. Must reference an existing node.
    *
@@ -250,13 +237,6 @@ export const EdgeSchema: GenMessage<Edge> = /*@__PURE__*/
  * @generated from message archeglyph.content.v1.Group
  */
 export type Group = Message<"archeglyph.content.v1.Group"> & {
-  /**
-   * Stable id. MUST equal the key in Graph.groups.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
   /**
    * Display label (localizable).
    *

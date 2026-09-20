@@ -56,7 +56,6 @@ function group(padding: number): GroupStyleEntry {
 
 function annotation(text: string): AnnotationEntry {
   return create(AnnotationEntrySchema, {
-    id: 'a1',
     content: [{ locale: 'en', source: text }],
   });
 }
@@ -159,7 +158,6 @@ describe('hashStylesheet', () => {
 
   test('NESTED order independence: a map inside an annotation entry (tags) does not affect the hash', async () => {
     const forward = create(AnnotationEntrySchema, {
-      id: 'a1',
       tags: (() => {
         const t: Record<string, string> = {};
         t.alpha = '1';
@@ -168,7 +166,6 @@ describe('hashStylesheet', () => {
       })(),
     });
     const reversed = create(AnnotationEntrySchema, {
-      id: 'a1',
       tags: (() => {
         const t: Record<string, string> = {};
         t.beta = '2';

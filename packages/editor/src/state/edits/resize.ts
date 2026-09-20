@@ -83,7 +83,7 @@ export function resizeAnnotationEdit(stylesheet: Stylesheet, annotationId: strin
   const existing = stylesheet.annotations[annotationId];
   return styleEdit({
     annotationChanges: [
-      annotationChange(annotationId, patchAnnotationEntry(existing, { id: annotationId, position, size })),
+      annotationChange(annotationId, patchAnnotationEntry(existing, { position, size })),
     ],
     description: 'Resize annotation',
   });

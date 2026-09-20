@@ -47,7 +47,7 @@ export function initOf<T extends { $typeName: string }>(message: T | undefined):
 }
 
 export interface AnnotationEntryPatch {
-  id: string; content?: Array<Localization>; anchor?: AnnotationAnchor; position?: Vec2;
+  content?: Array<Localization>; anchor?: AnnotationAnchor; position?: Vec2;
   size?: Vec2; rotation?: number; shape?: Glyph2D; typography?: Typography;
   callout?: Glyph1D; component?: string;
 }
@@ -65,7 +65,7 @@ export function patchNodeEntry(existing: NodeStyleEntry | undefined, patch: Node
 
 export function patchAnnotationEntry(existing: AnnotationEntry | undefined, patch: AnnotationEntryPatch): AnnotationEntry {
   const hasLayoutPatch = patch.position !== undefined || patch.size !== undefined || patch.rotation !== undefined;
-  return create(AnnotationEntrySchema, { ...initOf(existing), id: patch.id,
+  return create(AnnotationEntrySchema, { ...initOf(existing),
     ...(patch.content === undefined ? {} : { content: patch.content }), ...(patch.anchor === undefined ? {} : { anchor: patch.anchor }),
     ...(hasLayoutPatch ? { layout: create(AnnotationLayoutSchema, { ...initOf(existing?.layout),
       ...(patch.position === undefined ? {} : { position: patch.position }), ...(patch.size === undefined ? {} : { size: patch.size }),

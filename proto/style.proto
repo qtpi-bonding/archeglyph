@@ -417,7 +417,6 @@ enum RefKind {
 // Typography from above — same vocabulary as nodes.
 
 message AnnotationEntry {
-  string id = 1;
 
   // Text content (localizable).
   repeated archeglyph.content.v1.Localization content = 2;

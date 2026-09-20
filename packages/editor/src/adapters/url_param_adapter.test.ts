@@ -15,7 +15,7 @@ import { buildGitHubUrl, UrlParamAdapter } from './url_param_adapter';
 const DIAGRAM = JSON.stringify({
   schemaVersion: 1,
   id: 'd',
-  graph: { nodes: { n1: { id: 'n1' } }, edges: {}, groups: {} },
+  graph: { nodes: { n1: {} }, edges: {}, groups: {} },
 });
 const STYLE = JSON.stringify({
   schemaVersion: 1,

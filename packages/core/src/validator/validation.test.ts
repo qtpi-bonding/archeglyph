@@ -44,9 +44,9 @@ interface DiagramJson {
   id: string;
   title?: Array<{ locale: string; source: string }>;
   graph: {
-    nodes: Record<string, { id: string; parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
-    edges: Record<string, { id: string; source: string; target: string; label?: Array<{ locale: string; source: string }>; ordinal?: number; tags?: Record<string, string> }>;
-    groups: Record<string, { id: string; parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
+    nodes: Record<string, { parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
+    edges: Record<string, { source: string; target: string; label?: Array<{ locale: string; source: string }>; ordinal?: number; tags?: Record<string, string> }>;
+    groups: Record<string, { parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
   };
   metadata?: { generator?: string; canonicalLocale?: string };
 }
@@ -62,13 +62,12 @@ function pipelineJson(): DiagramJson {
     title: [{ locale: 'en', source: 'Render pipeline' }],
     graph: {
       nodes: {
-        load: { id: 'load', parentGroup: 'core', label: [], tags: {} },
-        resolve: { id: 'resolve', parentGroup: 'core', label: [], tags: {} },
-        render: { id: 'render', label: [], tags: {} },
+        load: { parentGroup: 'core', label: [], tags: {} },
+        resolve: { parentGroup: 'core', label: [], tags: {} },
+        render: { label: [], tags: {} },
       },
       edges: {
         load__resolve: {
-          id: 'load__resolve',
           source: 'load',
           target: 'resolve',
           label: [],
@@ -76,7 +75,6 @@ function pipelineJson(): DiagramJson {
           tags: {},
         },
         resolve__render: {
-          id: 'resolve__render',
           source: 'resolve',
           target: 'render',
           label: [],
@@ -85,7 +83,7 @@ function pipelineJson(): DiagramJson {
         },
       },
       groups: {
-        core: { id: 'core', label: [], tags: {} },
+        core: { label: [], tags: {} },
       },
     },
     metadata: { generator: 'hand', canonicalLocale: 'en' },
@@ -148,8 +146,8 @@ describe('validator: valid input', () => {
       id: 'lonely-nodes',
       graph: {
         nodes: {
-          a: { id: 'a', label: [], tags: {} },
-          b: { id: 'b', label: [], tags: {} },
+          a: { label: [], tags: {} },
+          b: { label: [], tags: {} },
         },
         edges: {},
         groups: {},
@@ -168,9 +166,9 @@ describe('validator: valid input', () => {
       schemaVersion: 1,
       id: 'self-loop',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {} } },
+        nodes: { a: { label: [], tags: {} } },
         edges: {
-          a__a: { id: 'a__a', source: 'a', target: 'a', label: [], ordinal: 0, tags: {} },
+          a__a: { source: 'a', target: 'a', label: [], ordinal: 0, tags: {} },
         },
         groups: {},
       },
@@ -189,9 +187,9 @@ describe('validator: referential integrity — edges', () => {
       schemaVersion: 1,
       id: 'bad-source',
       graph: {
-        nodes: { b: { id: 'b', label: [], tags: {} } },
+        nodes: { b: { label: [], tags: {} } },
         edges: {
-          ghost__b: { id: 'ghost__b', source: 'ghost', target: 'b', label: [], ordinal: 0, tags: {} },
+          ghost__b: { source: 'ghost', target: 'b', label: [], ordinal: 0, tags: {} },
         },
         groups: {},
       },
@@ -210,9 +208,9 @@ describe('validator: referential integrity — edges', () => {
       schemaVersion: 1,
       id: 'bad-target',
       graph: {
-        nodes: { a: { id: 'a', label: [], tags: {} } },
+        nodes: { a: { label: [], tags: {} } },
         edges: {
-          a__ghost: { id: 'a__ghost', source: 'a', target: 'ghost', label: [], ordinal: 0, tags: {} },
+          a__ghost: { source: 'a', target: 'ghost', label: [], ordinal: 0, tags: {} },
         },
         groups: {},
       },
@@ -231,7 +229,7 @@ describe('validator: referential integrity — edges', () => {
       schemaVersion: 1,
       id: 'bad-parent-group',
       graph: {
-        nodes: { a: { id: 'a', parentGroup: 'ghost-group', label: [], tags: {} } },
+        nodes: { a: { parentGroup: 'ghost-group', label: [], tags: {} } },
         edges: {},
         groups: {},
       },
@@ -263,7 +261,7 @@ describe('validator: group hierarchy', () => {
       graph: {
         nodes: {},
         edges: {},
-        groups: { g1: { id: 'g1', parentGroup: 'ghost-group', label: [], tags: {} } },
+        groups: { g1: { parentGroup: 'ghost-group', label: [], tags: {} } },
       },
     });
     const result = validate(diagram);
@@ -283,7 +281,7 @@ describe('validator: group hierarchy', () => {
       graph: {
         nodes: {},
         edges: {},
-        groups: { g1: { id: 'g1', parentGroup: 'g1', label: [], tags: {} } },
+        groups: { g1: { parentGroup: 'g1', label: [], tags: {} } },
       },
     });
     const result = validate(diagram);
@@ -301,8 +299,8 @@ describe('validator: group hierarchy', () => {
         nodes: {},
         edges: {},
         groups: {
-          a: { id: 'a', parentGroup: 'b', label: [], tags: {} },
-          b: { id: 'b', parentGroup: 'a', label: [], tags: {} },
+          a: { parentGroup: 'b', label: [], tags: {} },
+          b: { parentGroup: 'a', label: [], tags: {} },
         },
       },
     });
@@ -321,9 +319,9 @@ describe('validator: group hierarchy', () => {
         nodes: {},
         edges: {},
         groups: {
-          a: { id: 'a', parentGroup: 'b', label: [], tags: {} },
-          b: { id: 'b', parentGroup: 'c', label: [], tags: {} },
-          c: { id: 'c', parentGroup: 'a', label: [], tags: {} },
+          a: { parentGroup: 'b', label: [], tags: {} },
+          b: { parentGroup: 'c', label: [], tags: {} },
+          c: { parentGroup: 'a', label: [], tags: {} },
         },
       },
     });
@@ -342,9 +340,9 @@ describe('validator: group hierarchy', () => {
         nodes: {},
         edges: {},
         groups: {
-          a: { id: 'a', parentGroup: 'b', label: [], tags: {} },
-          b: { id: 'b', parentGroup: 'c', label: [], tags: {} },
-          c: { id: 'c', label: [], tags: {} },
+          a: { parentGroup: 'b', label: [], tags: {} },
+          b: { parentGroup: 'c', label: [], tags: {} },
+          c: { label: [], tags: {} },
         },
       },
     });
@@ -352,82 +350,6 @@ describe('validator: group hierarchy', () => {
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(violationKinds(result.value)).not.toContain(ViolationKind.GROUP_CYCLE);
-    }
-  });
-});
-
-describe('validator: id/key agreement — proto "MUST equal the key" invariants', () => {
-  // proto/content.proto:
-  //   Node.id    "Stable id. MUST equal the key in Graph.nodes."
-  //   Edge.id    "Stable id. MUST equal the key in Graph.edges."
-  //   Group.id   "Stable id. MUST equal the key in Graph.groups."
-  //
-  // These are FINDINGS, not implementation bugs to fix here. The validator
-  // (packages/core/src/validator/validator/impl.ts) runs exactly three
-  // checks per its own spec doc (.archegraph/specs/validate/validator.spec.textproto):
-  // edge source/target referential integrity, node.parent_group existence,
-  // and group.parent_group existence+acyclicity. There is no fourth check,
-  // and no ViolationKind exists for an id/key mismatch at all — grep
-  // violation/impl.ts's ViolationKind enum: GROUP_CYCLE, EDGE_SOURCE_MISSING,
-  // EDGE_TARGET_MISSING, NODE_PARENT_GROUP_MISSING, GROUP_PARENT_GROUP_MISSING.
-  // None of these fire for a mismatched id. If these tests fail, that
-  // confirms the gap; they must not be edited to match the implementation.
-
-  test('a node whose id disagrees with its map key produces some violation', () => {
-    const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
-      id: 'mismatched-node',
-      graph: {
-        nodes: { realKey: { id: 'differentId', label: [], tags: {} } },
-        edges: {},
-        groups: {},
-      },
-    });
-    const result = validate(diagram);
-    expect(result.kind).toBe('ok');
-    if (result.kind === 'ok') {
-      // EXPECTATION from the proto MUST: this should not be silently accepted
-      // as zero violations. Currently it is (no id/key check exists).
-      expect(result.value.violations.length).toBeGreaterThan(0);
-    }
-  });
-
-  test('an edge whose id disagrees with its map key produces some violation', () => {
-    const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
-      id: 'mismatched-edge',
-      graph: {
-        nodes: {
-          a: { id: 'a', label: [], tags: {} },
-          b: { id: 'b', label: [], tags: {} },
-        },
-        edges: {
-          realKey: { id: 'differentId', source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
-        },
-        groups: {},
-      },
-    });
-    const result = validate(diagram);
-    expect(result.kind).toBe('ok');
-    if (result.kind === 'ok') {
-      expect(result.value.violations.length).toBeGreaterThan(0);
-    }
-  });
-
-  test('a group whose id disagrees with its map key produces some violation', () => {
-    const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
-      id: 'mismatched-group',
-      graph: {
-        nodes: {},
-        edges: {},
-        groups: { realKey: { id: 'differentId', label: [], tags: {} } },
-      },
-    });
-    const result = validate(diagram);
-    expect(result.kind).toBe('ok');
-    if (result.kind === 'ok') {
-      expect(result.value.violations.length).toBeGreaterThan(0);
     }
   });
 });
@@ -506,7 +428,7 @@ describe('loaders: malformed input rejection', () => {
       schemaVersion: 1,
       id: 'unknown-nested',
       graph: {
-        nodes: { a: { id: 'a', thisFieldDoesNotExist: 'x' } },
+        nodes: { a: { thisFieldDoesNotExist: 'x' } },
         edges: {},
         groups: {},
       },
@@ -543,7 +465,7 @@ describe('loaders: malformed input rejection', () => {
       id: 'roundtrip',
       title: [{ locale: 'en', source: 'Round Trip' }],
       graph: {
-        nodes: { a: { id: 'a', label: [{ locale: 'en', source: 'A' }], tags: { kind: 'stage' } } },
+        nodes: { a: { label: [{ locale: 'en', source: 'A' }], tags: { kind: 'stage' } } },
         edges: {},
         groups: {},
       },
@@ -552,7 +474,7 @@ describe('loaders: malformed input rejection', () => {
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(result.value.id).toBe('roundtrip');
-      expect(result.value.graph?.nodes['a']?.id).toBe('a');
+      expect(Object.keys(result.value.graph?.nodes ?? {})).toContain('a');
       expect(result.value.graph?.nodes['a']?.tags['kind']).toBe('stage');
     }
   });
@@ -564,8 +486,8 @@ describe('loaders: duplicate JSON object keys', () => {
     'duplicate-key detection anywhere in the load path, since by the time the ' +
     'map reaches the validator only one entry can exist per key', async () => {
     const text =
-      '{"schemaVersion":1,"id":"dup","graph":{"nodes":{"a":{"id":"a"},"b":{"id":"b"}},' +
-      '"edges":{"e1":{"id":"e1","source":"a","target":"b"},"e1":{"id":"e1","source":"b","target":"a"}},' +
+      '{"schemaVersion":1,"id":"dup","graph":{"nodes":{"a":{},"b":{}},' +
+      '"edges":{"e1":{"source":"a","target":"b"},"e1":{"source":"b","target":"a"}},' +
       '"groups":{}}}';
     const result = await loadDiagram(text);
     expect(result.kind).toBe('ok');
@@ -603,14 +525,14 @@ describe('diff: added / removed / modified', () => {
   test('a node present only in target is ADDED', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
-    targetJson.graph.nodes['extra'] = { id: 'extra', label: [], tags: {} };
+    targetJson.graph.nodes['extra'] = { label: [], tags: {} };
     const target = diagramFromJson(targetJson);
 
     const delta = diff(base, target);
     const added = delta.nodeDeltas.find((d) => d.nodeId === 'extra');
     expect(added?.changeType).toBe(2 /* ADDED */);
     expect(added?.before).toBeUndefined();
-    expect(added?.after?.id).toBe('extra');
+    expect(added?.after).toBeDefined();
   });
 
   test('a node present only in base is DELETED', () => {
@@ -623,14 +545,13 @@ describe('diff: added / removed / modified', () => {
     const deleted = delta.nodeDeltas.find((d) => d.nodeId === 'render');
     expect(deleted?.changeType).toBe(3 /* DELETED */);
     expect(deleted?.after).toBeUndefined();
-    expect(deleted?.before?.id).toBe('render');
+    expect(deleted?.before).toBeDefined();
   });
 
   test('a node whose fields differ between base and target is MODIFIED', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
     targetJson.graph.nodes['load'] = {
-      id: 'load',
       parentGroup: 'core',
       label: [{ locale: 'en', source: 'Load!' }],
       tags: {},
@@ -648,7 +569,6 @@ describe('diff: added / removed / modified', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
     targetJson.graph.edges['load__render'] = {
-      id: 'load__render',
       source: 'load',
       target: 'render',
       label: [],
@@ -677,7 +597,6 @@ describe('diff: added / removed / modified', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
     targetJson.graph.edges['load__resolve'] = {
-      id: 'load__resolve',
       source: 'load',
       target: 'resolve',
       label: [],

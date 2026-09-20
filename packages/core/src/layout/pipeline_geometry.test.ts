@@ -135,17 +135,17 @@ const DEEP_NESTING = {
   id: 'deep-nesting',
   graph: {
     nodes: {
-      top: { id: 'top', label: [{ locale: 'en', source: 'top' }] },
-      mid_node: { id: 'mid_node', label: [{ locale: 'en', source: 'mid' }], parentGroup: 'outer' },
-      deep: { id: 'deep', label: [{ locale: 'en', source: 'deep' }], parentGroup: 'inner' },
+      top: { label: [{ locale: 'en', source: 'top' }] },
+      mid_node: { label: [{ locale: 'en', source: 'mid' }], parentGroup: 'outer' },
+      deep: { label: [{ locale: 'en', source: 'deep' }], parentGroup: 'inner' },
     },
     edges: {
-      top_to_deep: { id: 'top_to_deep', source: 'top', target: 'deep' },
-      mid_to_deep: { id: 'mid_to_deep', source: 'mid_node', target: 'deep' },
+      top_to_deep: { source: 'top', target: 'deep' },
+      mid_to_deep: { source: 'mid_node', target: 'deep' },
     },
     groups: {
-      outer: { id: 'outer', label: [{ locale: 'en', source: 'outer' }] },
-      inner: { id: 'inner', label: [{ locale: 'en', source: 'inner' }], parentGroup: 'outer' },
+      outer: { label: [{ locale: 'en', source: 'outer' }] },
+      inner: { label: [{ locale: 'en', source: 'inner' }], parentGroup: 'outer' },
     },
   },
   metadata: { canonicalLocale: 'en' },
@@ -158,11 +158,11 @@ function diagramWithArrowhead() {
     id: 'arrowed',
     graph: {
       nodes: {
-        a: { id: 'a', label: [{ locale: 'en', source: 'a' }] },
-        b: { id: 'b', label: [{ locale: 'en', source: 'b' }] },
+        a: { label: [{ locale: 'en', source: 'a' }] },
+        b: { label: [{ locale: 'en', source: 'b' }] },
       },
       edges: {
-        a_b: { id: 'a_b', source: 'a', target: 'b' },
+        a_b: { source: 'a', target: 'b' },
       },
       groups: {},
     },
@@ -189,7 +189,7 @@ const SIMPLE_UNSTYLED = {
   id: 'unstyled',
   graph: {
     nodes: {
-      lonely: { id: 'lonely', label: [{ locale: 'en', source: 'lonely' }] },
+      lonely: { label: [{ locale: 'en', source: 'lonely' }] },
     },
     edges: {},
     groups: {},
@@ -202,16 +202,16 @@ const MANY_ELEMENTS = {
   id: 'many',
   graph: {
     nodes: {
-      n1: { id: 'n1', label: [{ locale: 'en', source: 'n1' }], parentGroup: 'g1' },
-      n2: { id: 'n2', label: [{ locale: 'en', source: 'n2' }], parentGroup: 'g1' },
-      n3: { id: 'n3', label: [{ locale: 'en', source: 'n3' }] },
+      n1: { label: [{ locale: 'en', source: 'n1' }], parentGroup: 'g1' },
+      n2: { label: [{ locale: 'en', source: 'n2' }], parentGroup: 'g1' },
+      n3: { label: [{ locale: 'en', source: 'n3' }] },
     },
     edges: {
-      e1: { id: 'e1', source: 'n1', target: 'n2' },
-      e2: { id: 'e2', source: 'n2', target: 'n3' },
+      e1: { source: 'n1', target: 'n2' },
+      e2: { source: 'n2', target: 'n3' },
     },
     groups: {
-      g1: { id: 'g1', label: [{ locale: 'en', source: 'g1' }] },
+      g1: { label: [{ locale: 'en', source: 'g1' }] },
     },
   },
   metadata: { canonicalLocale: 'en' },

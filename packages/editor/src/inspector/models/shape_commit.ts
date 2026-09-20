@@ -186,7 +186,7 @@ export function commitShape(
           return undefined;
         }
 
-        const patched = patchAnnotationEntry(existing, { id, shape: updatedShape });
+        const patched = patchAnnotationEntry(existing, { shape: updatedShape });
         return annotationChange(id, patched);
       })
       .filter((c): c is any => c !== undefined);

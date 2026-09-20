@@ -25,7 +25,7 @@ export function moveAnnotationEdit(stylesheet: Stylesheet, annotationId: string,
     annotationChanges: [
       annotationChange(
         annotationId,
-        patchAnnotationEntry(existing, { id: annotationId, position }),
+        patchAnnotationEntry(existing, { position }),
       ),
     ],
     description: 'Move annotation',
@@ -41,7 +41,7 @@ export function moveElementsEdit(stylesheet: Stylesheet, moves: Array<ElementMov
     .map((move) => groupChange(move.id, patchGroupEntry(stylesheet.groups[move.id], { position: move.position })));
   const annotationChanges = moves
     .filter((move) => move.kind === 'annotation')
-    .map((move) => annotationChange(move.id, patchAnnotationEntry(stylesheet.annotations[move.id], { id: move.id, position: move.position })));
+    .map((move) => annotationChange(move.id, patchAnnotationEntry(stylesheet.annotations[move.id], { position: move.position })));
 
   return styleEdit({
     nodeChanges,

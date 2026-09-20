@@ -44,7 +44,7 @@ const newElk = (): unknown =>
 const CONTENT = {
   schemaVersion: 1,
   id: 'anchored',
-  graph: { nodes: { target: { id: 'target', label: [{ locale: 'en', source: 'target' }] } } },
+  graph: { nodes: { target: { label: [{ locale: 'en', source: 'target' }] } } },
 };
 
 function baseStylesheet(): Stylesheet {
@@ -52,7 +52,6 @@ function baseStylesheet(): Stylesheet {
     schemaVersion: 1,
     annotations: {
       note: create(AnnotationEntrySchema, {
-        id: 'note',
         content: [create(LocalizationSchema, { source: 'note' })],
         layout: create(AnnotationLayoutSchema, {
           position: create(Vec2Schema, { x: 400, y: 400 }),

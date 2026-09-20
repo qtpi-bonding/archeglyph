@@ -223,7 +223,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'annotation', ids: ['a1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         annotations: {
-          a1: create(AnnotationEntrySchema, { id: 'a1', content: [] }),
+          a1: create(AnnotationEntrySchema, { content: [] }),
         },
         nodes: {},
         edges: {},

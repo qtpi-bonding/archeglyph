@@ -25,7 +25,7 @@ describe('testgen_gestures__modalDelta', () => {
         fc.assert(
             fc.property(fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join('')), (value) => {
         const magnitude: number = Number.parseInt(value, 10);
-        expect(modalDelta({ kind: 'grab', refs: [], direction: 'up', digits: value })).toEqual({ x: 0, y: -magnitude });
+        expect(modalDelta({ kind: 'grab', refs: [], direction: 'up', digits: value })).toEqual({ x: 0, y: magnitude === 0 ? 0 : -magnitude });
             })
         );
     });
@@ -55,7 +55,7 @@ describe('testgen_gestures__modalDelta', () => {
         fc.assert(
             fc.property(fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join('')), (value) => {
         const magnitude: number = Number.parseInt(value, 10);
-        expect(modalDelta({ kind: 'grab', refs: [], direction: 'left', digits: value })).toEqual({ x: -magnitude, y: 0 });
+        expect(modalDelta({ kind: 'grab', refs: [], direction: 'left', digits: value })).toEqual({ x: magnitude === 0 ? 0 : -magnitude, y: 0 });
             })
         );
     });

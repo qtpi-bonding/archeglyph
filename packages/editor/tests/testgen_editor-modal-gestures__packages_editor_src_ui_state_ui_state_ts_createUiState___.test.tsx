@@ -11,7 +11,7 @@ describe('testgen_ui_state__createUiState', () => {
     test('no_arguments', () => {
         const state = createUiState();
         expect(Object.keys(state)).toEqual(expect.arrayContaining(["modalGesture", "setModalGesture"]));
-        expect(state).toHaveProperty("modalGesture", undefined);
+        expect(state.modalGesture()).toBeUndefined();
         expect(state).toMatchObject({ setModalGesture: expect.any(Function) });
     });
 

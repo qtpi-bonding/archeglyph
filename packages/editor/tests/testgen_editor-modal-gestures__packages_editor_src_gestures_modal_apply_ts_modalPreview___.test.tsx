@@ -7,7 +7,7 @@ import * as fc from 'fast-check';
 import { modalPreview } from '../src/gestures/modal_apply';
 
 describe('testgen_gestures__modalPreview', () => {
-    const modalPreviewTestGeometry = (): any => ({ diagram: {}, index: [{ ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } }], byKey: { ref: { ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } } }, edgePolylines: {}, contentBounds: { x: 0, y: 0, width: 10, height: 10 }, svg: '' });
+    const modalPreviewTestGeometry = (): any => ({ diagram: { nodes: {}, edges: {}, groups: {} }, index: [{ ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } }], byKey: { ref: { ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } } }, edgePolylines: {}, contentBounds: { x: 0, y: 0, width: 10, height: 10 }, svg: '' });
 
     test('empty_refs', () => {
         fc.assert(

@@ -11,7 +11,7 @@ describe('testgen_gestures__COMMANDS', () => {
         fc.assert(
             fc.property(fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() }), { minLength: 1 }), (value) => {
         expect(value.length).toBeGreaterThan(0);
-        expect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeDefined();
             })
         );
     });
@@ -19,26 +19,26 @@ describe('testgen_gestures__COMMANDS', () => {
     // WHEN: Running enter-grab with an empty selection does nothing: no gesture opens, the mode indicator stays dark, and Escape remains the selection-clearing command.
     // THEN: Running enter-grab with an empty selection does nothing, leaving no gesture open, the mode indicator dark, and Escape as the selection-clearing command.
     test('enter_grab_empty_selection', () => {
-        expect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeDefined();
     });
 
     // WHEN: Running the enter-resize command with exactly one selected element opens a resize modal gesture for that element.
     // THEN: Running enter-resize with exactly one selected element opens a resize modal gesture for that element.
     test('enter_resize_single_selection', () => {
-        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeDefined();
     });
 
     // WHEN: Running enter-resize with an empty selection does nothing and opens no gesture.
     // THEN: Running enter-resize with an empty selection does nothing and opens no gesture.
     test('enter_resize_empty_selection', () => {
-        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeDefined();
     });
 
     test('enter_resize_multiple_selection', () => {
         fc.assert(
             fc.property(fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() }), { minLength: 2 }), (value) => {
         expect(value.length).toBeGreaterThanOrEqual(2);
-        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();
+        expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeDefined();
             })
         );
     });

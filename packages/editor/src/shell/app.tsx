@@ -146,6 +146,11 @@ export const App: Component<{}> = (): JSX.Element => {
 
   const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
   const mode = (): string | undefined => {
+    const gesture = ui.modalGesture();
+    if (gesture !== undefined) {
+      const label: string = gesture.kind === 'grab' ? 'Grab' : 'Resize';
+      return gesture.digits === '' ? label : `${label} ${gesture.digits}`;
+    }
     const tool = ui.tool();
     if (tool === 'select') { return undefined; }
     const id: CommandId = tool === 'hand' ? 'tool-hand' : 'tool-annotation';

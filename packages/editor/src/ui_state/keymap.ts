@@ -11,7 +11,8 @@ export type CommandId = 'undo' | 'redo' | 'delete' |
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' |
   'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' |
   'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' |
-  'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help';
+  'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help' |
+  'enter-grab' | 'enter-resize';
 
 export interface KeymapEntry {
   chord: Chord;
@@ -36,6 +37,8 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 'h' }, command: 'tool-hand' },
   { chord: { key: 't' }, command: 'tool-annotation' },
   { chord: { key: 'n' }, command: 'add-annotation' },
+  { chord: { key: 'g' }, command: 'enter-grab' },
+  { chord: { key: 'r' }, command: 'enter-resize' },
   { chord: { key: '=' }, command: 'zoom-in' },
   { chord: { key: '-' }, command: 'zoom-out' },
   { chord: { key: '0' }, command: 'zoom-reset' },

@@ -4,14 +4,17 @@ import type { Chord } from '../ui_state/keymap';
 
 export function formatChord(chord: Chord): string {
   const isApple = navigator.platform.includes('Mac');
-  const keyNames: Record<string, string> = {
-    ArrowUp: 'Up',
-    ArrowDown: 'Down',
-    ArrowLeft: 'Left',
-    ArrowRight: 'Right',
-    Escape: 'Esc',
-  };
-  const key = keyNames[chord.key] ?? (chord.key.length === 1 ? chord.key.toUpperCase() : chord.key);
+  // A Map, not an object literal: `keyNames['toLocaleString']` on a literal
+  // returns the inherited Object.prototype method rather than undefined, so
+  // `??` never fires and the chord renders as a function body.
+  const keyNames: ReadonlyMap<string, string> = new Map([
+    ['ArrowUp', 'Up'],
+    ['ArrowDown', 'Down'],
+    ['ArrowLeft', 'Left'],
+    ['ArrowRight', 'Right'],
+    ['Escape', 'Esc'],
+  ]);
+  const key = keyNames.get(chord.key) ?? (chord.key.length === 1 ? chord.key.toUpperCase() : chord.key);
 
   if (isApple) {
     return `${chord.meta === true ? '⌘' : ''}${chord.shift === true ? '⇧' : ''}${key}`;

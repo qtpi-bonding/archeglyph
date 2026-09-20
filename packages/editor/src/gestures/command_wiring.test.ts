@@ -66,7 +66,7 @@ function sheet(): Stylesheet {
  * point -- this is the fully-wired shell the commands are entitled to assume,
  * so anything that still does nothing is inert by its own fault.
  */
-function spyContext(selection: Array<ElementRef>): Spy {
+function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof node>> = [node('n1', 10, 20), node('n2', 300, 20)]): Spy {
   const calls: string[] = [];
   let current: Array<ElementRef> = selection;
   let stylesheet: Stylesheet = sheet();
@@ -102,7 +102,7 @@ function spyContext(selection: Array<ElementRef>): Spy {
   } as unknown as UiState;
 
   const geometry = buildSceneGeometry(
-    Object.assign(new LaidOutDiagram(), { nodes: [node('n1', 10, 20), node('n2', 300, 20)] }),
+    Object.assign(new LaidOutDiagram(), { nodes }),
     '<svg/>',
   );
 
@@ -224,7 +224,11 @@ describe('no command is inert', () => {
     // undefined check does not guard this. fitBoundsToRect special-cases
     // non-positive extent to zoom 1, which means an unguarded zoom-fit on an
     // empty diagram silently throws away wherever the user had panned to.
-    const spy = spyContext([]);
+    // The second argument is what makes this an empty diagram. spyContext's
+    // default builds two nodes, so passing only [] leaves content to fit and
+    // the assertion passes for the wrong reason.
+    const spy = spyContext([], []);
+    expect(spy.context.geometry?.index).toHaveLength(0);
     runCommand('zoom-fit' as CommandId, spy.context);
     expect(spy.calls).not.toContain('setViewport');
   });

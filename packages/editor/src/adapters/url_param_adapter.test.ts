@@ -135,16 +135,23 @@ describe('inline save writes to the fragment', () => {
   async function savedHref(startHref: string, run: () => Promise<unknown>): Promise<string> {
     let current: string = startHref;
     const g = globalThis as Record<string, unknown>;
-    const priorWindow = g['window'];
-    const priorHistory = g['history'];
-    g['window'] = { location: { get href(): string { return current; } } };
-    g['history'] = { replaceState: (_a: unknown, _b: unknown, next: string): void => { current = next; } };
+    // happy-dom (registered in test/solid_preload.ts) installs window and
+    // history as non-writable, so plain assignment throws. defineProperty
+    // replaces the descriptor instead.
+    const priorWindow = Object.getOwnPropertyDescriptor(g, 'window');
+    const priorHistory = Object.getOwnPropertyDescriptor(g, 'history');
+    const stub = (value: unknown): PropertyDescriptor =>
+      ({ value, writable: true, configurable: true, enumerable: true });
+    Object.defineProperty(g, 'window', stub({ location: { get href(): string { return current; } } }));
+    Object.defineProperty(g, 'history', stub({
+      replaceState: (_a: unknown, _b: unknown, next: string): void => { current = next; },
+    }));
     try {
       await run();
       return current;
     } finally {
-      g['window'] = priorWindow;
-      g['history'] = priorHistory;
+      if (priorWindow === undefined) { delete g['window']; } else { Object.defineProperty(g, 'window', priorWindow); }
+      if (priorHistory === undefined) { delete g['history']; } else { Object.defineProperty(g, 'history', priorHistory); }
     }
   }
 

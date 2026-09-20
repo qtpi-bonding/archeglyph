@@ -201,7 +201,7 @@ describe('keymap: KEYMAP table — unmapped keys', () => {
   test('unknown_key_unmatched', () => {
     // Checked against KEYMAP, so a new binding cannot silently invalidate this.
     const mapped = new Set(KEYMAP.map((entry) => entry.chord.key));
-    for (const key of ['q', 'w', 'j', 'k', ';']) {
+    for (const key of ['q', 'w', 'j', 'y', ';']) {
       expect(mapped.has(key)).toBe(false);
       expect(findKeymapCommand({ key })).toBeUndefined();
     }

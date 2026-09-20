@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Component, createMemo, createSignal, For, JSX, onMount } from 'solid-js';
+import { Accessor, Component, createMemo, createSignal, For, JSX, onMount } from 'solid-js';
 import { PaletteAction, PaletteItem } from './palette_item';
 import { filterPaletteItems } from './palette_search';
 
@@ -56,11 +56,12 @@ export const CommandPalette: Component<CommandPaletteProps> = (
 
   const scrimStyle: JSX.CSSProperties = {
     'align-items': 'center',
-    'background-color': 'var(--ag-bg)',
+    // Not `opacity`: the surface is a child of this element, and opacity
+    // composites the whole subtree, so it would fade the palette too.
+    background: 'rgba(0, 0, 0, 0.45)',
     display: 'flex',
     'justify-content': 'center',
     inset: '0',
-    opacity: '0.78',
     position: 'fixed',
     'z-index': '1000',
   };
@@ -101,13 +102,13 @@ export const CommandPalette: Component<CommandPaletteProps> = (
         />
         <div role="listbox">
           <For each={filtered()}>
-            {(item: PaletteItem, index: number): JSX.Element => (
+            {(item: PaletteItem, index: Accessor<number>): JSX.Element => (
               <button
-                aria-selected={index === highlighted()}
+                aria-selected={index() === highlighted()}
                 onClick={(): void => choose(item)}
                 role="option"
                 style={{
-                  background: index === highlighted() ? 'var(--ag-blue-soft)' : 'var(--ag-panel)',
+                  background: index() === highlighted() ? 'var(--ag-blue-soft)' : 'var(--ag-panel)',
                   border: '0',
                   'border-bottom': '1px solid var(--ag-edge)',
                   color: 'var(--ag-fg)',

@@ -11,7 +11,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Scene, SceneGeometry } from '../scene/scene';
 import { Handle, handleAtPoint, hitTestPoint } from '../scene/hit_test';
 import { ElementRef, UiState } from '../ui_state/ui_state';
-import { ContainerRect, fitBoundsToRect, screenToDiagram } from '../ui_state/viewport_math';
+import { centerBoundsInRect, ContainerRect, fitBoundsToRect, screenToDiagram } from '../ui_state/viewport_math';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
@@ -326,11 +326,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
         const minY: number = entry.bounds.minY * viewport.zoom + viewport.panY;
         const maxY: number = entry.bounds.maxY * viewport.zoom + viewport.panY;
         if (minX < 0 || maxX > containerRect().width || minY < 0 || maxY > containerRect().height) {
-          props.ui.setViewport({
-            zoom: viewport.zoom,
-            panX: containerRect().width / 2 - ((entry.bounds.minX + entry.bounds.maxX) / 2) * viewport.zoom,
-            panY: containerRect().height / 2 - ((entry.bounds.minY + entry.bounds.maxY) / 2) * viewport.zoom,
-          });
+          props.ui.setViewport(centerBoundsInRect(viewport, entry.bounds, containerRect()));
         }
       }
       props.ui.setTextEditTarget(ref);

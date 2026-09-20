@@ -4,7 +4,8 @@ import { create } from '@bufbuild/protobuf';
 import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { Bounds } from '@archeglyph/core/geometry/bounds';
 import type { CommandId } from '../ui_state/keymap';
-import { ContainerRect, screenToDiagram } from '../ui_state/viewport_math';
+import { ContainerRect, fitBoundsToRect, screenToDiagram, zoomAboutPoint } from '../ui_state/viewport_math';
+import { MIN_ZOOM, MAX_ZOOM } from './wheel_handler';
 import { EditorState } from '../state/editor_state';
 import { SceneGeometry } from '../scene/scene';
 import { UiState, ElementRef } from '../ui_state/ui_state';
@@ -28,6 +29,21 @@ import { clearNodeSizeEdit } from '../state/edits/resize';
  * outline and its resize handles, and those are drawn at a constant screen size.
  */
 export const FIT_PADDING: number = 40;
+
+/**
+ * Multiplier for one zoom-in press. 1.2.
+ *
+ * Its reciprocal is zoom-out, so in-then-out returns to the starting
+ * zoom. Not bit-exact, and a test must not assert exact equality: the
+ * round trip is floating-point, and it does not hold at all when a clamp
+ * intervened at MIN_ZOOM or MAX_ZOOM. Assert within 1e-9, away from the
+ * clamps.
+ *
+ * Multiplicative rather than additive because an additive step does not
+ * round-trip even in principle, and the drift is visible after a handful
+ * of presses.
+ */
+export const ZOOM_STEP: number = 1.2;
 
 export interface Command {
   id: CommandId;
@@ -219,6 +235,31 @@ function runResetSize(context: CommandContext): void {
   }
 }
 
+function runZoom(context: CommandContext, factor: number): void {
+  if (context.rect.width === 0 || context.rect.height === 0) {
+    return;
+  }
+  const point = {
+    x: context.rect.left + context.rect.width / 2,
+    y: context.rect.top + context.rect.height / 2,
+  };
+  context.ui.setViewport(zoomAboutPoint(
+    context.ui.viewport(), point, context.rect, factor, MIN_ZOOM, MAX_ZOOM,
+  ));
+}
+
+function runZoomReset(context: CommandContext): void {
+  runZoom(context, 1 / context.ui.viewport().zoom);
+}
+
+function runZoomFit(context: CommandContext): void {
+  const geometry = context.geometry;
+  if (context.rect.width === 0 || context.rect.height === 0 || geometry === undefined || geometry.index.length === 0) {
+    return;
+  }
+  context.ui.setViewport(fitBoundsToRect(geometry.contentBounds, context.rect, FIT_PADDING));
+}
+
 export const COMMANDS: Array<Command> = [
   { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
   { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
@@ -226,6 +267,7 @@ export const COMMANDS: Array<Command> = [
   { id: 'hide', label: 'Hide', run: runHide },
   { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => { ui.setTool('select'); } },
   { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => { ui.setTool('annotation'); } },
+  { id: 'tool-hand' as CommandId, label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); } },
   { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
   { id: 'edit-text', label: 'Edit text', run: runEditText },
   { id: 'duplicate', label: 'Duplicate', run: runDuplicate },
@@ -253,6 +295,10 @@ export const COMMANDS: Array<Command> = [
   { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll },
   { id: 'reset-size', label: 'Reset size', run: runResetSize },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
+  { id: 'zoom-in' as CommandId, label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP) },
+  { id: 'zoom-out' as CommandId, label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP) },
+  { id: 'zoom-reset' as CommandId, label: 'Reset zoom', run: runZoomReset },
+  { id: 'zoom-fit' as CommandId, label: 'Fit to screen', run: runZoomFit },
 ];
 
 export function runCommand(id: CommandId, context: CommandContext): void {

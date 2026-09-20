@@ -20,6 +20,7 @@ import { routePress, exceedsThreshold, GestureDecision } from '../gestures/point
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
 import { applyWheel } from '../gestures/wheel_handler';
 import { handleKeyDown } from '../gestures/keyboard_handler';
+import { CommandContext } from '../gestures/commands';
 import { EditorState } from '../state/editor_state';
 import { ScenePreview } from '../scene/preview';
 import { elementKey } from '../scene/element_key';
@@ -53,6 +54,8 @@ export interface CanvasProps {
   /** Called for the Save command. The canvas owns the keydown listener, so
       Cmd/Ctrl+S is dead without it. */
   onSave?: () => void;
+  /** Registers an accessor for the live command context owned by the canvas. */
+  registerCommandContext: (getContext: () => CommandContext) => void;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -65,7 +68,6 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     left: 0, top: 0, width: 0, height: 0,
   });
   const [panning, setPanning] = createSignal<boolean>(false);
-  const [errorVisible, setErrorVisible] = createSignal<boolean>(false);
   const [fitDone, setFitDone] = createSignal<boolean>(false);
   const [pointerOrigin, setPointerOrigin] = createSignal<Point | undefined>(undefined);
   const [gesture, setGesture] = createSignal<GestureSession | undefined>(undefined);
@@ -332,16 +334,21 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       }
       props.ui.setTextEditTarget(ref);
     };
+    // Keep the context construction in one place.  The registered accessor and
+    // the keyboard route must observe the same live canvas state; in
+    // particular, rect and geometry must not be captured at mount time.
+    const getCommandContext = (): CommandContext => ({
+      state: props.state,
+      ui: props.ui,
+      geometry: geometry(),
+      rect: containerRect(),
+      save: (): void => { props.onSave?.(); },
+      focusInspector: props.onFocusInspector,
+      beginTextEdit,
+    });
+    props.registerCommandContext(getCommandContext);
     const onKeyDown = (event: KeyboardEvent): void => {
-      const handled: boolean = handleKeyDown(event, {
-        state: props.state,
-        ui: props.ui,
-        geometry: geometry(),
-        rect: containerRect(),
-        save: (): void => { props.onSave?.(); },
-        focusInspector: props.onFocusInspector,
-        beginTextEdit,
-      });
+      const handled: boolean = handleKeyDown(event, getCommandContext());
       if (handled) { event.preventDefault(); }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -350,11 +357,6 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       containerRef.removeEventListener('wheel', onWheel);
       document.removeEventListener('keydown', onKeyDown);
     });
-  });
-
-  createEffect((): void => {
-    const sceneError = props.scene.error();
-    if (sceneError !== undefined) { setErrorVisible(true); }
   });
 
   createEffect((): void => {
@@ -406,12 +408,6 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
           </Show>
         </g>
       </svg>
-      <Show when={errorVisible() && props.scene.error() !== undefined}>
-        <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', padding: '8px 12px', background: 'var(--ag-error, #fee)', color: 'var(--ag-error-text, #600)', 'z-index': '2' }}>
-          <span>{props.scene.error()!.message}</span>
-          <button aria-label="Dismiss error" onClick={(): void => { setErrorVisible(false); }} style={{ float: 'right' }}>×</button>
-        </div>
-      </Show>
     </div>
   );
 };

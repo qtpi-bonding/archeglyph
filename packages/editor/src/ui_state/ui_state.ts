@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Accessor, createSignal, Setter } from 'solid-js';
+import { Overlay } from './overlay';
 
 export function createUiState(): UiState {
   const [selection, setSelection] = createSignal<ElementRef[]>([]);
@@ -12,6 +13,7 @@ export function createUiState(): UiState {
     panY: 0,
     zoom: 1,
   });
+  const [overlay, setOverlay] = createSignal<Overlay | undefined>(undefined);
 
   return {
     selection,
@@ -24,6 +26,8 @@ export function createUiState(): UiState {
     setTool,
     viewport,
     setViewport,
+    overlay,
+    setOverlay,
   };
 }
 export interface Viewport {
@@ -46,5 +50,7 @@ export interface UiState {
   setTool: Setter<Tool>;
   viewport: Accessor<Viewport>;
   setViewport: Setter<Viewport>;
+  overlay: Accessor<Overlay | undefined>;
+  setOverlay: Setter<Overlay | undefined>;
 }
 export type Tool = 'select' | 'hand' | 'annotation';

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
-import Resizable from '@corvu/resizable';
 import { create } from '@bufbuild/protobuf';
-import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
@@ -15,33 +13,33 @@ import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { Canvas } from '../canvas/canvas';
-import { TopBar } from './top_bar';
 import { Inspector } from '../inspector/inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
 import { createUiState } from '../ui_state/ui_state';
-import { Scene, createScene } from '../scene/scene';
+import { Scene, SceneError, createScene } from '../scene/scene';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 import { createSaveController, SaveController } from './save_controller';
 import { FileSync, syncToFile } from './external_change';
+import { IslandFrame } from './island_frame';
+import { Toolbar } from './toolbar';
+import { FileIsland } from './file_island';
+import { ZoomIsland } from './zoom_island';
+import { UndoIsland } from './undo_island';
+import { StateIsland } from './state_island';
+import { StartScreen } from './start_screen';
+import { CommandContext, CommandId, COMMANDS, runCommand } from '../gestures/commands';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
+type CommandContextAccessor = () => CommandContext;
+type MaybeCommandContextAccessor = CommandContextAccessor | undefined;
+
 export const App: Component<{}> = (): JSX.Element => {
-  // Content params (d, s) are read from the fragment, which the browser never
-  // transmits; locators stay in the query. See readUrlParams.
   const params: URLSearchParams = readUrlParams(window.location);
   const pair: AdapterPair = selectAdapters(params);
-  // The DOCUMENT's palette — part of the style file, and what
-  // `archeglyph render` uses. Independent of the chrome below.
   const theme: Theme = getBundledTheme('blueprint');
-
-  // The APPLICATION's palette. An editor preference, never document data:
-  // it is not written to the diagram or the style file, and the two are free
-  // to disagree (dark chrome around a light document is a normal thing to
-  // want). Persisted per browser; a stored name that no longer exists falls
-  // back rather than leaving the chrome unstyled.
   const storedChrome: string | null = (() => {
     try { return localStorage.getItem('archeglyph.editorTheme'); } catch { return null; }
   })();
@@ -53,21 +51,24 @@ export const App: Component<{}> = (): JSX.Element => {
     applyEditorTheme(active, document.documentElement);
     try { localStorage.setItem('archeglyph.editorTheme', active.name); } catch { /* private window */ }
   });
+
   const ui = createUiState();
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
+  const [loading, setLoading] = createSignal<boolean>(autoLoad);
+  const [loadError, setLoadError] = createSignal<string | undefined>(undefined);
+  const [commandContext, setCommandContext] = createSignal<MaybeCommandContextAccessor>(undefined);
+  const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
 
-  // This wrapper is stable, while the inspector supplies its target after
-  // mounting. Resolve the target when the callback is called, not here.
-  function onSave(): void {
-    void saveController()?.saveNow();
-  }
-  function onFocusInspector(): void {
-    focusInspector?.();
+  function onSave(): void { void saveController()?.saveNow(); }
+  function onFocusInspector(): void { focusInspector?.(); }
+  function onCommand(id: CommandId): void {
+    const accessor: MaybeCommandContextAccessor = commandContext();
+    if (accessor !== undefined) { runCommand(id, accessor()); }
   }
 
   function installState(nextState: EditorState): void {
@@ -81,12 +82,6 @@ export const App: Component<{}> = (): JSX.Element => {
   function startSession(nextState: EditorState, result: LoadResult): void {
     installState(nextState);
     setSaveController(createSaveController(pair.adapter, nextState, 800));
-    // The file is the truth. Anything that rewrites it -- an agent, the CLI,
-    // another editor -- wins, and the canvas follows. No reconciliation, no
-    // prompt: a suggestion from an agent never lands here (it goes to
-    // pendingEdits and touches nothing committed), so an incoming change is
-    // always a decision someone made, and last write wins is the right answer
-    // rather than a compromise. See D14.
     fileSync?.stop();
     fileSync = syncToFile(pair.adapter, result.stamp, (stylesheet: Stylesheet): void => {
       nextState.adoptStylesheet(stylesheet);
@@ -95,79 +90,109 @@ export const App: Component<{}> = (): JSX.Element => {
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
     if (result.kind === 'err') {
-      console.error(`archeglyph: failed to load diagram: ${result.error.message}`);
+      setLoading(false);
+      setLoadError(`archeglyph: failed to load diagram: ${result.error.message}`);
       return;
     }
-    // A diagram authored without a style file gets the theme's starting
-    // components written in as real bindings, rather than the resolver
-    // assuming them. They show up in the inspector as ordinary entries the
-    // user can change or remove, and they save to the style file like
-    // anything else -- which is the whole point of seeding rather than
-    // defaulting.
+    setLoading(false);
+    setLoadError(undefined);
     const loaded: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 });
     const stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
     startSession(createEditorState(result.value.diagram, stylesheet), result.value);
   }
 
-  function onOpen(): void { pair.adapter.load().then(loadFrom); }
-
-  function onNew(): void {
-    installState(createEditorState(create(DiagramSchema, {}), create(StylesheetSchema, {})));
-    
-    const current: EditorState | null = state();
-    if (current !== null) {
-      setSaveController(createSaveController(pair.adapter, current, 800));
-    }
+  function onOpen(): void {
+    setLoading(true);
+    setLoadError(undefined);
+    void pair.adapter.load().then(loadFrom);
   }
 
   onMount((): void => {
-    if (autoLoad) { pair.adapter.load().then(loadFrom); }
+    if (autoLoad) {
+      setLoading(true);
+      void pair.adapter.load().then(loadFrom);
+    }
     onCleanup((): void => {
       saveController()?.dispose();
       fileSync?.stop();
     });
   });
 
+  const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
+  const mode = (): string | undefined => {
+    const tool = ui.tool();
+    if (tool === 'select') { return undefined; }
+    const id: CommandId = tool === 'hand' ? 'tool-hand' : 'tool-annotation';
+    return COMMANDS.find((command): boolean => command.id === id)?.label;
+  };
+
+  let lastSceneError: SceneError | undefined;
+  createEffect((): void => {
+    const error = scene()?.error();
+    if (error !== lastSceneError) {
+      lastSceneError = error;
+      setDismissedError(undefined);
+    }
+  });
+
   return (
-      <div style={{ display: 'flex', 'flex-direction': 'column', height: '100%' }}>
-        <Show when={state() !== null} fallback={
-          <Show when={!autoLoad}>
-            <div style={{ display: 'flex', 'flex-direction': 'column', 'align-items': 'center', 'justify-content': 'center', height: '100%', gap: '12px' }}>
-              <div style={{ 'font-size': '20px', 'font-weight': '600', 'margin-bottom': '8px' }}>archeglyph</div>
-              <button onClick={onOpen} style={{ padding: '8px 20px', 'font-size': '14px', cursor: 'pointer' }}>Open file…</button>
-              <button onClick={onNew} style={{ padding: '8px 20px', 'font-size': '14px', cursor: 'pointer' }}>New diagram</button>
-            </div>
-          </Show>
-        }>
-          <TopBar
+    <Show
+      when={state() !== null}
+      fallback={<StartScreen loading={loading()} error={loadError()} onOpen={onOpen} />}
+    >
+      <IslandFrame
+        canvas={
+          <Canvas
+            diagram={state()!.diagram()}
+            layoutEngine={layoutEngine}
+            scene={scene()!}
+            stylesheet={state()!.stylesheet()}
+            theme={theme}
+            ui={ui}
             state={state()!}
-            adapter={pair.adapter}
-            saveController={saveController()}
+            onFocusInspector={onFocusInspector}
+            onSave={onSave}
+            registerCommandContext={(getContext: () => CommandContext): void => {
+              setCommandContext((): CommandContextAccessor => getContext);
+            }}
+          />
+        }
+        toolbar={<Toolbar tool={ui.tool()} onCommand={onCommand} />}
+        inspector={
+          <Show when={scene()?.geometry()}>
+            {(geometry) => (
+              <Inspector
+                state={state()!}
+                ui={ui}
+                geometry={geometry()}
+                theme={theme}
+                registerFocus={(focus: () => void): void => { focusInspector = focus; }}
+              />
+            )}
+          </Show>
+        }
+        file={
+          <FileIsland
+            fileName={fileName}
+            dirty={state()!.dirty()}
+            canSave={pair.adapter.canSave()}
+            status={saveController()?.status()}
+            errorMessage={saveController()?.errorMessage()}
+            onSave={onSave}
             editorTheme={chrome().name}
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
           />
-          <Resizable style={{ flex: '1', overflow: 'hidden' }}>
-            <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
-              <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} onSave={onSave} />
-              </Show>
-            </Resizable.Panel>
-            <Resizable.Handle />
-            <Resizable.Panel initialSize={'280px'} minSize={'200px'} style={{ height: '100%', overflow: 'hidden' }}>
-              <Show when={scene()?.geometry()}>
-                {(geometry) => (
-                  <Inspector
-                    state={state()!}
-                    ui={ui}
-                    geometry={geometry()}
-                    theme={theme}
-                    registerFocus={(focus: () => void): void => { focusInspector = focus; }}
-                  />
-                )}
-              </Show>
-            </Resizable.Panel>
-          </Resizable>
-        </Show>
-      </div>
+        }
+        zoom={<ZoomIsland zoom={ui.viewport().zoom} onCommand={onCommand} />}
+        undo={<UndoIsland canUndo={state()!.canUndo()} canRedo={state()!.canRedo()} onCommand={onCommand} />}
+        state={
+          <StateIsland
+            mode={mode()}
+            error={scene()?.error() !== dismissedError() ? scene()?.error()?.message : undefined}
+            onDismiss={(): void => { setDismissedError(scene()?.error()); }}
+          />
+        }
+      />
+    </Show>
   );
 };

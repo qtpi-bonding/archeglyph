@@ -18,4 +18,6 @@ export const PALETTE_EXCLUDED: ReadonlySet<CommandId> = new Set<CommandId>([
   'ring-prev',
   'open-palette',
   'open-help',
+  'enter-grab',
+  'enter-resize',
 ]);

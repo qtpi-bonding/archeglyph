@@ -6,6 +6,8 @@ import { formatChord } from './chord_label';
 import { PALETTE_EXCLUDED } from './palette_excluded';
 import type { PaletteItem } from './palette_item';
 import type { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
+import { elementKey } from '../scene/element_key';
+import type { ElementRef } from '../ui_state/ui_state';
 
 export function commandPaletteItems(commands: ReadonlyArray<Command>, keymap: ReadonlyArray<KeymapEntry>): Array<PaletteItem> {
   const items: Array<PaletteItem> = [];
@@ -24,5 +26,30 @@ export function commandPaletteItems(commands: ReadonlyArray<Command>, keymap: Re
   return items;
 }
 export function elementPaletteItems(diagram: LaidOutDiagram): Array<PaletteItem> {
-  throw new Error('not implemented');
+  const items: Array<PaletteItem> = [];
+  const addItem = (ref: ElementRef, label: string): void => {
+    const key = elementKey(ref);
+    items.push({
+      key,
+      label,
+      detail: ref.kind,
+      action: { kind: 'element', ref },
+    });
+  };
+  const textOrId = (id: string, text: string): string => {
+    const trimmed = text.trim();
+    return trimmed || id;
+  };
+
+  for (const node of Object.values(diagram.nodes)) {
+    addItem({ kind: 'node', id: node.id }, textOrId(node.id, node.label[0]?.source ?? ''));
+  }
+  for (const group of Object.values(diagram.groups)) {
+    addItem({ kind: 'group', id: group.id }, textOrId(group.id, group.label[0]?.source ?? ''));
+  }
+  for (const annotation of Object.values(diagram.annotations)) {
+    addItem({ kind: 'annotation', id: annotation.id }, textOrId(annotation.id, annotation.content[0]?.source ?? ''));
+  }
+
+  return items.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }

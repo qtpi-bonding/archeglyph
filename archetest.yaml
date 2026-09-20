@@ -37,3 +37,12 @@ tests:
     If a case genuinely cannot be tested within these limits, write the
     strongest assertion that can be made about the symbol's exported value,
     type, or pure behaviour instead of reaching for an unavailable helper.
+    Assert only through the declared interface. Never add a field or
+    collaborator to a parameter type to make a call observable -- a test that
+    invents a seam passes only against a shape nobody implements. When a call
+    to an imported function is not reachable through the declared type, assert
+    the state change it produces instead.
+    Every assertion must hold for every member of the strategy's domain. Before
+    adding an assertion beyond the one the case names, check it against the
+    domain's edges; if it fails for any member, narrow the domain or drop the
+    assertion.

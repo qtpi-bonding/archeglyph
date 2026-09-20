@@ -199,7 +199,10 @@ describe('keymap: KEYMAP table — unmapped keys', () => {
   // WHEN: A key not present in the table, including 'h', '=', '-', '0', or '1', does not map to any command.
   // THEN: It leaves unknown keys, including h, =, -, 0, and 1, unmapped.
   test('unknown_key_unmatched', () => {
-    for (const key of ['h', '=', '-', '0', '1']) {
+    // Checked against KEYMAP, so a new binding cannot silently invalidate this.
+    const mapped = new Set(KEYMAP.map((entry) => entry.chord.key));
+    for (const key of ['q', 'w', 'j', 'k', ';']) {
+      expect(mapped.has(key)).toBe(false);
       expect(findKeymapCommand({ key })).toBeUndefined();
     }
   });

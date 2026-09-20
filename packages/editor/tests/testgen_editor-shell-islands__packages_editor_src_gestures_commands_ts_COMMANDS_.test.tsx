@@ -135,7 +135,6 @@ describe('testgen_gestures__COMMANDS', () => {
         expect(result.zoom).toBeCloseTo(1, 12);
         expect(result.panX).toBeCloseTo(x - (x - 37) / value.zoom, 12);
         expect(result.panY).toBeCloseTo(y - (y + 19) / value.zoom, 12);
-        expect(result.panX).not.toBe(0);
             })
         );
     });

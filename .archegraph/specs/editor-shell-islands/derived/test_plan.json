@@ -1,0 +1,783 @@
+{
+  "specName": "editor-shell-islands",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-shell-islands' --root . --plan '.archegraph/specs/editor-shell-islands/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "symbolName": "Canvas",
+      "filePath": "packages/editor/src/canvas/canvas.tsx",
+      "cases": [
+        {
+          "name": "mount-registers-command-context",
+          "condition": "When Canvas mounts, it calls props.registerCommandContext with an accessor for the command context.",
+          "outcome": "On mount, Canvas registers an accessor that returns the command context."
+        },
+        {
+          "name": "accessor-reads-shared-command-context",
+          "condition": "When the registered accessor is invoked, it returns the same context shape used by the keydown listener, including the current state, UI, geometry, container rectangle, save callback, inspector-focus callback, and text-edit starter.",
+          "outcome": "When invoked, the accessor returns the shared context with current state, UI, geometry, container rectangle, save callback, inspector-focus callback, and text-edit starter.",
+          "domain": "any invocation after mount"
+        },
+        {
+          "name": "keydown-reads-shared-command-context",
+          "condition": "When a keydown event is processed, the listener supplies handleKeyDown with the same shared command-context shape as the registered accessor rather than a separately duplicated literal.",
+          "outcome": "For each keydown, the listener passes handleKeyDown that same shared command-context shape instead of a duplicate literal.",
+          "domain": "any keyboard event"
+        },
+        {
+          "name": "scene-without-error",
+          "condition": "When scene.error() is undefined, Canvas does not render an in-canvas error banner.",
+          "outcome": "When scene.error() is undefined, Canvas renders no in-canvas error banner."
+        },
+        {
+          "name": "scene-with-error",
+          "condition": "When scene.error() returns an error, Canvas still does not render its former absolutely positioned error banner; error display is left to the StateIsland wiring outside Canvas.",
+          "outcome": "When scene.error() returns an error, Canvas still renders no former absolutely positioned error banner, leaving display to StateIsland outside Canvas.",
+          "domain": "any scene error"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_canvas_canvas_tsx_Canvas_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "symbolName": "COMMANDS",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "existing-command-registry-preserved",
+          "condition": "Every pre-existing command entry remains in COMMANDS with its existing label.",
+          "outcome": "Every pre-existing command remains in COMMANDS with its original label unchanged.",
+          "domain": "the existing command entries"
+        },
+        {
+          "name": "tool-hand-sets-hand-tool",
+          "condition": "Running tool-hand sets the active tool to hand, matching the neighboring tool commands.",
+          "outcome": "Running tool-hand sets the active tool to hand."
+        },
+        {
+          "name": "zoom-in-positive-viewport",
+          "condition": "Running zoom-in with a rectangle whose width and height are both positive calls zoomAboutPoint at the rectangle centre using factor ZOOM_STEP, preserving the point under the centre.",
+          "outcome": "With a positive-size rectangle, zoom-in zooms by ZOOM_STEP about the rectangle centre while preserving the point beneath it.",
+          "domain": "rectangles with positive width and height"
+        },
+        {
+          "name": "zoom-in-lower-clamp",
+          "condition": "Running zoom-in would take the zoom below MIN_ZOOM, so zoomAboutPoint clamps the resulting zoom to MIN_ZOOM while remaining anchored at the rectangle centre.",
+          "outcome": "When zoom-in would fall below MIN_ZOOM, it clamps to MIN_ZOOM while remaining anchored at the rectangle centre.",
+          "domain": "positive-size rectangles and current zoom values whose zoom-in result is below MIN_ZOOM"
+        },
+        {
+          "name": "zoom-in-upper-clamp",
+          "condition": "Running zoom-in would take the zoom above MAX_ZOOM, so zoomAboutPoint clamps the resulting zoom to MAX_ZOOM while remaining anchored at the rectangle centre.",
+          "outcome": "When zoom-in would exceed MAX_ZOOM, it clamps to MAX_ZOOM while remaining anchored at the rectangle centre.",
+          "domain": "positive-size rectangles and current zoom values whose zoom-in result is above MAX_ZOOM"
+        },
+        {
+          "name": "zoom-out-positive-viewport",
+          "condition": "Running zoom-out with a rectangle whose width and height are both positive calls zoomAboutPoint at the rectangle centre using factor 1 / ZOOM_STEP, preserving the point under the centre.",
+          "outcome": "With a positive-size rectangle, zoom-out zooms by 1 / ZOOM_STEP about the rectangle centre while preserving the point beneath it.",
+          "domain": "rectangles with positive width and height"
+        },
+        {
+          "name": "zoom-out-lower-clamp",
+          "condition": "Running zoom-out would take the zoom below MIN_ZOOM, so zoomAboutPoint clamps the resulting zoom to MIN_ZOOM while remaining anchored at the rectangle centre.",
+          "outcome": "When zoom-out would fall below MIN_ZOOM, it clamps to MIN_ZOOM while remaining anchored at the rectangle centre.",
+          "domain": "positive-size rectangles and current zoom values whose zoom-out result is below MIN_ZOOM"
+        },
+        {
+          "name": "zoom-out-upper-clamp",
+          "condition": "Running zoom-out would take the zoom above MAX_ZOOM, so zoomAboutPoint clamps the resulting zoom to MAX_ZOOM while remaining anchored at the rectangle centre.",
+          "outcome": "When zoom-out would exceed MAX_ZOOM, it clamps to MAX_ZOOM while remaining anchored at the rectangle centre.",
+          "domain": "positive-size rectangles and current zoom values whose zoom-out result is above MAX_ZOOM"
+        },
+        {
+          "name": "zoom-reset-centred-to-one",
+          "condition": "Running zoom-reset with a positive-size rectangle uses the factor that takes the current zoom exactly to 1 and rewrites panX and panY through zoomAboutPoint so the point under the rectangle centre stays fixed; it does not reset pan to the origin.",
+          "outcome": "With a positive-size rectangle, zoom-reset uses the factor needed to reach zoom 1 and rewrites pan through the centre-anchored zoom so the centre point stays fixed rather than resetting pan to the origin.",
+          "domain": "positive-size rectangles and current zoom values"
+        },
+        {
+          "name": "zoom-fit-valid-geometry",
+          "condition": "Running zoom-fit with a positive-size rectangle and defined geometry whose index is non-empty calls fitBoundsToRect with geometry.contentBounds, the rectangle, and FIT_PADDING.",
+          "outcome": "With a positive-size rectangle and non-empty defined geometry, zoom-fit calls fitBoundsToRect with geometry.contentBounds, the rectangle, and FIT_PADDING.",
+          "domain": "positive-size rectangles and geometries with at least one index entry"
+        },
+        {
+          "name": "zoom-fit-content-bounds-source",
+          "condition": "Running zoom-fit uses SceneGeometry.contentBounds as published and does not recompute a union from index bounds.",
+          "outcome": "zoom-fit uses the published SceneGeometry.contentBounds without recomputing bounds from the index.",
+          "domain": "non-empty geometries whose published contentBounds may differ from a separately recomputed union"
+        },
+        {
+          "name": "zero-width-or-height-viewport-no-op",
+          "condition": "Each of zoom-in, zoom-out, zoom-reset, and zoom-fit does nothing when context.rect has zero width or zero height.",
+          "outcome": "Each zoom command does nothing when the rectangle has zero width or zero height.",
+          "domain": "rectangles with width 0 or height 0"
+        },
+        {
+          "name": "zoom-fit-undefined-geometry-no-op",
+          "condition": "Running zoom-fit does nothing when geometry is undefined, provided the rectangle has positive width and height.",
+          "outcome": "zoom-fit does nothing when geometry is undefined and the rectangle has positive dimensions."
+        },
+        {
+          "name": "zoom-fit-empty-index-no-op",
+          "condition": "Running zoom-fit does nothing when geometry is defined but geometry.index.length is 0, provided the rectangle has positive width and height.",
+          "outcome": "zoom-fit does nothing when defined geometry has an empty index and the rectangle has positive dimensions."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_gestures_commands_ts_COMMANDS_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/FIT_PADDING.",
+      "symbolName": "FIT_PADDING",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "declared-fit-padding",
+          "condition": "FIT_PADDING has its declared value of 40 CSS pixels of the viewport, used as the screen-space margin around content during zoom-fit.",
+          "outcome": "uses a 40 CSS-pixel viewport margin around content during zoom-fit."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_gestures_commands_ts_FIT_PADDING_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/ZOOM_STEP.",
+      "symbolName": "ZOOM_STEP",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "declared-zoom-step",
+          "condition": "The constant has the declared numeric value 1.2 and serves as the multiplicative factor for one zoom-in press.",
+          "outcome": "Defines ZOOM_STEP as the numeric multiplier 1.2 for one zoom-in press."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_gestures_commands_ts_ZOOM_STEP_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "no-document-no-autoload",
+          "condition": "The URL has none of the auto-load parameters, so no document is loaded initially and StartScreen is shown instead of IslandFrame.",
+          "outcome": "With no auto-load parameters, it leaves the document unloaded and shows StartScreen instead of IslandFrame."
+        },
+        {
+          "name": "autoload-parameter-present",
+          "condition": "The URL contains at least one auto-load parameter, causing the adapter load to start on mount.",
+          "outcome": "With an auto-load parameter, it starts the adapter load on mount and shows StartScreen while loading.",
+          "domain": "one or more of: d, s, fetch, gh, pr, issue"
+        },
+        {
+          "name": "autoload-success-with-stylesheet",
+          "condition": "The automatic adapter load succeeds and returns both a diagram and a stylesheet; the editor session is installed using the loaded stylesheet after component bindings are seeded.",
+          "outcome": "On successful load with a stylesheet, it seeds component bindings into that stylesheet and installs the editor session."
+        },
+        {
+          "name": "autoload-success-without-stylesheet",
+          "condition": "The automatic adapter load succeeds with no stylesheet; a new empty stylesheet is created, component bindings are seeded into it, and the editor session starts.",
+          "outcome": "On successful load without a stylesheet, it creates an empty stylesheet, seeds component bindings into it, and starts the editor session."
+        },
+        {
+          "name": "load-failure",
+          "condition": "The adapter load returns an error; loading is cleared, the error is exposed to StartScreen, and no document frame is installed.",
+          "outcome": "On load failure, it clears loading, exposes the adapter error on StartScreen, and does not install a document frame."
+        },
+        {
+          "name": "loading-in-progress",
+          "condition": "An auto-load request is pending; loading is true and StartScreen receives the loading state.",
+          "outcome": "While an auto-load request is pending, it sets loading true and passes that state to StartScreen."
+        },
+        {
+          "name": "manual-open-success",
+          "condition": "From the no-document StartScreen, opening a file succeeds and installs the editor session with its diagram, stylesheet, save controller, and file synchronization.",
+          "outcome": "On successful manual open, it installs the diagram session, save controller, and file synchronization."
+        },
+        {
+          "name": "manual-open-failure",
+          "condition": "A manually requested adapter load fails; the failure is surfaced through the StartScreen error state rather than logged only to the console.",
+          "outcome": "On manual-open failure, it clears loading and surfaces the adapter error through StartScreen instead of only logging it."
+        },
+        {
+          "name": "island-frame-after-load",
+          "condition": "A document is loaded, so StartScreen is replaced by IslandFrame with the Canvas in the canvas slot and all six islands rendered in their slots.",
+          "outcome": "After loading a document, it replaces StartScreen with IslandFrame containing the full-bleed Canvas and all six islands."
+        },
+        {
+          "name": "command-context-unset",
+          "condition": "An island invokes onCommand before Canvas has registered its command context; the invocation is a no-op while the islands remain rendered.",
+          "outcome": "Before Canvas registers its context, an island command is a no-op while all islands remain rendered."
+        },
+        {
+          "name": "command-context-set",
+          "condition": "Canvas has registered its command context; an island command invokes runCommand against that exact Canvas-provided context.",
+          "outcome": "After Canvas registers its context, an island command calls runCommand with that exact Canvas-provided context."
+        },
+        {
+          "name": "select-tool-active",
+          "condition": "The active tool is select; StateIsland receives an undefined mode.",
+          "outcome": "When the select tool is active, StateIsland receives an undefined mode."
+        },
+        {
+          "name": "non-select-tool-active",
+          "condition": "The active tool is not select; StateIsland receives that registered tool's Command.label as its mode.",
+          "outcome": "When another tool is active, StateIsland receives that tool's registered Command.label as its mode.",
+          "domain": "any registered active tool other than select"
+        },
+        {
+          "name": "scene-error-present",
+          "condition": "The scene exposes an error that has not been dismissed; StateIsland receives that error.",
+          "outcome": "When scene.error() is an undismissed error, StateIsland receives that error.",
+          "domain": "any scene error"
+        },
+        {
+          "name": "scene-error-dismissed",
+          "condition": "The current scene error is the error recorded by dismissedError; StateIsland does not receive it after dismissal.",
+          "outcome": "When the current scene error matches dismissedError, StateIsland receives no error."
+        },
+        {
+          "name": "different-scene-error-after-dismissal",
+          "condition": "scene.error() changes to a different error after a dismissal; dismissedError is reset so the new error is exposed to StateIsland.",
+          "outcome": "When scene.error() changes after dismissal, it resets dismissedError so the new error is exposed to StateIsland."
+        },
+        {
+          "name": "file-name-query-present",
+          "condition": "The URL contains a file or name query value, so FileIsland receives that value as fileName.",
+          "outcome": "When ?file= or ?name= supplies a value, FileIsland receives that query value as fileName.",
+          "domain": "any value supplied by ?file= or ?name="
+        },
+        {
+          "name": "file-name-query-absent",
+          "condition": "Neither ?file= nor ?name= supplies a file name, so FileIsland receives the fallback name Untitled.",
+          "outcome": "When neither file nor name supplies a value, FileIsland receives Untitled as fileName."
+        },
+        {
+          "name": "valid-stored-editor-theme",
+          "condition": "localStorage contains a recognized archeglyph.editorTheme value; that editor theme is selected, applied to the document root, and persisted.",
+          "outcome": "When storage contains a recognized editor theme, it selects, applies, and persists that theme.",
+          "domain": "any recognized editor theme name"
+        },
+        {
+          "name": "unknown-stored-editor-theme",
+          "condition": "localStorage contains a theme name that is not available; the configured default editor theme is selected instead.",
+          "outcome": "When storage contains an unavailable theme, it falls back to the configured default editor theme.",
+          "domain": "any unavailable theme name"
+        },
+        {
+          "name": "editor-theme-storage-unavailable",
+          "condition": "Reading or writing localStorage throws, such as in a private or restricted window; the editor continues using the default or selected theme without storage persistence.",
+          "outcome": "When storage access throws, it continues with the default or selected theme without persistence."
+        },
+        {
+          "name": "inspector-geometry-available",
+          "condition": "A loaded scene has geometry; Inspector is rendered with the existing state, UI, theme, geometry, and focus-registration props.",
+          "outcome": "When scene geometry is available, it renders Inspector with the existing state, UI, theme, geometry, and focus-registration props."
+        },
+        {
+          "name": "inspector-geometry-unavailable",
+          "condition": "A loaded scene has no geometry yet; Inspector is not rendered until geometry becomes available.",
+          "outcome": "When scene geometry is unavailable, it does not render Inspector until geometry becomes available."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/file_island.tsx/FileIsland.",
+      "symbolName": "FileIsland",
+      "filePath": "packages/editor/src/shell/file_island.tsx",
+      "cases": [
+        {
+          "name": "file-name-rendered",
+          "condition": "A file name is provided; the component renders the file name first in the island.",
+          "outcome": "Renders the provided file name first in the island.",
+          "domain": "any file-name string"
+        },
+        {
+          "name": "idle-status",
+          "condition": "Status is idle; no status text is rendered.",
+          "outcome": "Renders no status text when the status is idle."
+        },
+        {
+          "name": "saving-status",
+          "condition": "Status is saving; the status text is rendered as \"Saving...\".",
+          "outcome": "Renders the status text \"Saving...\" when saving."
+        },
+        {
+          "name": "saved-status",
+          "condition": "Status is saved; the status text is rendered as \"Saved\".",
+          "outcome": "Renders the status text \"Saved\" when saved."
+        },
+        {
+          "name": "unsaved-status",
+          "condition": "Status is unsaved; the status text is rendered as \"Unsaved\".",
+          "outcome": "Renders the status text \"Unsaved\" when unsaved."
+        },
+        {
+          "name": "error-status",
+          "condition": "Status is error; the status text is rendered as \"Save failed\", using --ag-danger, and the error indicator replaces the dirty dot.",
+          "outcome": "Renders \"Save failed\" in --ag-danger and replaces the dirty dot with the error indicator."
+        },
+        {
+          "name": "clean-document",
+          "condition": "The document is not dirty; the --ag-teal dirty dot is not shown.",
+          "outcome": "Does not show the --ag-teal dirty dot when the document is clean."
+        },
+        {
+          "name": "dirty-document",
+          "condition": "The document is dirty and status is not error; the --ag-teal dirty dot is shown.",
+          "outcome": "Shows the --ag-teal dirty dot when the document is dirty and the status is not error.",
+          "domain": "any non-error status"
+        },
+        {
+          "name": "dirty-saving-or-saved",
+          "condition": "The document is dirty while status is saving or saved; the status text remains \"Saving...\" or \"Saved\" respectively, and the --ag-teal dirty dot remains visible.",
+          "outcome": "Keeps the --ag-teal dirty dot visible and renders \"Saving...\" or \"Saved\" for dirty documents in those statuses.",
+          "domain": "one of: saving, saved"
+        },
+        {
+          "name": "save-available",
+          "condition": "canSave is true; the Save button is rendered and can provide the real click needed to initiate the first file write.",
+          "outcome": "Renders a Save button that provides the real click needed to initiate the first file write."
+        },
+        {
+          "name": "save-unavailable",
+          "condition": "canSave is false; the Save button is not rendered.",
+          "outcome": "Does not render the Save button when canSave is false."
+        },
+        {
+          "name": "theme-picker-options",
+          "condition": "The palette picker is rendered with EDITOR_THEMES as its options, displayed by theme label.",
+          "outcome": "Renders the palette picker with EDITOR_THEMES as options displayed by theme label.",
+          "domain": "any EDITOR_THEMES collection"
+        },
+        {
+          "name": "theme-selection-change",
+          "condition": "The user changes the palette selection; the browser chrome preference changes without marking the document dirty and without writing to the diagram or style file.",
+          "outcome": "Changes the browser chrome palette preference without marking the document dirty or writing to the diagram or style file.",
+          "domain": "any selectable EDITOR_THEMES label"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_file_island_tsx_FileIsland_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/island_frame.tsx/ISLAND_INSET.",
+      "symbolName": "ISLAND_INSET",
+      "filePath": "packages/editor/src/shell/island_frame.tsx",
+      "cases": [
+        {
+          "name": "declared-inset-value",
+          "condition": "The constant has its declared value of 12 CSS pixels, representing the gap between an island and the viewport edge.",
+          "outcome": "The constant should equal 12 CSS pixels, defining the gap between an island and the viewport edge."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_island_frame_tsx_ISLAND_INSET_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/island_frame.tsx/IslandFrame.",
+      "symbolName": "IslandFrame",
+      "filePath": "packages/editor/src/shell/island_frame.tsx",
+      "cases": [
+        {
+          "name": "loaded-document-with-canvas",
+          "condition": "A document is loaded, so IslandFrame is mounted and its canvas slot contains the real Canvas rather than StartScreen.",
+          "outcome": "Mounts IslandFrame with the real Canvas in the canvas slot."
+        },
+        {
+          "name": "document-not-loaded",
+          "condition": "No document exists, including a load failure before a document is created; IslandFrame is not mounted and StartScreen owns the surface.",
+          "outcome": "Does not mount IslandFrame, leaving StartScreen to own the surface."
+        },
+        {
+          "name": "present-slot-placement",
+          "condition": "Any supplied slot is rendered in its D13 position: toolbar top-centre, inspector top-left, file top-right, zoom bottom-left, undo bottom-right, or state bottom-centre.",
+          "outcome": "Renders each supplied slot in its declared D13 position.",
+          "domain": "one of: toolbar, inspector, file, zoom, undo, state"
+        },
+        {
+          "name": "optional-slots-omitted",
+          "condition": "Any subset of the island slots is absent; only present islands receive positioned wrappers, with no placeholder or status bar rendered for omitted slots.",
+          "outcome": "Renders only supplied islands, with no placeholders or status bar for omitted slots.",
+          "domain": "any subset of the six island slots"
+        },
+        {
+          "name": "all-slots-present",
+          "condition": "All six island slots are supplied while a document is loaded; each is overlaid on the full-bleed canvas at its declared position.",
+          "outcome": "Overlays all six supplied islands on the full-bleed canvas at their declared positions."
+        },
+        {
+          "name": "pointer-events-on-island-only",
+          "condition": "A pointer targets an island or empty canvas beneath a slot wrapper: the wrapper remains pointer-events:none and positioning-only, while the island root with ag-island receives pointer events and empty canvas remains available for pans and marquees.",
+          "outcome": "Keeps wrappers pointer-events:none while allowing only ag-island roots to receive pointer events, leaving empty canvas interactive.",
+          "domain": "an island target or empty canvas target"
+        },
+        {
+          "name": "content-sized-island",
+          "condition": "A present island has content that does not exceed its slot budget; its wrapper has no definite height, so height:100% content resolves to auto and the island remains content-sized.",
+          "outcome": "Leaves the wrapper height indefinite so height:100% resolves to auto and the island remains content-sized.",
+          "domain": "content fitting within the slot's max-height"
+        },
+        {
+          "name": "tall-top-island",
+          "condition": "A top-anchored island exceeds its available vertical budget; it is limited to half the viewport height less twice ISLAND_INSET and its own root scrolls instead of colliding with the opposite island.",
+          "outcome": "Limits the top island to half the viewport less twice ISLAND_INSET and lets its own root scroll.",
+          "domain": "top-anchored content taller than its budget"
+        },
+        {
+          "name": "tall-bottom-island",
+          "condition": "A bottom-anchored island exceeds its available vertical budget; it is limited to half the viewport height less twice ISLAND_INSET and its own root scrolls instead of colliding with the opposite island.",
+          "outcome": "Limits the bottom island to half the viewport less twice ISLAND_INSET and lets its own root scroll.",
+          "domain": "bottom-anchored content taller than its budget"
+        },
+        {
+          "name": "island-inset",
+          "condition": "Present islands are inset from the corresponding viewport edges by ISLAND_INSET rather than positioned flush against an edge.",
+          "outcome": "Offsets each present island from its corresponding viewport edges by ISLAND_INSET.",
+          "domain": "any present island"
+        },
+        {
+          "name": "non-form-mousedown",
+          "condition": "A mousedown occurs on an island element that is not a genuine form control; default focus-on-click is prevented so the ancestor keyboard handler retains focus behavior.",
+          "outcome": "Prevents the mousedown default on non-form island elements so ancestor keyboard handling retains focus.",
+          "domain": "a non-form island element"
+        },
+        {
+          "name": "form-control-mousedown",
+          "condition": "A mousedown occurs on a genuine form control, specifically the file island theme select; default handling is not suppressed so the control can receive focus and operate.",
+          "outcome": "Allows the theme select's mousedown default so the genuine form control can receive focus and operate."
+        },
+        {
+          "name": "scene-error-after-document",
+          "condition": "A scene error occurs after a document exists; the error is surfaced on StateIsland while the frame remains the document shell.",
+          "outcome": "Keeps the document frame mounted and surfaces the scene error on StateIsland."
+        },
+        {
+          "name": "failed-save",
+          "condition": "A save fails; the failure is surfaced on FileIsland and may coexist with a scene error on StateIsland.",
+          "outcome": "Surfaces the save failure on FileIsland, independently of any scene error."
+        },
+        {
+          "name": "scene-error-and-save-error",
+          "condition": "A scene error and a failed save occur together after a document exists; both distinct errors are shown on their respective islands.",
+          "outcome": "Shows the scene error on StateIsland and the save error on FileIsland simultaneously."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_island_frame_tsx_IslandFrame_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/start_screen.tsx/StartScreen.",
+      "symbolName": "StartScreen",
+      "filePath": "packages/editor/src/shell/start_screen.tsx",
+      "cases": [
+        {
+          "name": "no-error",
+          "condition": "The start screen is rendered when there is no file-opening error; it shows the wordmark and the 'Open file...' action.",
+          "outcome": "Renders the wordmark and an 'Open file...' action, with no error message."
+        },
+        {
+          "name": "file-opening-error",
+          "condition": "The start screen is rendered when a file-opening error is present; it shows the wordmark, the 'Open file...' action, and the error.",
+          "outcome": "Renders the wordmark and an 'Open file...' action followed by the file-opening error.",
+          "domain": "any file-opening error"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_start_screen_tsx_StartScreen_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/state_island.tsx/StateIsland.",
+      "symbolName": "StateIsland",
+      "filePath": "packages/editor/src/shell/state_island.tsx",
+      "cases": [
+        {
+          "name": "error-with-dismiss",
+          "condition": "An error is present and onDismiss is supplied; the island shows the full wrapping error text with error styling and renders the dismiss control.",
+          "outcome": "It shows the full wrapping error text with error styling and renders the supplied dismiss control.",
+          "domain": "any error string with any supplied dismiss callback"
+        },
+        {
+          "name": "error-without-dismiss",
+          "condition": "An error is present and onDismiss is not supplied; the island shows the full wrapping error text with error styling and does not render a dismiss control.",
+          "outcome": "It shows the full wrapping error text with error styling and omits the dismiss control.",
+          "domain": "any error string"
+        },
+        {
+          "name": "error-over-mode",
+          "condition": "Both an error and a mode are set; the error state wins, so the mode label is suppressed and the island remains a single error row. The dismiss control follows whether onDismiss is supplied.",
+          "outcome": "It prioritizes the error, suppresses the mode label, keeps a single error row, and renders the dismiss control only if onDismiss is supplied.",
+          "domain": "any error string, any mode label, and either presence or absence of onDismiss"
+        },
+        {
+          "name": "mode-only",
+          "condition": "A mode is set without an error; the island uses ordinary panel styling and shows the mode label in the secondary foreground color.",
+          "outcome": "It uses ordinary panel styling and displays the mode label in the secondary foreground color.",
+          "domain": "any mode label"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_state_island_tsx_StateIsland_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/toolbar.tsx/Toolbar.",
+      "symbolName": "Toolbar",
+      "filePath": "packages/editor/src/shell/toolbar.tsx",
+      "cases": [
+        {
+          "name": "select-tool-active",
+          "condition": "The select tool is the active tool; it is the only tool button receiving the active blue styling, while hand and annotation remain inactive.",
+          "outcome": "Marks only the select button with --ag-blue and --ag-blue-soft, leaving hand and annotation inactive."
+        },
+        {
+          "name": "hand-tool-active",
+          "condition": "The hand tool is the active tool; it is the only tool button receiving the active blue styling, while select and annotation remain inactive.",
+          "outcome": "Marks only the hand button with --ag-blue and --ag-blue-soft, leaving select and annotation inactive."
+        },
+        {
+          "name": "annotation-tool-active",
+          "condition": "The annotation tool is the active tool; it is the only tool button receiving the active blue styling, while select and hand remain inactive.",
+          "outcome": "Marks only the annotation button with --ag-blue and --ag-blue-soft, leaving select and hand inactive."
+        },
+        {
+          "name": "registry-labels-and-chords",
+          "condition": "Toolbar buttons use the labels from the command registry and, when present, the corresponding keymap chords to assemble their text and tooltips; no button text or hint is hardcoded in the toolbar.",
+          "outcome": "Builds each button's text and tooltip from its registry label and optional keymap chord without hardcoded text or hints.",
+          "domain": "any registered toolbar command with a label and optional keymap chord"
+        },
+        {
+          "name": "command-without-chord",
+          "condition": "A toolbar command has no keymap chord, so its assembled button text and tooltip contain the registry label alone rather than a label followed by a parenthesized key.",
+          "outcome": "Uses the registry label alone for the command's button text and tooltip when no chord is mapped.",
+          "domain": "any registered toolbar command lacking a chord"
+        },
+        {
+          "name": "command-with-chord",
+          "condition": "A toolbar command has a keymap chord, so its assembled button text and tooltip contain the registry label followed by the chord in parentheses.",
+          "outcome": "Uses the registry label followed by the mapped chord in parentheses for the command's button text and tooltip.",
+          "domain": "any registered toolbar command with a chord"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_toolbar_tsx_Toolbar_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/undo_island.tsx/UndoIsland.",
+      "symbolName": "UndoIsland",
+      "filePath": "packages/editor/src/shell/undo_island.tsx",
+      "cases": [
+        {
+          "name": "both-history-actions-available",
+          "condition": "Undo and redo history actions are available; both icon buttons are rendered enabled and the island retains its fixed two-button width.",
+          "outcome": "Render both undo and redo icon buttons enabled while preserving the island's fixed two-button width.",
+          "domain": "one of the editor history states where both undo and redo are available"
+        },
+        {
+          "name": "undo-unavailable",
+          "condition": "Undo is unavailable while redo may be available; the undo button remains rendered but is disabled rather than hidden.",
+          "outcome": "Keep the undo button rendered but disabled when undo is unavailable.",
+          "domain": "any history state with no undoable action"
+        },
+        {
+          "name": "redo-unavailable",
+          "condition": "Redo is unavailable while undo may be available; the redo button remains rendered but is disabled rather than hidden.",
+          "outcome": "Keep the redo button rendered but disabled when redo is unavailable.",
+          "domain": "any history state with no redoable action"
+        },
+        {
+          "name": "both-history-actions-unavailable",
+          "condition": "Neither undo nor redo is available; both buttons remain rendered and disabled, preserving the island width.",
+          "outcome": "Render both buttons disabled so the island retains its fixed width.",
+          "domain": "any history state with neither an undoable nor redoable action"
+        },
+        {
+          "name": "command-label-from-registry",
+          "condition": "A history command has a registry Command.label; that label supplies the button text and tooltip label.",
+          "outcome": "Use the registry Command.label for the history button text and tooltip label.",
+          "domain": "any registered undo or redo command label"
+        },
+        {
+          "name": "command-with-key-chord",
+          "condition": "A history command has a keymap chord; its tooltip combines the registry label and chord as `<label> (<key>)`, while the keymap supplies only the chord.",
+          "outcome": "Build the tooltip as the registry label followed by the keymap chord in parentheses.",
+          "domain": "any command with a configured keymap chord"
+        },
+        {
+          "name": "command-without-key-chord",
+          "condition": "A history command has no keymap chord; its tooltip contains the registry label alone.",
+          "outcome": "Use only the registry label as the tooltip when no keymap chord exists.",
+          "domain": "any command without a configured keymap chord"
+        },
+        {
+          "name": "mousedown-on-focused-button",
+          "condition": "A mousedown occurs on a focused undo or redo button; the default is prevented so keyboard activation keys such as Space and Enter are not swallowed by the button.",
+          "outcome": "Prevent the mousedown default on focused undo and redo buttons so Space and Enter remain available for keyboard activation.",
+          "domain": "any mousedown event targeting either button"
+        },
+        {
+          "name": "history-changes-during-edit-run",
+          "condition": "History availability changes as edits are made or undone/redone; unavailable buttons are disabled rather than removed, so the island does not change width or walk across the corner.",
+          "outcome": "Keep unavailable buttons rendered and disabled as history changes so the island neither changes width nor walks across the corner.",
+          "domain": "any sequence of editor history changes"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_undo_island_tsx_UndoIsland_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/zoom_island.tsx/ZoomIsland.",
+      "symbolName": "ZoomIsland",
+      "filePath": "packages/editor/src/shell/zoom_island.tsx",
+      "cases": [
+        {
+          "name": "render-with-current-zoom",
+          "condition": "The component renders the zoom controls for the supplied current zoom value: minus, percentage readout, plus, and a separated Fit control.",
+          "outcome": "Renders an ag-island with minus, the current percentage readout, plus, and a separated Fit control.",
+          "domain": "any supplied zoom value"
+        },
+        {
+          "name": "rounded-percentage-readout",
+          "condition": "The readout displays Math.round(zoom * 100) followed by a percent sign, so fractional zoom values are rounded to the nearest displayed percentage.",
+          "outcome": "Displays Math.round(zoom * 100) followed by a percent sign.",
+          "domain": "any numeric zoom value, including fractional values"
+        },
+        {
+          "name": "pinch-crosses-digit-width",
+          "condition": "The zoom changes across values such as 90%, 100%, and 110%; the fixed 4ch monospace readout width keeps the plus control from shifting horizontally.",
+          "outcome": "Keeps the monospace readout at a fixed 4ch width so the plus control does not shift as the percentage gains digits.",
+          "domain": "zoom values whose rounded percentages change digit count"
+        },
+        {
+          "name": "readout-activation",
+          "condition": "The readout button is clicked or keyboard-activated, invoking the zoom-reset action.",
+          "outcome": "Clicking or keyboard-activating the readout invokes the zoom-reset action.",
+          "domain": "pointer or keyboard activation of the readout"
+        },
+        {
+          "name": "minus-activation",
+          "condition": "The minus control is activated to request zooming out.",
+          "outcome": "Activating the minus control requests zooming out.",
+          "domain": "pointer or keyboard activation of the minus control"
+        },
+        {
+          "name": "plus-activation",
+          "condition": "The plus control is activated to request zooming in.",
+          "outcome": "Activating the plus control requests zooming in.",
+          "domain": "pointer or keyboard activation of the plus control"
+        },
+        {
+          "name": "fit-activation",
+          "condition": "The separated Fit control is activated to request fitting the view, using the purple secondary-control styling.",
+          "outcome": "Activating the separated Fit control requests fitting the view and uses the purple secondary-control styling.",
+          "domain": "pointer or keyboard activation of the Fit control"
+        },
+        {
+          "name": "keyboard-focus-readout",
+          "condition": "The readout receives keyboard focus as a real button and consequently has a focus ring; the surrounding island's focus suppression does not remove this button behavior.",
+          "outcome": "Makes the readout a keyboard-focusable real button with a focus ring despite the surrounding island's focus suppression."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_shell_zoom_island_tsx_ZoomIsland_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "symbolName": "KEYMAP",
+      "filePath": "packages/editor/src/ui_state/keymap.ts",
+      "cases": [
+        {
+          "name": "meta-z",
+          "condition": "The z key is pressed with the Meta modifier, selecting the undo command.",
+          "outcome": "It selects the undo command."
+        },
+        {
+          "name": "meta-shift-z",
+          "condition": "The z key is pressed with both Meta and Shift modifiers, selecting the redo command.",
+          "outcome": "It selects the redo command."
+        },
+        {
+          "name": "backspace",
+          "condition": "The Backspace key is pressed without modifiers, selecting the delete command.",
+          "outcome": "It selects the delete command."
+        },
+        {
+          "name": "delete",
+          "condition": "The Delete key is pressed without modifiers, selecting the delete command.",
+          "outcome": "It selects the delete command."
+        },
+        {
+          "name": "escape",
+          "condition": "The Escape key is pressed without modifiers, selecting the escape command.",
+          "outcome": "It selects the escape command."
+        },
+        {
+          "name": "meta-a",
+          "condition": "The a key is pressed with the Meta modifier, selecting the select-all command.",
+          "outcome": "It selects the select-all command."
+        },
+        {
+          "name": "arrow-up",
+          "condition": "The ArrowUp key is pressed without modifiers, selecting the nudge-up command.",
+          "outcome": "It selects the nudge-up command."
+        },
+        {
+          "name": "arrow-down",
+          "condition": "The ArrowDown key is pressed without modifiers, selecting the nudge-down command.",
+          "outcome": "It selects the nudge-down command."
+        },
+        {
+          "name": "arrow-left",
+          "condition": "The ArrowLeft key is pressed without modifiers, selecting the nudge-left command.",
+          "outcome": "It selects the nudge-left command."
+        },
+        {
+          "name": "arrow-right",
+          "condition": "The ArrowRight key is pressed without modifiers, selecting the nudge-right command.",
+          "outcome": "It selects the nudge-right command."
+        },
+        {
+          "name": "s",
+          "condition": "The s key is pressed without modifiers, selecting the ring-next command.",
+          "outcome": "It selects the ring-next command."
+        },
+        {
+          "name": "shift-s",
+          "condition": "The s key is pressed with Shift and without Meta, selecting the ring-prev command.",
+          "outcome": "It selects the ring-prev command."
+        },
+        {
+          "name": "meta-s",
+          "condition": "The s key is pressed with the Meta modifier, selecting the save command.",
+          "outcome": "It selects the save command."
+        },
+        {
+          "name": "meta-i",
+          "condition": "The i key is pressed with the Meta modifier, selecting the focus-inspector command.",
+          "outcome": "It selects the focus-inspector command."
+        },
+        {
+          "name": "v",
+          "condition": "The v key is pressed without modifiers, selecting the tool-select command.",
+          "outcome": "It selects the tool-select command."
+        },
+        {
+          "name": "t",
+          "condition": "The t key is pressed without modifiers, selecting the tool-annotation command.",
+          "outcome": "It selects the tool-annotation command."
+        },
+        {
+          "name": "n",
+          "condition": "The n key is pressed without modifiers, selecting the add-annotation command.",
+          "outcome": "It selects the add-annotation command."
+        },
+        {
+          "name": "enter",
+          "condition": "The Enter key is pressed without modifiers, selecting the edit-text command.",
+          "outcome": "It selects the edit-text command."
+        },
+        {
+          "name": "meta-d",
+          "condition": "The d key is pressed with the Meta modifier, selecting the duplicate command.",
+          "outcome": "It selects the duplicate command."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-islands__packages_editor_src_ui_state_keymap_ts_KEYMAP_.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "23f4cbbe4b2b936e9026df8eb39d0565fe81d0dd72fcf01cbac0b4cf1c58c3e5"
+}

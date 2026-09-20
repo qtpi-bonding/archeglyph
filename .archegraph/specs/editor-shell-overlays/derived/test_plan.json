@@ -1,0 +1,796 @@
+{
+  "specName": "editor-shell-overlays",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-shell-overlays' --root . --plan '.archegraph/specs/editor-shell-overlays/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "symbolName": "COMMANDS",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "open-palette-from-any-overlay-state",
+          "condition": "The open-palette command is invoked; it unconditionally sets the overlay to 'palette', regardless of the overlay's prior state.",
+          "outcome": "It sets the overlay to 'palette' regardless of its prior state.",
+          "domain": "any prior overlay state"
+        },
+        {
+          "name": "open-help-from-any-overlay-state",
+          "condition": "The open-help command is invoked; it unconditionally sets the overlay to 'help', regardless of the overlay's prior state.",
+          "outcome": "It sets the overlay to 'help' regardless of its prior state.",
+          "domain": "any prior overlay state"
+        },
+        {
+          "name": "escape-with-overlay-open",
+          "condition": "The escape command is invoked while ui.overlay() is not undefined; it sets the overlay to undefined, returns immediately, and leaves the selection unchanged.",
+          "outcome": "It sets the overlay to undefined, returns immediately, and leaves the selection unchanged.",
+          "domain": "any defined overlay value and any selection state"
+        },
+        {
+          "name": "escape-without-overlay",
+          "condition": "The escape command is invoked while ui.overlay() is undefined; it clears the selection.",
+          "outcome": "It clears the selection.",
+          "domain": "any selection state"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_gestures_commands_ts_COMMANDS_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "no-editor-state",
+          "condition": "The editor state is null, so App renders the start screen instead of the editor shell.",
+          "outcome": "It renders the start screen instead of the editor shell."
+        },
+        {
+          "name": "editor-state-ready",
+          "condition": "The editor state is non-null, so App renders the editor shell with IslandFrame and its canvas, toolbar, and inspector content.",
+          "outcome": "It renders the editor shell with IslandFrame containing the canvas, toolbar, and inspector."
+        },
+        {
+          "name": "no-overlay-open",
+          "condition": "The UI overlay signal is undefined, so neither overlay surface is mounted.",
+          "outcome": "It mounts neither the palette nor the help overlay."
+        },
+        {
+          "name": "palette-overlay-open",
+          "condition": "The UI overlay identifies the palette, so the palette is mounted as a sibling of IslandFrame and its rows are built for that opening.",
+          "outcome": "It mounts the palette as an IslandFrame sibling and builds its rows for that opening."
+        },
+        {
+          "name": "help-overlay-open",
+          "condition": "The UI overlay identifies help, so the help sheet is mounted as a sibling of IslandFrame using COMMANDS and KEYMAP directly.",
+          "outcome": "It mounts the help sheet as an IslandFrame sibling using COMMANDS and KEYMAP directly."
+        },
+        {
+          "name": "palette-reopened",
+          "condition": "The palette is opened again after a previous opening, so its surface and query state start fresh rather than retaining the previous query.",
+          "outcome": "It remounts the palette so its surface and query state start fresh."
+        },
+        {
+          "name": "palette-without-geometry",
+          "condition": "The palette is open but no scene geometry has been published, so it still opens with command rows and has no element rows.",
+          "outcome": "It opens the palette with command rows only and no element rows."
+        },
+        {
+          "name": "palette-with-geometry",
+          "condition": "The palette is open and current scene geometry is available, so command rows are concatenated before element rows generated from the diagram geometry.",
+          "outcome": "It concatenates command rows before element rows generated from the diagram geometry."
+        },
+        {
+          "name": "excluded-palette-commands",
+          "condition": "Palette rows are generated, and commands excluded by PALETTE_EXCLUDED, including open-palette and open-help, are absent; no listed action reopens an overlay.",
+          "outcome": "It omits PALETTE_EXCLUDED commands, including open-palette and open-help, so no listed action reopens an overlay.",
+          "domain": "the excluded overlay-opening commands"
+        },
+        {
+          "name": "palette-close",
+          "condition": "The palette invokes onClose, which clears the overlay signal by setting it to undefined.",
+          "outcome": "It clears the overlay signal by setting it to undefined."
+        },
+        {
+          "name": "choose-command-with-context",
+          "condition": "A palette command action is chosen while a command-context accessor exists; App closes the overlay first and dispatches the command through onCommand.",
+          "outcome": "It closes the overlay first, then dispatches the command through onCommand.",
+          "domain": "any non-excluded PaletteAction command"
+        },
+        {
+          "name": "choose-command-without-context",
+          "condition": "A palette command action is chosen while no command-context accessor exists; App closes the overlay first and onCommand performs no dispatch.",
+          "outcome": "It closes the overlay first, then onCommand performs no dispatch.",
+          "domain": "any non-excluded PaletteAction command"
+        },
+        {
+          "name": "choose-element-with-matching-entry",
+          "condition": "A palette element action is chosen, its ref is selected as the sole selection, and elementKey(ref) finds an entry in the current scene geometry byKey index; when a command context exists, the viewport is then centered on that entry's bounds within the context rect.",
+          "outcome": "It closes first, selects exactly the ref, and centers the viewport on the matched bounds within the context rect.",
+          "domain": "one of the four element-reference kinds with a matching geometry entry"
+        },
+        {
+          "name": "choose-element-without-entry",
+          "condition": "A palette element action is chosen and its ref has no entry in the current scene geometry byKey index; the ref is selected as the sole selection and the viewport is left unchanged.",
+          "outcome": "It closes first and selects exactly the ref without changing the viewport.",
+          "domain": "one of the four element-reference kinds absent from byKey"
+        },
+        {
+          "name": "choose-element-without-context",
+          "condition": "A palette element action is chosen and geometry contains a matching entry, but no command-context accessor exists; the ref is selected as the sole selection and no viewport pan is performed.",
+          "outcome": "It closes first and selects exactly the ref without panning the viewport.",
+          "domain": "one of the four element-reference kinds with a matching entry"
+        },
+        {
+          "name": "element-key-disambiguates-reference",
+          "condition": "A chosen element ref is looked up with elementKey(ref), so a node and a group sharing the same bare id are distinguished by their keyed references rather than colliding in byKey.",
+          "outcome": "It uses elementKey(ref) to distinguish same-id nodes and groups in byKey.",
+          "domain": "references whose bare ids may be shared across element kinds"
+        },
+        {
+          "name": "close-before-command",
+          "condition": "A palette command action is chosen; clearing the overlay precedes command dispatch so commands such as focus-inspector retain their focus movement after the palette unmounts.",
+          "outcome": "It clears the overlay before dispatch so focus movement from commands such as focus-inspector is preserved.",
+          "domain": "any palette command, especially focus-inspector"
+        },
+        {
+          "name": "close-before-element-action",
+          "condition": "A palette element action is chosen; clearing the overlay precedes selection and any viewport centering.",
+          "outcome": "It clears the overlay before selecting the element and centering the viewport."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/chord_label.ts/formatChord().",
+      "symbolName": "formatChord",
+      "filePath": "packages/editor/src/shell/chord_label.ts",
+      "cases": [
+        {
+          "name": "apple-no-modifiers",
+          "condition": "navigator.platform contains 'Mac'; the chord has neither the meta modifier nor the shift modifier. The key is displayed without a modifier prefix and is formatted according to the key rules.",
+          "outcome": "On a Mac, it returns the formatted key alone with no modifier prefix when neither meta nor shift is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "apple-meta-only",
+          "condition": "navigator.platform contains 'Mac'; the chord has the meta modifier but not shift. The display starts with U+2318 immediately followed by the formatted key.",
+          "outcome": "On a Mac, it prefixes the formatted key immediately with U+2318 when only meta is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "apple-shift-only",
+          "condition": "navigator.platform contains 'Mac'; the chord has shift but not the meta modifier. The display starts with U+21E7 immediately followed by the formatted key.",
+          "outcome": "On a Mac, it prefixes the formatted key immediately with U+21E7 when only shift is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "apple-meta-and-shift",
+          "condition": "navigator.platform contains 'Mac'; the chord has both meta and shift. The display is U+2318 followed immediately by U+21E7 and then the formatted key, with no separators.",
+          "outcome": "On a Mac, it returns U+2318 followed immediately by U+21E7 and the formatted key, with no separators.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "non-apple-no-modifiers",
+          "condition": "navigator.platform does not contain 'Mac'; the chord has neither the meta modifier nor the shift modifier. The key is displayed without a modifier prefix and is formatted according to the key rules.",
+          "outcome": "Off Apple platforms, it returns the formatted key alone with no modifier prefix when neither meta nor shift is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "non-apple-meta-only",
+          "condition": "navigator.platform does not contain 'Mac'; the chord has the meta modifier but not shift. Because this modifier is represented as Ctrl off Apple, the display is 'Ctrl+' followed by the formatted key.",
+          "outcome": "Off Apple platforms, it prefixes the formatted key with Ctrl+ when only meta is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "non-apple-shift-only",
+          "condition": "navigator.platform does not contain 'Mac'; the chord has shift but not the meta modifier. The display is 'Shift+' followed by the formatted key.",
+          "outcome": "Off Apple platforms, it prefixes the formatted key with Shift+ when only shift is active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "non-apple-meta-and-shift",
+          "condition": "navigator.platform does not contain 'Mac'; the chord has both meta and shift. The display is 'Ctrl+Shift+' followed by the formatted key.",
+          "outcome": "Off Apple platforms, it prefixes the formatted key with Ctrl+Shift+ when both meta and shift are active.",
+          "domain": "any supported Chord key"
+        },
+        {
+          "name": "single-character-key",
+          "condition": "The key is a single character; it is upper-cased, while any applicable platform-specific modifier composition is applied before it.",
+          "outcome": "It upper-cases a single-character key after applying any applicable platform-specific modifier composition.",
+          "domain": "any single-character KeyboardEvent.key value"
+        },
+        {
+          "name": "question-mark-key",
+          "condition": "The key is the single character '?'; upper-casing leaves it as '?', while any applicable modifier composition is applied before it.",
+          "outcome": "It leaves the single-character key ? unchanged after applying any applicable modifier composition."
+        },
+        {
+          "name": "arrow-up-key",
+          "condition": "The key is exactly 'ArrowUp'; it is renamed to 'Up', while any applicable modifier composition is applied before it.",
+          "outcome": "It renames ArrowUp to Up after applying any applicable modifier composition."
+        },
+        {
+          "name": "arrow-down-key",
+          "condition": "The key is exactly 'ArrowDown'; it is renamed to 'Down', while any applicable modifier composition is applied before it.",
+          "outcome": "It renames ArrowDown to Down after applying any applicable modifier composition."
+        },
+        {
+          "name": "arrow-left-key",
+          "condition": "The key is exactly 'ArrowLeft'; it is renamed to 'Left', while any applicable modifier composition is applied before it.",
+          "outcome": "It renames ArrowLeft to Left after applying any applicable modifier composition."
+        },
+        {
+          "name": "arrow-right-key",
+          "condition": "The key is exactly 'ArrowRight'; it is renamed to 'Right', while any applicable modifier composition is applied before it.",
+          "outcome": "It renames ArrowRight to Right after applying any applicable modifier composition."
+        },
+        {
+          "name": "escape-key",
+          "condition": "The key is exactly 'Escape'; it is renamed to 'Esc', while any applicable modifier composition is applied before it.",
+          "outcome": "It renames Escape to Esc after applying any applicable modifier composition."
+        },
+        {
+          "name": "other-multicharacter-key",
+          "condition": "The key has multiple characters and is not one of ArrowUp, ArrowDown, ArrowLeft, ArrowRight, or Escape; it is passed through verbatim, while any applicable modifier composition is applied before it.",
+          "outcome": "It passes through any other multi-character key verbatim after applying any applicable modifier composition.",
+          "domain": "any other multi-character KeyboardEvent.key value"
+        },
+        {
+          "name": "backspace-key",
+          "condition": "The key is exactly 'Backspace'; it remains 'Backspace' and is not renamed to 'Delete', while any applicable modifier composition is applied before it.",
+          "outcome": "It preserves Backspace as Backspace rather than renaming it to Delete, after applying any applicable modifier composition."
+        },
+        {
+          "name": "delete-key",
+          "condition": "The key is exactly 'Delete'; it remains 'Delete', while any applicable modifier composition is applied before it.",
+          "outcome": "It preserves Delete as Delete after applying any applicable modifier composition."
+        },
+        {
+          "name": "enter-key",
+          "condition": "The key is exactly 'Enter'; it remains 'Enter', while any applicable modifier composition is applied before it.",
+          "outcome": "It preserves Enter as Enter after applying any applicable modifier composition."
+        },
+        {
+          "name": "platform-read-per-call",
+          "condition": "The function is called after navigator.platform has changed between calls; each call uses the current platform value, so a value containing 'Mac' selects Apple symbols and a value not containing 'Mac' selects Ctrl/Shift words.",
+          "outcome": "It reads the current navigator.platform on every call, selecting Apple symbols when it contains Mac and Ctrl/Shift words otherwise.",
+          "domain": "any sequence of calls with differing navigator.platform values"
+        },
+        {
+          "name": "user-agent-ignored",
+          "condition": "The user agent indicates an Apple or non-Apple device independently of navigator.platform; only whether navigator.platform contains 'Mac' affects the result.",
+          "outcome": "It ignores the user agent and selects the output solely from whether navigator.platform contains Mac.",
+          "domain": "any userAgent value"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_chord_label_ts_formatChord___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/command_palette.tsx/CommandPalette.",
+      "symbolName": "CommandPalette",
+      "filePath": "packages/editor/src/shell/command_palette.tsx",
+      "cases": [
+        {
+          "name": "mount-focuses-input",
+          "condition": "The palette is mounted by its caller while open; the text input receives focus immediately on mount.",
+          "outcome": "Focuses the text input immediately when the palette mounts."
+        },
+        {
+          "name": "query-produces-filtered-rows",
+          "condition": "The query filters the available palette items to one or more rows; the filtered rows render with each label on the left and detail dimmed on the right.",
+          "outcome": "Filters the available items and renders each matching row with its label on the left and dimmed detail on the right.",
+          "domain": "any query producing a non-empty filtered list"
+        },
+        {
+          "name": "query-produces-no-rows",
+          "condition": "The query filters the available palette items to an empty list; no result rows are available for selection.",
+          "outcome": "Renders no selectable result rows when the filtered list is empty.",
+          "domain": "any query producing an empty filtered list"
+        },
+        {
+          "name": "query-change-resets-highlight",
+          "condition": "The query changes, causing the filtered list to be recomputed; the highlighted index resets to 0 rather than being retained.",
+          "outcome": "Resets the highlighted index to 0 whenever the query changes.",
+          "domain": "any query change"
+        },
+        {
+          "name": "arrow-down-advances-highlight",
+          "condition": "ArrowDown is pressed on the input while the filtered list has multiple rows and the highlighted index is not the last index; the highlight advances by one and the event is prevented.",
+          "outcome": "Advances the highlight by one and prevents the default event.",
+          "domain": "a filtered list with at least two rows and an index below its last index"
+        },
+        {
+          "name": "arrow-down-clamps-at-last-row",
+          "condition": "ArrowDown is pressed on the input while the highlight is already on the last filtered row; the highlight remains on that row and the event is prevented.",
+          "outcome": "Keeps the highlight on the last row and prevents the default event.",
+          "domain": "any non-empty filtered list with the highlight at its last index"
+        },
+        {
+          "name": "arrow-up-retreats-highlight",
+          "condition": "ArrowUp is pressed on the input while the highlighted index is greater than 0; the highlight moves back by one and the event is prevented.",
+          "outcome": "Moves the highlight back by one and prevents the default event.",
+          "domain": "a filtered list with a highlight index from 1 through the last index"
+        },
+        {
+          "name": "arrow-up-clamps-at-first-row",
+          "condition": "ArrowUp is pressed on the input while the highlight is at index 0; the highlight remains at index 0 and the event is prevented.",
+          "outcome": "Keeps the highlight at index 0 and prevents the default event.",
+          "domain": "any filtered list with the highlight at index 0"
+        },
+        {
+          "name": "enter-chooses-highlighted-row",
+          "condition": "Enter is pressed on the input while the filtered list is non-empty; onChoose is called with the action of the highlighted row and the event is prevented.",
+          "outcome": "Calls onChoose with the highlighted row’s action and prevents the default event.",
+          "domain": "any non-empty filtered list"
+        },
+        {
+          "name": "enter-on-empty-list-does-nothing",
+          "condition": "Enter is pressed on the input while the filtered list is empty; no row action is chosen and no close callback is invoked.",
+          "outcome": "Does nothing, including not choosing an action or calling onClose."
+        },
+        {
+          "name": "escape-closes-palette",
+          "condition": "Escape is pressed on the input; onClose is called.",
+          "outcome": "Calls onClose when Escape is pressed."
+        },
+        {
+          "name": "row-click-chooses-row",
+          "condition": "A filtered result row is clicked; onChoose is called with that row's action, equivalent to choosing it with Enter.",
+          "outcome": "Calls onChoose with the clicked row’s action.",
+          "domain": "any rendered result row"
+        },
+        {
+          "name": "scrim-click-closes-palette",
+          "condition": "The scrim itself is clicked; onClose is called.",
+          "outcome": "Calls onClose when the scrim itself is clicked."
+        },
+        {
+          "name": "scrim-blocks-background-pointer",
+          "condition": "A pointer event occurs behind the palette on the scrim; the event is swallowed so it does not reach the canvas or move a selection.",
+          "outcome": "Swallows pointer events on the scrim so they cannot reach the canvas or move a selection.",
+          "domain": "any pointer event targeting the scrim/background outside the palette"
+        },
+        {
+          "name": "input-key-does-not-reach-global-handler",
+          "condition": "A handled key originates in the palette's text input; the global keyboard command handler ignores it because the target is an input element.",
+          "outcome": "The global keyboard handler ignores the key because its target is an input element.",
+          "domain": "any key event originating in the palette input"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_command_palette_tsx_CommandPalette_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/help_sheet.tsx/HelpSheet.",
+      "symbolName": "HelpSheet",
+      "filePath": "packages/editor/src/shell/help_sheet.tsx",
+      "cases": [
+        {
+          "name": "ordered-keymap-entries",
+          "condition": "The keymap prop contains entries whose commands are present in commands; one row is rendered for each entry in the prop's original order, using formatChord for the chord and the matching command label.",
+          "outcome": "Renders one row per matching keymap entry in the prop's original order, formatting each chord with formatChord and showing its command label.",
+          "domain": "any ordered keymap with commands present in the commands prop"
+        },
+        {
+          "name": "empty-keymap",
+          "condition": "The keymap prop has no entries, so the sheet renders no command rows.",
+          "outcome": "Renders no command rows when the keymap prop is empty."
+        },
+        {
+          "name": "missing-command-skipped",
+          "condition": "A keymap entry names a command absent from the commands prop; that entry is skipped rather than rendered with its raw command id.",
+          "outcome": "Skips any keymap entry whose command is absent from the commands prop.",
+          "domain": "any keymap entry whose command id is absent from commands"
+        },
+        {
+          "name": "multiple-chords-per-command",
+          "condition": "Several keymap entries name the same command; every entry produces its own row rather than being collapsed to one chord.",
+          "outcome": "Renders a separate row for every keymap entry even when several entries name the same command.",
+          "domain": "any number of entries sharing a command"
+        },
+        {
+          "name": "backspace-and-delete-chords",
+          "condition": "A command is bound to both Backspace and Delete; both distinct chord rows are rendered, with the names passed through verbatim by formatChord.",
+          "outcome": "Renders distinct rows for both Backspace and Delete, passing both names verbatim through formatChord."
+        },
+        {
+          "name": "mount-focuses-root",
+          "condition": "The sheet is mounted; its root has tabIndex={-1} and is focused so the sheet can receive keyboard events and its own Escape handler can run.",
+          "outcome": "On mount, gives the root tabIndex={-1} and focuses it so it receives keyboard events and its Escape handler can run."
+        },
+        {
+          "name": "escape-dismissal",
+          "condition": "The focused sheet root receives an Escape key event; onClose is called.",
+          "outcome": "Calls onClose when the focused sheet root receives an Escape key event."
+        },
+        {
+          "name": "scrim-click-dismissal",
+          "condition": "The scrim is clicked; onClose is called.",
+          "outcome": "Calls onClose when the scrim is clicked."
+        },
+        {
+          "name": "opened-without-mouse",
+          "condition": "A user opens the sheet without using a mouse; focus on the root permits keyboard dismissal through Escape.",
+          "outcome": "Focuses the root so a sheet opened without a mouse can be dismissed with Escape from the keyboard."
+        },
+        {
+          "name": "closed-sheet-not-rendered",
+          "condition": "The sheet is not open because its caller has not mounted it under Show; no sheet UI is rendered.",
+          "outcome": "Renders no sheet UI when the caller does not mount the closed sheet under Show."
+        },
+        {
+          "name": "no-text-input",
+          "condition": "The sheet receives no text input; it has no text-entry behavior.",
+          "outcome": "Provides no text-entry behavior or text input handling."
+        },
+        {
+          "name": "no-highlighted-row",
+          "condition": "The sheet has no highlighted-row state or row-selection behavior.",
+          "outcome": "Provides no highlighted-row state or row-selection behavior."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_help_sheet_tsx_HelpSheet_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_excluded.ts/PALETTE_EXCLUDED.",
+      "symbolName": "PALETTE_EXCLUDED",
+      "filePath": "packages/editor/src/shell/palette_excluded.ts",
+      "cases": [
+        {
+          "name": "has-declared-value",
+          "condition": "The exported ReadonlySet contains exactly the nine excluded CommandId members: 'escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', and 'open-help'.",
+          "outcome": "Exports a ReadonlySet containing exactly the nine specified CommandId members: escape, the four nudge commands, the two ring commands, open-palette, and open-help."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_palette_excluded_ts_PALETTE_EXCLUDED_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/commandPaletteItems().",
+      "symbolName": "commandPaletteItems",
+      "filePath": "packages/editor/src/shell/palette_items.ts",
+      "cases": [
+        {
+          "name": "empty-commands",
+          "condition": "The commands argument is empty; no palette rows are produced regardless of keymap contents.",
+          "outcome": "Returns no palette rows when the commands argument is empty, regardless of keymap contents."
+        },
+        {
+          "name": "included-command",
+          "condition": "A command entry whose id is not in PALETTE_EXCLUDED produces one row with its Command.label, key equal to 'command:' followed by its id, and detail derived from the keymap argument.",
+          "outcome": "Creates one row for each non-excluded command using its label, a key of 'command:' plus its id, and detail derived from the supplied keymap.",
+          "domain": "any non-excluded command entry"
+        },
+        {
+          "name": "preserved-command-order",
+          "condition": "Multiple non-excluded command entries are supplied; output rows follow the commands argument order rather than registry order.",
+          "outcome": "Returns multiple non-excluded rows in the order of the commands argument.",
+          "domain": "any non-empty ordered list of non-excluded command entries"
+        },
+        {
+          "name": "excluded-command",
+          "condition": "A command entry whose id is in PALETTE_EXCLUDED is skipped and produces no row.",
+          "outcome": "Skips any command whose id is in PALETTE_EXCLUDED.",
+          "domain": "any excluded command id"
+        },
+        {
+          "name": "mixed-excluded-and-included",
+          "condition": "The commands argument mixes excluded and non-excluded entries; excluded entries are omitted while included entries retain their relative input order.",
+          "outcome": "Omits excluded commands while preserving the relative input order of included commands.",
+          "domain": "any mixture of excluded and non-excluded entries"
+        },
+        {
+          "name": "matching-chord",
+          "condition": "The keymap argument contains an entry whose command matches an included command id; that entry is rendered with formatChord and placed in the row detail.",
+          "outcome": "Uses the first matching keymap entry, rendered with formatChord, as the included command's detail.",
+          "domain": "any matching keymap entry"
+        },
+        {
+          "name": "missing-chord",
+          "condition": "An included command has no matching keymap entry; its row detail is the empty string.",
+          "outcome": "Sets detail to the empty string when an included command has no matching keymap entry.",
+          "domain": "any included command with no matching keymap entry"
+        },
+        {
+          "name": "first-chord-wins",
+          "condition": "More than one keymap entry matches an included command id; only the first matching entry in keymap order is rendered, and later matching chords are not shown.",
+          "outcome": "Renders only the first matching keymap chord and ignores later matches.",
+          "domain": "any ordered set of two or more matching keymap entries"
+        },
+        {
+          "name": "unrelated-keymap-entries",
+          "condition": "The keymap contains entries for other command ids; those entries do not affect the detail of an included command.",
+          "outcome": "Ignores keymap entries whose command ids do not match the included command.",
+          "domain": "any number of non-matching keymap entries"
+        },
+        {
+          "name": "argument-registries-used",
+          "condition": "Commands and keymap fixture arguments differ from any module-level registries; rows are still built from the supplied arguments, including their supplied labels and chords.",
+          "outcome": "Builds rows from the supplied command and keymap arguments, including their labels and chords, rather than module-level registries.",
+          "domain": "any fixture command and keymap arrays"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_palette_items_ts_commandPaletteItems___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/elementPaletteItems().",
+      "symbolName": "elementPaletteItems",
+      "filePath": "packages/editor/src/shell/palette_items.ts",
+      "cases": [
+        {
+          "name": "empty-diagram",
+          "condition": "The diagram has no nodes, groups, annotations, or edges; the function returns an empty array.",
+          "outcome": "Returns an empty array when the diagram contains no nodes, groups, annotations, or edges."
+        },
+        {
+          "name": "labeled-node-or-group",
+          "condition": "A node or group has a label list whose index-0 Localization source is non-empty after trimming; one row is produced with its element key, that source as label, and the corresponding kind as detail.",
+          "outcome": "Produces one row for the node or group using its element key, trimmed index-0 label source, and corresponding kind as detail.",
+          "domain": "one of: node, group"
+        },
+        {
+          "name": "labeled-annotation",
+          "condition": "An annotation has a content list whose index-0 Localization source is non-empty after trimming; one row is produced with its element key, that source as label, and annotation as detail.",
+          "outcome": "Produces one row for the annotation using its element key, trimmed index-0 content source as label, and annotation as detail.",
+          "domain": "any annotation with non-empty trimmed index-0 content source"
+        },
+        {
+          "name": "empty-label-list-fallback",
+          "condition": "A node or group has an empty label list, so its row label falls back to the element id.",
+          "outcome": "Produces the node or group row with its element id as the label when the label list is empty.",
+          "domain": "one of: node, group"
+        },
+        {
+          "name": "empty-content-list-fallback",
+          "condition": "An annotation has an empty content list, so its row label falls back to the element id.",
+          "outcome": "Produces the annotation row with its element id as the label when the content list is empty.",
+          "domain": "any annotation with no content entries"
+        },
+        {
+          "name": "blank-index-zero-source-fallback",
+          "condition": "A node, group, or annotation has an index-0 label/content Localization whose source is empty after trimming; its row label falls back to the element id.",
+          "outcome": "Produces the row with its element id as the label when the index-0 label or content source is blank after trimming.",
+          "domain": "one of: node, group, annotation"
+        },
+        {
+          "name": "edges-excluded",
+          "condition": "The diagram contains edges; edges produce no palette rows because they are not represented in the scene index bounds.",
+          "outcome": "Omits edges entirely because they have no scene-index bounds for panning.",
+          "domain": "any collection of edges"
+        },
+        {
+          "name": "mixed-element-collections",
+          "condition": "The diagram contains any combination of nodes, groups, annotations, and edges; rows are produced only for nodes, groups, and annotations, with no row for any edge.",
+          "outcome": "Produces rows only for nodes, groups, and annotations, omitting every edge.",
+          "domain": "any combination of node, group, annotation, and edge"
+        },
+        {
+          "name": "key-sorted-results",
+          "condition": "The diagram contains multiple row-producing elements; all produced rows are sorted by elementKey(ref) ascending before being returned, independently of record insertion order.",
+          "outcome": "Returns all produced rows sorted ascending by elementKey(ref), regardless of record insertion order.",
+          "domain": "two or more nodes, groups, or annotations with distinct keys"
+        },
+        {
+          "name": "integer-like-id-ordering",
+          "condition": "Row-producing elements have integer-like ids whose record enumeration order may differ from insertion order; the returned rows still follow ascending element keys.",
+          "outcome": "Returns rows with integer-like ids in ascending element-key order, independent of record enumeration order.",
+          "domain": "two or more row-producing elements with integer-like ids"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_palette_items_ts_elementPaletteItems___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_search.ts/filterPaletteItems().",
+      "symbolName": "filterPaletteItems",
+      "filePath": "packages/editor/src/shell/palette_search.ts",
+      "cases": [
+        {
+          "name": "empty-items",
+          "condition": "The items array is empty; the result is empty for any query.",
+          "outcome": "Returns an empty array for every query when the items array is empty.",
+          "domain": "any query string"
+        },
+        {
+          "name": "blank-query",
+          "condition": "The query is empty or consists only of whitespace after trimming; every item is returned in the original input order.",
+          "outcome": "Returns every item in its original input order when the trimmed query is blank.",
+          "domain": "empty or whitespace-only strings"
+        },
+        {
+          "name": "trimmed-query",
+          "condition": "Leading or trailing whitespace is removed before matching, so surrounding spaces do not affect the result.",
+          "outcome": "Trims leading and trailing whitespace from the query before matching.",
+          "domain": "any query with leading or trailing whitespace"
+        },
+        {
+          "name": "case-insensitive-label-match",
+          "condition": "A non-blank query matches an item when its trimmed text occurs as a case-insensitive substring of the item's label.",
+          "outcome": "For a non-blank query, returns items whose labels contain the trimmed query as a case-insensitive contiguous substring.",
+          "domain": "any non-blank string and labels containing it under case folding"
+        },
+        {
+          "name": "detail-does-not-match",
+          "condition": "Text present only in an item's detail does not make that item match; matching uses the label only.",
+          "outcome": "Ignores detail text entirely when determining whether an item matches.",
+          "domain": "any query occurring in detail but not in label"
+        },
+        {
+          "name": "starts-with-tier",
+          "condition": "Among matching items, labels that start with the trimmed query case-insensitively are ranked before labels that contain the query only later.",
+          "outcome": "Ranks matching items whose labels start with the trimmed query case-insensitively before other matching items.",
+          "domain": "any query with both prefix and non-prefix matches"
+        },
+        {
+          "name": "stable-prefix-order",
+          "condition": "Multiple matching items whose labels start with the query retain their original relative input order.",
+          "outcome": "Preserves input order among matching items whose labels start with the query.",
+          "domain": "two or more prefix-matching items"
+        },
+        {
+          "name": "stable-containing-order",
+          "condition": "Multiple matching items whose labels contain but do not start with the query retain their original relative input order.",
+          "outcome": "Preserves input order among matching items that contain but do not start with the query.",
+          "domain": "two or more non-prefix matching items"
+        },
+        {
+          "name": "mixed-tier-stable-ranking",
+          "condition": "The result places all prefix matches first and all other substring matches afterward, while preserving input order within each tier.",
+          "outcome": "Places all prefix matches before later substring matches while preserving input order within both tiers.",
+          "domain": "any input containing matches in both tiers"
+        },
+        {
+          "name": "no-match",
+          "condition": "A non-blank query that occurs in no label returns an empty result.",
+          "outcome": "Returns an empty array when a non-blank query occurs in no label.",
+          "domain": "any non-blank string absent from every label"
+        },
+        {
+          "name": "exact-label-match",
+          "condition": "A query equal to an entire label, ignoring case and trimmed surrounding whitespace, matches as a prefix-tier item.",
+          "outcome": "Treats a case-insensitive whole-label match after trimming as a prefix-tier match.",
+          "domain": "any label and case/whitespace variant of that label"
+        },
+        {
+          "name": "substring-not-subsequence",
+          "condition": "Matching requires contiguous substring occurrence; a query whose characters occur only as a non-contiguous subsequence does not match.",
+          "outcome": "Requires the query characters to occur contiguously, so a non-contiguous subsequence does not match.",
+          "domain": "any non-contiguous query such as 'nd' against 'node'"
+        },
+        {
+          "name": "case-insensitive-ranking",
+          "condition": "Prefix classification and substring matching are both case-insensitive.",
+          "outcome": "Performs both substring matching and prefix classification without regard to case.",
+          "domain": "any query and label differing only in letter case"
+        },
+        {
+          "name": "empty-query-order-preserved",
+          "condition": "For an empty or whitespace-only query, no ranking is applied and all items remain in input order, including duplicate or otherwise identical items.",
+          "outcome": "Returns all items unchanged in input order for an empty or whitespace-only query, including duplicates.",
+          "domain": "any items array with a blank query"
+        },
+        {
+          "name": "matching-items-only-ranking",
+          "condition": "Nonmatching items are omitted and do not participate in prefix-versus-containing ranking among the retained items.",
+          "outcome": "Omits nonmatching items and ranks only the retained matching items by prefix versus later substring.",
+          "domain": "any input containing matching and nonmatching items"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_palette_search_ts_filterPaletteItems___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/toolbar.tsx/commandText().",
+      "symbolName": "commandText",
+      "filePath": "packages/editor/src/shell/toolbar.tsx",
+      "cases": [
+        {
+          "name": "select-command-with-v-chord",
+          "condition": "The selected toolbar command is Select and its first matching KEYMAP entry has the single-character chord 'v'; the tooltip renders the label as 'Select (V)'.",
+          "outcome": "It uses the Select command label and formats the single-character chord as uppercase V, producing the tooltip 'Select (V)'."
+        },
+        {
+          "name": "toolbar-command-with-h-chord",
+          "condition": "The selected toolbar command's first matching KEYMAP entry has the single-character chord 'h' with no modifier; formatChord upper-cases it in the tooltip.",
+          "outcome": "It uses the command label and formats the unmodified single-character chord h as uppercase H in the tooltip.",
+          "domain": "any toolbar command bound first to the unmodified h chord"
+        },
+        {
+          "name": "toolbar-command-with-t-chord",
+          "condition": "The selected toolbar command's first matching KEYMAP entry has the single-character chord 't' with no modifier; formatChord upper-cases it in the tooltip.",
+          "outcome": "It uses the command label and formats the unmodified single-character chord t as uppercase T in the tooltip.",
+          "domain": "any toolbar command bound first to the unmodified t chord"
+        },
+        {
+          "name": "toolbar-command-with-n-chord",
+          "condition": "The selected toolbar command's first matching KEYMAP entry has the single-character chord 'n' with no modifier; formatChord upper-cases it in the tooltip.",
+          "outcome": "It uses the command label and formats the unmodified single-character chord n as uppercase N in the tooltip.",
+          "domain": "any toolbar command bound first to the unmodified n chord"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_toolbar_tsx_commandText___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/undo_island.tsx/commandTooltip().",
+      "symbolName": "commandTooltip",
+      "filePath": "packages/editor/src/shell/undo_island.tsx",
+      "cases": [
+        {
+          "name": "matching-keymap-entry",
+          "condition": "The command ID has one or more matching KEYMAP entries; the first matching entry is found, and the result is the command label followed by the first entry's formatted chord in parentheses.",
+          "outcome": "Returns the command label followed by the first matching entry's formatted chord in parentheses.",
+          "domain": "any command ID present in KEYMAP"
+        },
+        {
+          "name": "no-matching-keymap-entry",
+          "condition": "The command ID has no matching KEYMAP entry; the result is only the command label.",
+          "outcome": "Returns only the command label.",
+          "domain": "any command ID absent from KEYMAP"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_shell_undo_island_tsx_commandTooltip___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "symbolName": "KEYMAP",
+      "filePath": "packages/editor/src/ui_state/keymap.ts",
+      "cases": [
+        {
+          "name": "meta-k-opens-palette",
+          "condition": "The keymap contains an entry mapping the chord key 'k' with meta true to the 'open-palette' command.",
+          "outcome": "The function should include a keymap entry mapping meta+K to the open-palette command."
+        },
+        {
+          "name": "shift-question-opens-help",
+          "condition": "The keymap contains an entry mapping the chord key '?' with shift true to the 'open-help' command; the shift modifier is required for the chord to match the US-layout question-mark key event.",
+          "outcome": "The function should include a keymap entry mapping Shift+? to the open-help command, with shift required for matching the US-layout question-mark event."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_ui_state_keymap_ts_KEYMAP_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/ui_state.ts/createUiState().",
+      "symbolName": "createUiState",
+      "filePath": "packages/editor/src/ui_state/ui_state.ts",
+      "cases": [
+        {
+          "name": "initial-overlay-undefined",
+          "condition": "Calling createUiState initializes the overlay signal to undefined and returns both the overlay signal and its setter on the UI state handle.",
+          "outcome": "Calling createUiState initializes the overlay signal to undefined and returns both the overlay signal and its setter on the UI state handle."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_ui_state_ui_state_ts_createUiState___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/viewport_math.ts/centerBoundsInRect().",
+      "symbolName": "centerBoundsInRect",
+      "filePath": "packages/editor/src/ui_state/viewport_math.ts",
+      "cases": [
+        {
+          "name": "positive-container-dimensions",
+          "condition": "The container has nonzero width and height; the function pans so the scaled centre of bounds coincides with the centre of the container in its own coordinates, while preserving the incoming zoom.",
+          "outcome": "Returns the viewport with its zoom preserved and pan adjusted so the scaled bounds centre coincides with the container's own-coordinate centre.",
+          "domain": "any viewport, bounds, and container rectangle with nonzero width and height"
+        },
+        {
+          "name": "zero-container-width",
+          "condition": "The container width is zero, so the function returns the incoming viewport unchanged, including its pan and zoom.",
+          "outcome": "Returns the incoming viewport unchanged, including its pan and zoom.",
+          "domain": "any viewport, bounds, and container rectangle whose width is 0"
+        },
+        {
+          "name": "zero-container-height",
+          "condition": "The container height is zero, so the function returns the incoming viewport unchanged, including its pan and zoom.",
+          "outcome": "Returns the incoming viewport unchanged, including its pan and zoom.",
+          "domain": "any viewport, bounds, and container rectangle whose height is 0"
+        },
+        {
+          "name": "off-origin-container",
+          "condition": "The container rectangle has a nonzero page-position left or top; those page offsets are ignored, and centring uses only width and height in the container's own coordinates.",
+          "outcome": "Ignores the container's left and top offsets and centres using only its width and height in its own coordinates.",
+          "domain": "any nonzero left or top offsets with nonzero container width and height"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-shell-overlays__packages_editor_src_ui_state_viewport_math_ts_centerBoundsInRect___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "66a22aaf8897956e07df75daa3689c242a7ffaf504c794fe6dd22d6b927c298d"
+}

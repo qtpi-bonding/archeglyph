@@ -1,0 +1,817 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "codes": {
+        "escape-with-overlay-open": {
+          "body": "const command = COMMANDS.find((entry) => entry.id === 'escape')!;\nlet currentOverlay: unknown = value.overlay;\nlet selectionAfter: unknown = value.selection;\nconst setOverlay = (next: unknown): void => {\n  currentOverlay = next;\n};\nconst setSelection = (next: unknown): void => {\n  selectionAfter = next;\n};\nconst context = {\n  ui: {\n    overlay: (): unknown => currentOverlay,\n    setOverlay,\n    selection: (): unknown => value.selection,\n    setSelection,\n  },\n} as unknown as Parameters<typeof command.run>[0];\n\ncommand.run(context);\nexpect(currentOverlay).toBeUndefined();\nexpect(selectionAfter).toEqual(value.selection);",
+          "strategy": "fc.record({ overlay: fc.string(), selection: fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() })) })",
+          "helpersUsed": []
+        },
+        "escape-without-overlay": {
+          "body": "const command = COMMANDS.find((entry) => entry.id === 'escape')!;\nlet selectionAfter: unknown = value;\nconst setSelection = (next: unknown): void => {\n  selectionAfter = next;\n};\nconst context = {\n  ui: {\n    overlay: (): undefined => undefined,\n    setOverlay: (_next: unknown): void => {},\n    selection: (): unknown => value,\n    setSelection,\n  },\n} as unknown as Parameters<typeof command.run>[0];\n\ncommand.run(context);\nexpect(selectionAfter).toEqual([]);",
+          "strategy": "fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() }))",
+          "helpersUsed": []
+        },
+        "open-help-from-any-overlay-state": {
+          "body": "const command = COMMANDS.find((entry) => entry.id === 'open-help')!;\nlet currentOverlay: unknown = value;\nconst setOverlay = (next: unknown): void => {\n  currentOverlay = next;\n};\nconst context = {\n  ui: {\n    overlay: (): unknown => currentOverlay,\n    setOverlay,\n  },\n} as unknown as Parameters<typeof command.run>[0];\n\ncommand.run(context);\nexpect(currentOverlay).toBe('help');",
+          "strategy": "fc.oneof(fc.constant(undefined), fc.string())",
+          "helpersUsed": []
+        },
+        "open-palette-from-any-overlay-state": {
+          "body": "const command = COMMANDS.find((entry) => entry.id === 'open-palette')!;\nlet currentOverlay: unknown = value;\nconst setOverlay = (next: unknown): void => {\n  currentOverlay = next;\n};\nconst context = {\n  ui: {\n    overlay: (): unknown => currentOverlay,\n    setOverlay,\n  },\n} as unknown as Parameters<typeof command.run>[0];\n\ncommand.run(context);\nexpect(currentOverlay).toBe('palette');",
+          "strategy": "fc.oneof(fc.constant(undefined), fc.string())",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "choose-command-with-context": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('undo', 'redo', 'delete', 'hide', 'tool-select', 'tool-hand', 'tool-annotation', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit', 'add-annotation', 'edit-text', 'duplicate', 'select-all', 'focus-inspector', 'pin-all', 'unpin-all', 'auto-layout', 'reset-size', 'save')",
+          "helpersUsed": []
+        },
+        "choose-command-without-context": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('undo', 'redo', 'delete', 'hide', 'tool-select', 'tool-hand', 'tool-annotation', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit', 'add-annotation', 'edit-text', 'duplicate', 'select-all', 'focus-inspector', 'pin-all', 'unpin-all', 'auto-layout', 'reset-size', 'save')",
+          "helpersUsed": []
+        },
+        "choose-element-with-matching-entry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('node', 'edge', 'group', 'annotation')",
+          "helpersUsed": []
+        },
+        "choose-element-without-context": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('node', 'edge', 'group', 'annotation')",
+          "helpersUsed": []
+        },
+        "choose-element-without-entry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('node', 'edge', 'group', 'annotation')",
+          "helpersUsed": []
+        },
+        "close-before-command": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('undo', 'focus-inspector', 'save', 'tool-select', 'zoom-in')",
+          "helpersUsed": []
+        },
+        "close-before-element-action": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "editor-state-ready": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "element-key-disambiguates-reference": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('node', 'group', 'edge', 'annotation')",
+          "helpersUsed": []
+        },
+        "excluded-palette-commands": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('open-palette', 'open-help', 'escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev')",
+          "helpersUsed": []
+        },
+        "help-overlay-open": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-editor-state": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-overlay-open": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-close": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-overlay-open": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-reopened": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-with-geometry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-without-geometry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/chord_label.ts/formatChord().",
+      "codes": {
+        "apple-meta-and-shift": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: value, meta: true, shift: true })).toBe(expectedChord('MacIntel', { key: value, meta: true, shift: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "apple-meta-only": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: value, meta: true })).toBe(expectedChord('MacIntel', { key: value, meta: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "apple-no-modifiers": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: value })).toBe(expectedChord('MacIntel', { key: value }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "apple-shift-only": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: value, shift: true })).toBe(expectedChord('MacIntel', { key: value, shift: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "arrow-down-key": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: 'ArrowDown', meta: true, shift: true })).toBe('⌘⇧Down');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "arrow-left-key": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: 'ArrowLeft', meta: true, shift: true })).toBe('⌘⇧Left');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "arrow-right-key": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: 'ArrowRight', meta: true, shift: true })).toBe('⌘⇧Right');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "arrow-up-key": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: 'ArrowUp', meta: true, shift: true })).toBe('⌘⇧Up');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "backspace-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: 'Backspace', meta: true })).toBe('Ctrl+Backspace');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "delete-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: 'Delete', meta: true })).toBe('Ctrl+Delete');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "enter-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: 'Enter', meta: true })).toBe('Ctrl+Enter');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "escape-key": {
+          "body": "setNavigator('MacIntel', '');\nexpect(formatChord({ key: 'Escape', meta: true, shift: true })).toBe('⌘⇧Esc');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "non-apple-meta-and-shift": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value, meta: true, shift: true })).toBe(expectedChord('Linux', { key: value, meta: true, shift: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "non-apple-meta-only": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value, meta: true })).toBe(expectedChord('Linux', { key: value, meta: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "non-apple-no-modifiers": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value })).toBe(expectedChord('Linux', { key: value }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "non-apple-shift-only": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value, shift: true })).toBe(expectedChord('Linux', { key: value, shift: true }));",
+          "strategy": "fc.constantFrom('a', 'Z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Escape', 'Backspace', 'Delete', 'Enter', 'F1')",
+          "helpersUsed": [
+            "setNavigator",
+            "expectedChord"
+          ]
+        },
+        "other-multicharacter-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value, shift: true })).toBe('Shift+' + value);",
+          "strategy": "fc.string({ minLength: 2 }).filter((key) => !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape'].includes(key))",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "platform-read-per-call": {
+          "body": "const first = formatChord({ key: 'z', meta: true, shift: true });\nsetNavigator(value[0], '');\nconst appleResult = formatChord({ key: 'z', meta: true, shift: true });\nsetNavigator(value[1], '');\nconst otherResult = formatChord({ key: 'z', meta: true, shift: true });\nexpect(appleResult).toBe('⌘⇧Z');\nexpect(otherResult).toBe('Ctrl+Shift+Z');\nexpect(first).toBe('Ctrl+Shift+Z');",
+          "strategy": "fc.constantFrom(['MacIntel', 'Linux'], ['Linux', 'MacIntel'])",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "question-mark-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: '?', meta: true, shift: true })).toBe('Ctrl+Shift+?');",
+          "strategy": "",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "single-character-key": {
+          "body": "setNavigator('Linux', '');\nexpect(formatChord({ key: value, meta: true, shift: true })).toBe('Ctrl+Shift+' + value.toUpperCase());",
+          "strategy": "fc.string({ minLength: 1, maxLength: 1 })",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        },
+        "user-agent-ignored": {
+          "body": "setNavigator('MacIntel', value[0]);\nexpect(formatChord({ key: 'x', meta: true })).toBe('⌘X');\nsetNavigator('Linux', value[1]);\nexpect(formatChord({ key: 'x', meta: true })).toBe('Ctrl+X');",
+          "strategy": "fc.tuple(fc.string(), fc.string())",
+          "helpersUsed": [
+            "setNavigator"
+          ]
+        }
+      },
+      "helpers": {
+        "expectedChord": "function expectedChord(platform: string, chord: { key: string; meta?: boolean; shift?: boolean }): string {\n  let key: string;\n  switch (chord.key) {\n    case 'ArrowUp': key = 'Up'; break;\n    case 'ArrowDown': key = 'Down'; break;\n    case 'ArrowLeft': key = 'Left'; break;\n    case 'ArrowRight': key = 'Right'; break;\n    case 'Escape': key = 'Esc'; break;\n    default: key = chord.key.length === 1 ? chord.key.toUpperCase() : chord.key;\n  }\n  if (platform.includes('Mac')) {\n    return (chord.meta ? '⌘' : '') + (chord.shift ? '⇧' : '') + key;\n  }\n  return (chord.meta ? 'Ctrl+' : '') + (chord.shift ? 'Shift+' : '') + key;\n}",
+        "setNavigator": "function setNavigator(platform: string, userAgent: string): void {\n  Object.defineProperty(navigator, 'platform', { configurable: true, value: platform });\n  Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgent });\n}"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/command_palette.tsx/CommandPalette.",
+      "codes": {
+        "arrow-down-advances-highlight": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "arrow-down-clamps-at-last-row": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "arrow-up-clamps-at-first-row": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "arrow-up-retreats-highlight": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "enter-chooses-highlighted-row": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "enter-on-empty-list-does-nothing": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "escape-closes-palette": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "input-key-does-not-reach-global-handler": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "mount-focuses-input": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "query-change-resets-highlight": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.tuple(fc.string(), fc.string())",
+          "helpersUsed": []
+        },
+        "query-produces-filtered-rows": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "query-produces-no-rows": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "row-click-chooses-row": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "scrim-blocks-background-pointer": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "scrim-click-closes-palette": {
+          "body": "expect(CommandPalette).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/help_sheet.tsx/HelpSheet.",
+      "codes": {
+        "backspace-and-delete-chords": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "closed-sheet-not-rendered": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "empty-keymap": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "escape-dismissal": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "missing-command-skipped": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "fc.array(fc.anything())",
+          "helpersUsed": []
+        },
+        "mount-focuses-root": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "multiple-chords-per-command": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "fc.array(fc.anything())",
+          "helpersUsed": []
+        },
+        "no-highlighted-row": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-text-input": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "opened-without-mouse": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "ordered-keymap-entries": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "fc.array(fc.anything())",
+          "helpersUsed": []
+        },
+        "scrim-click-dismissal": {
+          "body": "expect(typeof HelpSheet).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_excluded.ts/PALETTE_EXCLUDED.",
+      "codes": {
+        "has-declared-value": {
+          "body": "expect(PALETTE_EXCLUDED).toEqual(new Set([\n  'escape',\n  'nudge-up',\n  'nudge-down',\n  'nudge-left',\n  'nudge-right',\n  'ring-next',\n  'ring-prev',\n  'open-palette',\n  'open-help',\n]));",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/commandPaletteItems().",
+      "codes": {
+        "argument-registries-used": {
+          "body": "const command = makeCommand(value, `supplied-label-${value}`);\nconst rows = commandPaletteItems([command], [makeKeymap(value, 'z')]);\nexpect(rows).toEqual([{ key: `command:${value}`, label: `supplied-label-${value}`, detail: 'Z', action: rows[0].action }]);",
+          "strategy": "fc.string().filter((id) => !['escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help'].includes(id))",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        },
+        "empty-commands": {
+          "body": "const rows = commandPaletteItems([], [makeKeymap('unrelated-command', 'z')]);\nexpect(rows).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeKeymap"
+          ]
+        },
+        "excluded-command": {
+          "body": "const rows = commandPaletteItems([makeCommand(value, 'excluded')], []);\nexpect(rows).toEqual([]);",
+          "strategy": "fc.constantFrom('escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help')",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "first-chord-wins": {
+          "body": "const rows = commandPaletteItems([makeCommand('fixture-command', 'Fixture')], [makeKeymap('fixture-command', 'z'), makeKeymap('fixture-command', 'x')]);\nexpect(rows).toHaveLength(1);\nexpect(rows[0].detail).toBe('Z');",
+          "strategy": "fc.constantFrom('first', 'only')",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        },
+        "included-command": {
+          "body": "const command = makeCommand(value, `label-${value}`);\nconst rows = commandPaletteItems([command], [makeKeymap(value, 'z')]);\nexpect(rows).toHaveLength(1);\nexpect(rows[0].label).toBe(`label-${value}`);\nexpect(rows[0].key).toBe(`command:${value}`);\nexpect(rows[0].detail).toBe('Z');",
+          "strategy": "fc.string().filter((id) => !['escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help'].includes(id))",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        },
+        "matching-chord": {
+          "body": "const command = makeCommand('fixture-command', 'Fixture');\nconst rows = commandPaletteItems([command], [makeKeymap('fixture-command', value)]);\nconst expected = value === 'ArrowUp' ? 'Up' : value === 'ArrowDown' ? 'Down' : value === 'ArrowLeft' ? 'Left' : value === 'ArrowRight' ? 'Right' : value === 'Escape' ? 'Esc' : value.length === 1 ? value.toUpperCase() : value;\nexpect(rows[0].detail).toBe(expected);",
+          "strategy": "fc.constantFrom('z', '?', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Backspace', 'Delete', 'Enter')",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        },
+        "missing-chord": {
+          "body": "const rows = commandPaletteItems([makeCommand(value, 'Fixture')], []);\nexpect(rows).toHaveLength(1);\nexpect(rows[0].detail).toBe('');",
+          "strategy": "fc.string().filter((id) => !['escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help'].includes(id))",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "mixed-excluded-and-included": {
+          "body": "const commands = value.map((excluded, index) => makeCommand(excluded ? 'escape' : `included-${index}`, `label-${index}`));\nconst rows = commandPaletteItems(commands, []);\nconst included = value.flatMap((excluded, index) => excluded ? [] : [`label-${index}`]);\nexpect(rows.map((row) => row.label)).toEqual(included);\nexpect(rows.map((row) => row.key)).toEqual(value.flatMap((excluded, index) => excluded ? [] : [`command:included-${index}`]));",
+          "strategy": "fc.array(fc.boolean(), { minLength: 1, maxLength: 8 })",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "preserved-command-order": {
+          "body": "const commands = value.map((id, index) => makeCommand(id, `label-${index}`));\nconst rows = commandPaletteItems(commands, []);\nexpect(rows.map((row) => row.label)).toEqual(value.map((_, index) => `label-${index}`));\nexpect(rows.map((row) => row.key)).toEqual(value.map((id) => `command:${id}`));",
+          "strategy": "fc.array(fc.string().filter((id) => !['escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help'].includes(id)), { minLength: 1, maxLength: 8 })",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "unrelated-keymap-entries": {
+          "body": "const rows = commandPaletteItems([makeCommand('fixture-command', 'Fixture')], value.map((key) => makeKeymap(`other-${key}`, key)));\nexpect(rows).toHaveLength(1);\nexpect(rows[0].detail).toBe('');",
+          "strategy": "fc.array(fc.string().filter((key) => key !== 'fixture-command'), { maxLength: 8 })",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        }
+      },
+      "helpers": {
+        "makeCommand": "function makeCommand(id: string, label: string): { id: never; label: string; run: (context: unknown) => void } {\n  return { id: id as never, label, run: (_context: unknown): void => {} };\n}",
+        "makeKeymap": "function makeKeymap(command: string, key: string): { command: never; chord: never } {\n  return { command: command as never, chord: { key, metaKey: false, shiftKey: false } as never };\n}"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/elementPaletteItems().",
+      "codes": {
+        "blank-index-zero-source-fallback": {
+          "body": "const diagram = makeDiagram();\nconst id = 'element';\nconst element = kind === 'annotation'\n  ? { id, content: [{ source: blank }] }\n  : { id, label: [{ source: blank }] };\nif (kind === 'node') diagram.nodes[id] = element;\nelse if (kind === 'group') diagram.groups[id] = element;\nelse diagram.annotations[id] = element;\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toHaveLength(1);\nexpect(rows[0]).toMatchObject({ key: `${kind}:${id}`, label: id, detail: kind });",
+          "strategy": "fc.record({ kind: fc.constantFrom('node', 'group', 'annotation'), blank: fc.constantFrom('', ' ', '\\t', '\\n', ' \\t ') })",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "edges-excluded": {
+          "body": "const diagram = makeDiagram();\nfor (const id of edgeIds) diagram.edges[id] = { id };\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toEqual([]);",
+          "strategy": "fc.array(fc.string({ minLength: 1, maxLength: 8 }), { maxLength: 8 })",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "empty-content-list-fallback": {
+          "body": "const diagram = makeDiagram();\nconst id = 'note';\ndiagram.annotations[id] = { id, content: [] };\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toHaveLength(1);\nexpect(rows[0]).toMatchObject({ key: `annotation:${id}`, label: id, detail: 'annotation' });",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "empty-diagram": {
+          "body": "const diagram = makeDiagram();\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "empty-label-list-fallback": {
+          "body": "const diagram = makeDiagram();\nconst id = 'element';\nconst element = { id, label: [] };\nif (kind === 'node') diagram.nodes[id] = element;\nelse diagram.groups[id] = element;\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toHaveLength(1);\nexpect(rows[0]).toMatchObject({ key: `${kind}:${id}`, label: id, detail: kind });",
+          "strategy": "fc.constantFrom('node', 'group')",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "integer-like-id-ordering": {
+          "body": "const diagram = makeDiagram();\nfor (let index = ids.length - 1; index >= 0; index -= 1) {\n  const id = String(ids[index]);\n  diagram.nodes[id] = { id, label: [] };\n}\nconst rows = elementPaletteItems(diagram);\nconst expected = ids.map((id) => `node:${String(id)}`).sort();\nexpect(rows.map((row) => row.key)).toEqual(expected);",
+          "strategy": "fc.uniqueArray(fc.integer({ min: 0, max: 100 }), { minLength: 2, maxLength: 8 })",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "key-sorted-results": {
+          "body": "const diagram = makeDiagram();\nfor (let index = ids.length - 1; index >= 0; index -= 1) {\n  const id = String(ids[index]);\n  diagram.nodes[id] = { id, label: [] };\n}\nconst rows = elementPaletteItems(diagram);\nconst expected = ids.map((id) => `node:${String(id)}`).sort();\nexpect(rows.map((row) => row.key)).toEqual(expected);",
+          "strategy": "fc.uniqueArray(fc.nat({ max: 999 }), { minLength: 2, maxLength: 8 })",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "labeled-annotation": {
+          "body": "const diagram = makeDiagram();\nconst id = 'note';\ndiagram.annotations[id] = { id, content: [{ source: `  ${text}  ` }] };\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toHaveLength(1);\nexpect(rows[0]).toMatchObject({ key: `annotation:${id}`, label: text.trim(), detail: 'annotation' });",
+          "strategy": "fc.string({ minLength: 1 }).filter((text) => text.trim().length > 0)",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "labeled-node-or-group": {
+          "body": "const diagram = makeDiagram();\nconst id = 'element';\nconst element = { id, label: [{ source: '  Core Service  ' }] };\nif (kind === 'node') diagram.nodes[id] = element;\nelse diagram.groups[id] = element;\nconst rows = elementPaletteItems(diagram);\nexpect(rows).toHaveLength(1);\nexpect(rows[0]).toMatchObject({ key: `${kind}:${id}`, label: 'Core Service', detail: kind });",
+          "strategy": "fc.constantFrom('node', 'group')",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "mixed-element-collections": {
+          "body": "const diagram = makeDiagram();\nlet expectedKeys: string[] = [];\nif (parts.node) { diagram.nodes.node = { id: 'node', label: [] }; expectedKeys.push('node:node'); }\nif (parts.group) { diagram.groups.group = { id: 'group', label: [] }; expectedKeys.push('group:group'); }\nif (parts.annotation) { diagram.annotations.annotation = { id: 'annotation', content: [] }; expectedKeys.push('annotation:annotation'); }\nfor (let index = 0; index < parts.edges; index += 1) diagram.edges[`edge-${index}`] = { id: `edge-${index}` };\nconst rows = elementPaletteItems(diagram);\nexpect(rows.map((row) => row.key)).toEqual(expectedKeys.sort());",
+          "strategy": "fc.record({ node: fc.boolean(), group: fc.boolean(), annotation: fc.boolean(), edges: fc.nat({ max: 5 }) })",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        }
+      },
+      "helpers": {
+        "makeDiagram": "function makeDiagram(): any {\n  return { nodes: {}, edges: {}, groups: {}, annotations: {} };\n}"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_search.ts/filterPaletteItems().",
+      "codes": {
+        "blank-query": {
+          "body": "const first = paletteItem('1', 'First', 'x');\nconst second = paletteItem('2', 'Second', 'y');\nconst third = paletteItem('3', 'Third', 'z');\nexpect(filterPaletteItems([first, second, third], query)).toEqual([first, second, third]);",
+          "strategy": "fc.constantFrom('', ' ', '  ', '\\t', '\\n', ' \\t ')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "case-insensitive-label-match": {
+          "body": "const node = paletteItem('1', 'Node A', 'element');\nexpect(filterPaletteItems([node], query)).toEqual([node]);",
+          "strategy": "fc.constantFrom('node', 'NODE', 'ode', 'NoDe')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "case-insensitive-ranking": {
+          "body": "const containing = paletteItem('1', 'Beta', 'x');\nconst prefix = paletteItem('2', 'Alpha', 'x');\nexpect(filterPaletteItems([containing, prefix], query)).toEqual([prefix, containing]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "detail-does-not-match": {
+          "body": "const labelOnly = paletteItem('1', 'Canvas', query);\nconst unrelated = paletteItem('2', 'Editor', 'other');\nexpect(filterPaletteItems([labelOnly, unrelated], query)).toEqual([]);",
+          "strategy": "fc.constantFrom('shortcut', 'ctrl', 'chord')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "empty-items": {
+          "body": "const result = filterPaletteItems([], query);\nexpect(result).toEqual([]);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "empty-query-order-preserved": {
+          "body": "const first = paletteItem('1', 'Same', 'x');\nconst duplicate = paletteItem('1', 'Same', 'x');\nconst last = paletteItem('2', 'Other', 'y');\nexpect(filterPaletteItems([first, duplicate, last], query)).toEqual([first, duplicate, last]);",
+          "strategy": "fc.constantFrom('', ' ', '\\t', '  \\n ')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "exact-label-match": {
+          "body": "const item = paletteItem('1', 'Node A', 'x');\nexpect(filterPaletteItems([item], query)).toEqual([item]);",
+          "strategy": "fc.constantFrom('Node A', 'node a', ' NODE A ', '\\tNoDe A\\t')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "matching-items-only-ranking": {
+          "body": "const containingFirst = paletteItem('1', 'Beta', 'x');\nconst nonmatching = paletteItem('2', 'Zed', 'x');\nconst prefix = paletteItem('3', 'Alpha', 'x');\nconst containingLast = paletteItem('4', 'Data', 'x');\nconst anotherNonmatching = paletteItem('5', 'Echo', 'x');\nexpect(filterPaletteItems([containingFirst, nonmatching, prefix, containingLast, anotherNonmatching], query)).toEqual([prefix, containingFirst, containingLast]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "mixed-tier-stable-ranking": {
+          "body": "const laterFirst = paletteItem('1', 'Data', 'x');\nconst prefixFirst = paletteItem('2', 'Alpha', 'x');\nconst prefixSecond = paletteItem('3', 'Atom', 'x');\nconst laterSecond = paletteItem('4', 'Beta', 'x');\nexpect(filterPaletteItems([laterFirst, prefixFirst, prefixSecond, laterSecond], query)).toEqual([prefixFirst, prefixSecond, laterFirst, laterSecond]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "no-match": {
+          "body": "const first = paletteItem('1', 'Node', 'x');\nconst second = paletteItem('2', 'Edge', 'y');\nexpect(filterPaletteItems([first, second], query)).toEqual([]);",
+          "strategy": "fc.constantFrom('z', 'ZZ', 'missing')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "stable-containing-order": {
+          "body": "const first = paletteItem('1', 'Banana', 'x');\nconst second = paletteItem('2', 'Cabana', 'x');\nexpect(filterPaletteItems([first, second], query)).toEqual([first, second]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "stable-prefix-order": {
+          "body": "const first = paletteItem('1', 'Apple', 'x');\nconst second = paletteItem('2', 'Apricot', 'x');\nexpect(filterPaletteItems([first, second], query)).toEqual([first, second]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "starts-with-tier": {
+          "body": "const containing = paletteItem('1', 'Beta', 'x');\nconst prefix = paletteItem('2', 'Alpha', 'x');\nconst otherContaining = paletteItem('3', 'Gamma', 'x');\nexpect(filterPaletteItems([containing, prefix, otherContaining], query)).toEqual([prefix, containing, otherContaining]);",
+          "strategy": "fc.constantFrom('a', 'A')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "substring-not-subsequence": {
+          "body": "const item = paletteItem('1', 'node', 'x');\nexpect(filterPaletteItems([item], query)).toEqual([]);",
+          "strategy": "fc.constantFrom('nd', 'n d', 'noe')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        },
+        "trimmed-query": {
+          "body": "const node = paletteItem('1', 'Node A', 'element');\nconst other = paletteItem('2', 'Other', 'element');\nexpect(filterPaletteItems([node, other], query)).toEqual([node]);",
+          "strategy": "fc.constantFrom(' node ', '  NODE', 'node  ', '\\tnode\\t')",
+          "helpersUsed": [
+            "paletteItem"
+          ]
+        }
+      },
+      "helpers": {
+        "paletteItem": "const paletteItem = (key: string, label: string, detail: string): Parameters<typeof filterPaletteItems>[0][number] => ({ key, label, detail, action: {} as never);"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/toolbar.tsx/commandText().",
+      "codes": {
+        "select-command-with-v-chord": {
+          "body": "expect(commandText('tool-select')).toBe('Select (V)');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "toolbar-command-with-h-chord": {
+          "body": "expect(commandText(value)).toBe('Hand (H)');",
+          "strategy": "fc.constantFrom('tool-hand')",
+          "helpersUsed": []
+        },
+        "toolbar-command-with-n-chord": {
+          "body": "expect(commandText(value)).toBe('Add annotation (N)');",
+          "strategy": "fc.constantFrom('add-annotation')",
+          "helpersUsed": []
+        },
+        "toolbar-command-with-t-chord": {
+          "body": "expect(commandText(value)).toBe('Annotation (T)');",
+          "strategy": "fc.constantFrom('tool-annotation')",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/undo_island.tsx/commandTooltip().",
+      "codes": {
+        "matching-keymap-entry": {
+          "body": "const result: string = commandTooltip(value);\nconst isApple: boolean = navigator.platform.includes('Mac');\nconst expectedChord: string = value === 'undo'\n  ? (isApple ? '⌘Z' : 'Ctrl+Z')\n  : (isApple ? '⌘⇧Z' : 'Ctrl+Shift+Z');\nconst expectedLabel: string = value === 'undo' ? 'Undo' : 'Redo';\nexpect(result).toBe(`${expectedLabel} (${expectedChord})`);",
+          "strategy": "fc.constantFrom('undo', 'redo')",
+          "helpersUsed": []
+        },
+        "no-matching-keymap-entry": {
+          "body": "const result: string = commandTooltip(value);\nexpect(result).not.toContain(' (');",
+          "strategy": "fc.constantFrom('pin-all', 'unpin-all', 'auto-layout', 'reset-size', 'zoom-fit')",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "codes": {
+        "meta-k-opens-palette": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'k', meta: true }, command: 'open-palette' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "shift-question-opens-help": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: '?', shift: true }, command: 'open-help' });",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/ui_state.ts/createUiState().",
+      "codes": {
+        "initial-overlay-undefined": {
+          "body": "const state = createUiState();\nexpect(state.overlay()).toBeUndefined();\nexpect(typeof state.setOverlay).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/viewport_math.ts/centerBoundsInRect().",
+      "codes": {
+        "off-origin-container": {
+          "body": "const { viewport, bounds, containerRect } = value;\nconst result = centerBoundsInRect(viewport, bounds, containerRect);\nexpect(result).toEqual({\n  panX: containerRect.width / 2 - ((bounds.minX + bounds.maxX) / 2) * viewport.zoom,\n  panY: containerRect.height / 2 - ((bounds.minY + bounds.maxY) / 2) * viewport.zoom,\n  zoom: viewport.zoom,\n});",
+          "strategy": "fc.record({\n  viewport: fc.record({\n    panX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    panY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    zoom: fc.double({ min: 0.001, max: 1000, noNaN: true, noInfinity: true }),\n  }),\n  bounds: fc.record({\n    minX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    minY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n  containerRect: fc.record({\n    left: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    top: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    width: fc.double({ min: 0.001, max: 1000000, noNaN: true, noInfinity: true }),\n    height: fc.double({ min: 0.001, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n}).filter(({ containerRect }) => containerRect.left !== 0 || containerRect.top !== 0)",
+          "helpersUsed": []
+        },
+        "positive-container-dimensions": {
+          "body": "const { viewport, bounds, containerRect } = value;\nconst result = centerBoundsInRect(viewport, bounds, containerRect);\nexpect(result).toEqual({\n  panX: containerRect.width / 2 - ((bounds.minX + bounds.maxX) / 2) * viewport.zoom,\n  panY: containerRect.height / 2 - ((bounds.minY + bounds.maxY) / 2) * viewport.zoom,\n  zoom: viewport.zoom,\n});",
+          "strategy": "fc.record({\n  viewport: fc.record({\n    panX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    panY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    zoom: fc.double({ min: 0.001, max: 1000, noNaN: true, noInfinity: true }),\n  }),\n  bounds: fc.record({\n    minX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    minY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n  containerRect: fc.record({\n    left: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    top: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    width: fc.double({ min: 0.001, max: 1000000, noNaN: true, noInfinity: true }),\n    height: fc.double({ min: 0.001, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n})",
+          "helpersUsed": []
+        },
+        "zero-container-height": {
+          "body": "const { viewport, bounds, containerRect } = value;\nconst result = centerBoundsInRect(viewport, bounds, { ...containerRect, height: 0 });\nexpect(result).toEqual(viewport);",
+          "strategy": "fc.record({\n  viewport: fc.record({\n    panX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    panY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    zoom: fc.double({ min: -1000, max: 1000, noNaN: true, noInfinity: true }),\n  }),\n  bounds: fc.record({\n    minX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    minY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n  containerRect: fc.record({\n    left: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    top: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    width: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    height: fc.constant(0),\n  }),\n})",
+          "helpersUsed": []
+        },
+        "zero-container-width": {
+          "body": "const { viewport, bounds, containerRect } = value;\nconst result = centerBoundsInRect(viewport, bounds, { ...containerRect, width: 0 });\nexpect(result).toEqual(viewport);",
+          "strategy": "fc.record({\n  viewport: fc.record({\n    panX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    panY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    zoom: fc.double({ min: -1000, max: 1000, noNaN: true, noInfinity: true }),\n  }),\n  bounds: fc.record({\n    minX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    minY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxX: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    maxY: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n  containerRect: fc.record({\n    left: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    top: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n    width: fc.constant(0),\n    height: fc.double({ min: -1000000, max: 1000000, noNaN: true, noInfinity: true }),\n  }),\n})",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

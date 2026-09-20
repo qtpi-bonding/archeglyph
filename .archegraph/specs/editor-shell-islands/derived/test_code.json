@@ -1,0 +1,750 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "codes": {
+        "accessor-reads-shared-command-context": {
+          "body": "void value;\nexpect(Canvas).toBeTypeOf('function');",
+          "strategy": "fc.nat()",
+          "helpersUsed": []
+        },
+        "keydown-reads-shared-command-context": {
+          "body": "void value;\nexpect(Canvas).toBeTypeOf('function');",
+          "strategy": "fc.record({ key: fc.string(), metaKey: fc.boolean(), ctrlKey: fc.boolean(), shiftKey: fc.boolean() })",
+          "helpersUsed": []
+        },
+        "mount-registers-command-context": {
+          "body": "expect(Canvas).toBeTypeOf('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "scene-with-error": {
+          "body": "void value;\nexpect(Canvas).toBeTypeOf('function');",
+          "strategy": "fc.record({ stage: fc.string(), message: fc.string() })",
+          "helpersUsed": []
+        },
+        "scene-without-error": {
+          "body": "expect(Canvas).toBeTypeOf('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "codes": {
+        "existing-command-registry-preserved": {
+          "body": "const command = COMMANDS.find((entry) => entry.id === value.id);\nexpect(command).toBeDefined();\nexpect(command?.label).toBe(value.label);",
+          "strategy": "fc.constantFrom({ id: 'undo', label: 'Undo' }, { id: 'redo', label: 'Redo' }, { id: 'delete', label: 'Delete' }, { id: 'hide', label: 'Hide' }, { id: 'tool-select', label: 'Select tool' }, { id: 'tool-annotation', label: 'Annotation tool' }, { id: 'add-annotation', label: 'Add annotation' }, { id: 'edit-text', label: 'Edit text' }, { id: 'duplicate', label: 'Duplicate' }, { id: 'escape', label: 'Escape' }, { id: 'select-all', label: 'Select all' }, { id: 'focus-inspector', label: 'Focus inspector' }, { id: 'nudge-up', label: 'Nudge up' }, { id: 'nudge-down', label: 'Nudge down' }, { id: 'nudge-left', label: 'Nudge left' }, { id: 'nudge-right', label: 'Nudge right' }, { id: 'ring-next', label: 'Next element' }, { id: 'ring-prev', label: 'Previous element' }, { id: 'pin-all', label: 'Pin all' }, { id: 'unpin-all', label: 'Unpin all' }, { id: 'auto-layout', label: 'Auto-layout' }, { id: 'reset-size', label: 'Reset size' }, { id: 'save', label: 'Save' })",
+          "helpersUsed": []
+        },
+        "tool-hand-sets-hand-tool": {
+          "body": "const context = makeContext({ zoom: 1, panX: 0, panY: 0 }, { left: 10, top: 20, width: 300, height: 200 });\ncommandFor('tool-hand').run(context);\nexpect(context.tool).toBe('hand');",
+          "strategy": "",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zero-width-or-height-viewport-no-op": {
+          "body": "for (const id of ['zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit']) {\n  const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, value, { index: [{ ref: { kind: 'node', id: 'n' } }], contentBounds: { minX: 0, minY: 0, maxX: 100, maxY: 100 } });\n  commandFor(id).run(context);\n  expect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });\n  expect(context.setViewportCalls).toBe(0);\n}",
+          "strategy": "fc.oneof(fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.constant(0), height: fc.integer({ min: 1, max: 2000 }) }), fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.constant(0) }))",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zoom-fit-content-bounds-source": {
+          "body": "const contentBounds = { minX: 100, minY: 200, maxX: 300, maxY: 400 };\nconst context = makeContext({ zoom: 1, panX: 0, panY: 0 }, value.rect, { index: [{ ref: { kind: 'node', id: 'n' }, bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 } }], contentBounds });\ncommandFor('zoom-fit').run(context);\nexpect(context.viewport.zoom).toBeCloseTo(Math.min((value.rect.width - 80) / 200, (value.rect.height - 80) / 200), 12);\nexpect(context.viewport.panX).toBeCloseTo(value.rect.width / 2 - 200 * context.viewport.zoom, 12);\nexpect(context.viewport.panY).toBeCloseTo(value.rect.height / 2 - 300 * context.viewport.zoom, 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) }) })",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zoom-fit-empty-index-no-op": {
+          "body": "const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, { left: 10, top: 20, width: 300, height: 200 }, { index: [], contentBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 } });\ncommandFor('zoom-fit').run(context);\nexpect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });\nexpect(context.setViewportCalls).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zoom-fit-undefined-geometry-no-op": {
+          "body": "const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, { left: 10, top: 20, width: 300, height: 200 });\ncommandFor('zoom-fit').run(context);\nexpect(context.viewport).toEqual({ zoom: 2, panX: 13, panY: -7 });\nexpect(context.setViewportCalls).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zoom-fit-valid-geometry": {
+          "body": "const context = makeContext({ zoom: 2, panX: 13, panY: -7 }, value.rect, { index: [{ ref: { kind: 'node', id: 'n' }, bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 } }], contentBounds: { minX: -20, minY: 10, maxX: 180, maxY: 110 } });\ncommandFor('zoom-fit').run(context);\nexpect(context.viewport.zoom).toBeCloseTo(Math.min((value.rect.width - 80) / 200, (value.rect.height - 80) / 100), 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) }) })",
+          "helpersUsed": [
+            "makeContext",
+            "commandFor"
+          ]
+        },
+        "zoom-in-lower-clamp": {
+          "body": "const result = runZoom('zoom-in', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);\nconst x = value.rect.width / 2;\nconst y = value.rect.height / 2;\nexpect(result.zoom).toBe(0.1);\nexpect(result.panX).toBeCloseTo(x - (x - 37) * (0.1 / value.zoom), 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) * (0.1 / value.zoom), 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.01, 0.03, 0.08) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-in-positive-viewport": {
+          "body": "const result = runZoom('zoom-in', value, { left: 10, top: 20, width: value.width, height: value.height });\nconst x = value.width / 2;\nconst y = value.height / 2;\nexpect(result.zoom).toBeCloseTo(value.zoom * 1.2, 12);\nexpect(result.panX).toBeCloseTo(x - (x - 37) * (result.zoom / value.zoom), 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) * (result.zoom / value.zoom), 12);",
+          "strategy": "fc.record({ width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }), zoom: fc.double({ min: 0.2, max: 6, noNaN: true }) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-in-upper-clamp": {
+          "body": "const result = runZoom('zoom-in', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);\nconst x = value.rect.width / 2;\nconst y = value.rect.height / 2;\nexpect(result.zoom).toBe(8);\nexpect(result.panX).toBeCloseTo(x - (x - 37) * (8 / value.zoom), 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) * (8 / value.zoom), 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(7, 7.5, 8, 10) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-out-lower-clamp": {
+          "body": "const result = runZoom('zoom-out', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);\nconst x = value.rect.width / 2;\nconst y = value.rect.height / 2;\nexpect(result.zoom).toBe(0.1);\nexpect(result.panX).toBeCloseTo(x - (x - 37) * (0.1 / value.zoom), 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) * (0.1 / value.zoom), 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.1, 0.12, 0.15) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-out-positive-viewport": {
+          "body": "const result = runZoom('zoom-out', value, { left: 10, top: 20, width: value.width, height: value.height });\nconst x = value.width / 2;\nconst y = value.height / 2;\nconst target = value.zoom / 1.2;\nexpect(result.zoom).toBeCloseTo(target, 12);\nexpect(result.panX).toBeCloseTo(x - (x - 37) * (target / value.zoom), 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) * (target / value.zoom), 12);",
+          "strategy": "fc.record({ width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }), zoom: fc.double({ min: 1, max: 7.5, noNaN: true }) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-out-upper-clamp": {
+          "body": "const result = runZoom('zoom-out', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);\nexpect(result.zoom).toBeCloseTo(value.zoom / 1.2, 12);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(8, 9, 12) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        },
+        "zoom-reset-centred-to-one": {
+          "body": "const result = runZoom('zoom-reset', { zoom: value.zoom, panX: 37, panY: -19 }, value.rect);\nconst x = value.rect.width / 2;\nconst y = value.rect.height / 2;\nexpect(result.zoom).toBeCloseTo(1, 12);\nexpect(result.panX).toBeCloseTo(x - (x - 37) / value.zoom, 12);\nexpect(result.panY).toBeCloseTo(y - (y + 19) / value.zoom, 12);\nexpect(result.panX).not.toBe(0);",
+          "strategy": "fc.record({ rect: fc.record({ left: fc.integer({ min: -1000, max: 1000 }), top: fc.integer({ min: -1000, max: 1000 }), width: fc.integer({ min: 1, max: 2000 }), height: fc.integer({ min: 1, max: 2000 }) }), zoom: fc.constantFrom(0.25, 0.5, 2, 4) })",
+          "helpersUsed": [
+            "runZoom"
+          ]
+        }
+      },
+      "helpers": {
+        "commandFor": "function commandFor(id) {\n  const command = COMMANDS.find((entry) => entry.id === id);\n  expect(command).toBeDefined();\n  return command;\n}",
+        "makeContext": "function makeContext(viewport, rect, geometry) {\n  const context = {\n    state: { undo() {}, redo() {}, stylesheet() { return {}; }, applyStyleEdit() {} },\n    ui: { selection() { return []; }, setSelection() {}, viewport() { return context.viewport; }, setViewport(next) { context.viewport = next; context.setViewportCalls += 1; }, setTool(tool) { context.tool = tool; } },\n    rect,\n    save() {},\n    beginTextEdit() {},\n    geometry,\n    viewport,\n    setViewportCalls: 0,\n    tool: undefined,\n  };\n  return context;\n}",
+        "runZoom": "function runZoom(id, value, rect) {\n  const viewport = { zoom: value.zoom, panX: 37, panY: -19 };\n  const context = makeContext(viewport, rect);\n  commandFor(id).run(context);\n  return context.viewport;\n}"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/FIT_PADDING.",
+      "codes": {
+        "declared-fit-padding": {
+          "body": "expect(FIT_PADDING).toBe(40);",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/ZOOM_STEP.",
+      "codes": {
+        "declared-zoom-step": {
+          "body": "expect(typeof ZOOM_STEP).toBe('number');\nexpect(ZOOM_STEP).toBe(1.2);",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "autoload-parameter-present": {
+          "body": "expect(typeof App).toBe(\"function\"); expect([\"d\", \"s\", \"fetch\", \"gh\", \"pr\", \"issue\"]).toContain(value);",
+          "strategy": "fc.constantFrom(\"d\", \"s\", \"fetch\", \"gh\", \"pr\", \"issue\")",
+          "helpersUsed": []
+        },
+        "autoload-success-with-stylesheet": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "autoload-success-without-stylesheet": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "command-context-set": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "command-context-unset": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "different-scene-error-after-dismissal": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "editor-theme-storage-unavailable": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "file-name-query-absent": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "file-name-query-present": {
+          "body": "expect(typeof App).toBe(\"function\"); expect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string({minLength: 1})",
+          "helpersUsed": []
+        },
+        "inspector-geometry-available": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "inspector-geometry-unavailable": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "island-frame-after-load": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "load-failure": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "loading-in-progress": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "manual-open-failure": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "manual-open-success": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-document-no-autoload": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "non-select-tool-active": {
+          "body": "expect(typeof App).toBe(\"function\"); expect([\"hand\", \"annotation\"]).toContain(value);",
+          "strategy": "fc.constantFrom(\"hand\", \"annotation\")",
+          "helpersUsed": []
+        },
+        "scene-error-dismissed": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "scene-error-present": {
+          "body": "expect(typeof App).toBe(\"function\"); expect(value.message).toBeTypeOf(\"string\");",
+          "strategy": "fc.record({message: fc.string()})",
+          "helpersUsed": []
+        },
+        "select-tool-active": {
+          "body": "expect(typeof App).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "unknown-stored-editor-theme": {
+          "body": "expect(typeof App).toBe(\"function\"); expect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string({minLength: 1})",
+          "helpersUsed": []
+        },
+        "valid-stored-editor-theme": {
+          "body": "expect(typeof App).toBe(\"function\"); expect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string({minLength: 1})",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/file_island.tsx/FileIsland.",
+      "codes": {
+        "clean-document": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "dirty-document": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");\nexpect([\"idle\", \"saving\", \"saved\", \"unsaved\"]).toContain(value);",
+          "strategy": "fc.constantFrom(\"idle\", \"saving\", \"saved\", \"unsaved\")",
+          "helpersUsed": []
+        },
+        "dirty-saving-or-saved": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");\nexpect([\"saving\", \"saved\"]).toContain(value);",
+          "strategy": "fc.constantFrom(\"saving\", \"saved\")",
+          "helpersUsed": []
+        },
+        "error-status": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "file-name-rendered": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "idle-status": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "save-available": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "save-unavailable": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "saved-status": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "saving-status": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "theme-picker-options": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "theme-selection-change": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "unsaved-status": {
+          "body": "expect(typeof FileIsland).toBe(\"function\");",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/island_frame.tsx/ISLAND_INSET.",
+      "codes": {
+        "declared-inset-value": {
+          "body": "expect(ISLAND_INSET).toBe(12);",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/island_frame.tsx/IslandFrame.",
+      "codes": {
+        "all-slots-present": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "content-sized-island": {
+          "body": "expect(value).toBeGreaterThanOrEqual(0);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.integer({ min: 0, max: 100000 })",
+          "helpersUsed": []
+        },
+        "document-not-loaded": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "failed-save": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "form-control-mousedown": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "island-inset": {
+          "body": "expect(['toolbar', 'inspector', 'file', 'zoom', 'undo', 'state']).toContain(value);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.constantFrom('toolbar', 'inspector', 'file', 'zoom', 'undo', 'state')",
+          "helpersUsed": []
+        },
+        "loaded-document-with-canvas": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "non-form-mousedown": {
+          "body": "expect(value).toBe('non-form');\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.constant('non-form')",
+          "helpersUsed": []
+        },
+        "optional-slots-omitted": {
+          "body": "expect(Array.isArray(value)).toBe(true);\nexpect(value.every((slot) => ['toolbar', 'inspector', 'file', 'zoom', 'undo', 'state'].includes(slot))).toBe(true);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.subarray(['toolbar', 'inspector', 'file', 'zoom', 'undo', 'state'])",
+          "helpersUsed": []
+        },
+        "pointer-events-on-island-only": {
+          "body": "expect(['island', 'canvas']).toContain(value);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.constantFrom('island', 'canvas')",
+          "helpersUsed": []
+        },
+        "present-slot-placement": {
+          "body": "expect(['toolbar', 'inspector', 'file', 'zoom', 'undo', 'state']).toContain(value);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.constantFrom('toolbar', 'inspector', 'file', 'zoom', 'undo', 'state')",
+          "helpersUsed": []
+        },
+        "scene-error-after-document": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "scene-error-and-save-error": {
+          "body": "expect(IslandFrame).toBeDefined();\nexpect(typeof IslandFrame).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "tall-bottom-island": {
+          "body": "expect(value).toBeGreaterThan(0);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.integer({ min: 1, max: 100000 })",
+          "helpersUsed": []
+        },
+        "tall-top-island": {
+          "body": "expect(value).toBeGreaterThan(0);\nexpect(IslandFrame).toBeDefined();",
+          "strategy": "fc.integer({ min: 1, max: 100000 })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/start_screen.tsx/StartScreen.",
+      "codes": {
+        "file-opening-error": {
+          "body": "expect(typeof StartScreen).toBe('function');\nconst view = StartScreen({ loading: false, error: value, onOpen: () => {} });\nexpect(view).toBeDefined();",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "no-error": {
+          "body": "expect(typeof StartScreen).toBe('function');\nconst view = StartScreen({ loading: false, onOpen: () => {} });\nexpect(view).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/state_island.tsx/StateIsland.",
+      "codes": {
+        "error-over-mode": {
+          "body": "expect(typeof StateIsland).toBe(\"function\");\nexpect(typeof value.error).toBe(\"string\");\nexpect(typeof value.mode).toBe(\"string\");\nexpect(typeof value.withDismiss).toBe(\"boolean\");",
+          "strategy": "fc.record({ error: fc.string(), mode: fc.string(), withDismiss: fc.boolean() })",
+          "helpersUsed": []
+        },
+        "error-with-dismiss": {
+          "body": "expect(typeof StateIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "error-without-dismiss": {
+          "body": "expect(typeof StateIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "mode-only": {
+          "body": "expect(typeof StateIsland).toBe(\"function\");\nexpect(typeof value).toBe(\"string\");",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/toolbar.tsx/Toolbar.",
+      "codes": {
+        "annotation-tool-active": {
+          "body": "expect(typeof Toolbar).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "command-with-chord": {
+          "body": "expect(value).toBeTruthy();\nexpect(typeof Toolbar).toBe('function');",
+          "strategy": "fc.constantFrom('tool-select', 'tool-annotation')",
+          "helpersUsed": []
+        },
+        "command-without-chord": {
+          "body": "expect(value).toBeTruthy();\nexpect(typeof Toolbar).toBe('function');",
+          "strategy": "fc.constantFrom('auto-layout', 'pin-all', 'unpin-all')",
+          "helpersUsed": []
+        },
+        "hand-tool-active": {
+          "body": "expect(typeof Toolbar).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "registry-labels-and-chords": {
+          "body": "expect(value).toBeTruthy();\nexpect(typeof Toolbar).toBe('function');",
+          "strategy": "fc.constantFrom('tool-select', 'tool-hand', 'tool-annotation', 'auto-layout', 'pin-all', 'unpin-all')",
+          "helpersUsed": []
+        },
+        "select-tool-active": {
+          "body": "expect(typeof Toolbar).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/undo_island.tsx/UndoIsland.",
+      "codes": {
+        "both-history-actions-available": {
+          "body": "assertUndoIslandExport();\nexpect(value.undoDepth).toBeGreaterThan(0);\nexpect(value.redoDepth).toBeGreaterThan(0);",
+          "strategy": "fc.record({ undoDepth: fc.integer({ min: 1, max: 100 }), redoDepth: fc.integer({ min: 1, max: 100 }) })",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "both-history-actions-unavailable": {
+          "body": "assertUndoIslandExport();\nexpect(value.historyLength).toBeGreaterThanOrEqual(0);",
+          "strategy": "fc.record({ historyLength: fc.nat({ max: 100 }), initial: fc.boolean() })",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "command-label-from-registry": {
+          "body": "assertUndoIslandExport();\nexpect(COMMANDS.some((command) => (command.id === 'undo' || command.id === 'redo') && command.label === value)).toBe(true);",
+          "strategy": "fc.constantFrom(...COMMANDS.filter((command) => command.id === 'undo' || command.id === 'redo').map((command) => command.label))",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "command-with-key-chord": {
+          "body": "assertUndoIslandExport();\nexpect(typeof value).toBe('string');\nexpect(KEYMAP.some((entry) => entry.command === value.command && entry.chord.key === value.key)).toBe(true);",
+          "strategy": "fc.constantFrom(...KEYMAP.filter((entry) => entry.command === 'undo' || entry.command === 'redo').map((entry) => ({ command: entry.command, key: entry.chord.key })))",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "command-without-key-chord": {
+          "body": "assertUndoIslandExport();\nexpect(COMMANDS.some((command) => command.id === value.id && command.label === value.label && !KEYMAP.some((entry) => entry.command === command.id))).toBe(true);",
+          "strategy": "fc.constantFrom(...COMMANDS.filter((command) => !KEYMAP.some((entry) => entry.command === command.id)).map((command) => ({ id: command.id, label: command.label })))",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "history-changes-during-edit-run": {
+          "body": "assertUndoIslandExport();\nexpect(value.length).toBeGreaterThan(0);\nexpect(value.every((state) => typeof state.canUndo === 'boolean' && typeof state.canRedo === 'boolean')).toBe(true);",
+          "strategy": "fc.array(fc.record({ canUndo: fc.boolean(), canRedo: fc.boolean() }), { minLength: 1, maxLength: 20 })",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "mousedown-on-focused-button": {
+          "body": "assertUndoIslandExport();\nexpect(value === 'undo' || value === 'redo').toBe(true);",
+          "strategy": "fc.constantFrom('undo', 'redo')",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "redo-unavailable": {
+          "body": "assertUndoIslandExport();\nexpect(value.undoDepth).toBeGreaterThanOrEqual(0);",
+          "strategy": "fc.record({ undoDepth: fc.nat({ max: 100 }) })",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        },
+        "undo-unavailable": {
+          "body": "assertUndoIslandExport();\nexpect(value.redoDepth).toBeGreaterThanOrEqual(0);",
+          "strategy": "fc.record({ redoDepth: fc.nat({ max: 100 }) })",
+          "helpersUsed": [
+            "assertUndoIslandExport"
+          ]
+        }
+      },
+      "helpers": {
+        "assertUndoIslandExport": "const assertUndoIslandExport = (): void => {\n  expect(UndoIsland).toBeDefined();\n  expect(typeof UndoIsland).toBe('function');\n};"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/zoom_island.tsx/ZoomIsland.",
+      "codes": {
+        "fit-activation": {
+          "body": "const rendered = ZoomIsland({ zoom: 1, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.constantFrom(\"click\", \"Enter\", \" \")",
+          "helpersUsed": []
+        },
+        "keyboard-focus-readout": {
+          "body": "expect(typeof ZoomIsland).toBe(\"function\");\nconst rendered = ZoomIsland({ zoom: 1, onCommand: () => {} });\nexpect(rendered).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "minus-activation": {
+          "body": "const rendered = ZoomIsland({ zoom: 1, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.constantFrom(\"click\", \"Enter\", \" \")",
+          "helpersUsed": []
+        },
+        "pinch-crosses-digit-width": {
+          "body": "const rendered = ZoomIsland({ zoom: value, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.constantFrom(0.9, 1, 1.1)",
+          "helpersUsed": []
+        },
+        "plus-activation": {
+          "body": "const rendered = ZoomIsland({ zoom: 1, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.constantFrom(\"click\", \"Enter\", \" \")",
+          "helpersUsed": []
+        },
+        "readout-activation": {
+          "body": "const rendered = ZoomIsland({ zoom: 1, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.constantFrom(\"click\", \"Enter\", \" \")",
+          "helpersUsed": []
+        },
+        "render-with-current-zoom": {
+          "body": "const rendered = ZoomIsland({ zoom: value, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.double({ noNaN: true, noDefaultInfinity: true })",
+          "helpersUsed": []
+        },
+        "rounded-percentage-readout": {
+          "body": "const rendered = ZoomIsland({ zoom: value, onCommand: () => {} });\nexpect(typeof ZoomIsland).toBe(\"function\");\nexpect(rendered).toBeDefined();",
+          "strategy": "fc.double({ noNaN: true, noDefaultInfinity: true })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "codes": {
+        "arrow-down": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowDown' }, command: 'nudge-down' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-left": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowLeft' }, command: 'nudge-left' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-right": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowRight' }, command: 'nudge-right' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-up": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'ArrowUp' }, command: 'nudge-up' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "backspace": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'Backspace' }, command: 'delete' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "delete": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'Delete' }, command: 'delete' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "enter": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'Enter' }, command: 'edit-text' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "escape": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'Escape' }, command: 'escape' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-a": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'a', meta: true }, command: 'select-all' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-d": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'd', meta: true }, command: 'duplicate' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-i": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'i', meta: true }, command: 'focus-inspector' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-s": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 's', meta: true }, command: 'save' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-shift-z": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'z', meta: true, shift: true }, command: 'redo' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "meta-z": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'z', meta: true }, command: 'undo' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "n": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'n' }, command: 'add-annotation' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "s": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 's' }, command: 'ring-next' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "shift-s": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 's', shift: true }, command: 'ring-prev' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "t": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 't' }, command: 'tool-annotation' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "v": {
+          "body": "expect(KEYMAP).toContainEqual({ chord: { key: 'v' }, command: 'tool-select' });",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

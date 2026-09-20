@@ -10,7 +10,8 @@ export type CommandId = 'undo' | 'redo' | 'delete' |
   'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' |
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' |
   'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' |
-  'duplicate' | 'hide';
+  'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' |
+  'zoom-reset' | 'zoom-fit';
 
 export interface KeymapEntry {
   chord: Chord;
@@ -32,8 +33,13 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 's', meta: true }, command: 'save' },
   { chord: { key: 'i', meta: true }, command: 'focus-inspector' },
   { chord: { key: 'v' }, command: 'tool-select' },
+  { chord: { key: 'h' }, command: 'tool-hand' },
   { chord: { key: 't' }, command: 'tool-annotation' },
   { chord: { key: 'n' }, command: 'add-annotation' },
+  { chord: { key: '=' }, command: 'zoom-in' },
+  { chord: { key: '-' }, command: 'zoom-out' },
+  { chord: { key: '0' }, command: 'zoom-reset' },
+  { chord: { key: '1' }, command: 'zoom-fit' },
   { chord: { key: 'Enter' }, command: 'edit-text' },
   { chord: { key: 'd', meta: true }, command: 'duplicate' },
 ];

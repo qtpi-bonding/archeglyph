@@ -4,26 +4,36 @@
 import { describe, expect, test } from 'bun:test';
 import * as fc from 'fast-check';
 
-import { COMMANDS, Command, CommandContext, FIT_PADDING, ZOOM_STEP, runAddAnnotation, runDelete, runDuplicate, runEditText, runHide, runNudge, runPinAll, runResetSize, runRing, runUnpinAll } from '../src/gestures/commands';
+import { COMMANDS, Command, CommandContext, FIT_PADDING, ZOOM_STEP } from '../src/gestures/commands';
 import { MAX_ZOOM, MIN_ZOOM } from '../src/gestures/wheel_handler';
 import { ElementBounds, SceneGeometry } from '../src/scene/scene';
 import { EditorState } from '../src/state/editor_state';
 import { CommandId } from '../src/ui_state/keymap';
 import { clearSelection } from '../src/ui_state/selection_ops';
 import { UiState } from '../src/ui_state/ui_state';
-import { fitBoundsToRect, zoomAboutPoint } from '../src/ui_state/viewport_math';
+import { ContainerRect, fitBoundsToRect, zoomAboutPoint } from '../src/ui_state/viewport_math';
 
 describe('testgen_gestures__COMMANDS', () => {
-    function commandFor(id) {
+    type SpyViewport = { zoom: number; panX: number; panY: number };
+
+    // The stubs stand in for EditorState/UiState/SceneGeometry, which carry far
+    // more surface than any command here touches. Hence the cast.
+    type SpyContext = CommandContext & {
+      viewport: SpyViewport;
+      setViewportCalls: number;
+      tool: string | undefined;
+    };
+
+    function commandFor(id: string): Command {
       const command = COMMANDS.find((entry) => entry.id === id);
       expect(command).toBeDefined();
-      return command;
+      return command as Command;
     }
 
-    function makeContext(viewport, rect, geometry) {
-      const context = {
+    function makeContext(viewport: SpyViewport, rect: ContainerRect, geometry?: unknown): SpyContext {
+      const context: SpyContext = {
         state: { undo() {}, redo() {}, stylesheet() { return {}; }, applyStyleEdit() {} },
-        ui: { selection() { return []; }, setSelection() {}, viewport() { return context.viewport; }, setViewport(next) { context.viewport = next; context.setViewportCalls += 1; }, setTool(tool) { context.tool = tool; } },
+        ui: { selection() { return []; }, setSelection() {}, viewport() { return context.viewport; }, setViewport(next: SpyViewport) { context.viewport = next; context.setViewportCalls += 1; }, setTool(tool: string) { context.tool = tool; } },
         rect,
         save() {},
         beginTextEdit() {},
@@ -31,11 +41,11 @@ describe('testgen_gestures__COMMANDS', () => {
         viewport,
         setViewportCalls: 0,
         tool: undefined,
-      };
+      } as unknown as SpyContext;
       return context;
     }
 
-    function runZoom(id, value, rect) {
+    function runZoom(id: string, value: { zoom: number; panX?: number; panY?: number }, rect: ContainerRect): SpyViewport {
       const viewport = { zoom: value.zoom, panX: 37, panY: -19 };
       const context = makeContext(viewport, rect);
       commandFor(id).run(context);

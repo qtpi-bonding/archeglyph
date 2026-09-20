@@ -7,7 +7,7 @@ import * as fc from 'fast-check';
 import { Bounds } from '../../core/src/geometry/bounds/impl';
 import { Vec2 } from '../../core/src/geometry/vec2/impl';
 import { LaidOutDiagram } from '../../core/src/layout/laid_out_diagram/impl';
-import { Canvas, CanvasProps, GestureSession, Point, pointFromEvent } from '../src/canvas/canvas';
+import { Canvas, CanvasProps } from '../src/canvas/canvas';
 import { cursorFor } from '../src/canvas/cursor';
 import { DiagramLayer, DiagramLayerProps } from '../src/canvas/diagram_layer';
 import { GhostLayer, GhostLayerProps } from '../src/canvas/ghost_layer';

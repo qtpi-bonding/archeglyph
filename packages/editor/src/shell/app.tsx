@@ -29,7 +29,8 @@ import { ZoomIsland } from './zoom_island';
 import { UndoIsland } from './undo_island';
 import { StateIsland } from './state_island';
 import { StartScreen } from './start_screen';
-import { CommandContext, CommandId, COMMANDS, runCommand } from '../gestures/commands';
+import { CommandContext, COMMANDS, runCommand } from '../gestures/commands';
+import type { CommandId } from '../ui_state/keymap';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 

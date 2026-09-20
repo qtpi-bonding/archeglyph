@@ -92,10 +92,10 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, undefined));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes.map((n) => n.id).sort()).toEqual(['a', 'b']);
-      expect(result.value.edges.map((e) => e.id)).toEqual(['ab']);
-      expect(result.value.groups).toEqual([]);
-      expect(result.value.annotations).toEqual([]);
+      expect(Object.keys(result.value.nodes).sort()).toEqual(['a', 'b']);
+      expect(Object.keys(result.value.edges)).toEqual(['ab']);
+      expect(result.value.groups).toEqual({});
+      expect(result.value.annotations).toEqual({});
     }
   });
 
@@ -121,10 +121,10 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes.map((n) => n.id)).toEqual(['a', 'c']);
+      expect(Object.keys(result.value.nodes)).toEqual(['a', 'c']);
       // Both edges are incident to the hidden node b, so both must be dropped
       // — there is no "direct edge A->C pretending B doesn't exist" per §2.8.
-      expect(result.value.edges).toEqual([]);
+      expect(result.value.edges).toEqual({});
     }
   });
 
@@ -143,7 +143,7 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes.map((n) => n.id)).toEqual(['a']);
+      expect(Object.keys(result.value.nodes)).toEqual(['a']);
     }
   });
 
@@ -166,11 +166,11 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.groups).toEqual([]);
-      expect(result.value.nodes).toHaveLength(1);
+      expect(result.value.groups).toEqual({});
+      expect(Object.keys(result.value.nodes)).toHaveLength(1);
       // Lifted up through the EXPANDED group to its (nonexistent) parent —
       // i.e. becomes top-level.
-      expect(result.value.nodes[0].parentGroup).toBeUndefined();
+      expect(Object.values(result.value.nodes)[0].parentGroup).toBeUndefined();
     }
   });
 
@@ -200,9 +200,9 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes.map((n) => n.id)).toEqual(['outside']);
-      expect(result.value.groups).toHaveLength(1);
-      const g = result.value.groups[0];
+      expect(Object.keys(result.value.nodes)).toEqual(['outside']);
+      expect(Object.keys(result.value.groups)).toHaveLength(1);
+      const g = Object.values(result.value.groups)[0];
       expect(g.id).toBe('g1');
       expect(g.isSuperNode).toBe(true);
       expect(g.hiddenDescendantCount).toBe(2);
@@ -210,9 +210,9 @@ describe('visibility_filter', () => {
       // e2 (inner1 -> inner2) is now fully internal to the contracted group
       // and per "children hidden" should not appear as a visible edge
       // between two hidden nodes collapsed onto the SAME super-node id.
-      const e1 = result.value.edges.find((e) => e.id === 'e1');
+      const e1 = result.value.edges['e1'];
       expect(e1?.target).toBe('g1');
-      const e2 = result.value.edges.find((e) => e.id === 'e2');
+      const e2 = result.value.edges['e2'];
       expect(e2).toBeUndefined();
     }
   });
@@ -242,12 +242,12 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes).toEqual([]); // leaf absorbed
-      const groupIds = result.value.groups.map((g) => g.id).sort();
+      expect(result.value.nodes).toEqual({}); // leaf absorbed
+      const groupIds = Object.keys(result.value.groups).sort();
       expect(groupIds).toEqual(['inner', 'outer']);
-      const outer = result.value.groups.find((g) => g.id === 'outer');
+      const outer = result.value.groups['outer'];
       expect(outer?.isSuperNode).toBe(false);
-      const inner = result.value.groups.find((g) => g.id === 'inner');
+      const inner = result.value.groups['inner'];
       expect(inner?.isSuperNode).toBe(true);
       expect(inner?.parentGroup).toBe('outer');
     }
@@ -279,7 +279,7 @@ describe('visibility_filter', () => {
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.annotations.map((a) => a.id)).toEqual(['note1']);
+      expect(Object.keys(result.value.annotations)).toEqual(['note1']);
     }
   });
 });

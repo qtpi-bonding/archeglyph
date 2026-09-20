@@ -255,12 +255,15 @@ export class VisibilityFilterImpl implements VisibilityFilter {
       // no-op.
     }
 
+    const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+      Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
+
     const out = new FilteredDiagram();
     out.id = diagram.id;
-    out.nodes = filteredNodes;
-    out.edges = filteredEdges;
-    out.groups = filteredGroups;
-    out.annotations = filteredAnnotations;
+    out.nodes = byId(filteredNodes);
+    out.edges = byId(filteredEdges);
+    out.groups = byId(filteredGroups);
+    out.annotations = byId(filteredAnnotations);
     return Ok(out);
   }
 }

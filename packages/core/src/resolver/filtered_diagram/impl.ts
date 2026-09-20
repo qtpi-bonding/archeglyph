@@ -7,8 +7,8 @@ import { FilteredNode } from '../filtered_node';
 
 export class FilteredDiagram {
   id!: string;
-  nodes: FilteredNode[] = [];
-  edges: FilteredEdge[] = [];
-  groups: FilteredGroup[] = [];
-  annotations: FilteredAnnotation[] = [];
+  nodes: Record<string, FilteredNode> = {};
+  edges: Record<string, FilteredEdge> = {};
+  groups: Record<string, FilteredGroup> = {};
+  annotations: Record<string, FilteredAnnotation> = {};
 }

@@ -168,7 +168,7 @@ export class StyleCascadeImpl implements StyleCascade {
       canvas,
     });
 
-    const sortedNodes: FilteredNode[] = filtered.nodes.slice();
+    const sortedNodes: FilteredNode[] = Object.values(filtered.nodes);
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));
     for (const node of sortedNodes) {
       const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
@@ -194,7 +194,7 @@ export class StyleCascadeImpl implements StyleCascade {
       result.nodes.push(resolved);
     }
 
-    const sortedEdges: FilteredEdge[] = filtered.edges.slice();
+    const sortedEdges: FilteredEdge[] = Object.values(filtered.edges);
     sortedEdges.sort((a: FilteredEdge, b: FilteredEdge): number => compareIds(a.id, b.id));
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
@@ -221,7 +221,7 @@ export class StyleCascadeImpl implements StyleCascade {
       result.edges.push(resolved);
     }
 
-    const sortedGroups: FilteredGroup[] = filtered.groups.slice();
+    const sortedGroups: FilteredGroup[] = Object.values(filtered.groups);
     sortedGroups.sort((a: FilteredGroup, b: FilteredGroup): number => compareIds(a.id, b.id));
     for (const group of sortedGroups) {
       const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
@@ -249,7 +249,7 @@ export class StyleCascadeImpl implements StyleCascade {
       result.groups.push(resolved);
     }
 
-    const sortedAnnotations: FilteredAnnotation[] = filtered.annotations.slice();
+    const sortedAnnotations: FilteredAnnotation[] = Object.values(filtered.annotations);
     sortedAnnotations.sort((a: FilteredAnnotation, b: FilteredAnnotation): number => compareIds(a.id, b.id));
     for (const annotation of sortedAnnotations) {
       const entry: AnnotationEntry = annotation.entry;

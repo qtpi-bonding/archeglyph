@@ -1,0 +1,31 @@
+# commandText renders chord.key alone, dropping modifiers. Harmless today --
+# every toolbar chord is a bare key -- and wrong for the first modified one.
+
+file: "packages/editor/src/shell/toolbar.tsx"
+doc: "Top-centre island: the tool strip."
+
+methods: [
+  { name: "commandText"
+    change_type: MODIFIED
+    doc:
+      "Renders the chord half with formatChord instead of reading chord.key\n"
+      "directly. The label half still comes from Command.label, and the\n"
+      "lookup of the first matching KEYMAP entry is unchanged.\n"
+      "\n"
+      "Tooltips DO change, by exactly one rule: formatChord upper-cases a\n"
+      "single-character key, so 'Select (v)' becomes 'Select (V)' and the\n"
+      "same for h, t and n. Nothing else moves, because none of the toolbar's\n"
+      "chords carries a modifier. Any test pinning the old lower-case strings\n"
+      "needs updating; that is the whole blast radius.\n"
+      "\n"
+      "The point is that there is ONE function turning a Chord into text, so\n"
+      "the next modified chord added here is right by construction rather\n"
+      "than by someone noticing.\n"
+      "\n"
+      "Toolbar itself is untouched: same props, same buttons, same\n"
+      "active-tool rule, same focus suppression."
+    inputs: [ { name: "id", type: { named: { symbol: "CommandId" } } } ]
+    output: { primitive: CHARACTER }
+    uses: ["formatChord"]
+  }
+]

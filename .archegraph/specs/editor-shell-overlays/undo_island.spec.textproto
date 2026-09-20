@@ -1,0 +1,27 @@
+# Only the file-local helper is declared. UndoIsland's own body does not call
+# formatChord, and declaring it there would attribute the edge to the wrong decl.
+
+file: "packages/editor/src/shell/undo_island.tsx"
+doc: "Bottom-right island: undo and redo."
+
+methods: [
+  { name: "commandTooltip"
+    change_type: MODIFIED
+    doc:
+      "Renders the chord half with formatChord instead of reading chord.key\n"
+      "directly. The label half still comes from Command.label, and the\n"
+      "lookup of the first matching KEYMAP entry is unchanged.\n"
+      "\n"
+      "This is a display fix. Undo is Cmd+Z and redo is Cmd+Shift+Z, and the\n"
+      "current tooltips read 'Undo (z)' and 'Redo (z)' -- bare `z` is bound\n"
+      "to nothing, so both tooltips name a chord that does nothing, and the\n"
+      "two commands are shown as if they had the same one. After this they\n"
+      "differ, and each names the chord that actually runs it.\n"
+      "\n"
+      "UndoIsland itself is untouched: same props, same buttons, same\n"
+      "disabled rules, same focus suppression."
+    inputs: [ { name: "commandId", type: { named: { symbol: "CommandId" } } } ]
+    output: { primitive: CHARACTER }
+    uses: ["formatChord"]
+  }
+]

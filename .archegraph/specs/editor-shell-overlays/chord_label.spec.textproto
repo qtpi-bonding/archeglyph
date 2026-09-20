@@ -1,0 +1,41 @@
+file: "packages/editor/src/shell/chord_label.ts"
+doc: "Render a Chord as the text a user reads."
+
+methods: [
+  { name: "formatChord"
+    change_type: ADDED
+    doc:
+      "Pure, apart from one platform read described below. Takes a Chord,\n"
+      "returns display text. Nothing parses the result back into a Chord.\n"
+      "\n"
+      "PLATFORM. Read `navigator.platform` and treat a value containing 'Mac'\n"
+      "as Apple; ignore userAgent entirely. Read it on every call rather than\n"
+      "caching at module scope, so a test can stub it between cases. This\n"
+      "matters because resolveChord treats metaKey and ctrlKey as the SAME\n"
+      "modifier, so one KEYMAP entry is Cmd on a Mac and Ctrl elsewhere, and\n"
+      "a hardcoded symbol is wrong for half the users.\n"
+      "\n"
+      "COMPOSITION, in this order: meta, then shift, then the key.\n"
+      "  On Apple: the symbols U+2318 and U+21E7, concatenated with NO\n"
+      "  separator, e.g. Cmd+Shift+Z renders as the two symbols followed\n"
+      "  by Z.\n"
+      "  Elsewhere: the words Ctrl and Shift, joined to each other and to the\n"
+      "  key with '+', e.g. Ctrl+Shift+Z.\n"
+      "That is the whole separator rule; there is no other whitespace.\n"
+      "\n"
+      "THE KEY. Exactly five KeyboardEvent.key values are renamed, and no\n"
+      "others: ArrowUp, ArrowDown, ArrowLeft and ArrowRight lose the word\n"
+      "Arrow (so 'Up', 'Down', 'Left', 'Right'), and 'Escape' becomes 'Esc'.\n"
+      "Every other multi-character key is passed through verbatim --\n"
+      "'Backspace' stays 'Backspace', 'Delete' stays 'Delete', 'Enter' stays\n"
+      "'Enter'. A single-character key is upper-cased, so 'v' renders 'V' and\n"
+      "'?' renders '?'.\n"
+      "\n"
+      "Backspace is deliberately NOT renamed to Delete even though it is the\n"
+      "delete key on Apple keyboards: both are bound to the same command, the\n"
+      "help sheet gives each chord its own row, and renaming one would print\n"
+      "two rows reading 'Delete' with no way to tell them apart."
+    inputs: [ { name: "chord", type: { named: { symbol: "Chord" } } } ]
+    output: { primitive: CHARACTER }
+  }
+]

@@ -1,0 +1,77 @@
+# Pure builders, so "what can the palette offer" is testable without a DOM.
+
+file: "packages/editor/src/shell/palette_items.ts"
+doc: "Build palette rows from the command registry and from the laid-out diagram."
+
+methods: [
+  { name: "commandPaletteItems"
+    change_type: ADDED
+    doc:
+      "One row per entry in the `commands` ARGUMENT -- not the imported\n"
+      "COMMANDS -- in that argument's own order, skipping any entry whose id\n"
+      "is in PALETTE_EXCLUDED. Likewise the chord is found in the `keymap`\n"
+      "ARGUMENT, never the imported KEYMAP. Both are parameters precisely so\n"
+      "a test can pass two fixture entries and get two rows; reading the\n"
+      "module-level registries would make the parameters decorative. The\n"
+      "shell is what passes the real COMMANDS and KEYMAP in.\n"
+      "\n"
+      "`label` comes from Command.label. That registry is the one source of a\n"
+      "command's human name -- do not spell any command's name here.\n"
+      "\n"
+      "`key` is 'command:' followed by the command id; see PaletteItem.\n"
+      "\n"
+      "`detail` is the chord: scan `keymap` for the first entry whose\n"
+      "`command` matches and render it with formatChord. A command with no\n"
+      "matching entry gets the empty string. Where a command has more than\n"
+      "one chord bound -- delete has both Backspace and Delete -- the FIRST\n"
+      "match in the given order wins and the others are not shown. The help\n"
+      "sheet is where every chord appears."
+    inputs: [
+      { name: "commands", type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "Command" } } ] } } },
+      { name: "keymap",   type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "KeymapEntry" } } ] } } }
+    ]
+    output: { named: { symbol: "Array", args: [ { named: { symbol: "PaletteItem" } } ] } }
+    uses: ["formatChord", "PALETTE_EXCLUDED"]
+  },
+  { name: "elementPaletteItems"
+    change_type: ADDED
+    doc:
+      "One row per node, group and annotation in the diagram -- this is the\n"
+      "'go to element' half of the palette.\n"
+      "\n"
+      "EDGES PRODUCE NO ROWS AT ALL. buildSceneGeometry indexes only nodes,\n"
+      "groups and annotations into `byKey`; an edge goes into `edgePolylines`\n"
+      "and has no bounds entry anywhere, so an edge row could be selected but\n"
+      "could never be panned to. A row that silently half-works is worse than\n"
+      "an absent one. Revisit when the scene index carries edge bounds.\n"
+      "\n"
+      "`key` is elementKey(ref); see PaletteItem.\n"
+      "\n"
+      "`label` is the element's own text where it has some: for a node or a\n"
+      "group, the `source` of the Localization at INDEX 0 of its `label`\n"
+      "list; for an annotation, index 0 of its `content` list. Index 0, not a\n"
+      "locale-aware pick: the palette has no locale to select with, and\n"
+      "svg_painter's textElement already takes label[0] the same way. If\n"
+      "locale selection is ever centralised, both call sites move together.\n"
+      "\n"
+      "Fall back to the id when that list is empty, or when its index-0\n"
+      "source is empty after trimming. The fallback is the point of the\n"
+      "feature rather than an edge case: ids are opaque, so a row reading\n"
+      "'Core Service' is the only thing that tells a user which element they\n"
+      "are about to jump to, and a row reading the raw id is still better\n"
+      "than no row.\n"
+      "\n"
+      "`detail` is the element kind, spelled as in ElementRef.kind.\n"
+      "\n"
+      "ORDER: sort the rows by `key` ascending before returning. The three\n"
+      "collections read here are Record<string, T> keyed by id, and\n"
+      "Object.values on a Record does NOT enumerate in insertion order --\n"
+      "integer-like keys come first, in ascending numeric order, whatever\n"
+      "order they were written. A diagram whose ids are numbers would\n"
+      "otherwise list its rows in an order that changes when an id is\n"
+      "renamed."
+    inputs: [ { name: "diagram", type: { named: { symbol: "LaidOutDiagram" } } } ]
+    output: { named: { symbol: "Array", args: [ { named: { symbol: "PaletteItem" } } ] } }
+    uses: ["elementKey"]
+  }
+]

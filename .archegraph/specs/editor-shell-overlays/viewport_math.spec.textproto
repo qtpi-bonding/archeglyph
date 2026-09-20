@@ -1,0 +1,45 @@
+file: "packages/editor/src/ui_state/viewport_math.ts"
+doc: "Pure pan/zoom arithmetic between diagram and screen space."
+
+methods: [
+  { name: "centerBoundsInRect"
+    change_type: ADDED
+    doc:
+      "Pan so the centre of `bounds` sits at the centre of `containerRect`.\n"
+      "KEEPS the incoming zoom -- only panX and panY change.\n"
+      "\n"
+      "The rect's centre is (width / 2, height / 2), in the container's OWN\n"
+      "coordinates. `left` and `top` are not read: panX and panY are offsets\n"
+      "within the container, so including the page offset would double-count\n"
+      "it for any container not at the page origin. screenToDiagram in this\n"
+      "same file already treats the rect the same way.\n"
+      "\n"
+      "Deliberately not fitBoundsToRect. Fitting a single node computes the\n"
+      "zoom that makes THAT NODE fill the viewport, which is a jump to\n"
+      "several hundred percent and leaves the user with no context around the\n"
+      "thing they jumped to. Going to an element should move the camera, not\n"
+      "change the lens.\n"
+      "\n"
+      "panX and panY are in SCREEN pixels, added after scaling, matching the\n"
+      "convention the other functions in this file already use.\n"
+      "\n"
+      "Returns the incoming viewport unchanged when containerRect has zero\n"
+      "width or height -- that is the state before the container is first\n"
+      "measured, and centring inside a zero rect puts the centre at 0,0.\n"
+      "\n"
+      "This same centring arithmetic is already written inline in canvas.tsx,\n"
+      "inside beginTextEdit: it tests whether the target is off screen and,\n"
+      "if so, centres it. Only that payload duplicates this function -- the\n"
+      "off-screen test is beginTextEdit's own and is not part of this\n"
+      "function's job. canvas.tsx is NOT in this spec: folding the payload\n"
+      "onto this call is a small hand patch afterwards, and putting a\n"
+      "component that large through a build node to save a few lines is the\n"
+      "wrong trade."
+    inputs: [
+      { name: "viewport",      type: { named: { symbol: "Viewport" } } },
+      { name: "bounds",        type: { named: { symbol: "Bounds" } } },
+      { name: "containerRect", type: { named: { symbol: "ContainerRect" } } }
+    ]
+    output: { named: { symbol: "Viewport" } }
+  }
+]

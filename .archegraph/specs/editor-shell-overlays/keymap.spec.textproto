@@ -1,0 +1,43 @@
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative chord to command-id table, and the resolver over it."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Gains two members: 'open-palette' and 'open-help'. Every existing\n"
+      "member stays."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' | 'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' | 'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' | 'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help'" } }
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    change_type: MODIFIED
+    doc:
+      "Two entries added, and no existing entry changes:\n"
+      "  { chord: { key: 'k', meta: true }, command: 'open-palette' }\n"
+      "  { chord: { key: '?', shift: true }, command: 'open-help' }\n"
+      "\n"
+      "`shift: true` on the help chord is REQUIRED, not decorative. On a US\n"
+      "layout '?' is produced by holding shift, so the event arrives with\n"
+      "shiftKey true; resolveChord compares `chord.shift === true` against\n"
+      "event.shiftKey for equality, so an entry without it would never match.\n"
+      "\n"
+      "This is the opposite situation to the zoom chords, which use '=' rather\n"
+      "than '+' precisely to AVOID needing shift. The difference is that '='\n"
+      "is an acceptable name for zoom-in while '?' is the only conventional\n"
+      "name for help.\n"
+      "\n"
+      "docs/editor-ui-review.md 11.6 offers 'Cmd/Ctrl+Shift+P (or ?)' for the\n"
+      "help sheet. Only '?' is bound. One chord for one surface is enough,\n"
+      "and '?' is the one a user guesses; Cmd+Shift+P is browser-adjacent and\n"
+      "buys nothing here. Noted rather than silently dropped.\n"
+      "\n"
+      "Both are bare of any editable-target special-casing; the guard already\n"
+      "in keyboard_handler is what stops them firing while the user types."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "KeymapEntry[]" } }
+    uses: ["KeymapEntry", "Chord"]
+  }
+]

@@ -1,0 +1,43 @@
+file: "packages/editor/src/shell/palette_search.ts"
+doc: "Narrow and rank palette rows against what the user has typed."
+
+methods: [
+  { name: "filterPaletteItems"
+    change_type: ADDED
+    doc:
+      "Pure. Case-insensitive substring match against PaletteItem.label only\n"
+      "-- NOT against `detail`. Matching the detail column would let a query\n"
+      "match a chord or the word 'node', surfacing rows whose visible text\n"
+      "does not contain what was typed.\n"
+      "\n"
+      "TRIM THE QUERY FIRST, then apply everything below to the trimmed\n"
+      "string. So a query of '' or '   ' returns every item in the order\n"
+      "given, and 'node ' behaves exactly as 'node' -- a trailing space from\n"
+      "a fast typist must not empty the list.\n"
+      "\n"
+      "RANKING, applied to the matching items only: rows whose label STARTS\n"
+      "WITH the query come before rows that merely contain it. Within each of\n"
+      "those two tiers the input order is preserved. So the result is stable\n"
+      "-- the same items and query always give the same order -- and typing\n"
+      "one more character never reorders two rows that both still match in\n"
+      "the same tier.\n"
+      "\n"
+      "No fuzzy or subsequence matching. 'nd' does not match 'node'.\n"
+      "\n"
+      "This REVERSES docs/editor-ui-review.md 11.5, which specifies 'fuzzy\n"
+      "search by name'. The reversal is deliberate and that doc is not being\n"
+      "amended here: a subsequence matcher ranks by score, and a score that\n"
+      "changes on every keystroke makes the highlighted row jump under a user\n"
+      "who is still typing, which costs more than the looser matching gains.\n"
+      "Revisit if substring matching proves too strict in use.\n"
+      "\n"
+      "Concretely, with labels ['Node A', 'Annotate', 'Auto-layout'] and\n"
+      "query 'a': 'Annotate' and 'Auto-layout' rank above 'Node A', and\n"
+      "'Annotate' stays ahead of 'Auto-layout' because it came first in."
+    inputs: [
+      { name: "items", type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "PaletteItem" } } ] } } },
+      { name: "query", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "Array", args: [ { named: { symbol: "PaletteItem" } } ] } }
+  }
+]

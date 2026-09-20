@@ -71,6 +71,10 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
   const calls: string[] = [];
   let current: Array<ElementRef> = selection;
   let stylesheet: Stylesheet = sheet();
+  // The `as unknown as UiState` cast below means nothing here is checked
+  // against UiState, so this pair must be present or every command that
+  // touches the overlay throws rather than failing an assertion.
+  let overlay: string | undefined = undefined;
 
   const state = {
     diagram: () => { throw new Error('not used'); },
@@ -100,6 +104,11 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
     setTool: (): void => { calls.push('setTool'); },
     viewport: () => ({ panX: 0, panY: 0, zoom: 1 }),
     setViewport: (): void => { calls.push('setViewport'); },
+    overlay: (): string | undefined => overlay,
+    setOverlay: (next: string | undefined): void => {
+      overlay = next;
+      calls.push('setOverlay');
+    },
   } as unknown as UiState;
 
   const geometry = buildSceneGeometry(

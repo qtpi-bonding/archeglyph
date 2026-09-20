@@ -1,0 +1,20 @@
+file: "packages/editor/src/ui_state/overlay.ts"
+doc: "Which full-surface overlay, if any, is currently open."
+
+structs: [
+  { name: "Overlay"
+    change_type: ADDED
+    doc:
+      "Emit exactly: export type Overlay = 'palette' | 'help';\n"
+      "\n"
+      "The ABSENCE of an overlay is `undefined` at the signal, not a third\n"
+      "member here. A 'none' member would make two spellings of closed --\n"
+      "`undefined` and `'none'` -- and every consumer would have to test for\n"
+      "both or silently handle one.\n"
+      "\n"
+      "At most one overlay is open at a time: this is a single value, not a\n"
+      "set. Opening the help sheet while the palette is open replaces it."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'palette' | 'help'" } }
+    typescript: {}
+  }
+]

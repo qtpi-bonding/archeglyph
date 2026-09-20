@@ -1,0 +1,57 @@
+# A tagged union, not two optional fields, so a row cannot be built with
+# neither set or with both.
+
+file: "packages/editor/src/shell/palette_item.ts"
+doc: "One row in the command palette, and what choosing it does."
+
+structs: [
+  { name: "PaletteAction"
+    change_type: ADDED
+    doc:
+      "Emit exactly:\n"
+      "  export type PaletteAction =\n"
+      "    | { kind: 'command'; command: CommandId }\n"
+      "    | { kind: 'element'; ref: ElementRef };\n"
+      "\n"
+      "Discriminated on `kind` so a consumer switches once and TypeScript\n"
+      "narrows the payload. The palette itself performs NEITHER action -- it\n"
+      "reports the chosen item upward. See CommandPaletteProps."
+    aliased: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "{ kind: 'command'; command: CommandId } | { kind: 'element'; ref: ElementRef }" } }
+    typescript: {}
+  },
+  { name: "PaletteItem"
+    change_type: ADDED
+    doc:
+      "`key` identifies the row and is used as the list key when rendering.\n"
+      "It is composed exactly one of two ways, and each builder owns its own\n"
+      "half:\n"
+      "  element rows  elementKey(ref), i.e. `${kind}:${id}`\n"
+      "  command rows  'command:' followed by the command id\n"
+      "Uniqueness across the concatenated list follows from those two forms,\n"
+      "not from any runtime check: 'command' is not one of the four\n"
+      "ElementRef kinds, so no command key can collide with an element key,\n"
+      "and within each half the id is already unique. This is why the row key\n"
+      "is not the bare element id -- ids are unique per kind, not across\n"
+      "kinds, so a node and a group may share one.\n"
+      "\n"
+      "An element row's `key` is therefore the same string the scene's byKey\n"
+      "index is keyed by. That is a consequence of both using elementKey, not\n"
+      "a contract: the shell looks bounds up by calling elementKey on the ref\n"
+      "it was handed, never by reusing this field.\n"
+      "\n"
+      "`label` is what the user reads and the ONLY field the filter matches\n"
+      "against.\n"
+      "\n"
+      "`detail` is the dimmer right-hand text: the chord for a command, the\n"
+      "element kind for an element. Always a string -- use the empty string\n"
+      "for a command with no chord bound, rather than making the field\n"
+      "optional, so every consumer renders it the same way."
+    fields: [
+      { name: "key",    type: { primitive: CHARACTER } },
+      { name: "label",  type: { primitive: CHARACTER } },
+      { name: "detail", type: { primitive: CHARACTER } },
+      { name: "action", type: { named: { symbol: "PaletteAction" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

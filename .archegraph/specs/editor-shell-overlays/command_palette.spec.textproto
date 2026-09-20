@@ -1,0 +1,75 @@
+file: "packages/editor/src/shell/command_palette.tsx"
+doc: "Full-surface overlay: type to narrow, Enter to choose."
+
+structs: [
+  { name: "CommandPaletteProps"
+    change_type: ADDED
+    doc:
+      "`items` is the full unfiltered row list; the component filters it\n"
+      "itself as the query changes. The caller builds it once per open rather\n"
+      "than per keystroke.\n"
+      "\n"
+      "`onChoose` receives the chosen row's action. The component does NOT\n"
+      "run commands or move the viewport -- it has no CommandContext and no\n"
+      "geometry, and giving it either would put a second dispatcher beside\n"
+      "the registry.\n"
+      "\n"
+      "`onClose` is called for dismissal WITHOUT a choice. Choosing a row\n"
+      "calls onChoose only; the caller closes the overlay in response, so\n"
+      "that closing happens in exactly one place whichever way the palette\n"
+      "was left."
+    fields: [
+      { name: "items",    type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "PaletteItem" } } ] } } },
+      { name: "onChoose", type: { arrow: { inputs: [ { named: { symbol: "PaletteAction" } } ], output: { primitive: VOID } } } },
+      { name: "onClose",  type: { arrow: { inputs: [], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "CommandPalette"
+    change_type: ADDED
+    doc:
+      "A centred surface over a scrim: one text input, then the filtered rows,\n"
+      "each showing `label` on the left and `detail` dimmed on the right.\n"
+      "\n"
+      "Rendered only while it is open -- the caller mounts it under a Show, so\n"
+      "it need not handle an is-open prop.\n"
+      "\n"
+      "Focus the input on mount. A palette that opens without focus makes the\n"
+      "user click before typing, which costs more than the chord saved.\n"
+      "\n"
+      "Highlighted row: index into the FILTERED list, starting at 0. It resets\n"
+      "to 0 on every query change, because holding an index across a change\n"
+      "of list length points at a different row than the one the user was\n"
+      "looking at, or past the end.\n"
+      "\n"
+      "Keys handled on the input. Call preventDefault on the arrow keys and\n"
+      "Enter for the ordinary reason -- to stop the caret moving and to stop\n"
+      "any enclosing form submitting. It is NOT needed to fend off the global\n"
+      "keyboard handler: that listener runs shouldIgnoreKey(event.target)\n"
+      "first, which already returns true for any input element, so nothing\n"
+      "originating in this field reaches a command.\n"
+      "  ArrowDown / ArrowUp  move the highlight, clamped at both ends --\n"
+      "                       they do not wrap, so holding a key comes to\n"
+      "                       rest rather than cycling forever\n"
+      "  Enter                onChoose with the highlighted row's action;\n"
+      "                       does nothing at all when the filtered list is\n"
+      "                       empty\n"
+      "  Escape               onClose\n"
+      "Clicking a row chooses it, the same as Enter on it.\n"
+      "\n"
+      "The scrim swallows pointer events so a click behind the palette does\n"
+      "not reach the canvas and move a selection; clicking the scrim itself\n"
+      "calls onClose. So there are two ways out, Escape and the scrim, and\n"
+      "both land on onClose.\n"
+      "\n"
+      "Take every colour and font from the --ag- custom properties already\n"
+      "defined in shell/styles.css, with no literal colour anywhere in this\n"
+      "file. Chord text specifically in --ag-font-mono, matching the zoom\n"
+      "readout."
+    type: { named: { symbol: "Component", args: [ { named: { symbol: "CommandPaletteProps" } } ] } }
+    uses: ["filterPaletteItems"]
+  }
+]

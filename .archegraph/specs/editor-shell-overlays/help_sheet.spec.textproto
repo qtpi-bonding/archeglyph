@@ -1,0 +1,62 @@
+# Renders the keymap it is handed. A hand-written shortcut list is a second
+# source of truth that goes stale silently.
+
+file: "packages/editor/src/shell/help_sheet.tsx"
+doc: "Full-surface overlay listing every bound chord and what it does."
+
+structs: [
+  { name: "HelpSheetProps"
+    change_type: ADDED
+    doc:
+      "Takes the registry and the keymap as data rather than importing them,\n"
+      "for the same reason commandPaletteItems does: a widget test can render\n"
+      "it against two entries instead of the whole editor's keymap."
+    fields: [
+      { name: "commands", type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "Command" } } ] } } },
+      { name: "keymap",   type: { named: { symbol: "ReadonlyArray", args: [ { named: { symbol: "KeymapEntry" } } ] } } },
+      { name: "onClose",  type: { arrow: { inputs: [], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "HelpSheet"
+    change_type: ADDED
+    doc:
+      "One row per entry in the `keymap` PROP, in that prop's order -- not\n"
+      "the imported KEYMAP, which would make the prop decorative. Each row is\n"
+      "the chord via formatChord, and the label of the matching entry in the\n"
+      "`commands` prop.\n"
+      "\n"
+      "A keymap entry naming a command absent from `commands` is SKIPPED, not\n"
+      "rendered with its raw id. An id is not something a user can act on.\n"
+      "gestures/command_wiring.test.ts already asserts that the real KEYMAP\n"
+      "contains no such entry, so with real data this branch never runs; it\n"
+      "exists so a fixture cannot crash the sheet.\n"
+      "\n"
+      "Where one command has several chords bound, EVERY chord gets its own\n"
+      "row -- unlike the palette's detail column, which shows only the first.\n"
+      "Both Backspace and Delete should be discoverable here; the palette is\n"
+      "answering 'what can I do' and this is answering 'what keys work'. The\n"
+      "two rows are distinguishable because formatChord passes both names\n"
+      "through verbatim.\n"
+      "\n"
+      "FOCUSES ITS ROOT ON MOUNT, which requires the root to carry\n"
+      "tabIndex={-1}. This is what makes the sheet's own Escape handler the\n"
+      "thing that closes it, and it is worth being exact about the\n"
+      "alternative: without the focus call the key event would never reach\n"
+      "this component, would bubble to the document listener, and would\n"
+      "resolve to the 'escape' command instead -- which also closes the\n"
+      "sheet, so the bug would be invisible while leaving onClose a dead\n"
+      "wire. Focusing the root also gives keyboard dismissal to a user who\n"
+      "opened the sheet without a mouse.\n"
+      "\n"
+      "Escape calls onClose, as does clicking the scrim. The sheet takes no\n"
+      "text input and holds no highlighted row.\n"
+      "\n"
+      "Rendered only while open -- the caller mounts it under a Show."
+    type: { named: { symbol: "Component", args: [ { named: { symbol: "HelpSheetProps" } } ] } }
+    uses: ["formatChord"]
+  }
+]

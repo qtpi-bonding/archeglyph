@@ -1,0 +1,36 @@
+file: "packages/editor/src/shell/palette_excluded.ts"
+doc: "Commands that exist for a chord but do not belong in a searchable list."
+
+constants: [
+  { name: "PALETTE_EXCLUDED"
+    change_type: ADDED
+    doc:
+      "A ReadonlySet<CommandId>. Emit exactly these members: 'escape',\n"
+      "'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next',\n"
+      "'ring-prev', 'open-palette', 'open-help'.\n"
+      "\n"
+      "COMMANDS is the one registry every dispatcher runs through, and it is\n"
+      "not the right list to show verbatim -- three kinds of entry make no\n"
+      "sense as a clickable row:\n"
+      "\n"
+      "  - The four nudges and the two ring verbs are chord-only. They move a\n"
+      "    selection by one step; reaching a mouse to a filtered list to move\n"
+      "    something one pixel is not a thing anyone does.\n"
+      "  - 'escape' cancels. A row labelled Escape inside a surface that\n"
+      "    Escape closes is a puzzle, not an affordance.\n"
+      "  - 'open-palette' and 'open-help' would name the surface the user is\n"
+      "    already looking at. Choosing one would close the overlay and\n"
+      "    reopen an overlay, which reads as nothing having happened.\n"
+      "\n"
+      "This is an exclusion set rather than a `palette: boolean` field on\n"
+      "Command because the registry is shared with the keymap, the toolbar\n"
+      "and a future context menu, and a field on Command would invite each of\n"
+      "them to add its own. A palette-shaped decision belongs beside the\n"
+      "palette. If a third surface ever needs to filter the registry, that is\n"
+      "when the field earns its place.\n"
+      "\n"
+      "Every member must be a CommandId, so a renamed command is a compile\n"
+      "error here rather than an entry that silently stops matching."
+    type: { named: { symbol: "ReadonlySet", args: [ { named: { symbol: "CommandId" } } ] } }
+  }
+]

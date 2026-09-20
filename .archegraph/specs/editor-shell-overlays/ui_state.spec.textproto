@@ -1,0 +1,49 @@
+# The overlay lives here so commands reach it via CommandContext.ui rather
+# than through a new optional context field. UiState is re-declared WHOLE: a
+# MODIFIED struct's field list is its final shape, so omitting a field deletes it.
+
+file: "packages/editor/src/ui_state/ui_state.ts"
+doc: "The one mutable UI-state store: selection, hover, tool, viewport, overlay."
+
+structs: [
+  { name: "UiState"
+    change_type: MODIFIED
+    doc:
+      "Gains exactly one accessor/setter pair, `overlay` and `setOverlay`.\n"
+      "Every other field below is unchanged and is restated because a\n"
+      "MODIFIED struct declares its whole shape.\n"
+      "\n"
+      "`undefined` means no overlay is open. See Overlay in\n"
+      "ui_state/overlay.ts for why closed is not a member of the union."
+    fields: [
+      { name: "selection",          type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<ElementRef[]>" } } },
+      { name: "setSelection",       type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<ElementRef[]>" } } },
+      { name: "hover",              type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<ElementRef | undefined>" } } },
+      { name: "setHover",           type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<ElementRef | undefined>" } } },
+      { name: "textEditTarget",     type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<ElementRef | undefined>" } } },
+      { name: "setTextEditTarget",  type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<ElementRef | undefined>" } } },
+      { name: "tool",               type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<Tool>" } } },
+      { name: "setTool",            type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<Tool>" } } },
+      { name: "viewport",           type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Accessor<Viewport>" } } },
+      { name: "setViewport",        type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Setter<Viewport>" } } },
+      { name: "overlay",            type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<Overlay | undefined>" } } },
+      { name: "setOverlay",         type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<Overlay | undefined>" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "createUiState"
+    change_type: MODIFIED
+    doc:
+      "Gains one `createSignal<Overlay | undefined>(undefined)` call and\n"
+      "returns the pair on the handle, in the same plain-signal style as the\n"
+      "fields already there. No other default changes.\n"
+      "\n"
+      "The initial value is `undefined`: the editor opens with no overlay."
+    inputs: []
+    output: { named: { symbol: "UiState" } }
+    uses: ["Overlay"]
+  }
+]

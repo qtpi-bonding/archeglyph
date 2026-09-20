@@ -1,0 +1,51 @@
+# The overlay verbs set a signal and nothing else, so a chord, a button and a
+# future context menu open the same palette without three copies of the logic.
+
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The one command registry every dispatcher — keymap, toolbar, context menu, palette — runs through."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "Two entries added, and one existing entry changes.\n"
+      "\n"
+      "ADDED 'open-palette', label 'Command Palette': sets the overlay signal\n"
+      "to 'palette'. ADDED 'open-help', label 'Keyboard Shortcuts': sets it\n"
+      "to 'help'. Both set unconditionally and neither toggles.\n"
+      "\n"
+      "MODIFIED 'escape': when ui.overlay() is not undefined, set the overlay\n"
+      "to undefined and RETURN WITHOUT touching the selection. Only when no\n"
+      "overlay is open does it clear the selection as it does today.\n"
+      "\n"
+      "Every claim above is about what these three FUNCTIONS do when invoked,\n"
+      "which is how command_wiring.test.ts exercises them -- by calling\n"
+      "runCommand directly, never by dispatching a key event. Which chords\n"
+      "reach them end to end is a separate question owned by\n"
+      "keyboard_handler, and the two do not line up everywhere: with focus in\n"
+      "the palette's text input, shouldIgnoreKey returns true and NO chord\n"
+      "reaches any command, so the palette is closed by its own Escape\n"
+      "handler rather than by this one.\n"
+      "\n"
+      "The modified 'escape' therefore covers the HELP SHEET, which holds no\n"
+      "text input. Ordering still matters there: closing the overlay AND\n"
+      "clearing the selection on one press would discard a selection the user\n"
+      "never asked to lose, and selection is not on the undo log so it could\n"
+      "not be recovered. Escape twice is how a user clears a selection with\n"
+      "an overlay open -- once to close, once to deselect.\n"
+      "\n"
+      "All three reach the overlay through context.ui, which every command\n"
+      "already holds. No new CommandContext field, optional or otherwise.\n"
+      "\n"
+      "gestures/command_wiring.test.ts needs a change BEFORE this lands, and\n"
+      "it is not only an added assertion. Its spyContext builds `ui` as a\n"
+      "partial object cast `as unknown as UiState`, so the cast hides a\n"
+      "missing setOverlay from the compiler while the file's\n"
+      "`for (const command of COMMANDS)` loop runs every command -- the two\n"
+      "new entries and the modified escape would each throw at runtime. The\n"
+      "spy `ui` gains a recording overlay/setOverlay pair, and each new\n"
+      "command gains its own assertion."
+    type: { named: { symbol: "Array", args: [ { named: { symbol: "Command" } } ] } }
+    uses: ["CommandContext", "clearSelection"]
+  }
+]

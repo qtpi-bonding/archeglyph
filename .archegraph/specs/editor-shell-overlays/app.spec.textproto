@@ -1,0 +1,56 @@
+# CommandPalette and HelpSheet have no caller unless this file mounts them.
+
+file: "packages/editor/src/shell/app.tsx"
+doc: "Root component: adapters, load, the island frame, and the overlays over it."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Everything already here stays. Three additions.\n"
+      "\n"
+      "1. MOUNTS both overlays as siblings of IslandFrame, not slots in it --\n"
+      "   IslandFrame positions inert corner boxes clipped to half the\n"
+      "   viewport, which is the wrong geometry for a centred surface over a\n"
+      "   scrim. Each is under its own Show keyed on ui.overlay(), so only\n"
+      "   the open one is mounted and the palette starts fresh each time\n"
+      "   rather than retaining the previous query.\n"
+      "\n"
+      "2. BUILDS the palette rows, inside the Show so it happens once per\n"
+      "   open: commandPaletteItems(COMMANDS, KEYMAP) concatenated with\n"
+      "   elementPaletteItems over the current scene geometry's diagram.\n"
+      "   Commands first. When no geometry has been published yet the element\n"
+      "   half is simply absent and the palette still opens on commands --\n"
+      "   the palette must not be conditional on a diagram being laid out.\n"
+      "\n"
+      "3. HANDLES the chosen action. CLOSE THE OVERLAY FIRST -- set it to\n"
+      "   undefined -- then switch on PaletteAction.kind:\n"
+      "     'command'  dispatch through the existing onCommand, which is the\n"
+      "                same path the toolbar and the chords take\n"
+      "     'element'  set the selection to exactly that one ref, then pan to\n"
+      "                it with centerBoundsInRect using the element's bounds\n"
+      "                from the scene geometry's byKey index, the current\n"
+      "                viewport and the CommandContext's rect\n"
+      "\n"
+      "   Closing first is what keeps 'focus-inspector' working when chosen\n"
+      "   from the palette: unmounting a surface that holds focus returns\n"
+      "   focus to document.body, so closing second would undo the focus move\n"
+      "   the command just performed. Nothing in the list re-opens an overlay\n"
+      "   -- PALETTE_EXCLUDED keeps 'open-palette' and 'open-help' out of the\n"
+      "   rows -- so ordering is not load-bearing for those.\n"
+      "\n"
+      "   onClose closes the same way, so there is one place that clears the\n"
+      "   signal.\n"
+      "\n"
+      "   Look the bounds up by calling elementKey on the chosen ref, not by\n"
+      "   its bare id: byKey is keyed across all four kinds together and a\n"
+      "   node and a group may share an id. A ref with no entry in byKey\n"
+      "   selects the element and leaves the viewport alone rather than\n"
+      "   panning to the origin.\n"
+      "\n"
+      "The help sheet takes COMMANDS and KEYMAP directly and needs nothing\n"
+      "from the scene."
+    type: { named: { symbol: "Component" } }
+    uses: ["CommandPalette", "HelpSheet", "commandPaletteItems", "elementPaletteItems", "centerBoundsInRect", "elementKey", "PALETTE_EXCLUDED", "COMMANDS", "KEYMAP"]
+  }
+]

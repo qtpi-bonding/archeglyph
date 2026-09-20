@@ -18,6 +18,7 @@ import { setNodesHiddenEdit } from '../state/edits/visibility';
 import { pinAllEdit, unpinAllEdit, withLayoutMaterialized } from '../state/edits/layout_command';
 import { clearNodeSizeEdit } from '../state/edits/resize';
 import { MAX_ZOOM, MIN_ZOOM } from './wheel_handler';
+import { beginModalGesture } from '../ui_state/modal_gesture';
 
 /**
  * Multiplier for one zoom-in press. 1.2.
@@ -273,6 +274,26 @@ export const COMMANDS: Array<Command> = [
   { id: 'open-palette', label: 'Command Palette', run: ({ ui }: CommandContext): void => { ui.setOverlay('palette'); } },
   { id: 'open-help', label: 'Keyboard Shortcuts', run: ({ ui }: CommandContext): void => { ui.setOverlay('help'); } },
   {
+    id: 'enter-grab',
+    label: 'Grab',
+    run: (context: CommandContext): void => {
+      const selection = context.ui.selection();
+      if (selection.length > 0) {
+        context.ui.setModalGesture(beginModalGesture('grab', selection));
+      }
+    },
+  },
+  {
+    id: 'enter-resize',
+    label: 'Resize',
+    run: (context: CommandContext): void => {
+      const selection = context.ui.selection();
+      if (selection.length === 1) {
+        context.ui.setModalGesture(beginModalGesture('resize', selection));
+      }
+    },
+  },
+  {
     id: 'escape',
     label: 'Escape',
     run: (context: CommandContext): void => {
@@ -309,6 +330,7 @@ export const COMMANDS: Array<Command> = [
 ];
 
 export function runCommand(id: CommandId, context: CommandContext): void {
+  context.ui.setModalGesture(undefined);
   const command = COMMANDS.find((candidate) => candidate.id === id);
   if (command === undefined) {
     return;

@@ -47,3 +47,14 @@ export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, pa
     panY: containerRect.height / 2 - centre.y * zoom,
   };
 }
+export function centerBoundsInRect(viewport: Viewport, bounds: Bounds, containerRect: ContainerRect): Viewport {
+  if (containerRect.width === 0 || containerRect.height === 0) {
+    return viewport;
+  }
+  const centre = boundsCentre(bounds);
+  return {
+    zoom: viewport.zoom,
+    panX: containerRect.width / 2 - centre.x * viewport.zoom,
+    panY: containerRect.height / 2 - centre.y * viewport.zoom,
+  };
+}

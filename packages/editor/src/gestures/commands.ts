@@ -270,7 +270,19 @@ export const COMMANDS: Array<Command> = [
   { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
   { id: 'edit-text', label: 'Edit text', run: runEditText },
   { id: 'duplicate', label: 'Duplicate', run: runDuplicate },
-  { id: 'escape', label: 'Escape', run: (context: CommandContext): void => { context.ui.setSelection(clearSelection()); } },
+  { id: 'open-palette', label: 'Command Palette', run: ({ ui }: CommandContext): void => { ui.setOverlay('palette'); } },
+  { id: 'open-help', label: 'Keyboard Shortcuts', run: ({ ui }: CommandContext): void => { ui.setOverlay('help'); } },
+  {
+    id: 'escape',
+    label: 'Escape',
+    run: (context: CommandContext): void => {
+      if (context.ui.overlay() !== undefined) {
+        context.ui.setOverlay(undefined);
+        return;
+      }
+      context.ui.setSelection(clearSelection());
+    },
+  },
   {
     id: 'select-all',
     label: 'Select all',

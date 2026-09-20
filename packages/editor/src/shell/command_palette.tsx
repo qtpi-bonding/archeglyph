@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { Component, createMemo, createSignal, For, JSX, onMount } from 'solid-js';
+import { PaletteAction, PaletteItem } from './palette_item';
+import { filterPaletteItems } from './palette_search';
+
+export interface CommandPaletteProps {
+  items: ReadonlyArray<PaletteItem>;
+  onChoose: (a0: PaletteAction) => void;
+  onClose: () => void;
+}
+
+export const CommandPalette: Component<CommandPaletteProps> = (
+  props: CommandPaletteProps,
+): JSX.Element => {
+  const [query, setQuery] = createSignal<string>('');
+  const [highlighted, setHighlighted] = createSignal<number>(0);
+  const filtered = createMemo<Array<PaletteItem>>((): Array<PaletteItem> =>
+    filterPaletteItems(props.items, query()),
+  );
+  let input: HTMLInputElement | undefined;
+
+  onMount((): void => {
+    input?.focus();
+  });
+
+  function choose(item: PaletteItem): void {
+    props.onChoose(item.action);
+  }
+
+  function onInput(event: InputEvent): void {
+    const target = event.currentTarget as HTMLInputElement;
+    setQuery(target.value);
+    setHighlighted(0);
+  }
+
+  function onKeyDown(event: KeyboardEvent): void {
+    const rows: Array<PaletteItem> = filtered();
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (rows.length > 0) {
+        setHighlighted((index: number): number => Math.min(index + 1, rows.length - 1));
+      }
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setHighlighted((index: number): number => Math.max(index - 1, 0));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (rows.length > 0) {
+        choose(rows[highlighted()]);
+      }
+    } else if (event.key === 'Escape') {
+      props.onClose();
+    }
+  }
+
+  const scrimStyle: JSX.CSSProperties = {
+    'align-items': 'center',
+    'background-color': 'var(--ag-bg)',
+    display: 'flex',
+    'justify-content': 'center',
+    inset: '0',
+    opacity: '0.78',
+    position: 'fixed',
+    'z-index': '1000',
+  };
+  const surfaceStyle: JSX.CSSProperties = {
+    background: 'var(--ag-panel)',
+    border: '1px solid var(--ag-edge)',
+    'border-radius': 'var(--ag-radius)',
+    'box-shadow': 'var(--ag-shadow)',
+    color: 'var(--ag-fg)',
+    'font-family': 'var(--ag-font-ui)',
+    'max-width': '640px',
+    width: 'min(640px, calc(100vw - 32px))',
+  };
+  const inputStyle: JSX.CSSProperties = {
+    background: 'var(--ag-field)',
+    border: '0',
+    'border-bottom': '1px solid var(--ag-edge)',
+    color: 'var(--ag-fg)',
+    'font-family': 'var(--ag-font-ui)',
+    'font-size': '15px',
+    outline: 'none',
+    padding: '14px 16px',
+    width: '100%',
+  };
+
+  return (
+    <div style={scrimStyle} onClick={(): void => props.onClose()}>
+      <div style={surfaceStyle} onClick={(event: MouseEvent): void => event.stopPropagation()}>
+        <input
+          ref={input}
+          aria-label="Command palette"
+          autofocus={true}
+          onInput={onInput}
+          onKeyDown={onKeyDown}
+          placeholder="Type a command or element"
+          style={inputStyle}
+          type="text"
+        />
+        <div role="listbox">
+          <For each={filtered()}>
+            {(item: PaletteItem, index: number): JSX.Element => (
+              <button
+                aria-selected={index === highlighted()}
+                onClick={(): void => choose(item)}
+                role="option"
+                style={{
+                  background: index === highlighted() ? 'var(--ag-blue-soft)' : 'var(--ag-panel)',
+                  border: '0',
+                  'border-bottom': '1px solid var(--ag-edge)',
+                  color: 'var(--ag-fg)',
+                  display: 'flex',
+                  'font-family': 'var(--ag-font-ui)',
+                  'justify-content': 'space-between',
+                  padding: '10px 16px',
+                  'text-align': 'left',
+                  width: '100%',
+                }}
+              >
+                <span>{item.label}</span>
+                <span style={{
+                  color: 'var(--ag-fg-2)',
+                  'font-family': 'var(--ag-font-mono)',
+                  'margin-left': '24px',
+                }}>{item.detail}</span>
+              </button>
+            )}
+          </For>
+        </div>
+      </div>
+    </div>
+  );
+};

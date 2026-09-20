@@ -30,7 +30,13 @@ import { UndoIsland } from './undo_island';
 import { StateIsland } from './state_island';
 import { StartScreen } from './start_screen';
 import { CommandContext, COMMANDS, runCommand } from '../gestures/commands';
-import type { CommandId } from '../ui_state/keymap';
+import { CommandId, KEYMAP } from '../ui_state/keymap';
+import { CommandPalette } from './command_palette';
+import { HelpSheet } from './help_sheet';
+import { commandPaletteItems, elementPaletteItems } from './palette_items';
+import { PaletteAction } from './palette_item';
+import { centerBoundsInRect } from '../ui_state/viewport_math';
+import { elementKey } from '../scene/element_key';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -70,6 +76,25 @@ export const App: Component<{}> = (): JSX.Element => {
   function onCommand(id: CommandId): void {
     const accessor: MaybeCommandContextAccessor = commandContext();
     if (accessor !== undefined) { runCommand(id, accessor()); }
+  }
+
+  function onOverlayClose(): void {
+    ui.setOverlay(undefined);
+  }
+
+  function onPaletteChoose(action: PaletteAction): void {
+    onOverlayClose();
+    if (action.kind === 'command') {
+      onCommand(action.command);
+      return;
+    }
+    ui.setSelection([action.ref]);
+    const accessor: MaybeCommandContextAccessor = commandContext();
+    const context: CommandContext | undefined = accessor === undefined ? undefined : accessor();
+    const entry = scene()?.geometry()?.byKey[elementKey(action.ref)];
+    if (context !== undefined && entry !== undefined) {
+      context.ui.setViewport(centerBoundsInRect(context.ui.viewport(), entry.bounds, context.rect));
+    }
   }
 
   function installState(nextState: EditorState): void {
@@ -141,6 +166,7 @@ export const App: Component<{}> = (): JSX.Element => {
       when={state() !== null}
       fallback={<StartScreen loading={loading()} error={loadError()} onOpen={onOpen} />}
     >
+      <>
       <IslandFrame
         canvas={
           <Canvas
@@ -194,6 +220,21 @@ export const App: Component<{}> = (): JSX.Element => {
           />
         }
       />
+      <Show when={ui.overlay() === 'palette'} keyed>
+        <CommandPalette
+          items={commandPaletteItems(COMMANDS, KEYMAP).concat(
+            scene()?.geometry() === undefined
+              ? []
+              : elementPaletteItems(scene()!.geometry()!.diagram),
+          )}
+          onChoose={onPaletteChoose}
+          onClose={onOverlayClose}
+        />
+      </Show>
+      <Show when={ui.overlay() === 'help'} keyed>
+        <HelpSheet commands={COMMANDS} keymap={KEYMAP} onClose={onOverlayClose} />
+      </Show>
+      </>
     </Show>
   );
 };

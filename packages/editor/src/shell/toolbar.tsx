@@ -4,9 +4,9 @@ import { Component, JSX } from 'solid-js';
 import { COMMANDS, Command } from '../gestures/commands';
 import { CommandId, KEYMAP } from '../ui_state/keymap';
 import { Tool } from '../ui_state/ui_state';
+import { formatChord } from './chord_label';
 
 type MaybeCommand = Command | undefined;
-type MaybeKey = string | undefined;
 
 export interface ToolbarProps {
   tool: Tool;
@@ -29,14 +29,10 @@ function commandLabel(id: CommandId): string {
   return commandFor(id)?.label ?? '';
 }
 
-function commandKey(id: CommandId): MaybeKey {
-  return KEYMAP.find((entry): boolean => entry.command === id)?.chord.key;
-}
-
 function commandText(id: CommandId): string {
   const label: string = commandLabel(id);
-  const key: MaybeKey = commandKey(id);
-  return key === undefined ? label : `${label} (${key})`;
+  const chord = KEYMAP.find((entry): boolean => entry.command === id)?.chord;
+  return chord === undefined ? label : `${label} (${formatChord(chord)})`;
 }
 
 function commandButton(

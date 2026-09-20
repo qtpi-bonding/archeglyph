@@ -11,7 +11,7 @@ export type CommandId = 'undo' | 'redo' | 'delete' |
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' |
   'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' |
   'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' |
-  'zoom-reset' | 'zoom-fit';
+  'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help';
 
 export interface KeymapEntry {
   chord: Chord;
@@ -42,6 +42,8 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: '1' }, command: 'zoom-fit' },
   { chord: { key: 'Enter' }, command: 'edit-text' },
   { chord: { key: 'd', meta: true }, command: 'duplicate' },
+  { chord: { key: 'k', meta: true }, command: 'open-palette' },
+  { chord: { key: '?', shift: true }, command: 'open-help' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {

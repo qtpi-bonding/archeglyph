@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
-import Resizable from '@corvu/resizable';
+import { Component, createEffect, createMemo, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
-import { Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
@@ -15,16 +13,24 @@ import { EditorState } from '../state/editor_state';
 import { createEditorState } from '../state/create_editor_state';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { Canvas } from '../canvas/canvas';
-import { TopBar } from './top_bar';
 import { Inspector } from '../inspector/inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
 import { createUiState } from '../ui_state/ui_state';
-import { Scene, createScene } from '../scene/scene';
+import { Scene, SceneError, createScene } from '../scene/scene';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
 import { createSaveController, SaveController } from './save_controller';
 import { FileSync, syncToFile } from './external_change';
+import { IslandFrame } from './island_frame';
+import { StartScreen } from './start_screen';
+import { Toolbar } from './toolbar';
+import { FileIsland } from './file_island';
+import { ZoomIsland } from './zoom_island';
+import { UndoIsland } from './undo_island';
+import { StateIsland } from './state_island';
+import { CommandContext, CommandId, COMMANDS, runCommand } from '../gestures/commands';
+import { Tool } from '../ui_state/ui_state';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -55,8 +61,13 @@ export const App: Component<{}> = (): JSX.Element => {
   });
   const ui = createUiState();
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
+  const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
   const [state, setState] = createSignal<EditorState | null>(null);
   const [scene, setScene] = createSignal<Scene | null>(null);
+  const [loadError, setLoadError] = createSignal<string | undefined>(undefined);
+  const [loading, setLoading] = createSignal<boolean>(autoLoad);
+  const [commandContext, setCommandContext] = createSignal<(() => CommandContext) | undefined>(undefined);
+  const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -95,9 +106,11 @@ export const App: Component<{}> = (): JSX.Element => {
 
   function loadFrom(result: Result<LoadResult, AdapterError>): void {
     if (result.kind === 'err') {
-      console.error(`archeglyph: failed to load diagram: ${result.error.message}`);
+      setLoadError(`archeglyph: failed to load diagram: ${result.error.message}`);
+      setLoading(false);
       return;
     }
+    setLoading(false);
     // A diagram authored without a style file gets the theme's starting
     // components written in as real bindings, rather than the resolver
     // assuming them. They show up in the inspector as ordinary entries the
@@ -109,19 +122,34 @@ export const App: Component<{}> = (): JSX.Element => {
     startSession(createEditorState(result.value.diagram, stylesheet), result.value);
   }
 
-  function onOpen(): void { pair.adapter.load().then(loadFrom); }
-
-  function onNew(): void {
-    installState(createEditorState(create(DiagramSchema, {}), create(StylesheetSchema, {})));
-    
-    const current: EditorState | null = state();
-    if (current !== null) {
-      setSaveController(createSaveController(pair.adapter, current, 800));
-    }
+  function onOpen(): void {
+    setLoadError(undefined);
+    setLoading(true);
+    pair.adapter.load().then(loadFrom);
   }
 
+  function onCommand(command: CommandId): void {
+    const accessor: (() => CommandContext) | undefined = commandContext();
+    if (accessor !== undefined) { runCommand(command, accessor()); }
+  }
+
+  const activeMode = createMemo<string | undefined>(() => {
+    const tool: Tool = ui.tool();
+    if (tool === 'select') { return undefined; }
+    const id: CommandId = `tool-${tool}` as CommandId;
+    return COMMANDS.find((command): boolean => command.id === id)?.label;
+  });
+
+  createEffect((): void => {
+    const current: SceneError | undefined = scene()?.error();
+    if (current !== dismissedError()) { setDismissedError(undefined); }
+  });
+
   onMount((): void => {
-    if (autoLoad) { pair.adapter.load().then(loadFrom); }
+    if (autoLoad) {
+      setLoading(true);
+      pair.adapter.load().then(loadFrom);
+    }
     onCleanup((): void => {
       saveController()?.dispose();
       fileSync?.stop();
@@ -129,45 +157,16 @@ export const App: Component<{}> = (): JSX.Element => {
   });
 
   return (
-      <div style={{ display: 'flex', 'flex-direction': 'column', height: '100%' }}>
-        <Show when={state() !== null} fallback={
-          <Show when={!autoLoad}>
-            <div style={{ display: 'flex', 'flex-direction': 'column', 'align-items': 'center', 'justify-content': 'center', height: '100%', gap: '12px' }}>
-              <div style={{ 'font-size': '20px', 'font-weight': '600', 'margin-bottom': '8px' }}>archeglyph</div>
-              <button onClick={onOpen} style={{ padding: '8px 20px', 'font-size': '14px', cursor: 'pointer' }}>Open file…</button>
-              <button onClick={onNew} style={{ padding: '8px 20px', 'font-size': '14px', cursor: 'pointer' }}>New diagram</button>
-            </div>
-          </Show>
-        }>
-          <TopBar
-            state={state()!}
-            adapter={pair.adapter}
-            saveController={saveController()}
-            editorTheme={chrome().name}
-            onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
-          />
-          <Resizable style={{ flex: '1', overflow: 'hidden' }}>
-            <Resizable.Panel initialSize={0.7} minSize={0.2} style={{ height: '100%', overflow: 'hidden' }}>
-              <Show when={scene() !== null}>
-                <Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} onSave={onSave} />
-              </Show>
-            </Resizable.Panel>
-            <Resizable.Handle />
-            <Resizable.Panel initialSize={'280px'} minSize={'200px'} style={{ height: '100%', overflow: 'hidden' }}>
-              <Show when={scene()?.geometry()}>
-                {(geometry) => (
-                  <Inspector
-                    state={state()!}
-                    ui={ui}
-                    geometry={geometry()}
-                    theme={theme}
-                    registerFocus={(focus: () => void): void => { focusInspector = focus; }}
-                  />
-                )}
-              </Show>
-            </Resizable.Panel>
-          </Resizable>
-        </Show>
-      </div>
+    <Show when={state() !== null} fallback={<StartScreen loading={loading()} error={loadError()} onOpen={onOpen} />}>
+      <IslandFrame
+        canvas={<Canvas diagram={state()!.diagram()} layoutEngine={layoutEngine} scene={scene()!} stylesheet={state()!.stylesheet()} theme={theme} ui={ui} state={state()!} onFocusInspector={onFocusInspector} onSave={onSave} registerCommandContext={(getContext: () => CommandContext): void => { setCommandContext(getContext); }} />}
+        toolbar={<Toolbar tool={ui.tool()} onCommand={onCommand} />}
+        inspector={<Show when={scene()?.geometry()}>{(geometry) => <Inspector state={state()!} ui={ui} geometry={geometry()} theme={theme} registerFocus={(focus: () => void): void => { focusInspector = focus; }} />}</Show>}
+        file={<FileIsland fileName={fileName} dirty={state()!.dirty()} canSave={pair.adapter.canSave()} status={saveController()?.status()} errorMessage={saveController()?.errorMessage()} onSave={onSave} editorTheme={chrome().name} onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }} />}
+        zoom={<ZoomIsland zoom={ui.viewport().zoom} onCommand={onCommand} />}
+        undo={<UndoIsland canUndo={state()!.canUndo()} canRedo={state()!.canRedo()} onCommand={onCommand} />}
+        state={<StateIsland mode={activeMode()} error={((): string | undefined => { const current = scene()?.error(); return current !== undefined && current !== dismissedError() ? current.message : undefined; })()} onDismiss={(): void => { setDismissedError(scene()?.error()); }} />}
+      />
+    </Show>
   );
 };

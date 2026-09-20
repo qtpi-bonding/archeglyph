@@ -53,6 +53,9 @@ import { Ok } from '@archeglyph/proto/util/result';
 import { ElkAdapterImpl, LayoutAdapter } from '../src/layout/layout_adapter/impl';
 import { LayoutEngineImpl } from '../src/layout/layout_engine/impl';
 
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
+
 describe('layout pinning paths (repaired testgen cases)', () => {
     // WHEN: The root element itself (with no parent group) carries an explicit position; the root graph is the "parent" laying out that root-level sibling, so runLayout marks the root graph's own layoutOptions 'fixed' -- exactly the same propagation a compound group gets for a positioned child, just one level up
     // THEN: runLayout applies the position/option handling to the explicitly positioned root element AND marks the root graph's own layoutOptions with 'org.eclipse.elk.fixed', since the root graph plays the parent role for root-level children.
@@ -63,7 +66,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           id: 'root_node',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 3, y: 4 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: [node], edges: [], groups: [], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: {}, groups: {}, annotations: {} });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -86,7 +89,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
         });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [nodeA], groups: [group], edges: [], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([nodeA]), groups: byId([group]), edges: {}, annotations: {},
         });
         const seedCalls: ResolvedDiagram[] = [];
         const runLayoutCalls: ResolvedDiagram[] = [];
@@ -97,7 +100,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           },
           async runLayout(d) {
             runLayoutCalls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -122,7 +125,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
         });
         const newcomer = Object.assign(new ResolvedNode(), { id: 'newcomer', shape: {} as any, typography: {} as any });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [pinnedNode, newcomer], groups: [pinnedGroup], edges: [], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([pinnedNode, newcomer]), groups: byId([pinnedGroup]), edges: {}, annotations: {},
         });
         const seedCalls: { diagram: ResolvedDiagram; pinned: Map<string, any> }[] = [];
         const runLayoutCalls: ResolvedDiagram[] = [];
@@ -133,7 +136,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           },
           async runLayout(d) {
             runLayoutCalls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -149,8 +152,8 @@ describe('layout pinning paths (repaired testgen cases)', () => {
         expect(pinnedArg.has('newcomer')).toBe(false);
         expect(result.kind).toBe('ok');
         if (result.kind === 'ok') {
-          const laidPinned = result.value.nodes.find((n) => n.id === 'pinned')!;
-          const laidNewcomer = result.value.nodes.find((n) => n.id === 'newcomer')!;
+          const laidPinned = result.value.nodes['pinned']!;
+          const laidNewcomer = result.value.nodes['newcomer']!;
           expect(laidPinned.position.x).toBeCloseTo(5);
           expect(laidPinned.position.y).toBeCloseTo(6);
           expect(laidNewcomer.position.x).toBeCloseTo(50);

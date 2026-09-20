@@ -51,9 +51,12 @@ function unpinnedNode(id: string): ResolvedNode {
   return Object.assign(new ResolvedNode(), { id });
 }
 
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item) => [item.id, item]));
+
 function diagramOf(nodes: ResolvedNode[]): ResolvedDiagram {
   return Object.assign(new ResolvedDiagram(), {
-    id: 'd', nodes, edges: [], groups: [], annotations: [],
+    id: 'd', nodes: byId(nodes), edges: {}, groups: {}, annotations: {},
   });
 }
 
@@ -76,8 +79,8 @@ describe('pin-on-touch: adding an element must not move a pinned one', () => {
     ]);
 
     for (const id of ['a', 'b']) {
-      const was = before.nodes.find((n) => n.id === id);
-      const now = after.nodes.find((n) => n.id === id);
+      const was = before.nodes[id];
+      const now = after.nodes[id];
       expect(now).toBeDefined();
       // Exact equality on purpose. A tolerance here would hide precisely the
       // failure this test exists to catch -- elk.layered treating a fixed
@@ -95,8 +98,8 @@ describe('pin-on-touch: adding an element must not move a pinned one', () => {
       pinnedNode('b', 300, 20),
       unpinnedNode('newcomer'),
     ]);
-    const a = after.nodes.find((n) => n.id === 'a');
-    const b = after.nodes.find((n) => n.id === 'b');
+    const a = after.nodes['a'];
+    const b = after.nodes['b'];
     expect(a!.position.x).toBe(10);
     expect(a!.position.y).toBe(20);
     expect(b!.position.x).toBe(300);
@@ -122,9 +125,9 @@ describe('pin-on-touch: adding an element must not move a pinned one', () => {
       pinnedNode('b', 300, 20),
       unpinnedNode('newcomer'),
     ]);
-    const newcomer = after.nodes.find((n) => n.id === 'newcomer')!;
+    const newcomer = after.nodes['newcomer']!;
     for (const id of ['a', 'b']) {
-      const pinned = after.nodes.find((n) => n.id === id)!;
+      const pinned = after.nodes[id]!;
       const overlaps =
         newcomer.position.x < pinned.position.x + pinned.size.x &&
         newcomer.position.x + newcomer.size.x > pinned.position.x &&
@@ -137,7 +140,7 @@ describe('pin-on-touch: adding an element must not move a pinned one', () => {
   test('the newcomer is actually placed somewhere', async () => {
     // Otherwise "nothing moved" could be satisfied by doing no layout at all.
     const after = await layoutOf([pinnedNode('a', 10, 20), unpinnedNode('newcomer')]);
-    const newcomer = after.nodes.find((n) => n.id === 'newcomer');
+    const newcomer = after.nodes['newcomer'];
     expect(newcomer).toBeDefined();
     expect(Number.isFinite(newcomer!.position.x)).toBe(true);
     expect(Number.isFinite(newcomer!.position.y)).toBe(true);

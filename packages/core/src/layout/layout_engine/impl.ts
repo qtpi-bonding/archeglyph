@@ -101,26 +101,25 @@ export class LayoutEngineImpl implements LayoutEngine {
 
     this.absolutizePositions(result.value);
     const laid = result.value;
-    const groupById = new Map(laid.groups.map(group => [group.id, group]));
-    for (const node of laid.nodes) {
+    for (const node of Object.values(laid.nodes)) {
       const position = request.diagram.nodes[node.id]?.layout?.position;
       if (position !== undefined) {
-        const parent = node.parentGroup === undefined ? undefined : groupById.get(node.parentGroup);
+        const parent = node.parentGroup === undefined ? undefined : laid.groups[node.parentGroup];
         node.position = parent === undefined
           ? position
           : create(Vec2Schema, { x: parent.position.x + position.x, y: parent.position.y + position.y });
       }
     }
-    for (const group of laid.groups) {
+    for (const group of Object.values(laid.groups)) {
       const position = request.diagram.groups[group.id]?.layout?.position;
       if (position !== undefined) {
-        const parent = group.parentGroup === undefined ? undefined : groupById.get(group.parentGroup);
+        const parent = group.parentGroup === undefined ? undefined : laid.groups[group.parentGroup];
         group.position = parent === undefined
           ? position
           : create(Vec2Schema, { x: parent.position.x + position.x, y: parent.position.y + position.y });
       }
     }
-    for (const edge of laid.edges) {
+    for (const edge of Object.values(laid.edges)) {
       const waypoints = request.diagram.edges[edge.id]?.layout?.waypoints;
       if (waypoints !== undefined && waypoints.length > 0) {
         edge.sections = [Object.assign(new EdgeSection(), {
@@ -155,18 +154,17 @@ export class LayoutEngineImpl implements LayoutEngine {
     const nodeSize = (node: ResolvedNode): { x: number; y: number } =>
       node.layout?.size ?? sizeForLabel(node.label, node.typography);
 
-    const nodes = Object.values(diagram.nodes).map(node => {
+    const nodes: Record<string, LaidOutNode> = Object.fromEntries(Object.values(diagram.nodes).map(node => {
       const local = node.layout?.position!;
       const parent = node.parentGroup === undefined ? { x: 0, y: 0 } : absoluteGroupPosition(node.parentGroup);
-      return Object.assign(new LaidOutNode(), {
+      return [node.id, Object.assign(new LaidOutNode(), {
         id: node.id, parentGroup: node.parentGroup,
         position: create(Vec2Schema, { x: local.x + parent.x, y: local.y + parent.y }),
         size: create(Vec2Schema, nodeSize(node)), shape: node.shape,
         typography: node.typography, label: node.label, layout: node.layout,
-      });
-    });
+      })];
+    }));
 
-    const laidNodeById = new Map(nodes.map(node => [node.id, node]));
     const computedGroupSize = new Map<string, { x: number; y: number }>();
     const groupSize = (group: ResolvedGroup): { x: number; y: number } => {
       const existing = computedGroupSize.get(group.id);
@@ -174,7 +172,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       const origin = absoluteGroupPosition(group.id);
       let width = 0;
       let height = 0;
-      for (const child of nodes.filter(node => node.parentGroup === group.id)) {
+      for (const child of Object.values(nodes).filter(node => node.parentGroup === group.id)) {
         width = Math.max(width, child.position.x - origin.x + child.size.x);
         height = Math.max(height, child.position.y - origin.y + child.size.y);
       }
@@ -188,43 +186,42 @@ export class LayoutEngineImpl implements LayoutEngine {
       computedGroupSize.set(group.id, size);
       return size;
     };
-    const groups = Object.values(diagram.groups).map(group => {
+    const groups: Record<string, LaidOutGroup> = Object.fromEntries(Object.values(diagram.groups).map(group => {
       const position = absoluteGroupPosition(group.id);
       const size = groupSize(group);
-      return Object.assign(new LaidOutGroup(), {
+      return [group.id, Object.assign(new LaidOutGroup(), {
         id: group.id, parentGroup: group.parentGroup,
         position: create(Vec2Schema, position), size: create(Vec2Schema, size),
         shape: group.shape, typography: group.typography, label: group.label,
         isSuperNode: group.isSuperNode, hiddenDescendantCount: group.hiddenDescendantCount,
         layout: group.layout,
-      });
-    });
-    const laidGroupById = new Map(groups.map(group => [group.id, group]));
+      })];
+    }));
     const endpointBounds = (id: string): Bounds => {
-      const node = laidNodeById.get(id);
+      const node = nodes[id];
       if (node !== undefined) return boundsFromRect(node.position, node.size);
-      const group = laidGroupById.get(id);
+      const group = groups[id];
       return group === undefined ? boundsFromRect(create(Vec2Schema, { x: 0, y: 0 }), create(Vec2Schema, { x: 0, y: 0 })) : boundsFromRect(group.position, group.size);
     };
-    const edges = Object.values(diagram.edges).map(edge => {
+    const edges: Record<string, LaidOutEdge> = Object.fromEntries(Object.values(diagram.edges).map(edge => {
       const layout = edge.layout;
       const waypoints = layout?.routing === EdgeRouting.ROUTING_MANUAL && layout.waypoints.length > 0
         ? layout.waypoints
         : layout?.routing === EdgeRouting.ROUTING_ORTHOGONAL
           ? routeOrthogonal(endpointBounds(edge.source), endpointBounds(edge.target), layout?.sourceAttach, layout?.targetAttach)
           : routeStraight(endpointBounds(edge.source), endpointBounds(edge.target), layout?.sourceAttach, layout?.targetAttach);
-      return Object.assign(new LaidOutEdge(), {
+      return [edge.id, Object.assign(new LaidOutEdge(), {
         id: edge.id, source: edge.source, target: edge.target,
         sections: [Object.assign(new EdgeSection(), {
           startPoint: waypoints[0], endPoint: waypoints[waypoints.length - 1], bendPoints: waypoints.slice(1, -1),
         })], connection: edge.connection, typography: edge.typography, label: edge.label, layout: edge.layout,
-      });
-    });
-    const annotations = Object.values(diagram.annotations).map(annotation => {
+      })];
+    }));
+    const annotations: Record<string, LaidOutAnnotation> = Object.fromEntries(Object.values(diagram.annotations).map(annotation => {
       const measured = sizeForLabel(annotation.content, annotation.typography);
       const position = annotation.layout?.position ?? create(Vec2Schema, { x: 0, y: 0 });
       const size = annotation.layout?.size ?? create(Vec2Schema, measured);
-      return Object.assign(new LaidOutAnnotation(), {
+      return [annotation.id, Object.assign(new LaidOutAnnotation(), {
         id: annotation.id,
         position,
         size,
@@ -234,8 +231,8 @@ export class LayoutEngineImpl implements LayoutEngine {
         callout: annotation.callout,
         layout: annotation.layout,
         content: annotation.content,
-      });
-    });
+      })];
+    }));
     return Object.assign(new LaidOutDiagram(), {
       id: diagram.id, canvas: diagram.canvas, nodes, groups, edges, annotations,
     });
@@ -243,25 +240,24 @@ export class LayoutEngineImpl implements LayoutEngine {
 
   /** Converts ELK's parent-relative positions to diagram coordinates. */
   private absolutizePositions(laid: LaidOutDiagram): void {
-    const groupById = new Map(laid.groups.map(group => [group.id, group]));
     function depthOf(group: LaidOutGroup): number {
       let depth = 0;
       let current: LaidOutGroup | undefined = group;
       while (current?.parentGroup !== undefined) {
-        current = groupById.get(current.parentGroup);
+        current = laid.groups[current.parentGroup];
         depth += 1;
       }
       return depth;
     }
-    const orderedGroups = laid.groups.slice().sort((a, b) => depthOf(a) - depthOf(b));
+    const orderedGroups = Object.values(laid.groups).sort((a, b) => depthOf(a) - depthOf(b));
     for (const group of orderedGroups) {
       if (group.parentGroup !== undefined) {
-        const parent = groupById.get(group.parentGroup);
+        const parent = laid.groups[group.parentGroup];
         if (parent !== undefined) group.position = create(Vec2Schema, { x: group.position.x + parent.position.x, y: group.position.y + parent.position.y });
       }
     }
-    for (const node of laid.nodes) {
-      const parent = node.parentGroup === undefined ? undefined : groupById.get(node.parentGroup);
+    for (const node of Object.values(laid.nodes)) {
+      const parent = node.parentGroup === undefined ? undefined : laid.groups[node.parentGroup];
       if (parent !== undefined) node.position = create(Vec2Schema, { x: node.position.x + parent.position.x, y: node.position.y + parent.position.y });
     }
   }

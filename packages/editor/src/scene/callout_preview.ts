@@ -15,7 +15,7 @@ export function calloutPreviews(geometry: SceneGeometry, moved: Array<ElementBou
   }
 
   const result: Array<PreviewEdge> = [];
-  for (const annotation of geometry.diagram.annotations) {
+  for (const annotation of Object.values(geometry.diagram.annotations)) {
     const anchor = annotation.anchor;
     if (anchor === undefined || anchor.refKind === RefKind.EDGE) {
       continue;

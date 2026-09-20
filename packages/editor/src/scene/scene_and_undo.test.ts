@@ -110,8 +110,23 @@ function edge(id: string, source: string, target: string, points: Vec2[]): LaidO
   });
 }
 
-function diagram(partial: Partial<LaidOutDiagram>): LaidOutDiagram {
-  return Object.assign(new LaidOutDiagram(), partial);
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item) => [item.id, item]));
+
+interface DiagramParts {
+  nodes?: LaidOutNode[];
+  edges?: LaidOutEdge[];
+  groups?: LaidOutGroup[];
+  annotations?: LaidOutAnnotation[];
+}
+
+function diagram(parts: DiagramParts): LaidOutDiagram {
+  return Object.assign(new LaidOutDiagram(), {
+    ...(parts.nodes === undefined ? {} : { nodes: byId(parts.nodes) }),
+    ...(parts.edges === undefined ? {} : { edges: byId(parts.edges) }),
+    ...(parts.groups === undefined ? {} : { groups: byId(parts.groups) }),
+    ...(parts.annotations === undefined ? {} : { annotations: byId(parts.annotations) }),
+  });
 }
 
 // ---------------------------------------------------------------------------

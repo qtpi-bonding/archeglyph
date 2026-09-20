@@ -82,25 +82,25 @@ function viewBoxExtents(diagram: LaidOutDiagram): ViewBoxExtents {
   let maxX: number = -Infinity;
   let maxY: number = -Infinity;
 
-  for (const node of diagram.nodes) {
+  for (const node of Object.values(diagram.nodes)) {
     minX = Math.min(minX, node.position.x);
     minY = Math.min(minY, node.position.y);
     maxX = Math.max(maxX, node.position.x + node.size.x);
     maxY = Math.max(maxY, node.position.y + node.size.y);
   }
-  for (const group of diagram.groups) {
+  for (const group of Object.values(diagram.groups)) {
     minX = Math.min(minX, group.position.x);
     minY = Math.min(minY, group.position.y);
     maxX = Math.max(maxX, group.position.x + group.size.x);
     maxY = Math.max(maxY, group.position.y + group.size.y);
   }
-  for (const ann of diagram.annotations) {
+  for (const ann of Object.values(diagram.annotations)) {
     minX = Math.min(minX, ann.position.x);
     minY = Math.min(minY, ann.position.y);
     maxX = Math.max(maxX, ann.position.x + ann.size.x);
     maxY = Math.max(maxY, ann.position.y + ann.size.y);
   }
-  for (const edge of diagram.edges) {
+  for (const edge of Object.values(diagram.edges)) {
     for (const section of edge.sections) {
       minX = Math.min(minX, section.startPoint.x, section.endPoint.x);
       minY = Math.min(minY, section.startPoint.y, section.endPoint.y);

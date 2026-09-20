@@ -52,8 +52,22 @@ function group(id: string, position: Vec2, size: Vec2): LaidOutGroup {
   });
 }
 
-function geometryFrom(partial: Partial<LaidOutDiagram>): SceneGeometry {
-  return buildSceneGeometry(Object.assign(new LaidOutDiagram(), partial), '<svg/>');
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item) => [item.id, item]));
+
+interface DiagramParts {
+  nodes?: LaidOutNode[];
+  groups?: LaidOutGroup[];
+}
+
+function geometryFrom(parts: DiagramParts): SceneGeometry {
+  return buildSceneGeometry(
+    Object.assign(new LaidOutDiagram(), {
+      ...(parts.nodes === undefined ? {} : { nodes: byId(parts.nodes) }),
+      ...(parts.groups === undefined ? {} : { groups: byId(parts.groups) }),
+    }),
+    '<svg/>',
+  );
 }
 
 const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>

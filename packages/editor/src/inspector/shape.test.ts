@@ -52,8 +52,11 @@ function node(id: string, shape?: ReturnType<typeof create>): LaidOutNode {
   });
 }
 
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
+
 function geometryFrom(nodes: LaidOutNode[]): SceneGeometry {
-  return buildSceneGeometry(Object.assign(new LaidOutDiagram(), { nodes }), '<svg/>');
+  return buildSceneGeometry(Object.assign(new LaidOutDiagram(), { nodes: byId(nodes) }), '<svg/>');
 }
 
 const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>

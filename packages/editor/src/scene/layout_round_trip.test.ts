@@ -65,7 +65,7 @@ async function sceneFor(sheet: Stylesheet): Promise<{ geometry: SceneGeometry; s
 /** Absolute laid-out position of every node, by id. */
 function positions(geometry: SceneGeometry): Record<string, { x: number; y: number }> {
   return Object.fromEntries(
-    geometry.diagram.nodes.map((node) => [node.id, { x: node.position.x, y: node.position.y }]),
+    Object.values(geometry.diagram.nodes).map((node) => [node.id, { x: node.position.x, y: node.position.y }]),
   );
 }
 
@@ -102,7 +102,7 @@ describe('a drag survives the next layout pass', () => {
     const edit = dragNode('load', { x: 10, y: 10 }, first.geometry, first.sheet)!;
     const sheet = applyStyleEditToStylesheet(first.sheet, edit);
 
-    for (const node of first.geometry.diagram.nodes) {
+    for (const node of Object.values(first.geometry.diagram.nodes)) {
       expect(sheet.nodes[node.id]?.layout?.position).toBeDefined();
     }
   });
@@ -154,7 +154,7 @@ describe('a drag survives the next layout pass', () => {
     )!;
 
     const after = await sceneFor(applyStyleEditToStylesheet(first.sheet, edit));
-    const node = after.geometry.diagram.nodes.find((candidate) => candidate.id === 'load')!;
+    const node = after.geometry.diagram.nodes['load'];
     expect(node.size.x).toBeCloseTo(bounds.maxX - bounds.minX + 30, 5);
     expect(node.size.y).toBeCloseTo(bounds.maxY - bounds.minY + 20, 5);
   });

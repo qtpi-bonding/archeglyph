@@ -10,8 +10,8 @@ import { CanvasStyle } from '@archeglyph/proto/gen/style_pb';
 export class LaidOutDiagram {
   id!: string;
   canvas!: CanvasStyle;
-  nodes: LaidOutNode[] = [];
-  edges: LaidOutEdge[] = [];
-  groups: LaidOutGroup[] = [];
-  annotations: LaidOutAnnotation[] = [];
+  nodes: Record<string, LaidOutNode> = {};
+  edges: Record<string, LaidOutEdge> = {};
+  groups: Record<string, LaidOutGroup> = {};
+  annotations: Record<string, LaidOutAnnotation> = {};
 }

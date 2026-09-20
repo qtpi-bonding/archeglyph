@@ -181,7 +181,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         expect(elkNode.y).toBeUndefined();
         expect(elkNode.layoutOptions?.['org.eclipse.elk.position']).toBeUndefined();
         if (result.kind === 'ok') {
-          const laidOut = result.value.nodes.find((n: any) => n.id === 'unstyled');
+          const laidOut = result.value.nodes['unstyled'];
           expect(laidOut).toBeDefined();
           expect(laidOut!.position.x).toBe(0);
           expect(laidOut!.position.y).toBe(0);
@@ -399,7 +399,7 @@ describe('testgen_layout_engine__layout', () => {
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -409,9 +409,9 @@ describe('testgen_layout_engine__layout', () => {
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
         const laid = result.value;
-        const a = laid.nodes.find((n) => n.id === 'a')!;
-        const b = laid.nodes.find((n) => n.id === 'b')!;
-        const g = laid.groups.find((gr) => gr.id === 'g')!;
+        const a = laid.nodes['a']!;
+        const b = laid.nodes['b']!;
+        const g = laid.groups['g']!;
         expect(a.position.x).toBeCloseTo(0);
         expect(a.position.y).toBeCloseTo(0);
         expect(b.position.x).toBeCloseTo(200);
@@ -423,7 +423,7 @@ describe('testgen_layout_engine__layout', () => {
           { minX: 0, minY: 0, maxX: 100, maxY: 40 },
           { minX: 200, minY: 0, maxX: 300, maxY: 40 },
         );
-        const laidEdge = laid.edges.find((e) => e.id === 'e')!;
+        const laidEdge = laid.edges['e']!;
         const points = laidEdge.sections.flatMap((s) => [s.startPoint, ...s.bendPoints, s.endPoint]);
         expect(points.length).toBe(expectedRoute.length);
         expect(points[0].x).toBeCloseTo(expectedRoute[0].x);
@@ -442,7 +442,7 @@ describe('testgen_layout_engine__layout', () => {
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -475,7 +475,7 @@ describe('testgen_layout_engine__layout', () => {
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -484,7 +484,7 @@ describe('testgen_layout_engine__layout', () => {
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
-        const a = result.value.nodes.find((n) => n.id === 'a')!;
+        const a = result.value.nodes['a']!;
         expect(a.position.x).toBeCloseTo(0);
         expect(a.position.y).toBeCloseTo(0);
     });
@@ -503,7 +503,7 @@ describe('testgen_layout_engine__layout', () => {
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -512,8 +512,8 @@ describe('testgen_layout_engine__layout', () => {
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
-        expect(result.value.annotations.length).toBe(1);
-        const ann = result.value.annotations[0];
+        expect(Object.keys(result.value.annotations).length).toBe(1);
+        const ann = Object.values(result.value.annotations)[0];
         expect(ann.id).toBe('ann');
         expect(ann.position.x).toBeCloseTo(10);
         expect(ann.position.y).toBeCloseTo(20);
@@ -528,7 +528,7 @@ describe('testgen_layout_engine__layout', () => {
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -537,10 +537,10 @@ describe('testgen_layout_engine__layout', () => {
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
         expect(elkInvoked).toBe(false);
-        expect(result.value.nodes).toEqual([]);
-        expect(result.value.groups).toEqual([]);
-        expect(result.value.edges).toEqual([]);
-        expect(result.value.annotations).toEqual([]);
+        expect(result.value.nodes).toEqual({});
+        expect(result.value.groups).toEqual({});
+        expect(result.value.edges).toEqual({});
+        expect(result.value.annotations).toEqual({});
     });
 
     // WHEN: Diagram consists of exactly one node with an explicit pinned position; ELK is bypassed and the node's position matches its stylesheet declaration exactly
@@ -557,7 +557,7 @@ describe('testgen_layout_engine__layout', () => {
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -566,8 +566,8 @@ describe('testgen_layout_engine__layout', () => {
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
-        expect(result.value.nodes.length).toBe(1);
-        const laid = result.value.nodes[0];
+        expect(Object.keys(result.value.nodes).length).toBe(1);
+        const laid = Object.values(result.value.nodes)[0];
         expect(laid.id).toBe('solo');
         expect(laid.position.x).toBeCloseTo(42);
         expect(laid.position.y).toBeCloseTo(17);
@@ -594,7 +594,7 @@ describe('testgen_layout_engine__layout', () => {
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: [], edges: [], groups: [], annotations: [] }));
+            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
@@ -603,7 +603,7 @@ describe('testgen_layout_engine__layout', () => {
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
-        const laidEdge = result.value.edges.find((e) => e.id === 'e')!;
+        const laidEdge = result.value.edges['e']!;
         expect(laidEdge.sections.length).toBeGreaterThan(0);
         const points = laidEdge.sections.flatMap((s) => [s.startPoint, ...s.bendPoints, s.endPoint]);
         const start = points[0];
@@ -638,10 +638,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        expect(laid.nodes).toEqual([]);
-        expect(laid.edges).toEqual([]);
-        expect(laid.groups).toEqual([]);
-        expect(laid.annotations).toEqual([]);
+        expect(laid.nodes).toEqual({});
+        expect(laid.edges).toEqual({});
+        expect(laid.groups).toEqual({});
+        expect(laid.annotations).toEqual({});
         expect(measureSpy).not.toHaveBeenCalled();
         expect(straightSpy).not.toHaveBeenCalled();
         expect(orthoSpy).not.toHaveBeenCalled();
@@ -675,11 +675,11 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        expect(laid.nodes).toHaveLength(1);
-        expect(laid.nodes[0].position.x).toBe(10);
-        expect(laid.nodes[0].position.y).toBe(20);
-        expect(laid.nodes[0].size.x).toBe(100);
-        expect(laid.nodes[0].size.y).toBe(50);
+        expect(Object.keys(laid.nodes)).toHaveLength(1);
+        expect(Object.values(laid.nodes)[0].position.x).toBe(10);
+        expect(Object.values(laid.nodes)[0].position.y).toBe(20);
+        expect(Object.values(laid.nodes)[0].size.x).toBe(100);
+        expect(Object.values(laid.nodes)[0].size.y).toBe(50);
         expect(measureSpy).not.toHaveBeenCalled();
         measureSpy.mockRestore();
     });
@@ -710,10 +710,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
         expect(measureSpy).toHaveBeenCalled();
-        expect(laid.nodes[0].position.x).toBe(5);
-        expect(laid.nodes[0].position.y).toBe(5);
-        expect(laid.nodes[0].size.x).toBe(42);
-        expect(laid.nodes[0].size.y).toBe(14);
+        expect(Object.values(laid.nodes)[0].position.x).toBe(5);
+        expect(Object.values(laid.nodes)[0].position.y).toBe(5);
+        expect(Object.values(laid.nodes)[0].size.x).toBe(42);
+        expect(Object.values(laid.nodes)[0].size.y).toBe(14);
         measureSpy.mockRestore();
     });
 
@@ -765,7 +765,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        const laidGroup = laid.groups.find(g => g.id === 'g1')!;
+        const laidGroup = laid.groups['g1']!;
         expect(laidGroup.size.x).not.toBe(9999);
         expect(laidGroup.size.y).not.toBe(9999);
         expect(laidGroup.size.x).toBe(120);
@@ -820,8 +820,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        const laidInner = laid.groups.find(g => g.id === 'inner')!;
-        const laidOuter = laid.groups.find(g => g.id === 'outer')!;
+        const laidInner = laid.groups['inner']!;
+        const laidOuter = laid.groups['outer']!;
         expect(laidInner.size.x).toBe(30);
         expect(laidInner.size.y).toBe(30);
         expect(laidOuter.size.x).toBeGreaterThanOrEqual(laidInner.position.x + laidInner.size.x - laidOuter.position.x);
@@ -854,7 +854,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        const laidGroup = laid.groups[0];
+        const laidGroup = Object.values(laid.groups)[0];
         expect(laidGroup.position.x).toBe(15);
         expect(laidGroup.position.y).toBe(25);
         expect(laidGroup.size.x).toBe(0);
@@ -1019,7 +1019,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const call = straightSpy.mock.calls[0];
         expect(call[2]).toEqual(expect.objectContaining({ x: 1, y: 0 }));
         expect(call[3]).toEqual(expect.objectContaining({ x: -1, y: 0 }));
-        const laidEdge = laid.edges.find(e => e.id === 'e1')!;
+        const laidEdge = laid.edges['e1']!;
         expect(laidEdge.layout?.labelPosition).toBe(EdgePathPosition.PATH_POSITION_CUSTOM);
         expect(laidEdge.layout?.labelPositionFraction).toBe(0.25);
         expect(laidEdge.sections.length).toBeGreaterThan(0);
@@ -1117,7 +1117,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        const laidAnnotation = laid.annotations[0];
+        const laidAnnotation = Object.values(laid.annotations)[0];
         expect(laidAnnotation.position.x).toBe(7);
         expect(laidAnnotation.position.y).toBe(8);
         expect(laidAnnotation.size.x).toBe(30);
@@ -1151,7 +1151,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        const laidAnnotation = laid.annotations[0];
+        const laidAnnotation = Object.values(laid.annotations)[0];
         expect(laidAnnotation.position.x).toBe(3);
         expect(laidAnnotation.position.y).toBe(4);
         expect(laidAnnotation.size.x).toBe(12);
@@ -1196,8 +1196,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
-        expect(laid.nodes[0].layout?.rotation).toBe(37.5);
-        expect(laid.annotations[0].layout?.rotation).toBe(-12.25);
+        expect(Object.values(laid.nodes)[0].layout?.rotation).toBe(37.5);
+        expect(Object.values(laid.annotations)[0].layout?.rotation).toBe(-12.25);
     });
 
     // WHEN: layoutFromPins is invoked (bypassing the normal isFullyPinned gate) on a diagram where some node, group, or annotation lacks a written position

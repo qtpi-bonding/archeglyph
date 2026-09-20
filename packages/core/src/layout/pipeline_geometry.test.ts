@@ -89,7 +89,11 @@ function bbox(diagram: LaidOutDiagram): { minX: number; minY: number; maxX: numb
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const el of [...diagram.nodes, ...diagram.groups, ...diagram.annotations]) {
+  for (const el of [
+    ...Object.values(diagram.nodes),
+    ...Object.values(diagram.groups),
+    ...Object.values(diagram.annotations),
+  ]) {
     minX = Math.min(minX, el.position.x);
     minY = Math.min(minY, el.position.y);
     maxX = Math.max(maxX, el.position.x + el.size.x);
@@ -99,7 +103,7 @@ function bbox(diagram: LaidOutDiagram): { minX: number; minY: number; maxX: numb
 }
 
 function touches(diagram: LaidOutDiagram, point: Vec2, id: string): boolean {
-  const node = diagram.nodes.find((candidate) => candidate.id === id);
+  const node = diagram.nodes[id];
   if (node === undefined) {
     return false;
   }
@@ -111,7 +115,7 @@ function touches(diagram: LaidOutDiagram, point: Vec2, id: string): boolean {
 }
 
 function polyline(diagram: LaidOutDiagram, edgeId: string): Vec2[] {
-  const edge = diagram.edges.find((candidate) => candidate.id === edgeId);
+  const edge = diagram.edges[edgeId];
   if (edge === undefined) {
     throw new Error(`no edge ${edgeId}`);
   }
@@ -224,9 +228,9 @@ const MANY_ELEMENTS = {
 describe('completeness', () => {
   test('every node, edge and group in the content file appears in the laid-out diagram', async () => {
     const diagram = await layout(MANY_ELEMENTS);
-    expect(diagram.nodes.map((n) => n.id).sort()).toEqual(['n1', 'n2', 'n3']);
-    expect(diagram.edges.map((e) => e.id).sort()).toEqual(['e1', 'e2']);
-    expect(diagram.groups.map((g) => g.id).sort()).toEqual(['g1']);
+    expect(Object.keys(diagram.nodes).sort()).toEqual(['n1', 'n2', 'n3']);
+    expect(Object.keys(diagram.edges).sort()).toEqual(['e1', 'e2']);
+    expect(Object.keys(diagram.groups).sort()).toEqual(['g1']);
   });
 
   test('every node, edge and group appears as its own element in the SVG', async () => {
@@ -251,9 +255,9 @@ describe('completeness', () => {
 describe('nested group frames (design.md §4.2.x, laid_out_node/laid_out_group specs)', () => {
   test('a node nested two levels deep sits inside its immediate parent AND its grandparent', async () => {
     const diagram = await layout(DEEP_NESTING);
-    const outer = diagram.groups.find((g) => g.id === 'outer')!;
-    const inner = diagram.groups.find((g) => g.id === 'inner')!;
-    const deepNode = diagram.nodes.find((n) => n.id === 'deep')!;
+    const outer = diagram.groups['outer']!;
+    const inner = diagram.groups['inner']!;
+    const deepNode = diagram.nodes['deep']!;
 
     expect(outer).toBeDefined();
     expect(inner).toBeDefined();
@@ -298,9 +302,9 @@ describe('nested group frames (design.md §4.2.x, laid_out_node/laid_out_group s
     // design.md L993: "GroupLayout.size is optional. Absent = auto-fit
     // (renderer computes bounding box of children + padding)."
     const diagram = await layout(DEEP_NESTING);
-    const outer = diagram.groups.find((g) => g.id === 'outer')!;
-    const midNode = diagram.nodes.find((n) => n.id === 'mid_node')!;
-    const inner = diagram.groups.find((g) => g.id === 'inner')!;
+    const outer = diagram.groups['outer']!;
+    const midNode = diagram.nodes['mid_node']!;
+    const inner = diagram.groups['inner']!;
 
     // outer must contain mid_node and inner with some margin, not be exactly
     // flush with either child's bbox (that would mean no padding at all).
@@ -371,7 +375,7 @@ describe('determinism (design.md L43: "Same inputs → same SVG, byte-for-byte")
   test('running layout twice on identical input produces identical coordinates', async () => {
     const a = await layout(DEEP_NESTING);
     const b = await layout(DEEP_NESTING);
-    const coords = (d: LaidOutDiagram) => d.nodes.map((n) => `${n.id}:${n.position.x},${n.position.y},${n.size.x},${n.size.y}`).sort();
+    const coords = (d: LaidOutDiagram) => Object.values(d.nodes).map((n) => `${n.id}:${n.position.x},${n.position.y},${n.size.x},${n.size.y}`).sort();
     expect(coords(a)).toEqual(coords(b));
   });
 
@@ -508,13 +512,13 @@ describe('group render modes', () => {
       },
     });
     const diagram = await layout(MANY_ELEMENTS, stylesheet);
-    const group = diagram.groups.find((g) => g.id === 'g1');
+    const group = diagram.groups['g1'];
     expect(group).toBeDefined();
     expect(group!.isSuperNode).toBe(true);
     expect(group!.hiddenDescendantCount).toBe(2); // n1, n2
-    expect(diagram.nodes.find((n) => n.id === 'n1')).toBeUndefined();
-    expect(diagram.nodes.find((n) => n.id === 'n2')).toBeUndefined();
+    expect(diagram.nodes['n1']).toBeUndefined();
+    expect(diagram.nodes['n2']).toBeUndefined();
     // n3 (outside the group) is untouched.
-    expect(diagram.nodes.find((n) => n.id === 'n3')).toBeDefined();
+    expect(diagram.nodes['n3']).toBeDefined();
   });
 });

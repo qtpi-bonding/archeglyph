@@ -79,7 +79,7 @@ async function layout(json: unknown): Promise<LaidOutDiagram> {
 
 /** Whether `point` lies on or just inside the box of the node called `id`. */
 function touches(diagram: LaidOutDiagram, point: Vec2, id: string): boolean {
-  const node = diagram.nodes.find((candidate) => candidate.id === id);
+  const node = diagram.nodes[id];
   if (node === undefined) {
     return false;
   }
@@ -91,7 +91,7 @@ function touches(diagram: LaidOutDiagram, point: Vec2, id: string): boolean {
 }
 
 function polyline(diagram: LaidOutDiagram, edgeId: string): Vec2[] {
-  const edge = diagram.edges.find((candidate) => candidate.id === edgeId);
+  const edge = diagram.edges[edgeId];
   if (edge === undefined) {
     throw new Error(`no edge ${edgeId}`);
   }
@@ -117,8 +117,8 @@ describe('edge coordinate frame', () => {
 
   test('a grouped node sits inside its own group', async () => {
     const diagram = await layout(GROUPED);
-    const group = diagram.groups.find((candidate) => candidate.id === 'box');
-    const node = diagram.nodes.find((candidate) => candidate.id === 'inner_a');
+    const group = diagram.groups['box'];
+    const node = diagram.nodes['inner_a'];
     expect(group).toBeDefined();
     expect(node!.position.x).toBeGreaterThanOrEqual(group!.position.x);
     expect(node!.position.y).toBeGreaterThanOrEqual(group!.position.y);
@@ -132,7 +132,7 @@ describe('group label placement', () => {
     expect(rendered.kind).toBe('ok');
     const svg = rendered.kind === 'ok' ? rendered.value : '';
 
-    const group = diagram.groups.find((candidate) => candidate.id === 'box')!;
+    const group = diagram.groups['box']!;
     const label = svg.match(/<g id="group-box"[\s\S]*?<text x="([\d.]+)" y="([\d.]+)"/);
     expect(label).not.toBeNull();
 

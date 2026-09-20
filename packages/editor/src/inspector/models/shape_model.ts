@@ -27,17 +27,17 @@ export function shapeModel(model: InspectorModel, geometry: SceneGeometry, style
     if (model.kind === 'node') {
       const styleEntry = stylesheet.nodes[id];
       overrideGlyph2D = styleEntry?.shape;
-      const laidOutNode = geometry.diagram.nodes.find((n) => n.id === id);
+      const laidOutNode = geometry.diagram.nodes[id];
       effectiveGlyph2D = laidOutNode?.shape;
     } else if (model.kind === 'group') {
       const styleEntry = stylesheet.groups[id];
       overrideGlyph2D = styleEntry?.shape;
-      const laidOutGroup = geometry.diagram.groups.find((g) => g.id === id);
+      const laidOutGroup = geometry.diagram.groups[id];
       effectiveGlyph2D = laidOutGroup?.shape;
     } else if (model.kind === 'annotation') {
       const styleEntry = stylesheet.annotations[id];
       overrideGlyph2D = styleEntry?.shape;
-      const laidOutAnnotation = geometry.diagram.annotations.find((a) => a.id === id);
+      const laidOutAnnotation = geometry.diagram.annotations[id];
       effectiveGlyph2D = laidOutAnnotation?.shape;
     }
 

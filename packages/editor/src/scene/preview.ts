@@ -179,7 +179,7 @@ function previewEdges(
   moved: Map<string, Bounds>,
 ): Array<PreviewEdge> {
   const result: Array<PreviewEdge> = [];
-  for (const edge of geometry.diagram.edges) {
+  for (const edge of Object.values(geometry.diagram.edges)) {
     const source = endpointBounds(geometry, edge.source, moved);
     const target = endpointBounds(geometry, edge.target, moved);
     if (source === undefined || target === undefined) {

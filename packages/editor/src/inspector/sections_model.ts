@@ -220,10 +220,10 @@ export function typographyModel(model: InspectorModel, geometry: SceneGeometry, 
 
   const effectiveTypography = (id: string): Typography | undefined => {
     switch (model.kind) {
-      case 'node': return geometry.diagram.nodes.find((entry) => entry.id === id)?.typography;
-      case 'edge': return geometry.diagram.edges.find((entry) => entry.id === id)?.typography;
-      case 'group': return geometry.diagram.groups.find((entry) => entry.id === id)?.typography;
-      case 'annotation': return geometry.diagram.annotations.find((entry) => entry.id === id)?.typography;
+      case 'node': return geometry.diagram.nodes[id]?.typography;
+      case 'edge': return geometry.diagram.edges[id]?.typography;
+      case 'group': return geometry.diagram.groups[id]?.typography;
+      case 'annotation': return geometry.diagram.annotations[id]?.typography;
     }
   };
 

@@ -23,10 +23,10 @@ export function lineModel(model: InspectorModel, geometry: SceneGeometry, styles
     let glyph1D = undefined;
 
     if (model.kind === 'edge') {
-      const edge = geometry.diagram.edges.find((e) => e.id === id);
+      const edge = geometry.diagram.edges[id];
       glyph1D = edge?.connection;
     } else if (model.kind === 'annotation') {
-      const annotation = geometry.diagram.annotations.find((a) => a.id === id);
+      const annotation = geometry.diagram.annotations[id];
       glyph1D = annotation?.callout;
     }
 

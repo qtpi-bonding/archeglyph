@@ -37,8 +37,8 @@ describe('testgen_gestures__COMMANDS', () => {
           function laidOutNode(overrides: Partial<LaidOutNode> = {}): LaidOutNode {
             return { id: 'n1', parentGroup: undefined, position: vec2(0, 0), size: vec2(10, 10), shape: create(Glyph2DSchema, {}), typography: create(TypographySchema, {}), label: [], ...overrides } as LaidOutNode;
           }
-          function laidOutDiagram(overrides: Partial<LaidOutDiagram> = {}): LaidOutDiagram {
-            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: [], edges: [], groups: [], annotations: [], ...overrides } as LaidOutDiagram;
+          function laidOutDiagram(parts: { nodes?: LaidOutNode[] } = {}): LaidOutDiagram {
+            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: Object.fromEntries((parts.nodes ?? []).map((n) => [n.id, n])), edges: {}, groups: {}, annotations: {} } as LaidOutDiagram;
           }
           function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
             return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
@@ -94,7 +94,7 @@ describe('testgen_gestures__COMMANDS', () => {
     // THEN: Returns a StyleEdit with zero position entries, since there are no nodes to write positions for.
     test('pin_all_empty_diagram_produces_no_position_entries', () => {
         function laidOutDiagram(overrides: Partial<LaidOutDiagram> = {}): LaidOutDiagram {
-            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: [], edges: [], groups: [], annotations: [], ...overrides } as LaidOutDiagram;
+            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: {}, edges: {}, groups: {}, annotations: {}, ...overrides } as LaidOutDiagram;
           }
           function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
             return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
@@ -128,8 +128,8 @@ describe('testgen_gestures__COMMANDS', () => {
           function laidOutNode(overrides: Partial<LaidOutNode> = {}): LaidOutNode {
             return { id: 'n1', parentGroup: undefined, position: vec2(0, 0), size: vec2(10, 10), shape: create(Glyph2DSchema, {}), typography: create(TypographySchema, {}), label: [], ...overrides } as LaidOutNode;
           }
-          function laidOutDiagram(overrides: Partial<LaidOutDiagram> = {}): LaidOutDiagram {
-            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: [], edges: [], groups: [], annotations: [], ...overrides } as LaidOutDiagram;
+          function laidOutDiagram(parts: { nodes?: LaidOutNode[] } = {}): LaidOutDiagram {
+            return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: Object.fromEntries((parts.nodes ?? []).map((n) => [n.id, n])), edges: {}, groups: {}, annotations: {} } as LaidOutDiagram;
           }
 
           const sheet = create(StylesheetSchema, {

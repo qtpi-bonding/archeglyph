@@ -130,15 +130,22 @@ function laidOutGroup(overrides: Partial<LaidOutGroup> = {}): LaidOutGroup {
   } as LaidOutGroup;
 }
 
-function laidOutDiagram(overrides: Partial<LaidOutDiagram> = {}): LaidOutDiagram {
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item) => [item.id, item]));
+
+interface DiagramParts {
+  nodes?: LaidOutNode[];
+  groups?: LaidOutGroup[];
+}
+
+function laidOutDiagram(parts: DiagramParts = {}): LaidOutDiagram {
   return {
     id: 'd1',
     canvas: create(CanvasStyleSchema, {}),
-    nodes: [],
-    edges: [],
-    groups: [],
-    annotations: [],
-    ...overrides,
+    nodes: byId(parts.nodes ?? []),
+    edges: {},
+    groups: byId(parts.groups ?? []),
+    annotations: {},
   } as LaidOutDiagram;
 }
 

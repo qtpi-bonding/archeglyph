@@ -89,11 +89,11 @@ export function unpinElementsEdit(stylesheet: Stylesheet, refs: Array<ElementMov
  * it is written to the stylesheet.
  */
 function parentRelative(
-  groupsById: Map<string, { position: Vec2 }>,
+  groupsById: Record<string, { position: Vec2 }>,
   position: Vec2,
   parentId: string | undefined,
 ): Vec2 {
-  const parent = parentId === undefined ? undefined : groupsById.get(parentId);
+  const parent = parentId === undefined ? undefined : groupsById[parentId];
   return parent === undefined
     ? create(Vec2Schema, { x: position.x, y: position.y })
     : create(Vec2Schema, {
@@ -103,21 +103,19 @@ function parentRelative(
 }
 
 export function pinAllEdit(stylesheet: Stylesheet, diagram: LaidOutDiagram): StyleEdit {
-  const groupsById = new Map(diagram.groups.map((group) => [group.id, group]));
-
-  const nodeChanges = diagram.nodes.map((node) =>
+  const nodeChanges = Object.values(diagram.nodes).map((node) =>
     nodeChange(
       node.id,
       patchNodeEntry(stylesheet.nodes[node.id], {
-        position: parentRelative(groupsById, node.position, node.parentGroup),
+        position: parentRelative(diagram.groups, node.position, node.parentGroup),
       }),
     ),
   );
-  const groupChanges = diagram.groups.map((group) =>
+  const groupChanges = Object.values(diagram.groups).map((group) =>
     groupChange(
       group.id,
       patchGroupEntry(stylesheet.groups[group.id], {
-        position: parentRelative(groupsById, group.position, group.parentGroup),
+        position: parentRelative(diagram.groups, group.position, group.parentGroup),
       }),
     ),
   );
@@ -152,25 +150,23 @@ export function withLayoutMaterialized(
   diagram: LaidOutDiagram,
   edit: StyleEdit,
 ): StyleEdit {
-  const groupsById = new Map(diagram.groups.map((group) => [group.id, group]));
-
-  const nodePins: Array<NodeStyleChange> = diagram.nodes
+  const nodePins: Array<NodeStyleChange> = Object.values(diagram.nodes)
     .filter((node) => stylesheet.nodes[node.id]?.layout?.position === undefined)
     .map((node) =>
       nodeChange(
         node.id,
         patchNodeEntry(stylesheet.nodes[node.id], {
-          position: parentRelative(groupsById, node.position, node.parentGroup),
+          position: parentRelative(diagram.groups, node.position, node.parentGroup),
         }),
       ),
     );
-  const groupPins: Array<GroupStyleChange> = diagram.groups
+  const groupPins: Array<GroupStyleChange> = Object.values(diagram.groups)
     .filter((group) => stylesheet.groups[group.id]?.layout?.position === undefined)
     .map((group) =>
       groupChange(
         group.id,
         patchGroupEntry(stylesheet.groups[group.id], {
-          position: parentRelative(groupsById, group.position, group.parentGroup),
+          position: parentRelative(diagram.groups, group.position, group.parentGroup),
         }),
       ),
     );

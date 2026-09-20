@@ -27,8 +27,9 @@ export function hitTestPoint(geometry: SceneGeometry, point: Vec2, edgeTolerance
     }
   }
 
-  for (let i = geometry.diagram.edges.length - 1; i >= 0; i -= 1) {
-    const id = geometry.diagram.edges[i].id;
+  const edgeIds = Object.keys(geometry.diagram.edges);
+  for (let i = edgeIds.length - 1; i >= 0; i -= 1) {
+    const id = edgeIds[i];
     const points = geometry.edgePolylines[id];
     if (points === undefined) {
       continue;

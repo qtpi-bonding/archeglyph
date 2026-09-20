@@ -48,7 +48,7 @@ export function anchorGripAt(geometry: SceneGeometry, selection: Array<ElementRe
     return undefined;
   }
 
-  const laidOutAnnotation = geometry.diagram.annotations.find((candidate) => candidate.id === annotation.id);
+  const laidOutAnnotation = geometry.diagram.annotations[annotation.id];
   let towardCentre: Vec2 | undefined;
   const anchor = laidOutAnnotation?.anchor;
   if (anchor !== undefined) {

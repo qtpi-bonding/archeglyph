@@ -401,13 +401,16 @@ export class ElkAdapterImpl implements LayoutAdapter {
         });
       });
 
+      const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+        Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
+
       return Ok(Object.assign(new LaidOutDiagram(), {
         id: diagram.id,
         canvas: diagram.canvas,
-        nodes,
-        edges,
-        groups,
-        annotations,
+        nodes: byId(nodes),
+        edges: byId(edges),
+        groups: byId(groups),
+        annotations: byId(annotations),
       }));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);

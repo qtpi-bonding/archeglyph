@@ -35,18 +35,18 @@ export function buildSceneGeometry(diagram: LaidOutDiagram, svg: string): SceneG
     byKey[elementKey(ref)] = entry;
   };
 
-  for (const node of diagram.nodes) {
+  for (const node of Object.values(diagram.nodes)) {
     add({ kind: 'node', id: node.id }, node.position, node.size, node.parentGroup);
   }
-  for (const group of diagram.groups) {
+  for (const group of Object.values(diagram.groups)) {
     add({ kind: 'group', id: group.id }, group.position, group.size, group.parentGroup);
   }
-  for (const annotation of diagram.annotations) {
+  for (const annotation of Object.values(diagram.annotations)) {
     add({ kind: 'annotation', id: annotation.id }, annotation.position, annotation.size, undefined);
   }
 
   const edgePolylines: Record<string, Vec2[]> = {};
-  for (const edge of diagram.edges) {
+  for (const edge of Object.values(diagram.edges)) {
     const points: Vec2[] = [];
     for (const section of edge.sections) {
       points.push(section.startPoint, ...section.bendPoints, section.endPoint);

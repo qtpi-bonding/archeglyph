@@ -18,17 +18,17 @@ export function calloutSections(diagram: LaidOutDiagram, annotation: LaidOutAnno
 
   let targetBounds: Bounds | undefined;
   if (anchor.refKind === RefKind.NODE) {
-    const node = diagram.nodes.find((candidate) => candidate.id === anchor.refId);
+    const node = diagram.nodes[anchor.refId];
     if (node !== undefined) {
       targetBounds = boundsFromRect(node.position, node.size);
     }
   } else if (anchor.refKind === RefKind.GROUP) {
-    const group = diagram.groups.find((candidate) => candidate.id === anchor.refId);
+    const group = diagram.groups[anchor.refId];
     if (group !== undefined) {
       targetBounds = boundsFromRect(group.position, group.size);
     }
   } else if (anchor.refKind === RefKind.EDGE) {
-    const edge = diagram.edges.find((candidate) => candidate.id === anchor.refId);
+    const edge = diagram.edges[anchor.refId];
     if (edge === undefined || edge.sections.length === 0) {
       return [];
     }

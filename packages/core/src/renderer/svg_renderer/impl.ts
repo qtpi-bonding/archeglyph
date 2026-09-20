@@ -90,16 +90,16 @@ export class SvgRendererImpl implements SvgRenderer {
     const svgWidth: string = vbParts[2];
     const svgHeight: string = vbParts[3];
 
-    const sortedGroups: LaidOutGroup[] = diagram.groups.slice().sort(
+    const sortedGroups: LaidOutGroup[] = Object.values(diagram.groups).sort(
       (a: LaidOutGroup, b: LaidOutGroup) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     );
-    const sortedNodes: LaidOutNode[] = diagram.nodes.slice().sort(
+    const sortedNodes: LaidOutNode[] = Object.values(diagram.nodes).sort(
       (a: LaidOutNode, b: LaidOutNode) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     );
-    const sortedEdges: LaidOutEdge[] = diagram.edges.slice().sort(
+    const sortedEdges: LaidOutEdge[] = Object.values(diagram.edges).sort(
       (a: LaidOutEdge, b: LaidOutEdge) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     );
-    const sortedAnnotations: LaidOutAnnotation[] = diagram.annotations.slice().sort(
+    const sortedAnnotations: LaidOutAnnotation[] = Object.values(diagram.annotations).sort(
       (a: LaidOutAnnotation, b: LaidOutAnnotation) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     );
 

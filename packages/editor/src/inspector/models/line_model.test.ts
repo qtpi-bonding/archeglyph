@@ -41,8 +41,13 @@ function annotation(id: string): LaidOutAnnotation {
   });
 }
 
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
+
 function geometryFrom(edges: LaidOutEdge[], annotations: LaidOutAnnotation[]): SceneGeometry {
-  const diagram = Object.assign(new LaidOutDiagram(), { edges, annotations, nodes: [], groups: [] });
+  const diagram = Object.assign(new LaidOutDiagram(), {
+    edges: byId(edges), annotations: byId(annotations), nodes: {}, groups: {},
+  });
   return {
     diagram,
     index: [],

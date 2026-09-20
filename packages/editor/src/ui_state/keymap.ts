@@ -42,6 +42,8 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: '1' }, command: 'zoom-fit' },
   { chord: { key: 'Enter' }, command: 'edit-text' },
   { chord: { key: 'd', meta: true }, command: 'duplicate' },
+  { chord: { key: 'k', meta: true }, command: 'open-palette' },
+  { chord: { key: '?', shift: true }, command: 'open-help' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {

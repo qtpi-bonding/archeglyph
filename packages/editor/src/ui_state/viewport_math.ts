@@ -47,3 +47,6 @@ export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, pa
     panY: containerRect.height / 2 - centre.y * zoom,
   };
 }
+export function centerBoundsInRect(viewport: Viewport, bounds: Bounds, containerRect: ContainerRect): Viewport {
+  throw new Error('not implemented');
+}

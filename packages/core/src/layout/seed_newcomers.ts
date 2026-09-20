@@ -71,11 +71,11 @@ export async function seedNewcomers(
   elk: ELK,
 ): Promise<Map<string, Vec2>> {
   const elements = new Map<string, ElementInfo>();
-  for (const group of diagram.groups) {
+  for (const group of Object.values(diagram.groups)) {
     const size = sizeOf(group);
     elements.set(group.id, { id: group.id, width: size.x, height: size.y, position: pinned.get(group.id) });
   }
-  for (const node of diagram.nodes) {
+  for (const node of Object.values(diagram.nodes)) {
     const size = sizeOf(node);
     elements.set(node.id, { id: node.id, width: size.x, height: size.y, position: pinned.get(node.id) });
   }
@@ -89,7 +89,7 @@ export async function seedNewcomers(
 
   const adjacency = new Map<string, Set<string>>();
   for (const id of elements.keys()) adjacency.set(id, new Set<string>());
-  for (const edge of diagram.edges) {
+  for (const edge of Object.values(diagram.edges)) {
     if (!elements.has(edge.source) || !elements.has(edge.target)) continue;
     adjacency.get(edge.source)?.add(edge.target);
     adjacency.get(edge.target)?.add(edge.source);
@@ -157,7 +157,7 @@ export async function seedNewcomers(
       }
       return node;
     });
-    const edges: ElkEdge[] = diagram.edges
+    const edges: ElkEdge[] = Object.values(diagram.edges)
       .filter(edge => included.has(edge.source) && included.has(edge.target))
       .sort((a, b) => a.id.localeCompare(b.id))
       .map(edge => ({ id: edge.id, sources: [edge.source], targets: [edge.target] }));

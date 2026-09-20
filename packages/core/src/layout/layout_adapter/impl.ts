@@ -89,7 +89,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
     try {
       // Build ELK compound nodes for non-superNode groups; leaf nodes for superNodes
       const groupElkNodes: Record<string, ElkNode> = {};
-      for (const group of diagram.groups) {
+      for (const group of Object.values(diagram.groups)) {
         const position = group.layout?.position;
         groupElkNodes[group.id] = group.isSuperNode
           ? {
@@ -127,7 +127,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const rootChildren: ElkNode[] = [];
 
-      for (const group of diagram.groups) {
+      for (const group of Object.values(diagram.groups)) {
         const elkGroup = groupElkNodes[group.id];
         if (group.parentGroup) {
           const parent = groupElkNodes[group.parentGroup];
@@ -141,7 +141,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         }
       }
 
-      for (const node of diagram.nodes) {
+      for (const node of Object.values(diagram.nodes)) {
         const position = node.layout?.position;
         const elkNode: ElkNode = {
           id: node.id,
@@ -175,11 +175,11 @@ export class ElkAdapterImpl implements LayoutAdapter {
       // A fixed option belongs to the graph that lays out the siblings, not
       // to the pinned child itself.  Only direct children matter here; a
       // nested pinned node is handled by the compound graph containing it.
-      for (const group of diagram.groups) {
+      for (const group of Object.values(diagram.groups)) {
         const elkGroup = groupElkNodes[group.id];
-        const hasPositionedChild = diagram.groups.some(child =>
+        const hasPositionedChild = Object.values(diagram.groups).some(child =>
           child.parentGroup === group.id && child.layout?.position !== undefined,
-        ) || diagram.nodes.some(child =>
+        ) || Object.values(diagram.nodes).some(child =>
           child.parentGroup === group.id && child.layout?.position !== undefined,
         );
         if (hasPositionedChild) {
@@ -209,9 +209,9 @@ export class ElkAdapterImpl implements LayoutAdapter {
       // Root children are laid out by the root graph itself.  As with a
       // compound group's layoutOptions above, fixed belongs to that parent
       // graph rather than to the pinned child.
-      const hasPositionedRootChild = diagram.groups.some(group =>
+      const hasPositionedRootChild = Object.values(diagram.groups).some(group =>
         group.parentGroup === undefined && group.layout?.position !== undefined,
-      ) || diagram.nodes.some(node =>
+      ) || Object.values(diagram.nodes).some(node =>
         node.parentGroup === undefined && node.layout?.position !== undefined,
       );
       if (hasPositionedRootChild) {
@@ -233,7 +233,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         id: 'root',
         layoutOptions,
         children: rootChildren,
-        edges: diagram.edges.map(edge => ({
+        edges: Object.values(diagram.edges).map(edge => ({
           id: edge.id,
           sources: [edge.source],
           targets: [edge.target],
@@ -288,10 +288,10 @@ export class ElkAdapterImpl implements LayoutAdapter {
       // nothing about which frame the numbers are in. Derive the ancestor
       // from the endpoints instead, which is what actually determines it.
       const parentOf: Record<string, string | undefined> = {};
-      for (const node of diagram.nodes) {
+      for (const node of Object.values(diagram.nodes)) {
         parentOf[node.id] = node.parentGroup;
       }
-      for (const group of diagram.groups) {
+      for (const group of Object.values(diagram.groups)) {
         parentOf[group.id] = group.parentGroup;
       }
 
@@ -321,7 +321,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         return common === undefined ? vec2(0, 0) : containerOrigin[common] ?? vec2(0, 0);
       }
 
-      const nodes = diagram.nodes.map(node => {
+      const nodes = Object.values(diagram.nodes).map(node => {
         const pos = nodePositions[node.id] ?? { x: 0, y: 0, w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT };
         return Object.assign(new LaidOutNode(), {
           id: node.id,
@@ -335,7 +335,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         });
       });
 
-      const edges = diagram.edges.map(edge => {
+      const edges = Object.values(diagram.edges).map(edge => {
         const origin: Vec2 = edgeOrigin(edge.source, edge.target);
         const point = (p: ElkPoint | undefined): Vec2 =>
           vec2(origin.x + (p?.x ?? 0), origin.y + (p?.y ?? 0));
@@ -358,7 +358,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         });
       });
 
-      const groups = diagram.groups.map(group => {
+      const groups = Object.values(diagram.groups).map(group => {
         const pos = nodePositions[group.id] ?? { x: 0, y: 0, w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT };
         return Object.assign(new LaidOutGroup(), {
           id: group.id,
@@ -377,7 +377,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       // Annotations bypass ELK — always explicitly positioned. An anchor is
       // copied for rendering only; it must not make the referenced element a
       // layout participant or otherwise affect ELK's result.
-      const annotations = diagram.annotations.map(ann => {
+      const annotations = Object.values(diagram.annotations).map(ann => {
         const font: string = ann.typography.font ?? '';
         const fontSize: number = ann.typography.size ?? 16;
         let measuredWidth: number = 0;

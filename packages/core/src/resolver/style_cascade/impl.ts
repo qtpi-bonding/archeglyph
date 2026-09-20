@@ -191,7 +191,7 @@ export class StyleCascadeImpl implements StyleCascade {
         layout: entry?.layout,
         label: node.label,
       });
-      result.nodes.push(resolved);
+      result.nodes[node.id] = resolved;
     }
 
     const sortedEdges: FilteredEdge[] = Object.values(filtered.edges);
@@ -218,7 +218,7 @@ export class StyleCascadeImpl implements StyleCascade {
         layout: entry?.layout,
         label: edge.label,
       });
-      result.edges.push(resolved);
+      result.edges[edge.id] = resolved;
     }
 
     const sortedGroups: FilteredGroup[] = Object.values(filtered.groups);
@@ -246,7 +246,7 @@ export class StyleCascadeImpl implements StyleCascade {
         isSuperNode: group.isSuperNode,
         hiddenDescendantCount: group.hiddenDescendantCount,
       });
-      result.groups.push(resolved);
+      result.groups[group.id] = resolved;
     }
 
     const sortedAnnotations: FilteredAnnotation[] = Object.values(filtered.annotations);
@@ -278,7 +278,7 @@ export class StyleCascadeImpl implements StyleCascade {
         layout: entry.layout,
         content: entry.content,
       });
-      result.annotations.push(resolved);
+      result.annotations[annotation.id] = resolved;
     }
 
     return Ok(result);

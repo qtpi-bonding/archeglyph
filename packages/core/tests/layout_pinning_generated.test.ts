@@ -34,6 +34,9 @@ import { Ok } from '@archeglyph/proto/util/result';
 import { ElkAdapterImpl, LayoutAdapter } from '../src/layout/layout_adapter/impl';
 import { LayoutEngineImpl } from '../src/layout/layout_engine/impl';
 
+const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
+  Object.fromEntries(items.map((item) => [item.id, item]));
+
 describe('testgen_layout_adapter__runLayout', () => {
     // WHEN: An element whose style entry carries an explicit x/y position is sent to ELK with that position set as node x/y and with 'org.eclipse.elk.position' set on the node
     // THEN: runLayout sets the ELK node's x and y to the style entry's explicit position and sets the 'org.eclipse.elk.position' layout option on that node.
@@ -44,7 +47,7 @@ describe('testgen_layout_adapter__runLayout', () => {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 10, y: 20 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: [node], edges: [], groups: [], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -67,7 +70,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         });
         const free = Object.assign(new ResolvedNode(), { id: 'free', parentGroup: 'g1' });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', nodes: [positioned, free], edges: [], groups: [group], annotations: [],
+          id: 'd', nodes: byId([positioned, free]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
@@ -86,7 +89,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const a = Object.assign(new ResolvedNode(), { id: 'a', parentGroup: 'g1' });
         const b = Object.assign(new ResolvedNode(), { id: 'b', parentGroup: 'g1' });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', nodes: [a, b], edges: [], groups: [group], annotations: [],
+          id: 'd', nodes: byId([a, b]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
@@ -111,7 +114,7 @@ describe('testgen_layout_adapter__runLayout', () => {
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 2, y: 2 }) }),
         });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', nodes: [a, b], edges: [], groups: [group], annotations: [],
+          id: 'd', nodes: byId([a, b]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
@@ -130,7 +133,7 @@ describe('testgen_layout_adapter__runLayout', () => {
           id: 'origin',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: [node], edges: [], groups: [], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -150,7 +153,7 @@ describe('testgen_layout_adapter__runLayout', () => {
           id: 'leaf', isSuperNode: true,
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 7, y: 9 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: [], edges: [], groups: [leaf], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([]), edges: byId([]), groups: byId([leaf]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -169,7 +172,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const node = Object.assign(new ResolvedNode(), { id: 'unstyled' });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: [node], edges: [], groups: [], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -198,7 +201,7 @@ describe('testgen_layout_adapter__runLayout', () => {
           }),
         );
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', nodes: children, edges: [], groups: [group], annotations: [],
+          id: 'd', nodes: byId(children), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
@@ -214,8 +217,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // THEN: Returns true, since with no nodes or groups the universal condition over an empty set holds vacuously.
     test('when_diagram_has_no_nodes_or_groups_returns_true', () => {
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [];
-        diagram.groups = [];
+        diagram.nodes = byId([]);
+        diagram.groups = byId([]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(true);
@@ -237,8 +240,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [pinnedNode, unpinnedNode];
-        diagram.groups = [pinnedGroup];
+        diagram.nodes = byId([pinnedNode, unpinnedNode]);
+        diagram.groups = byId([pinnedGroup]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(false);
@@ -260,8 +263,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [pinnedNode, missingPositionNode];
-        diagram.groups = [pinnedGroup];
+        diagram.nodes = byId([pinnedNode, missingPositionNode]);
+        diagram.groups = byId([pinnedGroup]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(false);
@@ -283,8 +286,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: undefined,
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [pinnedNode];
-        diagram.groups = [pinnedGroup, unpinnedGroup];
+        diagram.nodes = byId([pinnedNode]);
+        diagram.groups = byId([pinnedGroup, unpinnedGroup]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(false);
@@ -306,8 +309,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: create(GroupLayoutSchema, {}),
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [pinnedNode];
-        diagram.groups = [pinnedGroup, missingPositionGroup];
+        diagram.nodes = byId([pinnedNode]);
+        diagram.groups = byId([pinnedGroup, missingPositionGroup]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(false);
@@ -325,8 +328,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [node1, node2];
-        diagram.groups = [];
+        diagram.nodes = byId([node1, node2]);
+        diagram.groups = byId([]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(true);
@@ -344,8 +347,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [];
-        diagram.groups = [group1, group2];
+        diagram.nodes = byId([]);
+        diagram.groups = byId([group1, group2]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(true);
@@ -363,8 +366,8 @@ describe('testgen_layout_engine__isFullyPinned', () => {
           layout: undefined,
         });
         const diagram = new ResolvedDiagram();
-        diagram.nodes = [unpinnedNode];
-        diagram.groups = [unpinnedGroup];
+        diagram.nodes = byId([unpinnedNode]);
+        diagram.groups = byId([unpinnedGroup]);
         const engine = new LayoutEngineImpl({} as LayoutAdapter);
         const result = (engine as unknown as { isFullyPinned(d: ResolvedDiagram): boolean }).isFullyPinned(diagram);
         expect(result).toBe(false);
@@ -391,7 +394,7 @@ describe('testgen_layout_engine__layout', () => {
         });
         const edge = Object.assign(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [group], edges: [edge], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([group]), edges: byId([edge]), annotations: byId([]),
         });
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -435,7 +438,7 @@ describe('testgen_layout_engine__layout', () => {
         const nodeA = Object.assign(new ResolvedNode(), { id: 'a', shape: {} as any, typography: {} as any });
         const nodeB = Object.assign(new ResolvedNode(), { id: 'b', shape: {} as any, typography: {} as any });
         const group = Object.assign(new ResolvedGroup(), { id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0 });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [group], edges: [], annotations: [] });
+        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([group]), edges: byId([]), annotations: byId([]) });
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
@@ -446,8 +449,8 @@ describe('testgen_layout_engine__layout', () => {
         const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
 
         expect(calls.length).toBe(1);
-        expect(calls[0].nodes.every((n) => n.layout?.position === undefined)).toBe(true);
-        expect(calls[0].groups.every((g) => g.layout?.position === undefined)).toBe(true);
+        expect(Object.values(calls[0].nodes).every((n) => n.layout?.position === undefined)).toBe(true);
+        expect(Object.values(calls[0].groups).every((g) => g.layout?.position === undefined)).toBe(true);
         expect(result.kind).toBe('ok');
     });
 
@@ -467,7 +470,7 @@ describe('testgen_layout_engine__layout', () => {
           id: 'ann', shape: {} as any, typography: {} as any, callout: {} as any,
         });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [nodeA], groups: [group], edges: [], annotations: [annotation],
+          id: 'd', canvas: {} as any, nodes: byId([nodeA]), groups: byId([group]), edges: byId([]), annotations: byId([annotation]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -495,7 +498,7 @@ describe('testgen_layout_engine__layout', () => {
           layout: create(AnnotationLayoutSchema, { position: vec(10, 20), size: vec(80, 30) }),
         });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [], groups: [], edges: [], annotations: [annotation],
+          id: 'd', canvas: {} as any, nodes: byId([]), groups: byId([]), edges: byId([]), annotations: byId([annotation]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -520,7 +523,7 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Returns an empty/trivial layout result without erroring, since there are no nodes, groups, or annotations to place.
     test('empty_diagram', async () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [], groups: [], edges: [], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([]), groups: byId([]), edges: byId([]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -549,7 +552,7 @@ describe('testgen_layout_engine__layout', () => {
           layout: create(NodeLayoutSchema, { position: vec(42, 17), size: vec(90, 30) }),
         });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [node], groups: [], edges: [], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([node]), groups: byId([]), edges: byId([]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -586,7 +589,7 @@ describe('testgen_layout_engine__layout', () => {
         });
         const edge = Object.assign(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
         const diagram = Object.assign(new ResolvedDiagram(), {
-          id: 'd', canvas: {} as any, nodes: [nodeA, nodeB], groups: [], edges: [edge], annotations: [],
+          id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([]), edges: byId([edge]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
@@ -624,10 +627,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [],
-          edges: [],
-          groups: [],
-          annotations: [],
+          nodes: byId([]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const measureSpy = spyOn(fontMetrics, 'measureLabel');
         const straightSpy = spyOn(edgeRouter, 'routeStraight');
@@ -663,10 +666,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [node],
-          edges: [],
-          groups: [],
-          annotations: [],
+          nodes: byId([node]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const measureSpy = spyOn(fontMetrics, 'measureLabel');
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
@@ -696,10 +699,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [node],
-          edges: [],
-          groups: [],
-          annotations: [],
+          nodes: byId([node]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const measured = { x: 42, y: 14 };
         const measureSpy = spyOn(fontMetrics, 'measureLabel').mockReturnValue(measured as any);
@@ -754,10 +757,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [child1, child2],
-          edges: [],
-          groups: [group],
-          annotations: [],
+          nodes: byId([child1, child2]),
+          edges: byId([]),
+          groups: byId([group]),
+          annotations: byId([]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -809,10 +812,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [innerChild],
-          edges: [],
-          groups: [outerGroup, innerGroup],
-          annotations: [],
+          nodes: byId([innerChild]),
+          edges: byId([]),
+          groups: byId([outerGroup, innerGroup]),
+          annotations: byId([]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -843,10 +846,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [],
-          edges: [],
-          groups: [group],
-          annotations: [],
+          nodes: byId([]),
+          edges: byId([]),
+          groups: byId([group]),
+          annotations: byId([]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -893,10 +896,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [source, target],
-          edges: [edge],
-          groups: [],
-          annotations: [],
+          nodes: byId([source, target]),
+          edges: byId([edge]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const straightSpy = spyOn(edgeRouter, 'routeStraight');
         const orthoSpy = spyOn(edgeRouter, 'routeOrthogonal');
@@ -944,10 +947,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [source, target],
-          edges: [edge],
-          groups: [],
-          annotations: [],
+          nodes: byId([source, target]),
+          edges: byId([edge]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const straightSpy = spyOn(edgeRouter, 'routeStraight');
         const orthoSpy = spyOn(edgeRouter, 'routeOrthogonal');
@@ -1003,10 +1006,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [source, target],
-          edges: [edge],
-          groups: [],
-          annotations: [],
+          nodes: byId([source, target]),
+          edges: byId([edge]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const straightSpy = spyOn(edgeRouter, 'routeStraight');
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
@@ -1070,10 +1073,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [other, childNode],
-          edges: [edge],
-          groups: [group],
-          annotations: [],
+          nodes: byId([other, childNode]),
+          edges: byId([edge]),
+          groups: byId([group]),
+          annotations: byId([]),
         });
         const straightSpy = spyOn(edgeRouter, 'routeStraight');
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
@@ -1106,10 +1109,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [],
-          edges: [],
-          groups: [],
-          annotations: [annotation],
+          nodes: byId([]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([annotation]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -1140,10 +1143,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [],
-          edges: [],
-          groups: [],
-          annotations: [annotation],
+          nodes: byId([]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([annotation]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -1185,10 +1188,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [node],
-          edges: [],
-          groups: [],
-          annotations: [annotation],
+          nodes: byId([node]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([annotation]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);
@@ -1212,10 +1215,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const diagram = Object.assign(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
-          nodes: [node],
-          edges: [],
-          groups: [],
-          annotations: [],
+          nodes: byId([node]),
+          edges: byId([]),
+          groups: byId([]),
+          annotations: byId([]),
         });
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
         const engine = new LayoutEngineImpl(adapter);

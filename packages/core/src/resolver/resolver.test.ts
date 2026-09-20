@@ -339,7 +339,7 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      const node = result.value.nodes[0];
+      const node = Object.values(result.value.nodes)[0];
       // Same field (fill.color) — override wins.
       expect(node.shape.fill?.paint.case).toBe('color');
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#OVERRIDE' }));
@@ -382,7 +382,7 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      const node = result.value.nodes[0];
+      const node = Object.values(result.value.nodes)[0];
       expect(node.shape.fill).toBeUndefined();
     }
   });
@@ -431,8 +431,9 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes[0].shape.shapeKind.case).toBe('standard');
-      expect(result.value.nodes[0].shape.shapeKind.value).toBe(ShapeType.SHAPE_ELLIPSE);
+      const node = Object.values(result.value.nodes)[0];
+      expect(node.shape.shapeKind.case).toBe('standard');
+      expect(node.shape.shapeKind.value).toBe(ShapeType.SHAPE_ELLIPSE);
     }
   });
 
@@ -454,8 +455,8 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes).toHaveLength(1);
-      expect(result.value.nodes[0].shape.shapeKind.case).toBeUndefined();
+      expect(Object.keys(result.value.nodes)).toHaveLength(1);
+      expect(Object.values(result.value.nodes)[0].shape.shapeKind.case).toBeUndefined();
     }
   });
 
@@ -482,7 +483,7 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      const ann = result.value.annotations[0];
+      const ann = Object.values(result.value.annotations)[0];
       expect(ann.callout.stroke).toBeUndefined();
     }
   });
@@ -511,7 +512,7 @@ describe('style_cascade', () => {
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      const ann = result.value.annotations[0];
+      const ann = Object.values(result.value.annotations)[0];
       expect(ann.callout.stroke?.width).toBe(3);
     }
   });
@@ -563,7 +564,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#123456' }));
     }
   });
@@ -584,7 +585,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.nope' }));
     }
   });
@@ -612,7 +613,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       // Single substitution pass: value becomes the literal string
       // "$colors.brand", NOT further resolved to "#ABCDEF".
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.brand' }));
@@ -635,7 +636,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       // The concrete value for a font token is its family name.
       expect(node.typography.font).toBe('Georgia');
     }
@@ -654,7 +655,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.primary' }));
     }
   });
@@ -672,7 +673,7 @@ describe('token_resolver', () => {
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
-      const node = tokenResult.value.nodes[0];
+      const node = Object.values(tokenResult.value.nodes)[0];
       expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#3B82F6' }));
     }
   });
@@ -734,17 +735,17 @@ describe('resolvePipeline end-to-end', () => {
     if (result.kind !== 'ok') return;
 
     // hidden node gone, its edge gone.
-    expect(result.value.nodes.map((n) => n.id).sort()).toEqual(['visible']);
-    expect(result.value.edges.find((e) => e.id === 'toHidden')).toBeUndefined();
+    expect(Object.keys(result.value.nodes).sort()).toEqual(['visible']);
+    expect(result.value.edges['toHidden']).toBeUndefined();
     // contained node absorbed into contracted super-node; edge re-points to g1.
-    const toGroup = result.value.edges.find((e) => e.id === 'toGroup');
+    const toGroup = result.value.edges['toGroup'];
     expect(toGroup?.target).toBe('g1');
-    expect(result.value.groups[0].isSuperNode).toBe(true);
+    expect(Object.values(result.value.groups)[0].isSuperNode).toBe(true);
 
     // per-element override (fill=$colors.primary) wins over theme
     // component's fill for the same field, and different field (stroke)
     // from the theme still comes through.
-    const visible = result.value.nodes.find((n) => n.id === 'visible');
+    const visible = result.value.nodes['visible'];
     expect(visible?.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#00FF00' }));
     expect(visible?.shape.stroke?.width).toBe(1);
   });
@@ -762,7 +763,7 @@ describe('resolvePipeline end-to-end', () => {
     const result = resolvePipeline(diagram, stylesheet, theme);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodes[0].layout?.rotation).toBe(45);
+      expect(Object.values(result.value.nodes)[0].layout?.rotation).toBe(45);
     }
   });
 });

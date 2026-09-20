@@ -14,6 +14,8 @@ import { LaidOutNode } from '../laid_out_node';
 import { LayoutError } from '../layout_error';
 import { LayoutRequest } from '../layout_request';
 import { ResolvedDiagram } from '../../resolver/resolved_diagram';
+import { ResolvedGroup } from '../../resolver/resolved_group';
+import { ResolvedNode } from '../../resolver/resolved_node';
 import { measureLabel } from '../../text/font_metrics';
 import { boundsFromRect, type Bounds } from '../../geometry/bounds';
 import { Ok, Result } from '@archeglyph/proto/util/result';
@@ -30,12 +32,12 @@ const DEFAULT_HEIGHT = 40;
 /** Every element that already carries an explicit position, by id. */
 function pinnedPositions(diagram: ResolvedDiagram): Map<string, Vec2> {
   const pinned = new Map<string, Vec2>();
-  for (const node of diagram.nodes) {
+  for (const node of Object.values(diagram.nodes)) {
     if (node.layout?.position !== undefined) {
       pinned.set(node.id, node.layout.position);
     }
   }
-  for (const group of diagram.groups) {
+  for (const group of Object.values(diagram.groups)) {
     if (group.layout?.position !== undefined) {
       pinned.set(group.id, group.layout.position);
     }
@@ -62,8 +64,8 @@ function withSeededPositions(diagram: ResolvedDiagram, seeded: Map<string, Vec2>
     }) as T;
   };
   return Object.assign(Object.create(Object.getPrototypeOf(diagram) as object), diagram, {
-    nodes: diagram.nodes.map(apply),
-    groups: diagram.groups.map(apply),
+    nodes: Object.fromEntries(Object.entries(diagram.nodes).map(([id, node]) => [id, apply(node)])),
+    groups: Object.fromEntries(Object.entries(diagram.groups).map(([id, group]) => [id, apply(group)])),
   }) as ResolvedDiagram;
 }
 
@@ -71,8 +73,8 @@ export class LayoutEngineImpl implements LayoutEngine {
   constructor(private readonly adapter: LayoutAdapter) {}
 
   private isFullyPinned(diagram: ResolvedDiagram): boolean {
-    return diagram.nodes.every(node => node.layout?.position !== undefined)
-      && diagram.groups.every(group => group.layout?.position !== undefined);
+    return Object.values(diagram.nodes).every(node => node.layout?.position !== undefined)
+      && Object.values(diagram.groups).every(group => group.layout?.position !== undefined);
   }
 
   async layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>> {
@@ -99,12 +101,9 @@ export class LayoutEngineImpl implements LayoutEngine {
 
     this.absolutizePositions(result.value);
     const laid = result.value;
-    const resolvedNodeById = new Map(request.diagram.nodes.map(node => [node.id, node]));
-    const resolvedGroupById = new Map(request.diagram.groups.map(group => [group.id, group]));
-    const resolvedEdgeById = new Map(request.diagram.edges.map(edge => [edge.id, edge]));
     const groupById = new Map(laid.groups.map(group => [group.id, group]));
     for (const node of laid.nodes) {
-      const position = resolvedNodeById.get(node.id)?.layout?.position;
+      const position = request.diagram.nodes[node.id]?.layout?.position;
       if (position !== undefined) {
         const parent = node.parentGroup === undefined ? undefined : groupById.get(node.parentGroup);
         node.position = parent === undefined
@@ -113,7 +112,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       }
     }
     for (const group of laid.groups) {
-      const position = resolvedGroupById.get(group.id)?.layout?.position;
+      const position = request.diagram.groups[group.id]?.layout?.position;
       if (position !== undefined) {
         const parent = group.parentGroup === undefined ? undefined : groupById.get(group.parentGroup);
         group.position = parent === undefined
@@ -122,7 +121,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       }
     }
     for (const edge of laid.edges) {
-      const waypoints = resolvedEdgeById.get(edge.id)?.layout?.waypoints;
+      const waypoints = request.diagram.edges[edge.id]?.layout?.waypoints;
       if (waypoints !== undefined && waypoints.length > 0) {
         edge.sections = [Object.assign(new EdgeSection(), {
           startPoint: waypoints[0],
@@ -135,9 +134,8 @@ export class LayoutEngineImpl implements LayoutEngine {
   }
 
   private layoutFromPins(diagram: ResolvedDiagram): LaidOutDiagram {
-    const groupById = new Map(diagram.groups.map(group => [group.id, group]));
     const absoluteGroupPosition = (id: string): { x: number; y: number } => {
-      const group = groupById.get(id);
+      const group = diagram.groups[id];
       if (group === undefined || group.layout?.position === undefined) {
         return { x: 0, y: 0 };
       }
@@ -154,10 +152,10 @@ export class LayoutEngineImpl implements LayoutEngine {
       }
       return { x: width, y: height };
     };
-    const nodeSize = (node: typeof diagram.nodes[number]): { x: number; y: number } =>
+    const nodeSize = (node: ResolvedNode): { x: number; y: number } =>
       node.layout?.size ?? sizeForLabel(node.label, node.typography);
 
-    const nodes = diagram.nodes.map(node => {
+    const nodes = Object.values(diagram.nodes).map(node => {
       const local = node.layout?.position!;
       const parent = node.parentGroup === undefined ? { x: 0, y: 0 } : absoluteGroupPosition(node.parentGroup);
       return Object.assign(new LaidOutNode(), {
@@ -170,7 +168,7 @@ export class LayoutEngineImpl implements LayoutEngine {
 
     const laidNodeById = new Map(nodes.map(node => [node.id, node]));
     const computedGroupSize = new Map<string, { x: number; y: number }>();
-    const groupSize = (group: typeof diagram.groups[number]): { x: number; y: number } => {
+    const groupSize = (group: ResolvedGroup): { x: number; y: number } => {
       const existing = computedGroupSize.get(group.id);
       if (existing !== undefined) return existing;
       const origin = absoluteGroupPosition(group.id);
@@ -180,7 +178,7 @@ export class LayoutEngineImpl implements LayoutEngine {
         width = Math.max(width, child.position.x - origin.x + child.size.x);
         height = Math.max(height, child.position.y - origin.y + child.size.y);
       }
-      for (const child of diagram.groups.filter(candidate => candidate.parentGroup === group.id)) {
+      for (const child of Object.values(diagram.groups).filter(candidate => candidate.parentGroup === group.id)) {
         const childOrigin = absoluteGroupPosition(child.id);
         const childExtent = groupSize(child);
         width = Math.max(width, childOrigin.x - origin.x + childExtent.x);
@@ -190,7 +188,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       computedGroupSize.set(group.id, size);
       return size;
     };
-    const groups = diagram.groups.map(group => {
+    const groups = Object.values(diagram.groups).map(group => {
       const position = absoluteGroupPosition(group.id);
       const size = groupSize(group);
       return Object.assign(new LaidOutGroup(), {
@@ -208,7 +206,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       const group = laidGroupById.get(id);
       return group === undefined ? boundsFromRect(create(Vec2Schema, { x: 0, y: 0 }), create(Vec2Schema, { x: 0, y: 0 })) : boundsFromRect(group.position, group.size);
     };
-    const edges = diagram.edges.map(edge => {
+    const edges = Object.values(diagram.edges).map(edge => {
       const layout = edge.layout;
       const waypoints = layout?.routing === EdgeRouting.ROUTING_MANUAL && layout.waypoints.length > 0
         ? layout.waypoints
@@ -222,7 +220,7 @@ export class LayoutEngineImpl implements LayoutEngine {
         })], connection: edge.connection, typography: edge.typography, label: edge.label, layout: edge.layout,
       });
     });
-    const annotations = diagram.annotations.map(annotation => {
+    const annotations = Object.values(diagram.annotations).map(annotation => {
       const measured = sizeForLabel(annotation.content, annotation.typography);
       const position = annotation.layout?.position ?? create(Vec2Schema, { x: 0, y: 0 });
       const size = annotation.layout?.size ?? create(Vec2Schema, measured);

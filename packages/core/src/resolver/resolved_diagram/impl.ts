@@ -10,8 +10,8 @@ import { ResolvedNode } from '../resolved_node';
 export class ResolvedDiagram {
   id!: string;
   canvas!: CanvasStyle;
-  nodes: ResolvedNode[] = [];
-  edges: ResolvedEdge[] = [];
-  groups: ResolvedGroup[] = [];
-  annotations: ResolvedAnnotation[] = [];
+  nodes: Record<string, ResolvedNode> = {};
+  edges: Record<string, ResolvedEdge> = {};
+  groups: Record<string, ResolvedGroup> = {};
+  annotations: Record<string, ResolvedAnnotation> = {};
 }

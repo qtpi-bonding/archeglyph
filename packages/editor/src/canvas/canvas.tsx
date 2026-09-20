@@ -334,6 +334,9 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       }
       props.ui.setTextEditTarget(ref);
     };
+    // Keep the context construction in one place.  The registered accessor and
+    // the keyboard route must observe the same live canvas state; in
+    // particular, rect and geometry must not be captured at mount time.
     const getCommandContext = (): CommandContext => ({
       state: props.state,
       ui: props.ui,

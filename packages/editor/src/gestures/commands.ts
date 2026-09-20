@@ -34,6 +34,18 @@ export interface CommandContext {
   beginTextEdit: (ref: ElementRef) => void;
 }
 
+/**
+ * Margin left around the content by 'zoom-fit'. 40.
+ *
+ * CSS PIXELS OF THE VIEWPORT, not diagram units. fitBoundsToRect
+ * subtracts it from containerRect.width and height before dividing, so
+ * it is screen-space whatever the zoom. That is also the right unit for the
+ * reason it exists: the thing being kept clear of the edge is a selection
+ * outline and its resize handles, and those are drawn at a constant screen
+ * size.
+ */
+export const FIT_PADDING: number = 40;
+
 function selectedElements(context: CommandContext): ElementRef[] {
   return context.ui.selection();
 }

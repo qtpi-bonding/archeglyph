@@ -6,6 +6,25 @@ import { EDITOR_THEMES } from './editor_theme';
 import { HostAdapter } from '../adapters/host_adapter';
 import { SaveController, SaveStatus } from './save_controller';
 
+export interface TopBarProps {
+  state: EditorState;
+  adapter: HostAdapter;
+  saveController: SaveController | null;
+  /** Active chrome palette name, and a setter. Wave 6's toolbar takes this over. */
+  editorTheme: string;
+  onEditorTheme: (name: string) => void;
+}
+
+function statusLabel(status: SaveStatus | undefined): string {
+  switch (status) {
+    case 'unsaved': return 'Unsaved';
+    case 'saving': return 'Saving…';
+    case 'saved': return 'Saved';
+    case 'error': return 'Save failed';
+    default: return '';
+  }
+}
+
 export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element => {
   const params: URLSearchParams = new URLSearchParams(window.location.search);
   const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';

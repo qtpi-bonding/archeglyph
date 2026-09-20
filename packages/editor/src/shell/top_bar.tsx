@@ -63,12 +63,3 @@ export const TopBar: Component<TopBarProps> = (props: TopBarProps): JSX.Element 
   );
 };
 
-function statusLabel(status: SaveStatus | undefined): string {
-  switch (status) {
-    case 'unsaved': return 'Unsaved';
-    case 'saving': return 'Saving…';
-    case 'saved': return 'Saved';
-    case 'error': return 'Save failed';
-    default: return '';
-  }
-}

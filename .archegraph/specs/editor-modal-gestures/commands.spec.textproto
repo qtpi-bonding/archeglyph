@@ -1,0 +1,82 @@
+file: "packages/editor/src/gestures/commands.ts"
+doc: "The command registry every chord, island button and palette row dispatches through."
+
+constants: [
+  { name: "COMMANDS"
+    change_type: MODIFIED
+    doc:
+      "Two entries added, and no existing entry changes.\n"
+      "\n"
+      "  { id: 'enter-grab', label: 'Grab' }\n"
+      "      Sets ui.setModalGesture(beginModalGesture('grab',\n"
+      "      ui.selection())). When the selection is empty its run() does\n"
+      "      nothing: no gesture is opened, so the mode indicator stays dark\n"
+      "      and Escape is still the selection-clearing command.\n"
+      "\n"
+      "      Note this is a statement about run(), not about the keystroke.\n"
+      "      runCommand has already cleared any open gesture by the time\n"
+      "      run() is reached, so pressing g with a gesture open and the\n"
+      "      selection since emptied does end that gesture.\n"
+      "\n"
+      "  { id: 'enter-resize', label: 'Resize' }\n"
+      "      Sets ui.setModalGesture(beginModalGesture('resize',\n"
+      "      ui.selection())). Does nothing unless the selection holds\n"
+      "      EXACTLY ONE element. Resize is single-element throughout the\n"
+      "      editor -- previewResize in scene/preview.ts resizes one target\n"
+      "      and leaves a group's members where they are -- so a two-element\n"
+      "      selection has no meaning here, and silently resizing the first\n"
+      "      of them would be worse than doing nothing. Same note as above:\n"
+      "      the empty run() does not mean the keystroke was inert.\n"
+      "\n"
+      "Neither command reads geometry, applies an edit, or closes anything.\n"
+      "Opening a gesture is the whole of their work; the keystrokes after it\n"
+      "are read by modalKeyDown and applied by commitModalGesture.\n"
+      "\n"
+      "Both rely on runCommand having already cleared any open gesture\n"
+      "before it dispatches -- see runCommand below. Neither clears it\n"
+      "itself."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "Command" } }] } }
+    uses: ["Command", "CommandContext", "beginModalGesture"]
+  }
+]
+
+methods: [
+  { name: "runCommand"
+    change_type: MODIFIED
+    doc:
+      "Gains one statement at the top, before the registry lookup and before\n"
+      "the command's own run(): context.ui.setModalGesture(undefined).\n"
+      "\n"
+      "Running any command ends any open modal gesture. Put here rather than\n"
+      "in gestures/keyboard_handler.ts because runCommand is the ONE place\n"
+      "every dispatcher goes through -- the keydown path, and also\n"
+      "shell/app.tsx's onCommand, which is what the toolbar, the zoom island,\n"
+      "the undo island, the file island and a chosen palette row all call.\n"
+      "None of those reach keyboard_handler at all. A clear placed there\n"
+      "would leave `g` then a click on Undo with the gesture still open, the\n"
+      "mode indicator stuck reading 'Grab', and the next arrow key swallowed\n"
+      "by a mode the user believes they left.\n"
+      "\n"
+      "BEFORE the dispatch, not after, and this is the one ordering here\n"
+      "that fails silently if reversed. 'enter-grab' and 'enter-resize' are\n"
+      "themselves commands that open a gesture, so clearing afterwards would\n"
+      "wipe the gesture the command just set and pressing g would never\n"
+      "leave a mode open at all. Clearing first also makes a second g\n"
+      "restart the gesture, which is what a user pressing it expects.\n"
+      "\n"
+      "Unconditional -- no check for whether a gesture is open. The only\n"
+      "redundant case is setting undefined over undefined, and Solid's\n"
+      "default referential equality makes that particular write a no-op\n"
+      "that notifies nothing. No wider claim about signal equality is meant\n"
+      "or needed here. A guard would be a second place this rule lives.\n"
+      "\n"
+      "Nothing else about the function changes: same lookup by id, same\n"
+      "silent no-op for an unknown id, same void return."
+    inputs: [
+      { name: "id", type: { named: { symbol: "CommandId" } } },
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: VOID }
+    uses: ["COMMANDS"]
+  }
+]

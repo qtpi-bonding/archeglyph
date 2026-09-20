@@ -1,0 +1,48 @@
+file: "packages/editor/src/shell/app.tsx"
+doc: "The editor shell: islands, overlays, load and save wiring."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "One change, to the local `mode` accessor that feeds StateIsland's\n"
+      "`mode` prop. Everything else -- the islands, both overlays, loading,\n"
+      "saving, the error effect -- is untouched.\n"
+      "\n"
+      "`mode` today returns the active tool's label when the tool is not\n"
+      "'select', and undefined otherwise. It gains a branch AHEAD of that\n"
+      "one: when ui.modalGesture() is defined, return a string describing the\n"
+      "gesture instead.\n"
+      "\n"
+      "The gesture wins over the tool because a modal gesture is the more\n"
+      "transient of the two and is the one the next keystroke acts on. A\n"
+      "user in grab mode with the hand tool active needs to be told they are\n"
+      "in grab mode.\n"
+      "\n"
+      "The string is built here rather than in StateIsland, which takes a\n"
+      "plain string and formats nothing. Its two parts:\n"
+      "  the word 'Grab' for kind 'grab', 'Resize' for kind 'resize'\n"
+      "  then, when `digits` is not the empty string, a space and the digits\n"
+      "So an untouched grab reads 'Grab' and typing 4 then 0 makes it read\n"
+      "'Grab 40'. The direction is not named: the preview already shows it,\n"
+      "and a mode line that restates what is drawn under it is noise.\n"
+      "\n"
+      "Echoing the digits is not decoration. Typing a digit is the one\n"
+      "keystroke in the gesture that changes nothing else on screen: the\n"
+      "preview and the dimming both come from modalDelta, which is the zero\n"
+      "vector until an arrow has aimed the gesture, so 4 then 0 before any\n"
+      "arrow moves no outline. The mode line is the only place those two\n"
+      "keystrokes are visible.\n"
+      "\n"
+      "This is a claim about the DIGIT keystrokes specifically, not about\n"
+      "the gesture. Opening one already changes the screen -- the targets\n"
+      "dim and draw a preview outline in place, before any key is typed.\n"
+      "\n"
+      "StateIslandProps needs no change. Its doc field already records that\n"
+      "`mode` is 'a short human string, not an enum' and that 'editor-shell\n"
+      "v2b feeds it the modal g/r gesture from UiState instead' -- this is\n"
+      "that caller change."
+    type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "Component<{}>" } }
+    uses: ["ModalGesture"]
+  }
+]

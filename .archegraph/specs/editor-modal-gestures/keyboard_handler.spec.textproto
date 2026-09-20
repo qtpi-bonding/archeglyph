@@ -1,0 +1,43 @@
+file: "packages/editor/src/gestures/keyboard_handler.ts"
+doc: "The document-level keydown listener: modal gestures first, then chords."
+
+methods: [
+  { name: "handleKeyDown"
+    change_type: MODIFIED
+    doc:
+      "Gains a modal branch, and nothing else. The existing shouldIgnoreKey\n"
+      "guard stays first and is unchanged, so nothing below fires while the\n"
+      "user is typing in an input, a textarea or a contenteditable. The chord\n"
+      "path after the branch is untouched: resolveChord, return false when\n"
+      "nothing matches, otherwise runCommand and return true.\n"
+      "\n"
+      "After the guard, read context.ui.modalGesture(). When it is undefined\n"
+      "the function behaves exactly as it does today. When one is open, call\n"
+      "modalKeyDown(gesture, event.key) and act on the outcome:\n"
+      "  'continue'  ui.setModalGesture(step.gesture); return true\n"
+      "  'commit'    commitModalGesture(gesture, context), then\n"
+      "              ui.setModalGesture(undefined); return true\n"
+      "  'cancel'    ui.setModalGesture(undefined); return true\n"
+      "  'ignore'    fall through to the chord path below\n"
+      "\n"
+      "Pass the gesture this function read, not step.gesture, to\n"
+      "commitModalGesture -- ModalStep carries a gesture only for\n"
+      "'continue'.\n"
+      "\n"
+      "This function does NOT clear the gesture when a chord matches.\n"
+      "runCommand in gestures/commands.ts does that for every dispatcher,\n"
+      "including the island buttons and palette rows that never reach this\n"
+      "file. Adding a clear here as well would be a second copy of one rule.\n"
+      "\n"
+      "Return value is unchanged in meaning: true when the event was handled\n"
+      "and the caller should preventDefault, false otherwise. A key consumed\n"
+      "by the gesture returns true, including one that only edited the digit\n"
+      "buffer."
+    inputs: [
+      { name: "event", type: { named: { symbol: "KeyboardEvent" } } },
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: BOOLEAN }
+    uses: ["resolveChord", "runCommand", "shouldIgnoreKey", "modalKeyDown", "commitModalGesture", "ModalStep"]
+  }
+]

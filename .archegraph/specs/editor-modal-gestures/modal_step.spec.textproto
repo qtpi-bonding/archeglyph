@@ -1,0 +1,84 @@
+file: "packages/editor/src/ui_state/modal_step.ts"
+doc: "The reducer that advances an open modal gesture one keystroke."
+
+structs: [
+  { name: "ModalStep"
+    doc:
+      "What modalKeyDown decided about one keystroke.\n"
+      "\n"
+      "`outcome` is one of four:\n"
+      "  'continue'  the key was consumed and the gesture is still open\n"
+      "  'commit'    apply the gesture, then close it\n"
+      "  'cancel'    close the gesture without applying anything\n"
+      "  'ignore'    this reducer does not consume the key\n"
+      "\n"
+      "`gesture` is present when and only when `outcome` is 'continue'. For\n"
+      "the other three outcomes the caller already holds the gesture it\n"
+      "passed in, and for 'commit' that is the value it must apply -- so\n"
+      "returning it again would give the caller two handles on the same\n"
+      "state and no rule about which one wins."
+    fields: [
+      { name: "outcome", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'continue' | 'commit' | 'cancel' | 'ignore'" } } },
+      { name: "gesture", type: { named: { symbol: "ModalGesture" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "modalKeyDown"
+    doc:
+      "Pure. `key` is a KeyboardEvent.key value. Never mutates the gesture it\n"
+      "is given; 'continue' carries a new object.\n"
+      "\n"
+      "The full key table, and nothing outside it is consumed:\n"
+      "\n"
+      "  ArrowUp / ArrowDown / ArrowLeft / ArrowRight\n"
+      "      continue, with `direction` set to 'up' / 'down' / 'left' /\n"
+      "      'right'. It OVERWRITES any direction already set, so Down then\n"
+      "      Right aims right. `digits` is carried across unchanged, so Down\n"
+      "      then 4 then 0 then Right is 40 units rightward.\n"
+      "  '0' through '9'\n"
+      "      continue, with the character appended to `digits`, UNLESS\n"
+      "      `digits` already holds 6 characters, in which case the gesture\n"
+      "      is returned unchanged and the keystroke is still consumed. No\n"
+      "      other character is accepted -- no minus sign, no decimal point.\n"
+      "      The cap is what keeps the parsed magnitude inside the safe\n"
+      "      integer range, so modalDelta's arithmetic is exact for every\n"
+      "      value the field can hold; 999999 diagram units is far past any\n"
+      "      real diagram.\n"
+      "  Backspace\n"
+      "      continue, with the last character of `digits` removed. When\n"
+      "      `digits` is already the empty string it stays empty and the\n"
+      "      gesture is otherwise unchanged; Backspace never cancels.\n"
+      "  Enter\n"
+      "      commit.\n"
+      "  Escape\n"
+      "      cancel.\n"
+      "  every other value of `key`\n"
+      "      ignore.\n"
+      "\n"
+      "'ignore' says only that this function did not consume the key. It\n"
+      "does NOT promise the gesture survives: the caller falls through to\n"
+      "the chord path, and runCommand in gestures/commands.ts clears the\n"
+      "gesture before dispatching whatever it resolves. So with a gesture\n"
+      "open, `v` returns 'ignore' here and then ends the gesture and\n"
+      "switches tool. Whether an ignored key ends the gesture is therefore\n"
+      "decided entirely by whether it resolves to a command, and never by\n"
+      "this function.\n"
+      "\n"
+      "Escape is consumed HERE so that it never reaches the 'escape' command\n"
+      "in gestures/commands.ts, whose second branch clears the selection.\n"
+      "Without that, aborting a move would delete the selection the move was\n"
+      "aimed at.\n"
+      "\n"
+      "There is no shift parameter. Shift distinguishes a 1-unit from a\n"
+      "10-unit nudge on the plain arrow commands, and has no job here\n"
+      "because the distance is typed rather than accumulated."
+    inputs: [
+      { name: "gesture", type: { named: { symbol: "ModalGesture" } } },
+      { name: "key", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "ModalStep" } }
+  }
+]

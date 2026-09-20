@@ -1,0 +1,57 @@
+file: "packages/editor/src/ui_state/modal_gesture.ts"
+doc: "The value an open modal keyboard gesture holds."
+
+structs: [
+  { name: "ModalGesture"
+    doc:
+      "One in-flight modal gesture: `g` (grab) or `r` (resize). Pure data --\n"
+      "no scene, no stylesheet, no DOM. Everything derived from it lives in\n"
+      "gestures/modal_aim.ts and gestures/modal_apply.ts.\n"
+      "\n"
+      "The interaction it encodes is: an arrow AIMS, digits give the DISTANCE\n"
+      "in diagram units, Enter commits. So `g` then Down then 4 then 0 then\n"
+      "Enter moves the selection 40 units down.\n"
+      "\n"
+      "An arrow does NOT move anything by itself, and this is the whole\n"
+      "reason the type has a separate `direction` and `digits` rather than an\n"
+      "accumulated Vec2. Plain arrows outside any mode are already bound to\n"
+      "the nudge commands, so an arrow that also moved here would be a second\n"
+      "copy of nudge, and the two ways of setting a distance would then need\n"
+      "rules for how they combine.\n"
+      "\n"
+      "`refs` is captured when the gesture opens and never changes while it is\n"
+      "open, so a selection change mid-gesture cannot retarget a move already\n"
+      "in flight.\n"
+      "\n"
+      "IMPORT DIRECTION. This file needs ElementRef from ./ui_state, and\n"
+      "./ui_state needs ModalGesture from here, so the two reference each\n"
+      "other. Write `import type { ElementRef } from \'./ui_state\'` -- a\n"
+      "type-only import erases, leaving no runtime edge and no cycle. A plain\n"
+      "value import would create one. Note that ui_state/overlay.ts, the\n"
+      "closest sibling to copy from, imports nothing at all and so does not\n"
+      "show this."
+    fields: [
+      { name: "kind",      type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'grab' | 'resize'" } } },
+      { name: "refs",      type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "direction", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'up' | 'down' | 'left' | 'right'" } }, is_optional: true },
+      { name: "digits",    type: { primitive: CHARACTER } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "beginModalGesture"
+    doc:
+      "Opens a gesture: `direction` undefined and `digits` the empty string.\n"
+      "\n"
+      "Both start empty rather than defaulting to a direction, because a\n"
+      "gesture with no arrow pressed yet must commit nothing. `g` then Enter\n"
+      "is a no-op, not a guess at which way the user meant."
+    inputs: [
+      { name: "kind", type: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'grab' | 'resize'" } } },
+      { name: "refs", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { named: { symbol: "ModalGesture" } }
+  }
+]

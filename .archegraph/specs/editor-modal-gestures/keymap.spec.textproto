@@ -1,0 +1,50 @@
+file: "packages/editor/src/ui_state/keymap.ts"
+doc: "Declarative chord to command-id table, and the resolver over it."
+
+structs: [
+  { name: "CommandId"
+    change_type: MODIFIED
+    doc:
+      "Gains two members: 'enter-grab' and 'enter-resize'. Every existing\n"
+      "member stays."
+    aliased: { unsupported: { reason: LITERAL_TYPE, source_excerpt: "'undo' | 'redo' | 'delete' | 'escape' | 'select-all' | 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right' | 'ring-next' | 'ring-prev' | 'pin-all' | 'unpin-all' | 'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' | 'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' | 'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' | 'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help' | 'enter-grab' | 'enter-resize'" } }
+    typescript: {}
+  }
+]
+
+constants: [
+  { name: "KEYMAP"
+    change_type: MODIFIED
+    doc:
+      "Two entries added, and no existing entry changes:\n"
+      "  { chord: { key: 'g' }, command: 'enter-grab' }\n"
+      "  { chord: { key: 'r' }, command: 'enter-resize' }\n"
+      "\n"
+      "Bare letters with no modifier, matching the other mode and tool keys\n"
+      "('v', 'h', 't', 'n'). docs/editor-ui-review.md 11.4 assigns g and r,\n"
+      "and D6 records that with the ring on 's' nothing collides. Neither\n"
+      "letter appears anywhere else in this table today.\n"
+      "\n"
+      "No entry is added for any key the gesture itself consumes -- the\n"
+      "arrows, the digits, Backspace, Enter and Escape are read by\n"
+      "modalKeyDown while a gesture is open and never resolved as chords.\n"
+      "Several of them are bound here to other commands (the arrows to\n"
+      "nudge, '0' to zoom-reset, '1' to zoom-fit, Enter to edit-text,\n"
+      "Escape to escape, Backspace to delete), and those bindings are\n"
+      "unchanged: they keep working whenever no gesture is open, which is\n"
+      "the only time resolveChord sees them.\n"
+      "\n"
+      "Backspace is the one worth stating outright, because the two\n"
+      "meanings are far apart: with a gesture open it removes one typed\n"
+      "digit, and with none open it runs 'delete' on the selection. The\n"
+      "ordering in handleKeyDown is what keeps them separate.\n"
+      "\n"
+      "docs/editor-ui-review.md 11.4 has already been rewritten to the\n"
+      "aim-then-distance model by this pillar. The g and r assignments it\n"
+      "makes are unchanged by that rewrite and are what this table follows;\n"
+      "what the rewrite removed was the '1' to '8' handle picker, explained\n"
+      "in modalHandle's doc in gestures/modal_aim.ts."
+    type: { named: { symbol: "Array", args: [{ named: { symbol: "KeymapEntry" } }] } }
+    uses: ["KeymapEntry", "Chord"]
+  }
+]

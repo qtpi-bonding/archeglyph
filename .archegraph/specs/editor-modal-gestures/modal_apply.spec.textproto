@@ -1,0 +1,82 @@
+file: "packages/editor/src/gestures/modal_apply.ts"
+doc: "Runs a modal gesture through the same machines a pointer drag runs through."
+
+methods: [
+  { name: "modalPreview"
+    doc:
+      "The live preview for an open gesture, or undefined when there is\n"
+      "nothing to draw.\n"
+      "\n"
+      "Calls moveUpdate or resizeUpdate from gestures/drag_machines.ts --\n"
+      "the same two functions the pointer drag calls, not a reimplementation.\n"
+      "Both compute their delta as `current` minus `session.origin`, so a\n"
+      "session built with `origin: { x: 0, y: 0 }` and a `current` of\n"
+      "modalDelta(gesture) hands them exactly the typed delta. That identity\n"
+      "is the only reason the two input styles meet.\n"
+      "\n"
+      "grab:   moveUpdate(session, geometry, modalDelta(gesture)) with\n"
+      "        session { refs: gesture.refs, origin: zero }.\n"
+      "resize: resizeUpdate(session, geometry, modalDelta(gesture), false)\n"
+      "        with session { ref: gesture.refs[0], handle:\n"
+      "        modalHandle(gesture), origin: zero }. keepAspect is\n"
+      "        resizeUpdate's FOURTH ARGUMENT, not a field of the session,\n"
+      "        and is always false: shift-to-keep-aspect is a pointer\n"
+      "        affordance with no keyboard equivalent here.\n"
+      "\n"
+      "Returns undefined in exactly three cases: `refs` is empty; the kind\n"
+      "is 'resize' and modalHandle returns undefined; the kind is 'resize'\n"
+      "and `refs` holds more than one element.\n"
+      "\n"
+      "That third case cannot arise from the editor: the 'enter-resize'\n"
+      "command refuses to open a gesture unless the selection holds exactly\n"
+      "one element, so a resize gesture always carries exactly one ref and\n"
+      "`refs[0]` above is that ref. The guard is defensive, for a gesture\n"
+      "constructed directly in a test.\n"
+      "\n"
+      "Otherwise it returns a preview, including when the delta is zero -- a\n"
+      "gesture that is open but not yet aimed previews the selection\n"
+      "unmoved, which is correct."
+    inputs: [
+      { name: "gesture", type: { named: { symbol: "ModalGesture" } } },
+      { name: "geometry", type: { named: { symbol: "SceneGeometry" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "ScenePreview | undefined" } }
+    uses: ["ScenePreview", "modalDelta", "modalHandle", "moveUpdate", "resizeUpdate", "MoveSession", "ResizeSession"]
+  },
+  { name: "commitModalGesture"
+    doc:
+      "Applies the gesture and returns. It never reads or writes\n"
+      "ui.modalGesture: closing the gesture is the caller's job, and\n"
+      "gestures/keyboard_handler.ts does it immediately after this returns.\n"
+      "\n"
+      "This is not a claim that only one line in the editor clears the\n"
+      "gesture -- three do, and each ends a different way of leaving one:\n"
+      "runCommand for any command dispatch, Canvas's onPointerDown for a\n"
+      "pointer press, and handleKeyDown for a commit or a cancel. The claim\n"
+      "is only that THIS function is not one of them.\n"
+      "\n"
+      "Builds the same zero-origin sessions modalPreview builds, then calls\n"
+      "moveCommit or resizeCommit and passes the result to\n"
+      "context.state.applyStyleEdit when it is not undefined. Those two\n"
+      "return undefined for a zero delta and already materialize layout, so\n"
+      "pressing Enter with no digits typed writes no undo entry.\n"
+      "\n"
+      "Exactly one applyStyleEdit call per commit, with no coalesce key, so\n"
+      "one modal gesture is one undo entry. A coalesce key is what the nudge\n"
+      "commands need because holding an arrow repeats; a modal gesture\n"
+      "commits once, on Enter.\n"
+      "\n"
+      "Does not call modalPreview. It re-checks the same three conditions\n"
+      "itself -- empty `refs`; kind 'resize' with modalHandle undefined;\n"
+      "kind 'resize' with more than one ref -- and returns without applying\n"
+      "anything when any holds, as it also does when context.geometry is\n"
+      "undefined. Computing a preview in order to throw it away would be\n"
+      "the only alternative, and it would still need the geometry guard."
+    inputs: [
+      { name: "gesture", type: { named: { symbol: "ModalGesture" } } },
+      { name: "context", type: { named: { symbol: "CommandContext" } } }
+    ]
+    output: { primitive: VOID }
+    uses: ["modalDelta", "modalHandle", "moveCommit", "resizeCommit", "MoveSession", "ResizeSession"]
+  }
+]

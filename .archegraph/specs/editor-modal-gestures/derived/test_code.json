@@ -1,0 +1,795 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "codes": {
+        "double-click-annotation": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "idle-without-gesture": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "local-pointer-move-preview": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "local-pointer-resize-preview": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-enter-resize-target": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-gesture-without-geometry": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-grab-callout-dimming": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-grab-with-preview": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-precedence-over-local-state": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-preview-undefined": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-resize-callout-dimming": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-resize-with-preview": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pointer-down-clears-modal": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pointer-down-without-modal": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "codes": {
+        "dispatch-with-open-gesture": {
+          "body": "expect(value.selection.length).toBeGreaterThanOrEqual(0);\nexpect(COMMANDS.find((command) => command.id === value.command)).toBeUndefined();",
+          "strategy": "fc.record({ command: fc.constantFrom('enter-grab', 'enter-resize'), selection: fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() })) })",
+          "helpersUsed": []
+        },
+        "enter-grab-empty-selection": {
+          "body": "expect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "enter-grab-non-empty-selection": {
+          "body": "expect(value.length).toBeGreaterThan(0);\nexpect(COMMANDS.find((command) => command.id === 'enter-grab')).toBeUndefined();",
+          "strategy": "fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() }), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "enter-resize-empty-selection": {
+          "body": "expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "enter-resize-multiple-selection": {
+          "body": "expect(value.length).toBeGreaterThanOrEqual(2);\nexpect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();",
+          "strategy": "fc.array(fc.record({ kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string() }), { minLength: 2 })",
+          "helpersUsed": []
+        },
+        "enter-resize-single-selection": {
+          "body": "expect(COMMANDS.find((command) => command.id === 'enter-resize')).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/runCommand().",
+      "codes": {
+        "gesture-opening-command": {
+          "body": "const record = makeContext(true);\nrunCommand(id as never, record.context);\nexpect(record.modalGestureWrites).toEqual([undefined]);",
+          "strategy": "fc.constantFrom('enter-grab', 'enter-resize')",
+          "helpersUsed": [
+            "makeContext"
+          ]
+        },
+        "known-command-with-open-modal-gesture": {
+          "body": "const record = makeContext(true);\nrunCommand(id as never, record.context);\nexpect(record.modalGestureWrites).toEqual([undefined]);",
+          "strategy": "fc.constantFrom(...registeredCommandIds)",
+          "helpersUsed": [
+            "makeContext",
+            "registeredCommandIds"
+          ]
+        },
+        "known-command-without-open-modal-gesture": {
+          "body": "const record = makeContext(false);\nrunCommand(id as never, record.context);\nexpect(record.modalGestureWrites).toEqual([undefined]);",
+          "strategy": "fc.constantFrom(...registeredCommandIds)",
+          "helpersUsed": [
+            "makeContext",
+            "registeredCommandIds"
+          ]
+        },
+        "unknown-command-with-open-modal-gesture": {
+          "body": "const record = makeContext(true);\nrunCommand(id as never, record.context);\nexpect(record.modalGestureWrites).toEqual([undefined]);",
+          "strategy": "fc.string().filter((candidate) => !registeredCommandIds.includes(candidate))",
+          "helpersUsed": [
+            "makeContext",
+            "registeredCommandIds"
+          ]
+        },
+        "unknown-command-without-open-modal-gesture": {
+          "body": "const record = makeContext(false);\nrunCommand(id as never, record.context);\nexpect(record.modalGestureWrites).toEqual([undefined]);",
+          "strategy": "fc.string().filter((candidate) => !registeredCommandIds.includes(candidate))",
+          "helpersUsed": [
+            "makeContext",
+            "registeredCommandIds"
+          ]
+        }
+      },
+      "helpers": {
+        "makeContext": "function makeContext(open: boolean): { context: Parameters<typeof runCommand>[1]; modalGestureWrites: unknown[] } {\n  const modalGestureWrites: unknown[] = [];\n  const callable = (): unknown => undefined;\n  const state: Record<string, unknown> = new Proxy({}, {\n    get: (): unknown => callable,\n  });\n  const ui: Record<string, unknown> = new Proxy({}, {\n    get: (_target: Record<string, unknown>, property: string): unknown => {\n      if (property === 'setModalGesture') {\n        return (gesture: unknown): void => { modalGestureWrites.push(gesture); };\n      }\n      if (property === 'selection') {\n        return (): unknown[] => [];\n      }\n      if (property === 'viewport') {\n        return (): { zoom: number } => ({ zoom: 1 });\n      }\n      if (property === 'overlay') {\n        return (): undefined => undefined;\n      }\n      return callable;\n    },\n  });\n  const context: Parameters<typeof runCommand>[1] = {\n    state: state as Parameters<typeof runCommand>[1]['state'],\n    ui: ui as Parameters<typeof runCommand>[1]['ui'],\n    geometry: undefined,\n    rect: { left: 0, top: 0, width: 1, height: 1 } as Parameters<typeof runCommand>[1]['rect'],\n    save: (): void => undefined,\n    focusInspector: (): void => undefined,\n    beginTextEdit: (): void => undefined,\n  };\n  if (open) {\n    modalGestureWrites.push({ open: true });\n  }\n  return { context, modalGestureWrites: modalGestureWrites.slice(open ? 1 : 0) };\n}",
+        "registeredCommandIds": "const registeredCommandIds: readonly string[] = ['undo', 'redo', 'delete', 'hide', 'tool-select', 'tool-hand', 'tool-annotation', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit', 'add-annotation', 'edit-text', 'duplicate', 'open-palette', 'open-help', 'escape', 'select-all', 'focus-inspector', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'pin-all', 'unpin-all', 'auto-layout', 'reset-size', 'save'];"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/keyboard_handler.ts/handleKeyDown().",
+      "codes": {
+        "ignored-editable-target": {
+          "body": "const contextFixture = makeContext(undefined);\nconst target = editableTarget(value);\nconst event = makeEvent(\"q\", target);\nexpect(handleKeyDown(event, contextFixture.context)).toBe(false);\nexpect(contextFixture.modalReads).toBe(0);\nexpect(contextFixture.setValues).toHaveLength(0);",
+          "strategy": "fc.constantFrom(\"input\", \"textarea\", \"contenteditable\")",
+          "helpersUsed": [
+            "makeContext",
+            "editableTarget",
+            "makeEvent"
+          ]
+        },
+        "modal-cancel": {
+          "body": "const gesture = { kind: \"move\", refs: [], digits: \"\", direction: \"up\" };\nconst contextFixture = makeContext(gesture);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(true);\nexpect(contextFixture.setValues).toHaveLength(1);\nexpect(contextFixture.setValues[0]).toBeUndefined();",
+          "strategy": "fc.constant(\"Escape\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "modal-commit": {
+          "body": "const gesture = { kind: \"move\", refs: [], digits: \"\", direction: \"up\" };\nconst contextFixture = makeContext(gesture);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(true);\nexpect(contextFixture.setValues).toHaveLength(1);\nexpect(contextFixture.setValues[0]).toBeUndefined();",
+          "strategy": "fc.constant(\"Enter\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "modal-continue": {
+          "body": "const gesture = { kind: \"move\", refs: [], digits: \"\", direction: \"up\" };\nconst contextFixture = makeContext(gesture);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(true);\nexpect(contextFixture.setValues).toHaveLength(1);\nexpect(contextFixture.setValues[0]).not.toBeUndefined();",
+          "strategy": "fc.constantFrom(\"ArrowUp\", \"ArrowDown\", \"ArrowLeft\", \"ArrowRight\", \"1\", \"7\", \"Backspace\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "modal-ignore-matched-chord": {
+          "body": "const gesture = { kind: \"move\", refs: [], digits: \"\", direction: \"up\" };\nconst contextFixture = makeContext(gesture);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(true);\nexpect(contextFixture.setValues).toHaveLength(0);",
+          "strategy": "fc.constantFrom(\"ArrowUp\", \"ArrowDown\", \"ArrowLeft\", \"ArrowRight\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "modal-ignore-unmatched-chord": {
+          "body": "const gesture = { kind: \"move\", refs: [], digits: \"\", direction: \"up\" };\nconst contextFixture = makeContext(gesture);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(false);\nexpect(contextFixture.setValues).toHaveLength(0);",
+          "strategy": "fc.constantFrom(\"UnmappedKeyA\", \"UnmappedKeyB\", \"UnmappedKeyC\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "no-modal-matched-chord": {
+          "body": "const contextFixture = makeContext(undefined);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(true);\nexpect(contextFixture.modalReads).toBe(0);",
+          "strategy": "fc.constantFrom(\"ArrowUp\", \"ArrowDown\", \"ArrowLeft\", \"ArrowRight\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        },
+        "no-modal-unmatched-chord": {
+          "body": "const contextFixture = makeContext(undefined);\nconst event = makeEvent(value, nonEditingTarget());\nexpect(handleKeyDown(event, contextFixture.context)).toBe(false);\nexpect(contextFixture.modalReads).toBe(0);",
+          "strategy": "fc.constantFrom(\"UnmappedKeyA\", \"UnmappedKeyB\", \"UnmappedKeyC\")",
+          "helpersUsed": [
+            "makeContext",
+            "makeEvent",
+            "nonEditingTarget"
+          ]
+        }
+      },
+      "helpers": {
+        "editableTarget": "const editableTarget = (kind: string): EventTarget => { if (kind === \"input\" || kind === \"textarea\") { return { tagName: kind } as unknown as EventTarget; } return { tagName: \"div\", isContentEditable: false, contentEditable: \"inherit\", getAttribute: (name: string): string | null => name === \"contenteditable\" ? \"true\" : null } as unknown as EventTarget; };",
+        "makeContext": "const makeContext = (gesture: unknown): { context: Parameters<typeof handleKeyDown>[1]; setValues: unknown[]; modalReads: number } => { const setValues: unknown[] = []; let modalReads = 0; const context = { state: {}, ui: { modalGesture: (): unknown => { modalReads += 1; return gesture; }, setModalGesture: (next: unknown): void => { setValues.push(next); } }, geometry: undefined, rect: {}, save: (): void => {}, beginTextEdit: (): void => {} } as unknown as Parameters<typeof handleKeyDown>[1]; return { context, setValues, modalReads }; };",
+        "makeEvent": "const makeEvent = (key: string, target: EventTarget | null): KeyboardEvent => ({ key, target, metaKey: false, ctrlKey: false, shiftKey: false } as KeyboardEvent);",
+        "nonEditingTarget": "const nonEditingTarget = (): EventTarget => ({ tagName: \"div\", isContentEditable: false, contentEditable: \"inherit\", getAttribute: (): string | null => null } as unknown as EventTarget);"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_aim.ts/modalDelta().",
+      "codes": {
+        "down-empty-distance": {
+          "body": "expect(modalDelta({ kind: 'grab', refs: [], direction: 'down', digits: '' })).toEqual({ x: 0, y: 0 });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "down-typed-distance": {
+          "body": "const magnitude: number = Number.parseInt(value, 10);\nexpect(modalDelta({ kind: 'grab', refs: [], direction: 'down', digits: value })).toEqual({ x: 0, y: magnitude });",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join(''))",
+          "helpersUsed": []
+        },
+        "left-empty-distance": {
+          "body": "expect(modalDelta({ kind: 'grab', refs: [], direction: 'left', digits: '' })).toEqual({ x: 0, y: 0 });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "left-typed-distance": {
+          "body": "const magnitude: number = Number.parseInt(value, 10);\nexpect(modalDelta({ kind: 'grab', refs: [], direction: 'left', digits: value })).toEqual({ x: -magnitude, y: 0 });",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join(''))",
+          "helpersUsed": []
+        },
+        "right-empty-distance": {
+          "body": "expect(modalDelta({ kind: 'grab', refs: [], direction: 'right', digits: '' })).toEqual({ x: 0, y: 0 });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "right-typed-distance": {
+          "body": "const magnitude: number = Number.parseInt(value, 10);\nexpect(modalDelta({ kind: 'grab', refs: [], direction: 'right', digits: value })).toEqual({ x: magnitude, y: 0 });",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join(''))",
+          "helpersUsed": []
+        },
+        "undefined-direction": {
+          "body": "expect(modalDelta({ kind: 'grab', refs: [], direction: undefined, digits: value })).toEqual({ x: 0, y: 0 });",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 0, maxLength: 6 }).map((digits: number[]): string => digits.join(''))",
+          "helpersUsed": []
+        },
+        "up-empty-distance": {
+          "body": "expect(modalDelta({ kind: 'grab', refs: [], direction: 'up', digits: '' })).toEqual({ x: 0, y: 0 });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "up-typed-distance": {
+          "body": "const magnitude: number = Number.parseInt(value, 10);\nexpect(modalDelta({ kind: 'grab', refs: [], direction: 'up', digits: value })).toEqual({ x: 0, y: -magnitude });",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 6 }).map((digits: number[]): string => digits.join(''))",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_aim.ts/modalHandle().",
+      "codes": {
+        "down-direction": {
+          "body": "const gesture = { kind: value, refs: [], direction: 'down' as const, digits: '0' };\nexpect(modalHandle(gesture)).toBe('s');",
+          "strategy": "fc.constantFrom('grab' as const, 'resize' as const)",
+          "helpersUsed": []
+        },
+        "left-direction": {
+          "body": "const gesture = { kind: value, refs: [], direction: 'left' as const, digits: '0' };\nexpect(modalHandle(gesture)).toBe('w');",
+          "strategy": "fc.constantFrom('grab' as const, 'resize' as const)",
+          "helpersUsed": []
+        },
+        "right-direction": {
+          "body": "const gesture = { kind: value, refs: [], direction: 'right' as const, digits: '0' };\nexpect(modalHandle(gesture)).toBe('e');",
+          "strategy": "fc.constantFrom('grab' as const, 'resize' as const)",
+          "helpersUsed": []
+        },
+        "undefined-direction": {
+          "body": "const gesture = { kind: 'grab' as const, refs: [], digits: '0' };\nexpect(modalHandle(gesture)).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "up-direction": {
+          "body": "const gesture = { kind: value, refs: [], direction: 'up' as const, digits: '0' };\nexpect(modalHandle(gesture)).toBe('n');",
+          "strategy": "fc.constantFrom('grab' as const, 'resize' as const)",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_apply.ts/commitModalGesture().",
+      "codes": {
+        "empty-refs": {
+          "body": "const context: any = makeRecordingContext({ byKey: {}, diagram: {} });\ncommitModalGesture({ kind: 'grab', refs: [], direction: 'right', digits: '1' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        },
+        "missing-geometry": {
+          "body": "const context: any = makeRecordingContext(undefined);\ncommitModalGesture({ kind: 'grab', refs: [{ kind: 'node', id: 'n' }], direction: 'right', digits: '1' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        },
+        "move-nonzero-delta": {
+          "body": "const refs: Array<any> = value.ids.map((id: string) => ({ kind: 'node', id }));\nconst context: any = makeRecordingContext(makeGeometry(refs));\ncommitModalGesture({ kind: 'grab', refs, direction: value.direction, digits: String(value.magnitude) }, context);\nexpect(context.calls).toHaveLength(1);\nexpect(context.calls[0]).toHaveLength(1);",
+          "strategy": "fc.record({ ids: fc.array(fc.string({ minLength: 1 }), { minLength: 1 }), direction: fc.constantFrom('up', 'down', 'left', 'right'), magnitude: fc.integer({ min: 1, max: 999999 }) })",
+          "helpersUsed": [
+            "makeRecordingContext",
+            "makeGeometry"
+          ]
+        },
+        "move-zero-delta": {
+          "body": "const context: any = makeRecordingContext({ byKey: {}, diagram: {} });\ncommitModalGesture({ kind: 'grab', refs: [{ kind: 'node', id: 'n' }], direction: undefined, digits: '' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        },
+        "resize-missing-handle": {
+          "body": "const context: any = makeRecordingContext({ byKey: {}, diagram: {} });\ncommitModalGesture({ kind: 'resize', refs: [{ kind: 'node', id: 'n' }], digits: '1' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        },
+        "resize-multiple-refs": {
+          "body": "const refs: Array<any> = value.map((id: string) => ({ kind: 'node', id }));\nconst context: any = makeRecordingContext({ byKey: {}, diagram: {} });\ncommitModalGesture({ kind: 'resize', refs, direction: 'right', digits: '1' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "fc.array(fc.string(), { minLength: 2 })",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        },
+        "resize-nonzero-delta": {
+          "body": "const ref: any = { kind: 'node', id: value.id };\nconst context: any = makeRecordingContext(makeGeometry([ref]));\ncommitModalGesture({ kind: 'resize', refs: [ref], direction: value.direction, digits: String(value.magnitude) }, context);\nexpect(context.calls).toHaveLength(1);\nexpect(context.calls[0]).toHaveLength(1);",
+          "strategy": "fc.record({ id: fc.string({ minLength: 1 }), direction: fc.constantFrom('up', 'down', 'left', 'right'), magnitude: fc.integer({ min: 1, max: 999999 }) })",
+          "helpersUsed": [
+            "makeRecordingContext",
+            "makeGeometry"
+          ]
+        },
+        "resize-zero-delta": {
+          "body": "const context: any = makeRecordingContext({ byKey: {}, diagram: {} });\ncommitModalGesture({ kind: 'resize', refs: [{ kind: 'node', id: 'n' }], direction: 'right', digits: '' }, context);\nexpect(context.calls).toHaveLength(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeRecordingContext"
+          ]
+        }
+      },
+      "helpers": {
+        "makeGeometry": "const makeGeometry = (refs: Array<any>): any => {\n  const byKey: { [key: string]: any } = {};\n  for (const ref of refs) {\n    byKey[`${ref.kind}:${ref.id}`] = {\n      bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 },\n      parentGroup: undefined,\n    };\n  }\n  return { byKey, diagram: {} };\n};",
+        "makeRecordingContext": "const makeRecordingContext = (geometry: unknown): any => {\n  const calls: Array<Array<unknown>> = [];\n  return {\n    geometry,\n    calls,\n    rect: { x: 0, y: 0, width: 0, height: 0 },\n    ui: {},\n    save: (): void => {},\n    beginTextEdit: (_ref: unknown): void => {},\n    state: {\n      stylesheet: {},\n      applyStyleEdit: (...args: Array<unknown>): void => { calls.push(args); },\n    },\n  };\n};"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_apply.ts/modalPreview().",
+      "codes": {
+        "empty-refs": {
+          "body": "const gesture = { kind: value.kind, refs: [], direction: value.direction, digits: value.digits } as any;\nexpect(modalPreview(gesture, {} as any)).toBeUndefined();",
+          "strategy": "fc.record({ kind: fc.constantFrom('grab', 'resize'), direction: fc.option(fc.constantFrom('up', 'down', 'left', 'right'), { nil: undefined }), digits: fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { maxLength: 6 }).map((parts) => parts.join('')) })",
+          "helpersUsed": []
+        },
+        "grab-preview": {
+          "body": "const gesture = { kind: 'grab', refs: value, direction: 'right', digits: '12' } as any;\nexpect(modalPreview(gesture, modalPreviewTestGeometry())).toBeDefined();",
+          "strategy": "fc.array(fc.constant('ref'), { minLength: 1, maxLength: 6 })",
+          "helpersUsed": [
+            "modalPreviewTestGeometry"
+          ]
+        },
+        "resize-missing-handle": {
+          "body": "const gesture = { kind: 'resize', refs: ['ref'], direction: undefined, digits: value } as any;\nexpect(modalPreview(gesture, {} as any)).toBeUndefined();",
+          "strategy": "fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { maxLength: 6 }).map((parts) => parts.join(''))",
+          "helpersUsed": []
+        },
+        "resize-multiple-refs": {
+          "body": "const gesture = { kind: 'resize', refs: value, direction: 'up', digits: '' } as any;\nexpect(modalPreview(gesture, {} as any)).toBeUndefined();",
+          "strategy": "fc.array(fc.string(), { minLength: 2, maxLength: 6 })",
+          "helpersUsed": []
+        },
+        "resize-preview": {
+          "body": "const gesture = { kind: 'resize', refs: ['ref'], direction: value.direction, digits: value.digits } as any;\nexpect(modalPreview(gesture, modalPreviewTestGeometry())).toBeDefined();",
+          "strategy": "fc.record({ direction: fc.constantFrom('up', 'down', 'left', 'right'), digits: fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { maxLength: 6 }).map((parts) => parts.join('')) })",
+          "helpersUsed": [
+            "modalPreviewTestGeometry"
+          ]
+        },
+        "zero-delta-preview": {
+          "body": "const gesture = { kind: 'grab', refs: value.refs, direction: undefined, digits: value.digits } as any;\nexpect(modalPreview(gesture, modalPreviewTestGeometry())).toBeDefined();",
+          "strategy": "fc.record({ refs: fc.array(fc.constant('ref'), { minLength: 1, maxLength: 6 }), digits: fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { maxLength: 6 }).map((parts) => parts.join('')) })",
+          "helpersUsed": [
+            "modalPreviewTestGeometry"
+          ]
+        }
+      },
+      "helpers": {
+        "modalPreviewTestGeometry": "const modalPreviewTestGeometry = (): any => ({ diagram: {}, index: [{ ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } }], byKey: { ref: { ref: 'ref', key: 'ref', x: 0, y: 0, width: 10, height: 10, bounds: { x: 0, y: 0, width: 10, height: 10 } } }, edgePolylines: {}, contentBounds: { x: 0, y: 0, width: 10, height: 10 }, svg: '' });"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "modal-grab-empty-digits": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-grab-with-digits": {
+          "body": "expect(typeof App).toBe('function');\nvoid digits;",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1 }).map((values) => values.join(''))",
+          "helpersUsed": []
+        },
+        "modal-resize-empty-digits": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "modal-resize-with-digits": {
+          "body": "expect(typeof App).toBe('function');\nvoid digits;",
+          "strategy": "fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1 }).map((values) => values.join(''))",
+          "helpersUsed": []
+        },
+        "no-modal-hand-tool": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-modal-other-tool": {
+          "body": "expect(typeof App).toBe('function');\nvoid tool;",
+          "strategy": "fc.constantFrom('annotation')",
+          "helpersUsed": []
+        },
+        "no-modal-select-tool": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_excluded.ts/PALETTE_EXCLUDED.",
+      "codes": {
+        "enter-grab-excluded": {
+          "body": "expect(PALETTE_EXCLUDED.has('enter-grab')).toBe(true);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "enter-resize-excluded": {
+          "body": "expect(PALETTE_EXCLUDED.has('enter-resize')).toBe(true);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "existing-members-remain-excluded": {
+          "body": "expect(PALETTE_EXCLUDED.has(value)).toBe(true);",
+          "strategy": "fc.constantFrom('escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', 'open-help')",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "codes": {
+        "arrow-down-nudge": {
+          "body": "expect(commandForChord('ArrowDown', false, false)).toBe('nudge-down');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "arrow-left-nudge": {
+          "body": "expect(commandForChord('ArrowLeft', false, false)).toBe('nudge-left');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "arrow-right-nudge": {
+          "body": "expect(commandForChord('ArrowRight', false, false)).toBe('nudge-right');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "arrow-up-nudge": {
+          "body": "expect(commandForChord('ArrowUp', false, false)).toBe('nudge-up');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "backspace-delete": {
+          "body": "expect(commandForChord('Backspace', false, false)).toBe('delete');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "delete-delete": {
+          "body": "expect(commandForChord('Delete', false, false)).toBe('delete');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "enter-edit-text": {
+          "body": "expect(commandForChord('Enter', false, false)).toBe('edit-text');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "equals-zoom-in": {
+          "body": "expect(commandForChord('=', false, false)).toBe('zoom-in');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "escape-command": {
+          "body": "expect(commandForChord('Escape', false, false)).toBe('escape');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "g-enter-grab": {
+          "body": "expect(commandForChord('g', false, false)).toBe('enter-grab');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "h-tool-hand": {
+          "body": "expect(commandForChord('h', false, false)).toBe('tool-hand');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-a-select-all": {
+          "body": "expect(commandForChord('a', true, false)).toBe('select-all');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-d-duplicate": {
+          "body": "expect(commandForChord('d', true, false)).toBe('duplicate');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-i-focus-inspector": {
+          "body": "expect(commandForChord('i', true, false)).toBe('focus-inspector');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-k-open-palette": {
+          "body": "expect(commandForChord('k', true, false)).toBe('open-palette');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-s-save": {
+          "body": "expect(commandForChord('s', true, false)).toBe('save');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-shift-z-redo": {
+          "body": "expect(commandForChord('z', true, true)).toBe('redo');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "meta-z-undo": {
+          "body": "expect(commandForChord('z', true, false)).toBe('undo');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "minus-zoom-out": {
+          "body": "expect(commandForChord('-', false, false)).toBe('zoom-out');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "n-add-annotation": {
+          "body": "expect(commandForChord('n', false, false)).toBe('add-annotation');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "one-zoom-fit": {
+          "body": "expect(commandForChord('1', false, false)).toBe('zoom-fit');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "r-enter-resize": {
+          "body": "expect(commandForChord('r', false, false)).toBe('enter-resize');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "s-ring-next": {
+          "body": "expect(commandForChord('s', false, false)).toBe('ring-next');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "shift-question-open-help": {
+          "body": "expect(commandForChord('?', false, true)).toBe('open-help');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "shift-s-ring-prev": {
+          "body": "expect(commandForChord('s', false, true)).toBe('ring-prev');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "t-tool-annotation": {
+          "body": "expect(commandForChord('t', false, false)).toBe('tool-annotation');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "v-tool-select": {
+          "body": "expect(commandForChord('v', false, false)).toBe('tool-select');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        },
+        "zero-zoom-reset": {
+          "body": "expect(commandForChord('0', false, false)).toBe('zoom-reset');",
+          "strategy": "",
+          "helpersUsed": [
+            "commandForChord"
+          ]
+        }
+      },
+      "helpers": {
+        "commandForChord": "const commandForChord = (key: string, meta: boolean, shift: boolean): string | undefined => KEYMAP.find(({ chord }) => chord.key === key && Boolean(chord.meta) === meta && Boolean(chord.shift) === shift)?.command;"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/modal_gesture.ts/beginModalGesture().",
+      "codes": {
+        "grab-gesture": {
+          "body": "const gesture = beginModalGesture('grab', value);\nexpect(gesture).toEqual({\n  kind: 'grab',\n  refs: value,\n  direction: undefined,\n  digits: '',\n});",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }))",
+          "helpersUsed": []
+        },
+        "resize-gesture": {
+          "body": "const gesture = beginModalGesture('resize', value);\nexpect(gesture).toEqual({\n  kind: 'resize',\n  refs: value,\n  direction: undefined,\n  digits: '',\n});",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }))",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/modal_step.ts/modalKeyDown().",
+      "codes": {
+        "arrow-down": {
+          "body": "const gesture = { kind: 'resize', refs: [], direction: 'right' as const, digits: '4' };\nconst result = modalKeyDown(gesture, 'ArrowDown');\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, direction: 'down' } });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-left": {
+          "body": "const gesture = { kind: 'grab', refs: [], direction: 'up' as const, digits: '12' };\nconst result = modalKeyDown(gesture, 'ArrowLeft');\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, direction: 'left' } });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-right": {
+          "body": "const gesture = { kind: 'resize', refs: [], digits: '0' };\nconst result = modalKeyDown(gesture, 'ArrowRight');\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, direction: 'right' } });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-up": {
+          "body": "const gesture = { kind: 'grab', refs: [], direction: 'down' as const, digits: '40' };\nconst result = modalKeyDown(gesture, 'ArrowUp');\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, direction: 'up' } });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "backspace-empty": {
+          "body": "const gesture = { kind: 'resize', refs: [], direction: 'down' as const, digits: '' };\nconst result = modalKeyDown(gesture, 'Backspace');\nexpect(result).toEqual({ outcome: 'continue', gesture });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "backspace-with-digits": {
+          "body": "const gesture = { kind: 'grab', refs: [], direction: 'right' as const, digits: value };\nconst result = modalKeyDown(gesture, 'Backspace');\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, digits: value.slice(0, -1) } });",
+          "strategy": "fc.string({ minLength: 1 })",
+          "helpersUsed": []
+        },
+        "digit-at-cap": {
+          "body": "const [key, digits] = value;\nconst gesture = { kind: 'resize', refs: [], direction: 'up' as const, digits };\nconst result = modalKeyDown(gesture, key);\nexpect(result.outcome).toBe('continue');\nexpect(result.gesture).toBe(gesture);",
+          "strategy": "fc.tuple(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), fc.string({ minLength: 6, maxLength: 6 }))",
+          "helpersUsed": []
+        },
+        "digit-under-cap": {
+          "body": "const [key, digits] = value;\nconst gesture = { kind: 'grab', refs: [], direction: 'left' as const, digits };\nconst result = modalKeyDown(gesture, key);\nexpect(result).toEqual({ outcome: 'continue', gesture: { ...gesture, digits: digits + key } });",
+          "strategy": "fc.tuple(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), fc.string({ minLength: 0, maxLength: 5 }))",
+          "helpersUsed": []
+        },
+        "enter": {
+          "body": "const gesture = { kind: 'grab', refs: [], direction: 'up' as const, digits: '40' };\nconst result = modalKeyDown(gesture, 'Enter');\nexpect(result).toEqual({ outcome: 'commit' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "escape": {
+          "body": "const gesture = { kind: 'resize', refs: [], direction: 'left' as const, digits: '7' };\nconst result = modalKeyDown(gesture, 'Escape');\nexpect(result).toEqual({ outcome: 'cancel' });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "unrecognized-key": {
+          "body": "const gesture = { kind: 'grab', refs: [], direction: 'down' as const, digits: '12' };\nconst result = modalKeyDown(gesture, value);\nexpect(result).toEqual({ outcome: 'ignore' });",
+          "strategy": "fc.string().filter((key: string): boolean => !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Escape'].includes(key) && !/^[0-9]$/.test(key))",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/ui_state.ts/createUiState().",
+      "codes": {
+        "no-arguments": {
+          "body": "const state = createUiState();\nexpect(Object.keys(state)).toEqual(expect.arrayContaining([\"modalGesture\", \"setModalGesture\"]));\nexpect(state).toHaveProperty(\"modalGesture\", undefined);\nexpect(state).toMatchObject({ setModalGesture: expect.any(Function) });",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

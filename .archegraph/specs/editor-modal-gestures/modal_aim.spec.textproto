@@ -1,0 +1,64 @@
+file: "packages/editor/src/gestures/modal_aim.ts"
+doc: "Turns an aimed modal gesture into the two values the drag machines take."
+
+methods: [
+  { name: "modalDelta"
+    doc:
+      "Pure. The gesture's aim and typed distance as a diagram-space vector.\n"
+      "\n"
+      "Magnitude is `digits` parsed as a base-10 integer, or 0 when `digits`\n"
+      "is the empty string. modalKeyDown admits only the characters '0' to\n"
+      "'9' and caps the field at 6 of them, so the magnitude is always a\n"
+      "non-negative integer no greater than 999999, exactly the number the\n"
+      "digits spell. It never throws and never yields NaN; all three of\n"
+      "those hold for every value the field can hold, not merely for\n"
+      "typical ones.\n"
+      "\n"
+      "Direction maps to the vector with screen-y pointing DOWN, matching\n"
+      "SceneGeometry bounds and the nudge commands:\n"
+      "  'up'    { x: 0, y: -magnitude }\n"
+      "  'down'  { x: 0, y:  magnitude }\n"
+      "  'left'  { x: -magnitude, y: 0 }\n"
+      "  'right' { x:  magnitude, y: 0 }\n"
+      "\n"
+      "Returns { x: 0, y: 0 } when `direction` is undefined, whatever\n"
+      "`digits` holds. Typing a distance before aiming is therefore harmless\n"
+      "rather than an error: the number is kept and takes effect on the\n"
+      "first arrow.\n"
+      "\n"
+      "A zero vector is also what makes an empty commit write nothing --\n"
+      "moveCommit and resizeCommit in gestures/drag_machines.ts already\n"
+      "return undefined for a zero delta, so that guard is inherited here\n"
+      "rather than added."
+    inputs: [{ name: "gesture", type: { named: { symbol: "ModalGesture" } } }]
+    output: { named: { symbol: "Vec2" } }
+  },
+  { name: "modalHandle"
+    doc:
+      "Pure. The resize handle an arrow aims at:\n"
+      "  'up' -> 'n'   'down' -> 's'   'left' -> 'w'   'right' -> 'e'\n"
+      "and undefined when `direction` is undefined.\n"
+      "\n"
+      "Only the four edge handles are reachable from the keyboard. The four\n"
+      "corners ('nw', 'ne', 'se', 'sw') have no arrow that names them and\n"
+      "stay a pointer-only affordance.\n"
+      "\n"
+      "This is what lets `r` use the same single aiming keystroke as `g`\n"
+      "instead of a digit-indexed handle picker; binding digits to handles\n"
+      "would collide with the typed distance. docs/editor-ui-review.md 11.4\n"
+      "was rewritten to the aim-then-distance model by this pillar before\n"
+      "the build, and names this omission; that doc and this file agree as\n"
+      "of 2026-09-20.\n"
+      "\n"
+      "WHY THIS FILE AND NOT ui_state/. It returns Handle, which lives in\n"
+      "scene/hit_test.ts. Every existing file under ui_state/ imports only\n"
+      "from @archeglyph/core, solid-js and its own directory, and 7 of\n"
+      "docs/editor-ui-review.md puts ui_state below scene -- so placing this\n"
+      "there would open the first ui_state-to-scene edge. modalDelta has no\n"
+      "such dependency and could live in either place; it sits here to keep\n"
+      "the two aim helpers together, beside their only callers."
+    inputs: [{ name: "gesture", type: { named: { symbol: "ModalGesture" } } }]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Handle | undefined" } }
+    uses: ["Handle"]
+  }
+]

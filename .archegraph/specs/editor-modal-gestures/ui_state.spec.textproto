@@ -1,0 +1,67 @@
+file: "packages/editor/src/ui_state/ui_state.ts"
+doc: "The one mutable UI-state store: selection, hover, tool, viewport, overlay, gesture."
+
+structs: [
+  { name: "UiState"
+    change_type: MODIFIED
+    doc:
+      "Gains exactly one accessor/setter pair, `modalGesture` and\n"
+      "`setModalGesture`.\n"
+      "Every other field below is unchanged and is restated because a\n"
+      "MODIFIED struct declares its whole shape.\n"
+      "\n"
+      "`undefined` means no modal gesture is open.\n"
+      "\n"
+      "It lives on UiState, beside `overlay`, for the same reason `overlay`\n"
+      "does: gestures/keyboard_handler.ts reaches it through\n"
+      "CommandContext.ui, which is already required, rather than through a\n"
+      "new optional CommandContext field. An optional field is a promise\n"
+      "that some construction site will populate it, and nothing checks that\n"
+      "one does -- which is how `focusInspector` shipped resolving its chord\n"
+      "and calling undefined for months.\n"
+      "\n"
+      "NAMED `modalGesture`, NOT `gesture`, and the longer name is the\n"
+      "point. 7 and 8.2 of docs/editor-ui-review.md reserve a `gesture`\n"
+      "field on this store for the POINTER drag session, which canvas.tsx\n"
+      "still keeps in a local signal and which this pillar does not move. A\n"
+      "keyboard-only value taking that name would force the later pillar\n"
+      "that does move it either to rename this field or to invent a second\n"
+      "one beside it.\n"
+      "\n"
+      "The two stay separate for now because a pointer drag is owned by the\n"
+      "element receiving the pointer events, while a modal gesture is opened\n"
+      "by a command and outlives any one element's focus."
+    fields: [
+      { name: "selection",          type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }] } } },
+      { name: "setSelection",       type: { named: { symbol: "Setter", args: [{ named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } }] } } },
+      { name: "hover",              type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<ElementRef | undefined>" } } },
+      { name: "setHover",           type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<ElementRef | undefined>" } } },
+      { name: "textEditTarget",     type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<ElementRef | undefined>" } } },
+      { name: "setTextEditTarget",  type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<ElementRef | undefined>" } } },
+      { name: "tool",               type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Tool" } }] } } },
+      { name: "setTool",            type: { named: { symbol: "Setter", args: [{ named: { symbol: "Tool" } }] } } },
+      { name: "viewport",           type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Viewport" } }] } } },
+      { name: "setViewport",        type: { named: { symbol: "Setter", args: [{ named: { symbol: "Viewport" } }] } } },
+      { name: "overlay",            type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<Overlay | undefined>" } } },
+      { name: "setOverlay",         type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<Overlay | undefined>" } } },
+      { name: "modalGesture",       type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Accessor<ModalGesture | undefined>" } } },
+      { name: "setModalGesture",    type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Setter<ModalGesture | undefined>" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "createUiState"
+    change_type: MODIFIED
+    doc:
+      "Gains one `createSignal<ModalGesture | undefined>(undefined)` call,\n""returned as `modalGesture` / `setModalGesture`, and\n"
+      "returns the pair on the handle, in the same plain-signal style as the\n"
+      "fields already there. No other default changes.\n"
+      "\n"
+      "The initial value is `undefined`: the editor opens with no gesture."
+    inputs: []
+    output: { named: { symbol: "UiState" } }
+    uses: ["ModalGesture"]
+  }
+]

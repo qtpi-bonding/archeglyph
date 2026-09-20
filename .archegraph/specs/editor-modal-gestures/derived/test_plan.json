@@ -1,0 +1,743 @@
+{
+  "specName": "editor-modal-gestures",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-modal-gestures' --root . --plan '.archegraph/specs/editor-modal-gestures/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "symbolName": "Canvas",
+      "filePath": "packages/editor/src/canvas/canvas.tsx",
+      "cases": [
+        {
+          "name": "idle-without-gesture",
+          "condition": "No modal gesture is open, no local pointer gesture is active, and no local preview is in flight; the OverlayLayer preview is undefined and dimmedRefs is empty unless no preview exists to generate callout refs.",
+          "outcome": "It passes an undefined preview to OverlayLayer and returns no dimmed refs unless an active preview supplies callout annotation refs."
+        },
+        {
+          "name": "local-pointer-move-preview",
+          "condition": "No modal gesture is open and a local pointer move gesture is active with a local preview; the local preview is passed through to OverlayLayer and the moving refs are dimmed.",
+          "outcome": "It passes the local move preview through to OverlayLayer and dims all moving refs, plus any callout refs from that preview.",
+          "domain": "any active local move gesture and its preview"
+        },
+        {
+          "name": "local-pointer-resize-preview",
+          "condition": "No modal gesture is open and a local pointer resize gesture is active with a local preview; the local preview is passed through to OverlayLayer and the resized ref is dimmed.",
+          "outcome": "It passes the local resize preview through to OverlayLayer and dims the resized ref, plus any callout refs from that preview.",
+          "domain": "any active local resize gesture and its preview"
+        },
+        {
+          "name": "modal-grab-with-preview",
+          "condition": "A modal grab gesture is open, geometry is defined, and modalPreview returns a preview; that modal preview is passed to OverlayLayer and every ref in the modal gesture is included in dimmedRefs.",
+          "outcome": "It passes the modal grab preview to OverlayLayer and dims every ref in the modal gesture.",
+          "domain": "any modal grab gesture with any non-empty or empty refs array"
+        },
+        {
+          "name": "modal-resize-with-preview",
+          "condition": "A modal resize gesture is open, geometry is defined, and modalPreview returns a preview; that modal preview is passed to OverlayLayer and only the first modal ref is included in dimmedRefs.",
+          "outcome": "It passes the modal resize preview to OverlayLayer and dims only the modal gesture's first ref.",
+          "domain": "any modal resize gesture whose refs array contains its single target ref"
+        },
+        {
+          "name": "modal-gesture-without-geometry",
+          "condition": "A modal gesture is open while geometry() is undefined; the modal preview is undefined because the geometry guard applies to the modal branch, while dimmedRefs still uses the modal grab refs or first modal resize ref.",
+          "outcome": "It passes an undefined preview while still dimming all modal grab refs or the first modal resize ref.",
+          "domain": "any open modal gesture with unavailable scene geometry"
+        },
+        {
+          "name": "modal-preview-undefined",
+          "condition": "A modal gesture is open, geometry is defined, and modalPreview returns undefined; OverlayLayer receives an undefined preview, while dimmedRefs still contains the modal grab refs or first modal resize ref.",
+          "outcome": "It passes an undefined preview while still dimming all modal grab refs or the first modal resize ref.",
+          "domain": "any modal gesture for which modalPreview returns undefined"
+        },
+        {
+          "name": "modal-precedence-over-local-state",
+          "condition": "A modal gesture is open at the same time that local gesture() or local preview() has a value; both memos use the modal gesture as the higher-precedence source, so local preview and local moving/resizing refs are ignored for these props.",
+          "outcome": "It uses the modal gesture's preview and target refs for both props, ignoring local preview and local gesture state.",
+          "domain": "any combination of an open modal gesture and local pointer gesture state"
+        },
+        {
+          "name": "modal-grab-callout-dimming",
+          "condition": "A modal grab gesture produces a preview whose bounds yield callout previews; the modal target refs are retained and any corresponding annotation refs are appended without duplicates.",
+          "outcome": "It retains every modal grab ref and appends each corresponding callout annotation ref once.",
+          "domain": "any modal grab preview with zero or more callout preview annotations"
+        },
+        {
+          "name": "modal-resize-callout-dimming",
+          "condition": "A modal resize gesture produces a preview whose bounds yield callout previews; the single modal resize target ref is retained and any corresponding annotation refs are appended without duplicates.",
+          "outcome": "It retains the single modal resize target ref and appends each corresponding callout annotation ref once.",
+          "domain": "any modal resize preview with zero or more callout preview annotations"
+        },
+        {
+          "name": "pointer-down-clears-modal",
+          "condition": "A pointer-down event occurs while a modal gesture is open; Canvas clears the modal gesture before routing the press, preventing the modal and pointer interaction from being live together, after which normal pointer-down behavior proceeds.",
+          "outcome": "It clears the modal gesture before routing the pointer press, so the normal pointer interaction proceeds alone.",
+          "domain": "any pointer-down event while a modal gesture is defined"
+        },
+        {
+          "name": "pointer-down-without-modal",
+          "condition": "A pointer-down event occurs with no modal gesture open; no modal state needs clearing and the existing pointer interaction routing proceeds unchanged.",
+          "outcome": "It leaves modal state unchanged and performs the existing pointer interaction routing.",
+          "domain": "any pointer-down event while the modal gesture is undefined"
+        },
+        {
+          "name": "double-click-annotation",
+          "condition": "A pointer-down event is the second click on an annotation; after modal state is cleared, Canvas enters text editing for that annotation and does not start a pointer gesture.",
+          "outcome": "It clears the modal gesture, selects the annotation, enters text editing, and starts no pointer gesture.",
+          "domain": "any second click whose hit target is an annotation"
+        },
+        {
+          "name": "modal-enter-resize-target",
+          "condition": "A modal enter-resize gesture is open; its single target ref is treated like the resize case for dimming, because enter-resize only opens for a single selected element.",
+          "outcome": "It dims the modal enter-resize gesture's sole target ref as the resize case does.",
+          "domain": "a single selected element"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_canvas_canvas_tsx_Canvas_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "symbolName": "COMMANDS",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "enter-grab-non-empty-selection",
+          "condition": "Running the enter-grab command with a non-empty selection opens a grab modal gesture for the current selection.",
+          "outcome": "Running enter-grab with a non-empty selection opens a grab modal gesture for the current selection.",
+          "domain": "any non-empty selection"
+        },
+        {
+          "name": "enter-grab-empty-selection",
+          "condition": "Running enter-grab with an empty selection does nothing: no gesture opens, the mode indicator stays dark, and Escape remains the selection-clearing command.",
+          "outcome": "Running enter-grab with an empty selection does nothing, leaving no gesture open, the mode indicator dark, and Escape as the selection-clearing command."
+        },
+        {
+          "name": "enter-resize-single-selection",
+          "condition": "Running the enter-resize command with exactly one selected element opens a resize modal gesture for that element.",
+          "outcome": "Running enter-resize with exactly one selected element opens a resize modal gesture for that element."
+        },
+        {
+          "name": "enter-resize-empty-selection",
+          "condition": "Running enter-resize with an empty selection does nothing and opens no gesture.",
+          "outcome": "Running enter-resize with an empty selection does nothing and opens no gesture."
+        },
+        {
+          "name": "enter-resize-multiple-selection",
+          "condition": "Running enter-resize with a selection containing two or more elements does nothing and opens no gesture, because resize is single-element only.",
+          "outcome": "Running enter-resize with two or more selected elements does nothing and opens no gesture because resize is single-element only.",
+          "domain": "any selection containing at least two elements"
+        },
+        {
+          "name": "dispatch-with-open-gesture",
+          "condition": "Dispatching either added command through runCommand while a gesture is open first clears the existing gesture; the command then either opens a new gesture when its selection precondition is satisfied or does nothing when it is not.",
+          "outcome": "Dispatching either added command through runCommand first clears any open gesture, then opens the appropriate gesture when its selection precondition is met or does nothing otherwise.",
+          "domain": "an open gesture combined with any selection state"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_commands_ts_COMMANDS_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/runCommand().",
+      "symbolName": "runCommand",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "known-command-with-open-modal-gesture",
+          "condition": "The id matches a registered command and context.ui currently has an open modal gesture; the gesture is cleared before the command runs.",
+          "outcome": "Clear the open modal gesture, then run the matching command.",
+          "domain": "any registered command id and any open modal gesture"
+        },
+        {
+          "name": "known-command-without-open-modal-gesture",
+          "condition": "The id matches a registered command and no modal gesture is open; the unconditional clear is effectively a no-op, then the command runs.",
+          "outcome": "Perform the unconditional no-op clear, then run the matching command.",
+          "domain": "any registered command id and an undefined modal gesture"
+        },
+        {
+          "name": "gesture-opening-command",
+          "condition": "The id is the enter-grab or enter-resize command; the existing gesture is cleared first, and the command then opens its new gesture.",
+          "outcome": "Clear any existing gesture first, then run the enter-grab or enter-resize command so it opens the new gesture.",
+          "domain": "one of: enter-grab, enter-resize"
+        },
+        {
+          "name": "unknown-command-with-open-modal-gesture",
+          "condition": "The id does not match any registered command and a modal gesture is open; the gesture is cleared, then the function silently returns without running a command.",
+          "outcome": "Clear the open modal gesture, then silently return without running a command.",
+          "domain": "any unregistered command id and any open modal gesture"
+        },
+        {
+          "name": "unknown-command-without-open-modal-gesture",
+          "condition": "The id does not match any registered command and no modal gesture is open; the clear is effectively a no-op, and the function silently returns.",
+          "outcome": "Perform the unconditional no-op clear, then silently return without running a command.",
+          "domain": "any unregistered command id and an undefined modal gesture"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_commands_ts_runCommand___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/keyboard_handler.ts/handleKeyDown().",
+      "symbolName": "handleKeyDown",
+      "filePath": "packages/editor/src/gestures/keyboard_handler.ts",
+      "cases": [
+        {
+          "name": "ignored-editable-target",
+          "condition": "The event target is an input, textarea, or contenteditable element, so shouldIgnoreKey returns true; the function returns false without consulting modal or chord handling.",
+          "outcome": "It returns false immediately without consulting the modal gesture or chord handling.",
+          "domain": "any event whose target is a text-editing element"
+        },
+        {
+          "name": "no-modal-unmatched-chord",
+          "condition": "The event target is not ignored, no modal gesture is open, and resolveChord finds no command for the event key and modifiers; the function returns false.",
+          "outcome": "It returns false because no chord command matches.",
+          "domain": "any non-editing event with an unmapped key/modifier combination"
+        },
+        {
+          "name": "no-modal-matched-chord",
+          "condition": "The event target is not ignored, no modal gesture is open, and resolveChord finds a command; runCommand is called and the function returns true.",
+          "outcome": "It runs the matched command and returns true.",
+          "domain": "any non-editing event with a mapped key/modifier combination"
+        },
+        {
+          "name": "modal-continue",
+          "condition": "A modal gesture is open and modalKeyDown(gesture, event.key) returns 'continue'; ui.setModalGesture is called with step.gesture and the function returns true, including when the step only edits the digit buffer.",
+          "outcome": "It sets the modal gesture to step.gesture and returns true, including when only the digit buffer was edited.",
+          "domain": "any modal key outcome classified as 'continue'"
+        },
+        {
+          "name": "modal-commit",
+          "condition": "A modal gesture is open and modalKeyDown(gesture, event.key) returns 'commit'; commitModalGesture is called with the gesture read by this function, the modal gesture is cleared with ui.setModalGesture(undefined), and the function returns true.",
+          "outcome": "It commits the read gesture, clears the modal gesture, and returns true.",
+          "domain": "any modal key outcome classified as 'commit'"
+        },
+        {
+          "name": "modal-cancel",
+          "condition": "A modal gesture is open and modalKeyDown(gesture, event.key) returns 'cancel'; the modal gesture is cleared with ui.setModalGesture(undefined) and the function returns true.",
+          "outcome": "It clears the modal gesture and returns true.",
+          "domain": "any modal key outcome classified as 'cancel'"
+        },
+        {
+          "name": "modal-ignore-unmatched-chord",
+          "condition": "A modal gesture is open and modalKeyDown(gesture, event.key) returns 'ignore'; handling falls through to the chord path, resolveChord finds no command, and the function returns false.",
+          "outcome": "It falls through to chord handling, finds no command, and returns false.",
+          "domain": "any modal key classified as 'ignore' with an unmapped key/modifier combination"
+        },
+        {
+          "name": "modal-ignore-matched-chord",
+          "condition": "A modal gesture is open and modalKeyDown(gesture, event.key) returns 'ignore'; handling falls through to the chord path, resolveChord finds a command, runCommand is called, and the function returns true.",
+          "outcome": "It falls through to chord handling, runs the matched command, and returns true.",
+          "domain": "any modal key classified as 'ignore' with a mapped key/modifier combination"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_keyboard_handler_ts_handleKeyDown___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_aim.ts/modalDelta().",
+      "symbolName": "modalDelta",
+      "filePath": "packages/editor/src/gestures/modal_aim.ts",
+      "cases": [
+        {
+          "name": "undefined-direction",
+          "condition": "The gesture direction is undefined; the function returns the zero vector regardless of the stored distance digits.",
+          "outcome": "Returns the zero vector regardless of the stored distance digits.",
+          "domain": "any allowed digits value, including the empty string and any 1-to-6-character decimal digit string"
+        },
+        {
+          "name": "up-empty-distance",
+          "condition": "The direction is 'up' and the distance digits are empty; magnitude is 0 and the result is { x: 0, y: 0 }.",
+          "outcome": "Returns { x: 0, y: 0 } because the empty distance has magnitude 0."
+        },
+        {
+          "name": "up-typed-distance",
+          "condition": "The direction is 'up' and the distance digits are non-empty; the result is { x: 0, y: -magnitude }, where magnitude is the base-10 integer represented by the digits.",
+          "outcome": "Returns { x: 0, y: -magnitude }, using the base-10 integer represented by the digits.",
+          "domain": "any non-empty decimal digit string of length 1 through 6, representing a magnitude from 0 through 999999"
+        },
+        {
+          "name": "down-empty-distance",
+          "condition": "The direction is 'down' and the distance digits are empty; magnitude is 0 and the result is { x: 0, y: 0 }.",
+          "outcome": "Returns { x: 0, y: 0 } because the empty distance has magnitude 0."
+        },
+        {
+          "name": "down-typed-distance",
+          "condition": "The direction is 'down' and the distance digits are non-empty; the result is { x: 0, y: magnitude }, where magnitude is the base-10 integer represented by the digits.",
+          "outcome": "Returns { x: 0, y: magnitude }, using the base-10 integer represented by the digits.",
+          "domain": "any non-empty decimal digit string of length 1 through 6, representing a magnitude from 0 through 999999"
+        },
+        {
+          "name": "left-empty-distance",
+          "condition": "The direction is 'left' and the distance digits are empty; magnitude is 0 and the result is { x: 0, y: 0 }.",
+          "outcome": "Returns { x: 0, y: 0 } because the empty distance has magnitude 0."
+        },
+        {
+          "name": "left-typed-distance",
+          "condition": "The direction is 'left' and the distance digits are non-empty; the result is { x: -magnitude, y: 0 }, where magnitude is the base-10 integer represented by the digits.",
+          "outcome": "Returns { x: -magnitude, y: 0 }, using the base-10 integer represented by the digits.",
+          "domain": "any non-empty decimal digit string of length 1 through 6, representing a magnitude from 0 through 999999"
+        },
+        {
+          "name": "right-empty-distance",
+          "condition": "The direction is 'right' and the distance digits are empty; magnitude is 0 and the result is { x: 0, y: 0 }.",
+          "outcome": "Returns { x: 0, y: 0 } because the empty distance has magnitude 0."
+        },
+        {
+          "name": "right-typed-distance",
+          "condition": "The direction is 'right' and the distance digits are non-empty; the result is { x: magnitude, y: 0 }, where magnitude is the base-10 integer represented by the digits.",
+          "outcome": "Returns { x: magnitude, y: 0 }, using the base-10 integer represented by the digits. ",
+          "domain": "any non-empty decimal digit string of length 1 through 6, representing a magnitude from 0 through 999999"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_modal_aim_ts_modalDelta___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_aim.ts/modalHandle().",
+      "symbolName": "modalHandle",
+      "filePath": "packages/editor/src/gestures/modal_aim.ts",
+      "cases": [
+        {
+          "name": "up-direction",
+          "condition": "The gesture direction is 'up'; the function returns the north edge handle 'n'.",
+          "outcome": "returns the north edge handle 'n' for an 'up' direction",
+          "domain": "gestures whose direction is 'up'"
+        },
+        {
+          "name": "down-direction",
+          "condition": "The gesture direction is 'down'; the function returns the south edge handle 's'.",
+          "outcome": "returns the south edge handle 's' for a 'down' direction",
+          "domain": "gestures whose direction is 'down'"
+        },
+        {
+          "name": "left-direction",
+          "condition": "The gesture direction is 'left'; the function returns the west edge handle 'w'.",
+          "outcome": "returns the west edge handle 'w' for a 'left' direction",
+          "domain": "gestures whose direction is 'left'"
+        },
+        {
+          "name": "right-direction",
+          "condition": "The gesture direction is 'right'; the function returns the east edge handle 'e'.",
+          "outcome": "returns the east edge handle 'e' for a 'right' direction",
+          "domain": "gestures whose direction is 'right'"
+        },
+        {
+          "name": "undefined-direction",
+          "condition": "The gesture direction is undefined; the function returns undefined.",
+          "outcome": "returns undefined when the direction is undefined"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_modal_aim_ts_modalHandle___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_apply.ts/commitModalGesture().",
+      "symbolName": "commitModalGesture",
+      "filePath": "packages/editor/src/gestures/modal_apply.ts",
+      "cases": [
+        {
+          "name": "missing-geometry",
+          "condition": "context.geometry is undefined; the function returns without applying any edit.",
+          "outcome": "Returns without applying any edit."
+        },
+        {
+          "name": "empty-refs",
+          "condition": "The gesture has an empty refs collection; the function returns without applying any edit.",
+          "outcome": "Returns without applying any edit."
+        },
+        {
+          "name": "resize-missing-handle",
+          "condition": "The gesture kind is 'resize' and modalHandle() is undefined; the function returns without applying any edit.",
+          "outcome": "Returns without applying any edit."
+        },
+        {
+          "name": "resize-multiple-refs",
+          "condition": "The gesture kind is 'resize' and the gesture has more than one ref; the function returns without applying any edit.",
+          "outcome": "Returns without applying any edit.",
+          "domain": "any resize gesture with at least two refs"
+        },
+        {
+          "name": "move-zero-delta",
+          "condition": "A valid move gesture produces a zero delta; moveCommit returns undefined, so applyStyleEdit is not called.",
+          "outcome": "Does not call applyStyleEdit."
+        },
+        {
+          "name": "resize-zero-delta",
+          "condition": "A valid resize gesture produces a zero delta; resizeCommit returns undefined, so applyStyleEdit is not called.",
+          "outcome": "Does not call applyStyleEdit."
+        },
+        {
+          "name": "move-nonzero-delta",
+          "condition": "A move gesture passes the guards and produces a nonzero delta; the function calls applyStyleEdit exactly once with the committed edit and no coalesce key.",
+          "outcome": "Calls applyStyleEdit exactly once with the committed edit and no coalesce key.",
+          "domain": "any valid move gesture with a nonzero delta"
+        },
+        {
+          "name": "resize-nonzero-delta",
+          "condition": "A resize gesture passes the guards, has exactly one ref and a defined modal handle, and produces a nonzero delta; the function calls applyStyleEdit exactly once with the committed edit and no coalesce key.",
+          "outcome": "Calls applyStyleEdit exactly once with the committed edit and no coalesce key.",
+          "domain": "any valid resize gesture with exactly one ref and a nonzero delta"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_modal_apply_ts_commitModalGesture___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/modal_apply.ts/modalPreview().",
+      "symbolName": "modalPreview",
+      "filePath": "packages/editor/src/gestures/modal_apply.ts",
+      "cases": [
+        {
+          "name": "empty-refs",
+          "condition": "The gesture has no refs; modalPreview returns undefined.",
+          "outcome": "It returns undefined when the gesture has no refs.",
+          "domain": "an empty refs array"
+        },
+        {
+          "name": "resize-multiple-refs",
+          "condition": "The gesture kind is 'resize' and refs contains more than one element; modalPreview returns undefined as a defensive guard.",
+          "outcome": "It returns undefined as a defensive guard when a resize gesture has more than one ref.",
+          "domain": "any resize refs array with at least two elements"
+        },
+        {
+          "name": "resize-missing-handle",
+          "condition": "The gesture kind is 'resize', refs contains exactly one element, and modalHandle(gesture) returns undefined; modalPreview returns undefined.",
+          "outcome": "It returns undefined when a single-ref resize gesture has no modal handle.",
+          "domain": "any resize gesture whose modal handle is undefined"
+        },
+        {
+          "name": "grab-preview",
+          "condition": "The gesture kind is 'grab' and refs is non-empty; modalPreview returns the moveUpdate-based preview using the delta from modalDelta(gesture).",
+          "outcome": "It returns the moveUpdate-based preview for a non-empty grab gesture using modalDelta(gesture).",
+          "domain": "any grab gesture with one or more refs"
+        },
+        {
+          "name": "resize-preview",
+          "condition": "The gesture kind is 'resize', refs contains exactly one element, and modalHandle(gesture) returns a handle; modalPreview returns the resizeUpdate-based preview with keepAspect false.",
+          "outcome": "It returns the resizeUpdate-based preview for a single-ref resize gesture using the modal handle and keepAspect false.",
+          "domain": "any resize gesture with exactly one ref and a defined modal handle"
+        },
+        {
+          "name": "zero-delta-preview",
+          "condition": "A valid open grab or resize gesture has a zero delta from modalDelta(gesture); modalPreview still returns a preview of the selection unmoved rather than undefined.",
+          "outcome": "It still returns an unmoved preview for a valid grab or resize gesture whose modal delta is zero.",
+          "domain": "any valid grab or single-ref resize gesture with zero modal delta"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_gestures_modal_apply_ts_modalPreview___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "modal-grab-empty-digits",
+          "condition": "A modal gesture is defined with kind 'grab' and digits is the empty string; the accessor returns 'Grab', regardless of the active tool.",
+          "outcome": "It returns 'Grab', regardless of the active tool."
+        },
+        {
+          "name": "modal-grab-with-digits",
+          "condition": "A modal gesture is defined with kind 'grab' and digits is non-empty; the accessor returns 'Grab ' followed by the digits, regardless of the active tool.",
+          "outcome": "It returns 'Grab ' followed by the digits, regardless of the active tool.",
+          "domain": "any non-empty digit string"
+        },
+        {
+          "name": "modal-resize-empty-digits",
+          "condition": "A modal gesture is defined with kind 'resize' and digits is the empty string; the accessor returns 'Resize', regardless of the active tool.",
+          "outcome": "It returns 'Resize', regardless of the active tool."
+        },
+        {
+          "name": "modal-resize-with-digits",
+          "condition": "A modal gesture is defined with kind 'resize' and digits is non-empty; the accessor returns 'Resize ' followed by the digits, regardless of the active tool.",
+          "outcome": "It returns 'Resize ' followed by the digits, regardless of the active tool.",
+          "domain": "any non-empty digit string"
+        },
+        {
+          "name": "no-modal-select-tool",
+          "condition": "No modal gesture is defined and the active tool is 'select'; the accessor returns undefined.",
+          "outcome": "It returns undefined."
+        },
+        {
+          "name": "no-modal-hand-tool",
+          "condition": "No modal gesture is defined and the active tool is 'hand'; the accessor returns the label of the 'tool-hand' command.",
+          "outcome": "It returns the label of the 'tool-hand' command."
+        },
+        {
+          "name": "no-modal-other-tool",
+          "condition": "No modal gesture is defined and the active tool is a non-'select', non-'hand' tool; the accessor returns the label of the 'tool-annotation' command.",
+          "outcome": "It returns the label of the 'tool-annotation' command.",
+          "domain": "any supported non-select, non-hand tool"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_excluded.ts/PALETTE_EXCLUDED.",
+      "symbolName": "PALETTE_EXCLUDED",
+      "filePath": "packages/editor/src/shell/palette_excluded.ts",
+      "cases": [
+        {
+          "name": "enter-grab-excluded",
+          "condition": "The command id is 'enter-grab'; it is excluded from the palette.",
+          "outcome": "The function should include 'enter-grab' in the excluded command set."
+        },
+        {
+          "name": "enter-resize-excluded",
+          "condition": "The command id is 'enter-resize'; it is excluded from the palette.",
+          "outcome": "The function should include 'enter-resize' in the excluded command set."
+        },
+        {
+          "name": "existing-members-remain-excluded",
+          "condition": "The command id is one of the previously excluded members: 'escape', 'nudge-up', 'nudge-down', 'nudge-left', 'nudge-right', 'ring-next', 'ring-prev', 'open-palette', or 'open-help'. It remains excluded from the palette.",
+          "outcome": "The function should continue to include all nine previously excluded command ids in the excluded command set.",
+          "domain": "one of: escape, nudge-up, nudge-down, nudge-left, nudge-right, ring-next, ring-prev, open-palette, open-help"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_shell_palette_excluded_ts_PALETTE_EXCLUDED_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/keymap.ts/KEYMAP.",
+      "symbolName": "KEYMAP",
+      "filePath": "packages/editor/src/ui_state/keymap.ts",
+      "cases": [
+        {
+          "name": "meta-z-undo",
+          "condition": "The chord is Meta+z, with no gesture open; it resolves to the undo command.",
+          "outcome": "With no gesture open, Meta+z resolves to undo."
+        },
+        {
+          "name": "meta-shift-z-redo",
+          "condition": "The chord is Meta+Shift+z, with no gesture open; it resolves to the redo command.",
+          "outcome": "With no gesture open, Meta+Shift+z resolves to redo."
+        },
+        {
+          "name": "backspace-delete",
+          "condition": "The chord is Backspace with no gesture open; it resolves to the delete command, whereas an open gesture consumes Backspace to remove a typed digit instead of resolving this entry.",
+          "outcome": "With no gesture open, Backspace resolves to delete; during an open gesture, it removes a typed digit instead."
+        },
+        {
+          "name": "delete-delete",
+          "condition": "The chord is Delete with no gesture open; it resolves to the delete command.",
+          "outcome": "With no gesture open, Delete resolves to delete."
+        },
+        {
+          "name": "escape-command",
+          "condition": "The chord is Escape with no gesture open; it resolves to the escape command.",
+          "outcome": "With no gesture open, Escape resolves to escape."
+        },
+        {
+          "name": "meta-a-select-all",
+          "condition": "The chord is Meta+a, with no gesture open; it resolves to the select-all command.",
+          "outcome": "With no gesture open, Meta+a resolves to select-all."
+        },
+        {
+          "name": "arrow-up-nudge",
+          "condition": "The chord is ArrowUp with no gesture open; it resolves to the nudge-up command.",
+          "outcome": "With no gesture open, ArrowUp resolves to nudge-up."
+        },
+        {
+          "name": "arrow-down-nudge",
+          "condition": "The chord is ArrowDown with no gesture open; it resolves to the nudge-down command.",
+          "outcome": "With no gesture open, ArrowDown resolves to nudge-down."
+        },
+        {
+          "name": "arrow-left-nudge",
+          "condition": "The chord is ArrowLeft with no gesture open; it resolves to the nudge-left command.",
+          "outcome": "With no gesture open, ArrowLeft resolves to nudge-left."
+        },
+        {
+          "name": "arrow-right-nudge",
+          "condition": "The chord is ArrowRight with no gesture open; it resolves to the nudge-right command.",
+          "outcome": "With no gesture open, ArrowRight resolves to nudge-right."
+        },
+        {
+          "name": "s-ring-next",
+          "condition": "The bare s chord with no gesture open resolves to the ring-next command.",
+          "outcome": "With no gesture open, bare s resolves to ring-next."
+        },
+        {
+          "name": "shift-s-ring-prev",
+          "condition": "The Shift+s chord with no gesture open resolves to the ring-prev command.",
+          "outcome": "With no gesture open, Shift+s resolves to ring-prev."
+        },
+        {
+          "name": "meta-s-save",
+          "condition": "The Meta+s chord with no gesture open resolves to the save command.",
+          "outcome": "With no gesture open, Meta+s resolves to save."
+        },
+        {
+          "name": "meta-i-focus-inspector",
+          "condition": "The chord is Meta+i, with no gesture open; it resolves to the focus-inspector command.",
+          "outcome": "With no gesture open, Meta+i resolves to focus-inspector."
+        },
+        {
+          "name": "v-tool-select",
+          "condition": "The bare v chord with no gesture open resolves to the tool-select command.",
+          "outcome": "With no gesture open, bare v resolves to tool-select."
+        },
+        {
+          "name": "h-tool-hand",
+          "condition": "The bare h chord with no gesture open resolves to the tool-hand command.",
+          "outcome": "With no gesture open, bare h resolves to tool-hand."
+        },
+        {
+          "name": "t-tool-annotation",
+          "condition": "The bare t chord with no gesture open resolves to the tool-annotation command.",
+          "outcome": "With no gesture open, bare t resolves to tool-annotation."
+        },
+        {
+          "name": "n-add-annotation",
+          "condition": "The bare n chord with no gesture open resolves to the add-annotation command.",
+          "outcome": "With no gesture open, bare n resolves to add-annotation."
+        },
+        {
+          "name": "g-enter-grab",
+          "condition": "The bare g chord with no gesture open resolves to the enter-grab command.",
+          "outcome": "With no gesture open, bare g resolves to enter-grab."
+        },
+        {
+          "name": "r-enter-resize",
+          "condition": "The bare r chord with no gesture open resolves to the enter-resize command.",
+          "outcome": "With no gesture open, bare r resolves to enter-resize."
+        },
+        {
+          "name": "equals-zoom-in",
+          "condition": "The bare = chord with no gesture open resolves to the zoom-in command.",
+          "outcome": "With no gesture open, bare = resolves to zoom-in."
+        },
+        {
+          "name": "minus-zoom-out",
+          "condition": "The bare - chord with no gesture open resolves to the zoom-out command.",
+          "outcome": "With no gesture open, bare - resolves to zoom-out."
+        },
+        {
+          "name": "zero-zoom-reset",
+          "condition": "The bare 0 chord with no gesture open resolves to the zoom-reset command; an open gesture consumes this digit instead of resolving the entry.",
+          "outcome": "With no gesture open, bare 0 resolves to zoom-reset; during an open gesture, it is consumed as a digit instead."
+        },
+        {
+          "name": "one-zoom-fit",
+          "condition": "The bare 1 chord with no gesture open resolves to the zoom-fit command; an open gesture consumes this digit instead of resolving the entry.",
+          "outcome": "With no gesture open, bare 1 resolves to zoom-fit; during an open gesture, it is consumed as a digit instead."
+        },
+        {
+          "name": "enter-edit-text",
+          "condition": "The Enter chord with no gesture open resolves to the edit-text command; an open gesture consumes Enter instead of resolving the entry.",
+          "outcome": "With no gesture open, Enter resolves to edit-text; during an open gesture, it is consumed instead."
+        },
+        {
+          "name": "meta-d-duplicate",
+          "condition": "The chord is Meta+d, with no gesture open; it resolves to the duplicate command.",
+          "outcome": "With no gesture open, Meta+d resolves to duplicate."
+        },
+        {
+          "name": "meta-k-open-palette",
+          "condition": "The chord is Meta+k, with no gesture open; it resolves to the open-palette command.",
+          "outcome": "With no gesture open, Meta+k resolves to open-palette."
+        },
+        {
+          "name": "shift-question-open-help",
+          "condition": "The Shift+? chord with no gesture open resolves to the open-help command.",
+          "outcome": "With no gesture open, Shift+? resolves to open-help."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_ui_state_keymap_ts_KEYMAP_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/modal_gesture.ts/beginModalGesture().",
+      "symbolName": "beginModalGesture",
+      "filePath": "packages/editor/src/ui_state/modal_gesture.ts",
+      "cases": [
+        {
+          "name": "grab-gesture",
+          "condition": "The gesture kind is 'grab' and refs is an array of ElementRef values; the gesture opens with direction undefined and digits empty.",
+          "outcome": "It should open a grab gesture with direction undefined and digits empty.",
+          "domain": "any array of ElementRef values"
+        },
+        {
+          "name": "resize-gesture",
+          "condition": "The gesture kind is 'resize' and refs is an array of ElementRef values; the gesture opens with direction undefined and digits empty.",
+          "outcome": "It should open a resize gesture with direction undefined and digits empty.",
+          "domain": "any array of ElementRef values"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_ui_state_modal_gesture_ts_beginModalGesture___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/modal_step.ts/modalKeyDown().",
+      "symbolName": "modalKeyDown",
+      "filePath": "packages/editor/src/ui_state/modal_step.ts",
+      "cases": [
+        {
+          "name": "arrow-up",
+          "condition": "The key is ArrowUp; the function continues with direction set to up, overwriting any prior direction and carrying digits unchanged.",
+          "outcome": "Continues with direction set to up, overwriting any prior direction and carrying digits unchanged."
+        },
+        {
+          "name": "arrow-down",
+          "condition": "The key is ArrowDown; the function continues with direction set to down, overwriting any prior direction and carrying digits unchanged.",
+          "outcome": "Continues with direction set to down, overwriting any prior direction and carrying digits unchanged."
+        },
+        {
+          "name": "arrow-left",
+          "condition": "The key is ArrowLeft; the function continues with direction set to left, overwriting any prior direction and carrying digits unchanged.",
+          "outcome": "Continues with direction set to left, overwriting any prior direction and carrying digits unchanged."
+        },
+        {
+          "name": "arrow-right",
+          "condition": "The key is ArrowRight; the function continues with direction set to right, overwriting any prior direction and carrying digits unchanged.",
+          "outcome": "Continues with direction set to right, overwriting any prior direction and carrying digits unchanged."
+        },
+        {
+          "name": "digit-under-cap",
+          "condition": "The key is a decimal digit and the gesture's digits contains fewer than 6 characters; the function continues with that character appended to digits.",
+          "outcome": "Continues with the digit appended to digits.",
+          "domain": "one of: 0 through 9, with an existing digits length from 0 through 5"
+        },
+        {
+          "name": "digit-at-cap",
+          "condition": "The key is a decimal digit and the gesture's digits already contains 6 characters; the function consumes the keystroke and returns the gesture unchanged.",
+          "outcome": "Consumes the digit and returns the gesture unchanged.",
+          "domain": "one of: 0 through 9, with an existing digits length of 6"
+        },
+        {
+          "name": "backspace-with-digits",
+          "condition": "The key is Backspace and digits is non-empty; the function continues with the last character removed.",
+          "outcome": "Continues with the last character removed from digits.",
+          "domain": "any non-empty digits string"
+        },
+        {
+          "name": "backspace-empty",
+          "condition": "The key is Backspace and digits is already empty; the function continues with digits still empty and the gesture otherwise unchanged.",
+          "outcome": "Continues with digits empty and the gesture otherwise unchanged."
+        },
+        {
+          "name": "enter",
+          "condition": "The key is Enter; the function commits the modal gesture.",
+          "outcome": "Commits the modal gesture."
+        },
+        {
+          "name": "escape",
+          "condition": "The key is Escape; the function cancels the modal gesture.",
+          "outcome": "Cancels the modal gesture."
+        },
+        {
+          "name": "unrecognized-key",
+          "condition": "The key is any value outside the documented arrows, decimal digits, Backspace, Enter, and Escape; the function ignores it.",
+          "outcome": "Ignores the key.",
+          "domain": "any other string"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_ui_state_modal_step_ts_modalKeyDown___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/ui_state/ui_state.ts/createUiState().",
+      "symbolName": "createUiState",
+      "filePath": "packages/editor/src/ui_state/ui_state.ts",
+      "cases": [
+        {
+          "name": "no-arguments",
+          "condition": "The function is called with no arguments; the returned handle includes modalGesture and setModalGesture, with modalGesture initially undefined.",
+          "outcome": "returns a handle containing modalGesture and setModalGesture, with modalGesture initially undefined."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-modal-gestures__packages_editor_src_ui_state_ui_state_ts_createUiState___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "6881ca5c98f8283232a2cd6203c2cec370a9bfb110594d7d05f5917e407d7dd3"
+}

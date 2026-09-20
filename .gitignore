@@ -21,7 +21,8 @@ node_modules
 # does not hold for it. Note the trailing /* on the rule above: git cannot
 # re-include a file whose parent DIRECTORY is excluded, so the exclusion has to
 # name the contents.
-!.archegraph/specs/*/derived/test_plan.textproto
+!.archegraph/specs/*/derived/test_plan.json
+!.archegraph/specs/*/derived/test_code.json
 # Legacy top-level derived artifacts (pre-derived/ convention) — still ignored:
 .archegraph/specs/*/gcontract.pb
 .archegraph/specs/*/gbuild_delta.pb

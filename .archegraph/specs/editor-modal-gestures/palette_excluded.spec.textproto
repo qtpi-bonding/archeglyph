@@ -1,0 +1,20 @@
+file: "packages/editor/src/shell/palette_excluded.ts"
+doc: "Commands that are not useful as clickable rows in the command palette."
+
+constants: [
+  { name: "PALETTE_EXCLUDED"
+    change_type: MODIFIED
+    doc:
+      "Two ids added, 'enter-grab' and 'enter-resize'. Every existing member\n"
+      "stays.\n"
+      "\n"
+      "They join the chord-only movement commands already here for the same\n"
+      "reason those are: a modal gesture is a sequence of further keystrokes,\n"
+      "and the palette is left by a click or by Enter. Running one from a\n"
+      "palette row would open a mode at the moment the user's hands are on\n"
+      "the mouse, with nothing on screen saying which keys now mean\n"
+      "something different."
+    type: { named: { symbol: "ReadonlySet", args: [{ named: { symbol: "CommandId" } }] } }
+    uses: ["CommandId"]
+  }
+]

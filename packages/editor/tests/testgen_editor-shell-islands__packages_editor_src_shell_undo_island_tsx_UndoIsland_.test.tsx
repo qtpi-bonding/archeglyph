@@ -64,7 +64,6 @@ describe('testgen_shell__UndoIsland', () => {
         fc.assert(
             fc.property(fc.constantFrom(...KEYMAP.filter((entry) => entry.command === 'undo' || entry.command === 'redo').map((entry) => ({ command: entry.command, key: entry.chord.key }))), (value) => {
         assertUndoIslandExport();
-        expect(typeof value).toBe('string');
         expect(KEYMAP.some((entry) => entry.command === value.command && entry.chord.key === value.key)).toBe(true);
             })
         );

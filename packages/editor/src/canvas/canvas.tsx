@@ -31,6 +31,7 @@ import { addAnnotationEdit, setAnnotationTextEdit } from '../state/edits/annotat
 import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../state/edits/annotation_defaults';
 import { TextEditor } from './text_editor';
 import { init } from '@archeglyph/proto/util/init';
+import { modalPreview } from '../gestures/modal_apply';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = PointerEvent | WheelEvent;
@@ -81,6 +82,14 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   let pointerId: number | undefined;
 
   const geometry = createMemo((): SceneGeometry | undefined => props.scene.geometry());
+  const overlayPreview = createMemo((): ScenePreview | undefined => {
+    const modal = props.ui.modalGesture();
+    if (modal !== undefined) {
+      const currentGeometry = geometry();
+      return currentGeometry === undefined ? undefined : modalPreview(modal, currentGeometry);
+    }
+    return preview();
+  });
   // The diagram's own background, painted edge to edge by the canvas element
   // rather than as a slab inside the injected SVG (see diagram_layer's
   // injectDiagram). Falls back to the chrome token before the first scene.
@@ -117,6 +126,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }
 
   function onPointerDown(event: PointerEvent): void {
+    props.ui.setModalGesture(undefined);
     event.preventDefault();
     const screen: Vec2 = pointFromEvent(event);
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
@@ -282,14 +292,21 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }
 
   function dimmedRefs(): Array<ElementRef> {
-    const current = gesture();
-    const refs: Array<ElementRef> = current?.kind === 'move'
-      ? current.session.refs.slice()
-      : current?.kind === 'resize'
-        ? [current.session.ref]
-        : [];
+    const modal = props.ui.modalGesture();
+    const refs: Array<ElementRef> = modal !== undefined
+      ? modal.kind === 'grab'
+        ? modal.refs.slice()
+        : modal.refs.length === 0 ? [] : [modal.refs[0]]
+      : (() => {
+        const current = gesture();
+        return current?.kind === 'move'
+          ? current.session.refs.slice()
+          : current?.kind === 'resize'
+            ? [current.session.ref]
+            : [];
+      })();
     const currentGeometry = geometry();
-    const currentPreview = preview();
+    const currentPreview = overlayPreview();
     if (currentGeometry !== undefined && currentPreview !== undefined) {
       for (const edge of calloutPreviews(currentGeometry, currentPreview.bounds)) {
         const ref: ElementRef = { kind: 'annotation', id: edge.id };
@@ -389,7 +406,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
           <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} theme={props.theme} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
           <Show when={geometry() !== undefined}>
-            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={preview()} anchorLine={anchorLine()} marquee={marquee()} />
+            <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />
           </Show>
           <Show when={props.ui.textEditTarget() !== undefined && editorBounds(props.ui.textEditTarget()!) !== undefined}>
             <TextEditor

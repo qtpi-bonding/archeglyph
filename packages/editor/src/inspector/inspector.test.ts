@@ -32,12 +32,13 @@ import type { ElementRef } from '../ui_state/ui_state';
 import { inspectorModel } from './model';
 import { numberField, textField } from './field_value';
 import { commitLayout, commitTypography, layoutModel, typographyModel } from './sections_model';
+import { init } from '@archeglyph/proto/util/init';
 
 const v = (x: number, y: number) => create(Vec2Schema, { x, y });
-const vec = (x: number, y: number): Vec2 => ({ x, y });
+const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
 
 function node(id: string, position: Vec2, size: Vec2, parentGroup?: string): LaidOutNode {
-  return Object.assign(new LaidOutNode(), {
+  return init(new LaidOutNode(), {
     id,
     parentGroup,
     position,
@@ -47,7 +48,7 @@ function node(id: string, position: Vec2, size: Vec2, parentGroup?: string): Lai
 }
 
 function group(id: string, position: Vec2, size: Vec2): LaidOutGroup {
-  return Object.assign(new LaidOutGroup(), {
+  return init(new LaidOutGroup(), {
     id, position, size, isSuperNode: false, hiddenDescendantCount: 0,
   });
 }
@@ -62,7 +63,7 @@ interface DiagramParts {
 
 function geometryFrom(parts: DiagramParts): SceneGeometry {
   return buildSceneGeometry(
-    Object.assign(new LaidOutDiagram(), {
+    init(new LaidOutDiagram(), {
       ...(parts.nodes === undefined ? {} : { nodes: byId(parts.nodes) }),
       ...(parts.groups === undefined ? {} : { groups: byId(parts.groups) }),
     }),

@@ -89,8 +89,8 @@ export function unpinElementsEdit(stylesheet: Stylesheet, refs: Array<ElementMov
  * it is written to the stylesheet.
  */
 function parentRelative(
-  groupsById: Record<string, { position: Vec2 }>,
-  position: Vec2,
+  groupsById: Record<string, { position: { x: number; y: number } }>,
+  position: { x: number; y: number },
   parentId: string | undefined,
 ): Vec2 {
   const parent = parentId === undefined ? undefined : groupsById[parentId];

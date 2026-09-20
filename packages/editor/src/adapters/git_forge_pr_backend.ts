@@ -7,6 +7,7 @@ import { CommentBackend, ThreadEntry } from './comment_backend';
 import { AdapterError } from './host_adapter';
 import { Ok, Result } from '@archeglyph/proto/util/result';
 import { GitForge, RawComment } from './git_forge';
+import { init } from '@archeglyph/proto/util/init';
 
 interface Envelope {
   schema_version: number;
@@ -60,7 +61,7 @@ export class GitForgePrBackend implements CommentBackend {
     const entries: ThreadEntry[] = [];
     for (const [editRef, comments] of threadMap.entries()) {
       const thread: CommentThread = create(CommentThreadSchema, { comments });
-      entries.push(Object.assign(new ThreadEntry(), { editRef, thread }));
+      entries.push(init(new ThreadEntry(), { editRef, thread }));
     }
     return Ok(entries);
   }

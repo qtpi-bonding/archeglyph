@@ -6,7 +6,7 @@ import { AnnotationLayout } from '@archeglyph/proto/gen/style_pb';
 import { Glyph1D } from '@archeglyph/proto/gen/style_pb';
 import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
-import { Vec2 } from '@archeglyph/proto/gen/style_pb';
+import type { Vec2 } from '../../geometry/vec2';
 import { Localization } from '@archeglyph/proto/gen/content_pb';
 
 export class LaidOutAnnotation {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { type Vec2, type Glyph2D, type Fill, type Stroke, type Typography, ArrowheadVariant, ShapeType, FontWeight, TextAlign } from '@archeglyph/proto/gen/style_pb';
+import { type Glyph2D, type Fill, type Stroke, type Typography, ArrowheadVariant, ShapeType, FontWeight, TextAlign } from '@archeglyph/proto/gen/style_pb';
+import type { Vec2 } from '../../geometry/vec2';
 import { type Localization } from '@archeglyph/proto/gen/content_pb';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
 import { type EdgeSection } from '../../layout/edge_section';

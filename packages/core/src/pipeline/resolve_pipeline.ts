@@ -12,27 +12,28 @@ import { StyleCascadeImpl } from '../resolver/style_cascade';
 import { TokenResolverImpl } from '../resolver/token_resolver';
 import { VisibilityFilterImpl } from '../resolver/visibility_filter';
 import { PipelineError } from './pipeline_error';
+import { init } from '@archeglyph/proto/util/init';
 
 export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme): Result<ResolvedDiagram, PipelineError> {
   const filterResult = new VisibilityFilterImpl().filter(
-    Object.assign(new FilterRequest(), { diagram, stylesheet })
+    init(new FilterRequest(), { diagram, stylesheet })
   );
   if (filterResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'filter' }));
+    return Err(init(new PipelineError(), { stage: 'filter' }));
   }
 
   const cascadeResult = new StyleCascadeImpl().cascade(
-    Object.assign(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme })
+    init(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme })
   );
   if (cascadeResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'cascade' }));
+    return Err(init(new PipelineError(), { stage: 'cascade' }));
   }
 
   const tokenResult = new TokenResolverImpl().resolveTokens(
-    Object.assign(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens })
+    init(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens })
   );
   if (tokenResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'tokens' }));
+    return Err(init(new PipelineError(), { stage: 'tokens' }));
   }
 
   return Ok(tokenResult.value);

@@ -3,6 +3,7 @@
 import { ZodError } from 'zod';
 import { REGISTRY, formatRootHelp, formatOpHelp, parseArgv, createOpContext, dispatchCli } from '@archeglyph/ops';
 import { runMcpServer } from './mcp_server';
+import { init } from '@archeglyph/proto/util/init';
 
 function formatZodError(err: unknown): string {
   if (err instanceof ZodError) {
@@ -24,7 +25,7 @@ function messageOf(value: unknown): string | undefined {
 }
 
 // Op-boundary errors (<Op>OpError) are archebuild-generated definite-assignment
-// classes: `Object.assign(new XOpError(), { stage, cause })` never sets `.message`,
+// classes: `init(new XOpError(), { stage, cause })` never sets `.message`,
 // so `err.message` is always '' even on classes that `extends Error`. Format from
 // `stage`/`cause` directly instead of trusting `.message`.
 function formatOpError(err: unknown): string {

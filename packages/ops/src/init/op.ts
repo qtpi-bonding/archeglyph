@@ -10,6 +10,7 @@ import type { InitParams } from './init_params';
 import { initParamsSchema } from './init_params';
 import { InitOutput } from './init_output';
 import { InitOpError } from './init_op_error';
+import { init } from '@archeglyph/proto/util/init';
 
 export const initOp: Operation<InitParams, InitOutput> = {
   name: 'init',
@@ -28,7 +29,7 @@ export const initOp: Operation<InitParams, InitOutput> = {
       exists = false;
     }
     if (exists) {
-      throw Object.assign(new InitOpError(), { stage: 'exists', cause: undefined });
+      throw init(new InitOpError(), { stage: 'exists', cause: undefined });
     }
 
     const msg = create(DiagramSchema, { schemaVersion: 1, id: params.name, graph: {} });
@@ -37,9 +38,9 @@ export const initOp: Operation<InitParams, InitOutput> = {
     try {
       await writeFile(path, json, 'utf8');
     } catch (e) {
-      throw Object.assign(new InitOpError(), { stage: 'write', cause: e });
+      throw init(new InitOpError(), { stage: 'write', cause: e });
     }
 
-    return Object.assign(new InitOutput(), { path });
+    return init(new InitOutput(), { path });
   },
 };

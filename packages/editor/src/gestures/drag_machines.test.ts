@@ -36,21 +36,22 @@ import {
   type MoveSession,
   type ResizeSession,
 } from './drag_machines';
+import { init } from '@archeglyph/proto/util/init';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function vec2(x: number, y: number): Vec2 {
-  return { x, y };
+function vec2(x: number, y: number) {
+  return create(Vec2Schema, { x, y });
 }
 
 function node(id: string, position: Vec2, size: Vec2, parentGroup?: string): LaidOutNode {
-  return Object.assign(new LaidOutNode(), { id, parentGroup, position, size });
+  return init(new LaidOutNode(), { id, parentGroup, position, size });
 }
 
 function group(id: string, position: Vec2, size: Vec2): LaidOutGroup {
-  return Object.assign(new LaidOutGroup(), {
+  return init(new LaidOutGroup(), {
     id,
     position,
     size,
@@ -69,7 +70,7 @@ interface DiagramParts {
 
 function geometryFrom(parts: DiagramParts): SceneGeometry {
   return buildSceneGeometry(
-    Object.assign(new LaidOutDiagram(), {
+    init(new LaidOutDiagram(), {
       ...(parts.nodes === undefined ? {} : { nodes: byId(parts.nodes) }),
       ...(parts.groups === undefined ? {} : { groups: byId(parts.groups) }),
     }),

@@ -17,6 +17,7 @@ import { BindOutput } from './bind_output';
 import { BindOpError } from './bind_op_error';
 import { parsePredicate } from './predicate';
 import { deriveDefaultStylePath } from '../style_path';
+import { init } from '@archeglyph/proto/util/init';
 
 export const bindOp: Operation<BindParams, BindOutput> = {
   name: 'bind',
@@ -27,11 +28,11 @@ export const bindOp: Operation<BindParams, BindOutput> = {
   async execute(params: BindParams, ctx: OpContext): Promise<BindOutput> {
     const diagramPath = resolve(ctx.projectRoot, params.diagram);
     const diagramText = await readFile(diagramPath, 'utf8').catch((err) => {
-      throw Object.assign(new BindOpError(), { stage: 'load_diagram', cause: err });
+      throw init(new BindOpError(), { stage: 'load_diagram', cause: err });
     });
     const diagramResult = await loadDiagram(diagramText);
     if (diagramResult.kind === 'err') {
-      throw Object.assign(new BindOpError(), { stage: 'load_diagram', cause: diagramResult.error });
+      throw init(new BindOpError(), { stage: 'load_diagram', cause: diagramResult.error });
     }
     const diagram = diagramResult.value;
 
@@ -50,11 +51,11 @@ export const bindOp: Operation<BindParams, BindOutput> = {
     let stylesheet;
     if (styleExists) {
       const styleText = await readFile(stylePath, 'utf8').catch((err) => {
-        throw Object.assign(new BindOpError(), { stage: 'load_style', cause: err });
+        throw init(new BindOpError(), { stage: 'load_style', cause: err });
       });
       const styleResult = await loadStylesheet(styleText);
       if (styleResult.kind === 'err') {
-        throw Object.assign(new BindOpError(), { stage: 'load_style', cause: styleResult.error });
+        throw init(new BindOpError(), { stage: 'load_style', cause: styleResult.error });
       }
       stylesheet = styleResult.value;
     } else {
@@ -65,7 +66,7 @@ export const bindOp: Operation<BindParams, BindOutput> = {
     try {
       predicate = parsePredicate(params.where);
     } catch (err) {
-      throw Object.assign(new BindOpError(), { stage: 'parse_predicate', cause: err });
+      throw init(new BindOpError(), { stage: 'parse_predicate', cause: err });
     }
 
     const graph = diagram.graph;
@@ -101,9 +102,9 @@ export const bindOp: Operation<BindParams, BindOutput> = {
     }
 
     await writeFile(stylePath, toJson(StylesheetSchema, stylesheet), 'utf8').catch((err) => {
-      throw Object.assign(new BindOpError(), { stage: 'write', cause: err });
+      throw init(new BindOpError(), { stage: 'write', cause: err });
     });
 
-    return Object.assign(new BindOutput(), { matched, path: stylePath, component: params.component });
+    return init(new BindOutput(), { matched, path: stylePath, component: params.component });
   },
 };

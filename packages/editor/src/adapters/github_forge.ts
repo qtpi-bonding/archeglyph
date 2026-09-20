@@ -2,6 +2,7 @@
 
 import { GitForge } from './git_forge';
 import { RawComment } from './git_forge';
+import { init } from '@archeglyph/proto/util/init';
 
 const TOKEN_KEY: string = 'archeglyph.github_token';
 const CLIENT_ID: string = 'YOUR_GITHUB_OAUTH_APP_CLIENT_ID';
@@ -52,7 +53,7 @@ function parsePath(path: string): [string, string, string] {
 }
 
 function mapComment(c: GithubComment): RawComment {
-  return Object.assign(new RawComment(), {
+  return init(new RawComment(), {
     id: String(c.id),
     body: c.body,
     author: c.user !== null ? c.user.login : undefined,

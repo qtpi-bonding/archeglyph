@@ -31,6 +31,7 @@ import type { ElementRef, UiState } from '../ui_state/ui_state';
 import { KEYMAP, type CommandId } from '../ui_state/keymap';
 import { buildSceneGeometry } from '../scene/scene';
 import { COMMANDS, runCommand, type CommandContext } from './commands';
+import { init } from '@archeglyph/proto/util/init';
 
 interface Spy {
   calls: string[];
@@ -38,7 +39,7 @@ interface Spy {
 }
 
 function node(id: string, x: number, y: number): LaidOutNode {
-  return Object.assign(new LaidOutNode(), {
+  return init(new LaidOutNode(), {
     id,
     position: create(Vec2Schema, { x, y }),
     size: create(Vec2Schema, { x: 100, y: 40 }),
@@ -102,7 +103,7 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
   } as unknown as UiState;
 
   const geometry = buildSceneGeometry(
-    Object.assign(new LaidOutDiagram(), { nodes }),
+    init(new LaidOutDiagram(), { nodes: Object.fromEntries(nodes.map((n) => [n.id, n])) }),
     '<svg/>',
   );
 

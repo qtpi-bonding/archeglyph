@@ -59,7 +59,8 @@ execution:
           only inside one named boundary function per interop surface (ELK, FSA,
           fetch, JSON.parse), which returns a Result.
         - §3.3: proto messages via `create(Schema, { ...existing, field })` (spread is
-          fine); archebuild classes via `Object.assign(new Xxx(), {...})`.
+          fine); archebuild classes via `init(new Xxx(), {...})` from
+          `@archeglyph/proto/util/init`.
         - Spread, destructuring, default params, per-method generics, `extends Error`
           are all allowed — do not write around them.
       - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
@@ -72,10 +73,12 @@ execution:
 
       Construction + types:
       - When constructing data objects, initialize all fields at construction with
-        `Object.assign(new Xxx(), { field1, field2, ... })`. Do NOT construct with
-        `new Xxx()` then assign fields individually after. Applies to every
-        Request/Response/Output class in this codebase — they all use
-        definite-assignment fields with no constructor.
+        `init(new Xxx(), { field1, field2, ... })`, imported from
+        `@archeglyph/proto/util/init`. Do NOT construct with `new Xxx()` then assign
+        fields individually after. Applies to every Request/Response/Output class in
+        this codebase — they all use definite-assignment fields with no constructor.
+        NEVER use `Object.assign` for this: it is typed `(target: T, source: U) => T & U`,
+        so U is never checked against T and a wrong field type compiles silently.
       - For buf-generated proto values (anything from `@archeglyph/proto/gen/*_pb`):
         use `create(XSchema, { field1, field2 })` from `@bufbuild/protobuf`. NEVER
         `new XProtoMessage()` directly — protoc-gen-es emits a `Schema` factory and

@@ -14,6 +14,7 @@ import {
 import { CommentBackend, ThreadEntry } from './comment_backend';
 import { AdapterError } from './host_adapter';
 import { Ok, Result } from '@archeglyph/proto/util/result';
+import { init } from '@archeglyph/proto/util/init';
 
 export class FileBackend implements CommentBackend {
   private readonly getStylesheet: Accessor<Stylesheet>;
@@ -29,7 +30,7 @@ export class FileBackend implements CommentBackend {
     const entries: ThreadEntry[] = [];
     for (const edit of stylesheet.pendingEdits) {
       if (edit.thread !== undefined && edit.thread.comments.length > 0) {
-        entries.push(Object.assign(new ThreadEntry(), { editRef: edit.id, thread: edit.thread }));
+        entries.push(init(new ThreadEntry(), { editRef: edit.id, thread: edit.thread }));
       }
     }
     return Ok(entries);

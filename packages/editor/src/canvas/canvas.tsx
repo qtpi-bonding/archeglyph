@@ -30,6 +30,7 @@ import { AnchorSession, anchorCommit, anchorUpdate } from '../gestures/anchor_ma
 import { addAnnotationEdit, setAnnotationTextEdit } from '../state/edits/annotation';
 import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../state/edits/annotation_defaults';
 import { TextEditor } from './text_editor';
+import { init } from '@archeglyph/proto/util/init';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = PointerEvent | WheelEvent;
@@ -193,7 +194,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
         setHandle(session.handle);
         active = { kind: 'resize', session };
       } else if (decision.kind === 'anchor' && decision.ref !== undefined) {
-        const session: AnchorSession = Object.assign(new AnchorSession(), { ref: decision.ref });
+        const session: AnchorSession = init(new AnchorSession(), { ref: decision.ref });
         setGesture({ kind: 'anchor', session });
         active = { kind: 'anchor', session };
       } else if (decision.kind === 'marquee') {

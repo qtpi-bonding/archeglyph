@@ -10,6 +10,7 @@ import { type LaidOutDiagram } from '../layout/laid_out_diagram';
 import { SvgRendererImpl } from '../renderer/svg_renderer';
 import { PipelineError } from './pipeline_error';
 import { resolvePipeline } from './resolve_pipeline';
+import { init } from '@archeglyph/proto/util/init';
 
 export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme, layoutEngine: LayoutEngine): Promise<Result<string, PipelineError>> {
   const layoutResult = await layoutPipeline(diagram, stylesheet, theme, layoutEngine);
@@ -19,7 +20,7 @@ export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | 
 
   const renderResult = new SvgRendererImpl().render(layoutResult.value);
   if (renderResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'render' }));
+    return Err(init(new PipelineError(), { stage: 'render' }));
   }
 
   return Ok(renderResult.value);
@@ -32,10 +33,10 @@ export async function layoutPipeline(diagram: Diagram, stylesheet: Stylesheet | 
   }
 
   const layoutResult = await layoutEngine.layout(
-    Object.assign(new LayoutRequest(), { diagram: resolveResult.value })
+    init(new LayoutRequest(), { diagram: resolveResult.value })
   );
   if (layoutResult.kind === 'err') {
-    return Err(Object.assign(new PipelineError(), { stage: 'layout' }));
+    return Err(init(new PipelineError(), { stage: 'layout' }));
   }
 
   return Ok(layoutResult.value);

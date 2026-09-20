@@ -6,9 +6,10 @@ import { fromJson, toJson } from '@archeglyph/proto/util/json';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 import { AdapterError, FileStamp, HostAdapter, LoadResult } from './host_adapter';
 import { hashStylesheet } from '../state/stylesheet_hash';
+import { init } from '@archeglyph/proto/util/init';
 
 function toAdapterError(e: unknown): AdapterError {
-  return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
+  return init(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
 }
 
 function buildRemoteUrl(params: URLSearchParams): string | null {
@@ -121,15 +122,15 @@ export class UrlParamAdapter implements HostAdapter {
           const stylesheetJson: string = atob(stylesheetB64);
           const stylesheet: Stylesheet = fromJson(StylesheetSchema, stylesheetJson);
           const baseHash: string = await hashStylesheet(stylesheet);
-          return Ok(Object.assign(new LoadResult(), { diagram, stylesheet, baseHash }));
+          return Ok(init(new LoadResult(), { diagram, stylesheet, baseHash }));
         } else {
-          return Ok(Object.assign(new LoadResult(), { diagram, baseHash: '' }));
+          return Ok(init(new LoadResult(), { diagram, baseHash: '' }));
         }
       } else {
         const url: string = this.remoteUrl ?? '';
         const response: Response = await fetch(url);
         if (!response.ok) {
-          return Err(Object.assign(new AdapterError(), {
+          return Err(init(new AdapterError(), {
             kind: 'io',
             message: `Could not fetch ${url} (${response.status})`,
           }));
@@ -150,14 +151,14 @@ export class UrlParamAdapter implements HostAdapter {
         if (styleUrl !== null) {
           const stylesheet: Stylesheet | null = await fetchStylesheet(styleUrl);
           if (stylesheet !== null) {
-            return Ok(Object.assign(new LoadResult(), {
+            return Ok(init(new LoadResult(), {
               diagram,
               stylesheet,
               baseHash: await hashStylesheet(stylesheet),
             }));
           }
         }
-        return Ok(Object.assign(new LoadResult(), { diagram, baseHash: '' }));
+        return Ok(init(new LoadResult(), { diagram, baseHash: '' }));
       }
     } catch (e: unknown) {
       return Err(toAdapterError(e));
@@ -200,7 +201,7 @@ export class UrlParamAdapter implements HostAdapter {
   }
 
   async stat(): Promise<Result<FileStamp, AdapterError>> {
-    return Err(Object.assign(new AdapterError(), {
+    return Err(init(new AdapterError(), {
       kind: 'unsupported',
       message: 'The URL host has no file to stat',
     }));

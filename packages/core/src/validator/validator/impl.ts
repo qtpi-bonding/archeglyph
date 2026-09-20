@@ -8,6 +8,7 @@ import { ValidateRequest } from '../validate_request';
 import { ValidateResponse } from '../validate_response';
 import { Violation, ViolationKind, VIOLATION_KIND_ORDER } from '../violation';
 import { Validator } from './';
+import { init } from '@archeglyph/proto/util/init';
 
 export class ValidatorImpl implements Validator {
   validate(request: ValidateRequest): Result<ValidateResponse, ValidateError> {
@@ -32,7 +33,7 @@ export class ValidatorImpl implements Validator {
     for (const id of sortedEdgeIds) {
       const edge = edgesMap[id];
       if (nodesMap[edge.source] === undefined) {
-        violations.push(Object.assign(new Violation(), {
+        violations.push(init(new Violation(), {
           kind: ViolationKind.EDGE_SOURCE_MISSING,
           location: id,
           message: `edge '${id}' source '${edge.source}' does not reference an existing node`,
@@ -41,7 +42,7 @@ export class ValidatorImpl implements Validator {
         // valid source.
       }
       if (nodesMap[edge.target] === undefined) {
-        violations.push(Object.assign(new Violation(), {
+        violations.push(init(new Violation(), {
           kind: ViolationKind.EDGE_TARGET_MISSING,
           location: id,
           message: `edge '${id}' target '${edge.target}' does not reference an existing node`,
@@ -57,7 +58,7 @@ export class ValidatorImpl implements Validator {
       const node = nodesMap[id];
       const p = normParent(node.parentGroup);
       if (p !== undefined && groupsMap[p] === undefined) {
-        violations.push(Object.assign(new Violation(), {
+        violations.push(init(new Violation(), {
           kind: ViolationKind.NODE_PARENT_GROUP_MISSING,
           location: id,
           message: `node '${id}' parent_group '${p}' does not reference an existing group`,
@@ -73,7 +74,7 @@ export class ValidatorImpl implements Validator {
       const group = groupsMap[id];
       const p = normParent(group.parentGroup);
       if (p !== undefined && groupsMap[p] === undefined) {
-        violations.push(Object.assign(new Violation(), {
+        violations.push(init(new Violation(), {
           kind: ViolationKind.GROUP_PARENT_GROUP_MISSING,
           location: id,
           message: `group '${id}' parent_group '${p}' does not reference an existing group`,
@@ -102,7 +103,7 @@ export class ValidatorImpl implements Validator {
           const cyclePath = stack.slice(cycleStart);
           cyclePath.push(parentId);
           const location = cyclePath.join(', ');
-          violations.push(Object.assign(new Violation(), {
+          violations.push(init(new Violation(), {
             kind: ViolationKind.GROUP_CYCLE,
             location,
             message: `group cycle detected: ${location}`,
@@ -139,7 +140,7 @@ export class ValidatorImpl implements Validator {
       ): void => {
         for (const key of sortedKeys(entries)) {
           if (targets[key] === undefined) {
-            violations.push(Object.assign(new Violation(), {
+            violations.push(init(new Violation(), {
               kind: ViolationKind.STYLE_TARGET_MISSING,
               location: key,
               message: `stylesheet styles ${kindLabel} '${key}', which the graph does not define`,
@@ -162,7 +163,7 @@ export class ValidatorImpl implements Validator {
           : anchor.refKind === RefKind.GROUP ? groupsMap
           : undefined;
         if (targets === undefined || targets[anchor.refId] === undefined) {
-          violations.push(Object.assign(new Violation(), {
+          violations.push(init(new Violation(), {
             kind: ViolationKind.ANNOTATION_ANCHOR_MISSING,
             location: key,
             message: `annotation '${key}' anchors to '${anchor.refId}', which the graph does not define`,
@@ -180,6 +181,6 @@ export class ValidatorImpl implements Validator {
       }
     });
 
-    return Ok(Object.assign(new ValidateResponse(), { violations }));
+    return Ok(init(new ValidateResponse(), { violations }));
   }
 }

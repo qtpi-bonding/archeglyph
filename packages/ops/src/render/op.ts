@@ -18,6 +18,7 @@ import { type RenderParams, renderParamsSchema } from './render_params';
 import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
 import { deriveDefaultStylePath } from '../style_path';
+import { init } from '@archeglyph/proto/util/init';
 
 export function deriveOutPath(diagramPath: string): string {
   const ext = extname(diagramPath);
@@ -37,7 +38,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     const diagramText = await readFile(resolve(ctx.projectRoot, params.diagram), 'utf8');
     const diagramResult = await loadDiagram(diagramText);
     if (diagramResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: 'load', cause: diagramResult.error });
+      throw init(new RenderOpError(), { stage: 'load', cause: diagramResult.error });
     }
 
     const stylePath = params.style !== undefined
@@ -53,7 +54,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       const styleText = await readFile(stylePath, 'utf8');
       const styleResult = await loadStylesheet(styleText);
       if (styleResult.kind === 'err') {
-        throw Object.assign(new RenderOpError(), { stage: 'load', cause: styleResult.error });
+        throw init(new RenderOpError(), { stage: 'load', cause: styleResult.error });
       }
       stylesheet = styleResult.value;
     }
@@ -70,7 +71,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
         const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
         const themeResult = await loadTheme(themeText);
         if (themeResult.kind === 'err') {
-          throw Object.assign(new RenderOpError(), { stage: 'load', cause: themeResult.error });
+          throw init(new RenderOpError(), { stage: 'load', cause: themeResult.error });
         }
         theme = themeResult.value;
       }
@@ -83,7 +84,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
     const pipelineResult = await renderPipeline(diagramResult.value, seeded, theme, layoutEngine);
     if (pipelineResult.kind === 'err') {
-      throw Object.assign(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
+      throw init(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }
     const svg = pipelineResult.value;
 
@@ -91,6 +92,6 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     await writeFile(outPath, svg, 'utf8');
     const bytesWritten = Buffer.byteLength(svg, 'utf8');
 
-    return Object.assign(new RenderOutput(), { svg, outPath, bytesWritten });
+    return init(new RenderOutput(), { svg, outPath, bytesWritten });
   },
 };

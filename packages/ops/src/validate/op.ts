@@ -17,6 +17,7 @@ import { type ValidateParams, validateParamsSchema } from './validate_params';
 import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
 import { deriveDefaultStylePath } from '../style_path';
+import { init } from '@archeglyph/proto/util/init';
 
 export const validateOp: Operation<ValidateParams, ValidateOutput> = {
   name: 'validate',
@@ -30,7 +31,7 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     const diagramText = await readFile(resolve(ctx.projectRoot, params.diagram), 'utf8');
     const diagramResult = await loadDiagram(diagramText);
     if (diagramResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'load', cause: diagramResult.error });
+      throw init(new ValidateOpError(), { stage: 'load', cause: diagramResult.error });
     }
     stagesRun.push('load');
 
@@ -47,7 +48,7 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
       const styleText = await readFile(stylePath, 'utf8');
       const styleResult = await loadStylesheet(styleText);
       if (styleResult.kind === 'err') {
-        throw Object.assign(new ValidateOpError(), { stage: 'load', cause: styleResult.error });
+        throw init(new ValidateOpError(), { stage: 'load', cause: styleResult.error });
       }
       stylesheet = styleResult.value;
     }
@@ -55,10 +56,10 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     // After the stylesheet load: supplied, it brings the stylesheet-to-graph
     // reference checks, which cannot run on the diagram alone.
     const validateResult = new ValidatorImpl().validate(
-      Object.assign(new ValidateRequest(), { diagram: diagramResult.value, stylesheet }),
+      init(new ValidateRequest(), { diagram: diagramResult.value, stylesheet }),
     );
     if (validateResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'validate', cause: validateResult.error });
+      throw init(new ValidateOpError(), { stage: 'validate', cause: validateResult.error });
     }
     stagesRun.push('validate');
 
@@ -73,7 +74,7 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
         const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
         const themeResult = await loadTheme(themeText);
         if (themeResult.kind === 'err') {
-          throw Object.assign(new ValidateOpError(), { stage: 'load', cause: themeResult.error });
+          throw init(new ValidateOpError(), { stage: 'load', cause: themeResult.error });
         }
         theme = themeResult.value;
       }
@@ -85,12 +86,12 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), theme);
     const resolveResult = await resolvePipeline(diagramResult.value, seeded, theme);
     if (resolveResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: resolveResult.error.stage, cause: resolveResult.error });
+      throw init(new ValidateOpError(), { stage: resolveResult.error.stage, cause: resolveResult.error });
     }
     stagesRun.push('resolve');
 
     const violations = validateResult.value.violations;
     const passed = violations.length === 0;
-    return Object.assign(new ValidateOutput(), { violations, passed, stagesRun });
+    return init(new ValidateOutput(), { violations, passed, stagesRun });
   },
 };

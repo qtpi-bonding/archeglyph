@@ -20,6 +20,7 @@ import { type LaidOutNode } from '../../layout/laid_out_node';
 import { calloutSections } from '../../layout/callout_line/impl';
 import { RenderError } from '../render_error';
 import { arrowMarkers, backgroundRect, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
+import { init } from '@archeglyph/proto/util/init';
 
 /**
  * Where a group's label sits, and which way it reads from there.
@@ -82,7 +83,7 @@ export interface SvgRenderer {
 export class SvgRendererImpl implements SvgRenderer {
   render(diagram: LaidOutDiagram): Result<string, RenderError> {
     if (diagram.id === '') {
-      return Err(Object.assign(new RenderError(), { message: 'diagram.id must not be empty' }));
+      return Err(init(new RenderError(), { message: 'diagram.id must not be empty' }));
     }
 
     const vb: string = viewBox(diagram);

@@ -7,9 +7,10 @@ import { Err, Ok, type Result } from '@archeglyph/proto/util/result';
 import { loadDiagram, loadStylesheet, type LoadError } from '@archeglyph/core/loaders';
 import { toJson } from '@archeglyph/proto/util/json';
 import { hashStylesheet } from '../state/stylesheet_hash';
+import { init } from '@archeglyph/proto/util/init';
 
 function toAdapterError(e: unknown): AdapterError {
-  return Object.assign(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
+  return init(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
 }
 
 export class BrowserFsAdapter implements HostAdapter {
@@ -55,7 +56,7 @@ export class BrowserFsAdapter implements HostAdapter {
   async stat(): Promise<Result<FileStamp, AdapterError>> {
     try {
       if (this.styleHandle === null) {
-        return Err(Object.assign(new AdapterError(), { kind: 'unsupported', message: 'No file to stat' }));
+        return Err(init(new AdapterError(), { kind: 'unsupported', message: 'No file to stat' }));
       }
       const file: File = await this.styleHandle.getFile();
       return Ok({ lastModified: file.lastModified, size: file.size });
@@ -87,7 +88,7 @@ export class BrowserFsAdapter implements HostAdapter {
         const stamp: FileStamp | undefined = styleHandle === null
           ? undefined
           : await this.fileStamp(styleHandle);
-        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
+        return init(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
       } else {
         throw new Error(diagResult.error.message);
       }
@@ -135,7 +136,7 @@ export class BrowserFsAdapter implements HostAdapter {
         const stamp: FileStamp | undefined = styleFile === null
           ? undefined
           : { lastModified: styleFile.lastModified, size: styleFile.size };
-        return Object.assign(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
+        return init(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
       } else {
         throw new Error(diagResult.error.message);
       }

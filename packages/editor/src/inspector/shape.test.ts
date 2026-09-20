@@ -20,6 +20,7 @@ import {
   FillSchema,
   Glyph1DSchema,
   Glyph2DSchema,
+  type Glyph2D,
   NodeStyleEntrySchema,
   ShapeType,
   StrokeSchema,
@@ -37,14 +38,15 @@ import { SHAPE_TABLE } from './models/shape_names';
 import { shapeModel } from './models/shape_model';
 import { commitShape } from './models/shape_commit';
 import { ARROWHEAD_TABLE, PATTERN_TABLE } from './models/line_names';
+import { init } from '@archeglyph/proto/util/init';
 
 const namesOf = (table: ReadonlyArray<{ name: string }>): string[] =>
   table.map((entry) => entry.name);
 
-const vec = (x: number, y: number): Vec2 => ({ x, y });
+const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
 
-function node(id: string, shape?: ReturnType<typeof create>): LaidOutNode {
-  return Object.assign(new LaidOutNode(), {
+function node(id: string, shape?: Glyph2D): LaidOutNode {
+  return init(new LaidOutNode(), {
     id,
     position: vec(0, 0),
     size: vec(100, 50),
@@ -56,7 +58,7 @@ const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
   Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
 
 function geometryFrom(nodes: LaidOutNode[]): SceneGeometry {
-  return buildSceneGeometry(Object.assign(new LaidOutDiagram(), { nodes: byId(nodes) }), '<svg/>');
+  return buildSceneGeometry(init(new LaidOutDiagram(), { nodes: byId(nodes) }), '<svg/>');
 }
 
 const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>

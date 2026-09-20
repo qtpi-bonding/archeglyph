@@ -52,6 +52,7 @@ import { LayoutRequest } from '../src/layout/layout_request';
 import { Ok } from '@archeglyph/proto/util/result';
 import { ElkAdapterImpl, LayoutAdapter } from '../src/layout/layout_adapter/impl';
 import { LayoutEngineImpl } from '../src/layout/layout_engine/impl';
+import { init } from '@archeglyph/proto/util/init';
 
 const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
   Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
@@ -62,11 +63,11 @@ describe('layout pinning paths (repaired testgen cases)', () => {
     test('root_element_with_explicit_position_marks_root_graph_fixed', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'root_node',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 3, y: 4 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: {}, groups: {}, annotations: {} });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: {}, groups: {}, annotations: {} });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -81,14 +82,14 @@ describe('layout pinning paths (repaired testgen cases)', () => {
     // THEN: Calls adapter.seedPositions (not adapter.runLayout) because the unpinned group counts against full-pinning even though all nodes are pinned, and the not-fully-pinned path never asks ELK to place anything.
     test('unpinned_group_forces_seed_path_not_run_layout', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const nodeA = Object.assign(new ResolvedNode(), {
+        const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([nodeA]), groups: byId([group]), edges: {}, annotations: {},
         });
         const seedCalls: ResolvedDiagram[] = [];
@@ -100,11 +101,11 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           },
           async runLayout(d) {
             runLayoutCalls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(seedCalls.length).toBe(1);
         expect(runLayoutCalls.length).toBe(0);
@@ -115,16 +116,16 @@ describe('layout pinning paths (repaired testgen cases)', () => {
     // THEN: Calls adapter.seedPositions with every already-pinned node and group in the `pinned` map, never calls adapter.runLayout, and the returned diagram carries the pinned positions unchanged plus the seeded newcomer position.
     test('pinned_elements_passed_as_fixed_hints', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const pinnedNode = Object.assign(new ResolvedNode(), {
+        const pinnedNode = init(new ResolvedNode(), {
           id: 'pinned', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(5, 6), size: vec(80, 30) }),
         });
-        const pinnedGroup = Object.assign(new ResolvedGroup(), {
+        const pinnedGroup = init(new ResolvedGroup(), {
           id: 'pinnedGroup', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
           layout: create(GroupLayoutSchema, { position: vec(200, 200), size: vec(150, 150) }),
         });
-        const newcomer = Object.assign(new ResolvedNode(), { id: 'newcomer', shape: {} as any, typography: {} as any });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const newcomer = init(new ResolvedNode(), { id: 'newcomer', shape: {} as any, typography: {} as any });
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([pinnedNode, newcomer]), groups: byId([pinnedGroup]), edges: {}, annotations: {},
         });
         const seedCalls: { diagram: ResolvedDiagram; pinned: Map<string, any> }[] = [];
@@ -136,11 +137,11 @@ describe('layout pinning paths (repaired testgen cases)', () => {
           },
           async runLayout(d) {
             runLayoutCalls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(seedCalls.length).toBe(1);
         expect(runLayoutCalls.length).toBe(0);

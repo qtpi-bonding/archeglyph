@@ -33,6 +33,7 @@ import { LayoutRequest } from '../src/layout/layout_request';
 import { Ok } from '@archeglyph/proto/util/result';
 import { ElkAdapterImpl, LayoutAdapter } from '../src/layout/layout_adapter/impl';
 import { LayoutEngineImpl } from '../src/layout/layout_engine/impl';
+import { init } from '@archeglyph/proto/util/init';
 
 const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
   Object.fromEntries(items.map((item) => [item.id, item]));
@@ -43,11 +44,11 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('element_with_explicit_position_sends_xy_and_position_option', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 10, y: 20 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -63,13 +64,13 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('parent_gets_fixed_option_with_mixed_children', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const group = Object.assign(new ResolvedGroup(), { id: 'g1' });
-        const positioned = Object.assign(new ResolvedNode(), {
+        const group = init(new ResolvedGroup(), { id: 'g1' });
+        const positioned = init(new ResolvedNode(), {
           id: 'pinned', parentGroup: 'g1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
-        const free = Object.assign(new ResolvedNode(), { id: 'free', parentGroup: 'g1' });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const free = init(new ResolvedNode(), { id: 'free', parentGroup: 'g1' });
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', nodes: byId([positioned, free]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -85,10 +86,10 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('parent_without_any_positioned_children_omits_fixed', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const group = Object.assign(new ResolvedGroup(), { id: 'g1' });
-        const a = Object.assign(new ResolvedNode(), { id: 'a', parentGroup: 'g1' });
-        const b = Object.assign(new ResolvedNode(), { id: 'b', parentGroup: 'g1' });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const group = init(new ResolvedGroup(), { id: 'g1' });
+        const a = init(new ResolvedNode(), { id: 'a', parentGroup: 'g1' });
+        const b = init(new ResolvedNode(), { id: 'b', parentGroup: 'g1' });
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', nodes: byId([a, b]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -104,16 +105,16 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('parent_with_all_children_positioned_gets_fixed', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const group = Object.assign(new ResolvedGroup(), { id: 'g1' });
-        const a = Object.assign(new ResolvedNode(), {
+        const group = init(new ResolvedGroup(), { id: 'g1' });
+        const a = init(new ResolvedNode(), {
           id: 'a', parentGroup: 'g1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }),
         });
-        const b = Object.assign(new ResolvedNode(), {
+        const b = init(new ResolvedNode(), {
           id: 'b', parentGroup: 'g1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 2, y: 2 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', nodes: byId([a, b]), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -129,11 +130,11 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('element_with_zero_position_treated_as_explicit', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'origin',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -149,11 +150,11 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('leaf_with_no_children_handles_own_position_only', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const leaf = Object.assign(new ResolvedGroup(), {
+        const leaf = init(new ResolvedGroup(), {
           id: 'leaf', isSuperNode: true,
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 7, y: 9 }) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([]), edges: byId([]), groups: byId([leaf]), annotations: byId([]) });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([]), edges: byId([]), groups: byId([leaf]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -171,8 +172,8 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('style_entry_missing_treated_as_no_position', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const node = Object.assign(new ResolvedNode(), { id: 'unstyled' });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
+        const node = init(new ResolvedNode(), { id: 'unstyled' });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
         const result = await adapter.runLayout(diagram);
         expect(result.kind).toBe('ok');
@@ -193,14 +194,14 @@ describe('testgen_layout_adapter__runLayout', () => {
     test('single_positioned_child_among_many_marks_parent_fixed', async () => {
         const captured: { graph?: any } = {};
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
-        const group = Object.assign(new ResolvedGroup(), { id: 'g1' });
+        const group = init(new ResolvedGroup(), { id: 'g1' });
         const children = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id, i) =>
-          Object.assign(new ResolvedNode(), {
+          init(new ResolvedNode(), {
             id, parentGroup: 'g1',
             layout: i === 2 ? create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }) : undefined,
           }),
         );
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', nodes: byId(children), edges: byId([]), groups: byId([group]), annotations: byId([]),
         });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -227,15 +228,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: at least one node has layout undefined (no layout object at all) while all others are pinned — returns false
     // THEN: Returns false, since a node with no layout object at all cannot be considered pinned.
     test('when_one_node_has_no_layout_object_returns_false', () => {
-        const pinnedNode = Object.assign(new ResolvedNode(), {
+        const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const unpinnedNode = Object.assign(new ResolvedNode(), {
+        const unpinnedNode = init(new ResolvedNode(), {
           id: 'n2',
           layout: undefined,
         });
-        const pinnedGroup = Object.assign(new ResolvedGroup(), {
+        const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
@@ -250,15 +251,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: at least one node has a layout object but its position field is unset, while all others are pinned — returns false
     // THEN: Returns false, since a node whose layout exists but omits position is not fully pinned.
     test('when_one_node_layout_lacks_position_returns_false', () => {
-        const pinnedNode = Object.assign(new ResolvedNode(), {
+        const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const missingPositionNode = Object.assign(new ResolvedNode(), {
+        const missingPositionNode = init(new ResolvedNode(), {
           id: 'n2',
           layout: create(NodeLayoutSchema, {}),
         });
-        const pinnedGroup = Object.assign(new ResolvedGroup(), {
+        const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
@@ -273,15 +274,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: at least one group has layout undefined while all nodes and other groups are pinned — returns false
     // THEN: Returns false, since a group with no layout object at all cannot be considered pinned.
     test('when_one_group_has_no_layout_object_returns_false', () => {
-        const pinnedNode = Object.assign(new ResolvedNode(), {
+        const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const pinnedGroup = Object.assign(new ResolvedGroup(), {
+        const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const unpinnedGroup = Object.assign(new ResolvedGroup(), {
+        const unpinnedGroup = init(new ResolvedGroup(), {
           id: 'g2',
           layout: undefined,
         });
@@ -296,15 +297,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: at least one group has a layout object but position is unset, while all nodes and other groups are pinned — returns false
     // THEN: Returns false, since a group whose layout exists but omits position is not fully pinned.
     test('when_one_group_layout_lacks_position_returns_false', () => {
-        const pinnedNode = Object.assign(new ResolvedNode(), {
+        const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const pinnedGroup = Object.assign(new ResolvedGroup(), {
+        const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const missingPositionGroup = Object.assign(new ResolvedGroup(), {
+        const missingPositionGroup = init(new ResolvedGroup(), {
           id: 'g2',
           layout: create(GroupLayoutSchema, {}),
         });
@@ -319,11 +320,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: diagram has nodes only (empty groups array), and every node is pinned — returns true
     // THEN: Returns true, since all nodes are pinned and there are no groups to fail the check.
     test('when_only_nodes_present_and_all_pinned_returns_true', () => {
-        const node1 = Object.assign(new ResolvedNode(), {
+        const node1 = init(new ResolvedNode(), {
           id: 'n1',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const node2 = Object.assign(new ResolvedNode(), {
+        const node2 = init(new ResolvedNode(), {
           id: 'n2',
           layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
@@ -338,11 +339,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: diagram has groups only (empty nodes array), and every group is pinned — returns true
     // THEN: Returns true, since all groups are pinned and there are no nodes to fail the check.
     test('when_only_groups_present_and_all_pinned_returns_true', () => {
-        const group1 = Object.assign(new ResolvedGroup(), {
+        const group1 = init(new ResolvedGroup(), {
           id: 'g1',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
-        const group2 = Object.assign(new ResolvedGroup(), {
+        const group2 = init(new ResolvedGroup(), {
           id: 'g2',
           layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
@@ -357,11 +358,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     // WHEN: diagram has at least one node and one group and none of them carry any position — returns false
     // THEN: Returns false, since neither the node nor the group carries any position.
     test('when_no_node_or_group_carries_a_position_returns_false', () => {
-        const unpinnedNode = Object.assign(new ResolvedNode(), {
+        const unpinnedNode = init(new ResolvedNode(), {
           id: 'n1',
           layout: undefined,
         });
-        const unpinnedGroup = Object.assign(new ResolvedGroup(), {
+        const unpinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
           layout: undefined,
         });
@@ -380,30 +381,30 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Skips ELK entirely, computing positions directly from the stylesheet's explicit entries for every node and group, and routes edges via edge_router.
     test('fully_pinned_skips_elk', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const nodeA = Object.assign(new ResolvedNode(), {
+        const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
-        const nodeB = Object.assign(new ResolvedNode(), {
+        const nodeB = init(new ResolvedNode(), {
           id: 'b', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(200, 0), size: vec(100, 40) }),
         });
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
           layout: create(GroupLayoutSchema, { position: vec(0, 200), size: vec(150, 150) }),
         });
-        const edge = Object.assign(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const edge = init(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([group]), edges: byId([edge]), annotations: byId([]),
         });
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(calls.length).toBe(0);
         expect(result.kind).toBe('ok');
@@ -435,18 +436,18 @@ describe('testgen_layout_engine__layout', () => {
     // WHEN: No node or group has an explicit position; ELK computes positions for everything with no fixed-position hints supplied
     // THEN: Invokes ELK with no fixed-position hints, letting it compute positions for all nodes and groups from scratch.
     test('no_pins_full_elk_layout', async () => {
-        const nodeA = Object.assign(new ResolvedNode(), { id: 'a', shape: {} as any, typography: {} as any });
-        const nodeB = Object.assign(new ResolvedNode(), { id: 'b', shape: {} as any, typography: {} as any });
-        const group = Object.assign(new ResolvedGroup(), { id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0 });
-        const diagram = Object.assign(new ResolvedDiagram(), { id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([group]), edges: byId([]), annotations: byId([]) });
+        const nodeA = init(new ResolvedNode(), { id: 'a', shape: {} as any, typography: {} as any });
+        const nodeB = init(new ResolvedNode(), { id: 'b', shape: {} as any, typography: {} as any });
+        const group = init(new ResolvedGroup(), { id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0 });
+        const diagram = init(new ResolvedDiagram(), { id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([group]), edges: byId([]), annotations: byId([]) });
         const calls: ResolvedDiagram[] = [];
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             calls.push(d);
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(calls.length).toBe(1);
         expect(Object.values(calls[0].nodes).every((n) => n.layout?.position === undefined)).toBe(true);
@@ -458,28 +459,28 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Treats the diagram as fully pinned and skips ELK, since the unpinned annotation is excluded from the full-pinning check.
     test('annotations_excluded_from_fully_pinned_check', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const nodeA = Object.assign(new ResolvedNode(), {
+        const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
           layout: create(GroupLayoutSchema, { position: vec(0, 100), size: vec(150, 150) }),
         });
-        const annotation = Object.assign(new ResolvedAnnotation(), {
+        const annotation = init(new ResolvedAnnotation(), {
           id: 'ann', shape: {} as any, typography: {} as any, callout: {} as any,
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([nodeA]), groups: byId([group]), edges: byId([]), annotations: byId([annotation]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
@@ -493,21 +494,21 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Treats the fully-pinned check as vacuously satisfied and skips ELK, since only nodes and groups (of which there are none) are considered.
     test('annotations_only_no_nodes_or_groups', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const annotation = Object.assign(new ResolvedAnnotation(), {
+        const annotation = init(new ResolvedAnnotation(), {
           id: 'ann', shape: {} as any, typography: {} as any, callout: {} as any,
           layout: create(AnnotationLayoutSchema, { position: vec(10, 20), size: vec(80, 30) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([]), groups: byId([]), edges: byId([]), annotations: byId([annotation]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
@@ -522,17 +523,17 @@ describe('testgen_layout_engine__layout', () => {
     // WHEN: Diagram has no nodes, groups, or annotations at all; layout must not error and should return an empty/trivial layout result
     // THEN: Returns an empty/trivial layout result without erroring, since there are no nodes, groups, or annotations to place.
     test('empty_diagram', async () => {
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([]), groups: byId([]), edges: byId([]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') { return; }
@@ -547,21 +548,21 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Bypasses ELK and returns the single node's position exactly as declared in the stylesheet.
     test('single_node_fully_pinned', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'solo', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(42, 17), size: vec(90, 30) }),
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([node]), groups: byId([]), edges: byId([]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
@@ -579,26 +580,26 @@ describe('testgen_layout_engine__layout', () => {
     // THEN: Routes edges between the explicitly positioned nodes/groups using edge_router instead of ELK's own edge routing.
     test('edges_routed_via_edge_router_in_fully_pinned_path', async () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
-        const nodeA = Object.assign(new ResolvedNode(), {
+        const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
-        const nodeB = Object.assign(new ResolvedNode(), {
+        const nodeB = init(new ResolvedNode(), {
           id: 'b', shape: {} as any, typography: {} as any,
           layout: create(NodeLayoutSchema, { position: vec(300, 250), size: vec(100, 40) }),
         });
-        const edge = Object.assign(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const edge = init(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([nodeA, nodeB]), groups: byId([]), edges: byId([edge]), annotations: byId([]),
         });
         let elkInvoked = false;
         const spyAdapter: LayoutAdapter = { seedPositions: async () => new Map(), async runLayout(d) {
             elkInvoked = true;
-            return Ok(Object.assign(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
+            return Ok(init(new LaidOutDiagram(), { id: d.id, canvas: d.canvas, nodes: {}, edges: {}, groups: {}, annotations: {} }));
           },
         };
         const engine = new LayoutEngineImpl(spyAdapter);
-        const result = await engine.layout(Object.assign(new LayoutRequest(), { diagram }));
+        const result = await engine.layout(init(new LayoutRequest(), { diagram }));
 
         expect(elkInvoked).toBe(false);
         expect(result.kind).toBe('ok');
@@ -624,7 +625,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: ResolvedDiagram has empty nodes, edges, groups, and annotations arrays (vacuously fully pinned)
     // THEN: Returns a LaidOutDiagram with empty nodes, edges, groups, and annotations, with no computation performed.
     test('empty_diagram_no_elements_returns_empty_collections', () => {
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([]),
@@ -653,7 +654,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: Diagram with one top-level node whose NodeLayout has both position and size set
     // THEN: Returns the node laid out at its written position with its written size, unchanged.
     test('single_pinned_node_with_explicit_size_places_directly_without_measure', () => {
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -663,7 +664,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([node]),
@@ -687,7 +688,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: A node's style entry has a position but no size (NodeLayout.size unset)
     // THEN: Returns the node laid out at its written position with size computed by calling measureLabel for that node's style entry.
     test('node_size_missing_falls_back_to_measure_label', () => {
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, { font: 'Noto Sans Mono', size: 12 }),
@@ -696,7 +697,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [{ locale: 'en', source: 'hello' } as any],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([node]),
@@ -720,7 +721,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size
     // THEN: Ignores the group's written size and returns the group's size (and position extent) recomputed from the union of its children's actual laid-out bounding boxes.
     test('group_size_derived_from_children_ignores_written_size', () => {
-        const child1 = Object.assign(new ResolvedNode(), {
+        const child1 = init(new ResolvedNode(), {
           id: 'child1',
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
@@ -731,7 +732,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const child2 = Object.assign(new ResolvedNode(), {
+        const child2 = init(new ResolvedNode(), {
           id: 'child2',
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
@@ -742,7 +743,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -754,7 +755,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           isSuperNode: false,
           hiddenDescendantCount: 0,
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([child1, child2]),
@@ -775,7 +776,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: A group contains a child group, which itself contains pinned nodes; sizes must be computed bottom-up
     // THEN: Computes the innermost group's size from its pinned node children first, then computes the outer group's size from the union of its children (including the already-sized inner group), propagating bottom-up.
     test('nested_groups_size_propagates_bottom_up', () => {
-        const innerChild = Object.assign(new ResolvedNode(), {
+        const innerChild = init(new ResolvedNode(), {
           id: 'innerChild',
           parentGroup: 'inner',
           shape: create(Glyph2DSchema, {}),
@@ -786,7 +787,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const innerGroup = Object.assign(new ResolvedGroup(), {
+        const innerGroup = init(new ResolvedGroup(), {
           id: 'inner',
           parentGroup: 'outer',
           shape: create(Glyph2DSchema, {}),
@@ -798,7 +799,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           isSuperNode: false,
           hiddenDescendantCount: 0,
         });
-        const outerGroup = Object.assign(new ResolvedGroup(), {
+        const outerGroup = init(new ResolvedGroup(), {
           id: 'outer',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -809,7 +810,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           isSuperNode: false,
           hiddenDescendantCount: 0,
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([innerChild]),
@@ -831,7 +832,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: A group has a pinned position but no child nodes or subgroups reference it as parent_group
     // THEN: Returns the group laid out at its pinned position with a degenerate/empty size, since there are no children to derive an extent from.
     test('group_with_zero_children_derives_degenerate_size', () => {
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -843,7 +844,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           isSuperNode: false,
           hiddenDescendantCount: 0,
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([]),
@@ -864,7 +865,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: An edge's EdgeLayout.routing is ROUTING_STRAIGHT (or unset/defaulted to straight)
     // THEN: Returns the edge's route as a straight line computed between its resolved source and target endpoints via edge_router.
     test('straight_edge_routing_calls_route_straight', () => {
-        const source = Object.assign(new ResolvedNode(), {
+        const source = init(new ResolvedNode(), {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -874,7 +875,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const target = Object.assign(new ResolvedNode(), {
+        const target = init(new ResolvedNode(), {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -884,7 +885,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const edge = Object.assign(new ResolvedEdge(), {
+        const edge = init(new ResolvedEdge(), {
           id: 'e1',
           source: 'a',
           target: 'b',
@@ -893,7 +894,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           layout: create(EdgeLayoutSchema, { routing: EdgeRouting.ROUTING_STRAIGHT }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([source, target]),
@@ -915,7 +916,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: An edge's EdgeLayout.routing is ROUTING_ORTHOGONAL
     // THEN: Returns the edge's route as an orthogonal path computed via edge_router between its resolved source and target endpoints.
     test('orthogonal_edge_routing_calls_route_orthogonal_not_straight', () => {
-        const source = Object.assign(new ResolvedNode(), {
+        const source = init(new ResolvedNode(), {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -925,7 +926,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const target = Object.assign(new ResolvedNode(), {
+        const target = init(new ResolvedNode(), {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -935,7 +936,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const edge = Object.assign(new ResolvedEdge(), {
+        const edge = init(new ResolvedEdge(), {
           id: 'e1',
           source: 'a',
           target: 'b',
@@ -944,7 +945,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           layout: create(EdgeLayoutSchema, { routing: EdgeRouting.ROUTING_ORTHOGONAL }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([source, target]),
@@ -966,7 +967,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: An edge specifies source_attach/target_attach and a CUSTOM label_position with label_position_fraction
     // THEN: Returns the edge routed via its source_attach/target_attach points with the label placed at the position corresponding to label_position_fraction along that custom attachment geometry.
     test('edge_with_explicit_attach_points_and_custom_label_position', () => {
-        const source = Object.assign(new ResolvedNode(), {
+        const source = init(new ResolvedNode(), {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -976,7 +977,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const target = Object.assign(new ResolvedNode(), {
+        const target = init(new ResolvedNode(), {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -988,7 +989,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         });
         const sourceAttach = create(Vec2Schema, { x: 1, y: 0 });
         const targetAttach = create(Vec2Schema, { x: -1, y: 0 });
-        const edge = Object.assign(new ResolvedEdge(), {
+        const edge = init(new ResolvedEdge(), {
           id: 'e1',
           source: 'a',
           target: 'b',
@@ -1003,7 +1004,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([source, target]),
@@ -1029,7 +1030,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: An edge's source or target id refers to a ResolvedGroup (e.g. a CONTRACTED super-node) rather than a ResolvedNode
     // THEN: Returns the edge routed to/from the bounding box of the resolved group (using its bottom-up-derived extent) rather than a single node's position/size.
     test('edge_endpoint_resolves_against_group_bounding_box', () => {
-        const childNode = Object.assign(new ResolvedNode(), {
+        const childNode = init(new ResolvedNode(), {
           id: 'child',
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
@@ -1040,7 +1041,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const group = Object.assign(new ResolvedGroup(), {
+        const group = init(new ResolvedGroup(), {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1051,7 +1052,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           isSuperNode: true,
           hiddenDescendantCount: 3,
         });
-        const other = Object.assign(new ResolvedNode(), {
+        const other = init(new ResolvedNode(), {
           id: 'other',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1061,7 +1062,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const edge = Object.assign(new ResolvedEdge(), {
+        const edge = init(new ResolvedEdge(), {
           id: 'e1',
           source: 'other',
           target: 'g1',
@@ -1070,7 +1071,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           layout: create(EdgeLayoutSchema, { routing: EdgeRouting.ROUTING_STRAIGHT }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([other, childNode]),
@@ -1095,7 +1096,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // THEN: Returns the annotation laid out at its anchored position with its Glyph1D callout rendered/positioned per the resolver's cascade.
     test('anchored_annotation_with_callout_preserves_geometry', () => {
         const callout = create(Glyph1DSchema, { strokeWidth: 2 } as any);
-        const annotation = Object.assign(new ResolvedAnnotation(), {
+        const annotation = init(new ResolvedAnnotation(), {
           id: 'a1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1106,7 +1107,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           content: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([]),
@@ -1129,7 +1130,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // THEN: Returns the annotation laid out at its free-floating position with no callout geometry produced (callout omitted/empty in the output).
     test('free_annotation_without_callout_has_no_callout_geometry', () => {
         const emptyCallout = create(Glyph1DSchema, {});
-        const annotation = Object.assign(new ResolvedAnnotation(), {
+        const annotation = init(new ResolvedAnnotation(), {
           id: 'a1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1140,7 +1141,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           content: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([]),
@@ -1162,7 +1163,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: A node, group, or annotation has a non-zero NodeLayout/GroupLayout/AnnotationLayout.rotation value
     // THEN: Returns the element's layout with the given rotation value carried through unchanged into the corresponding LaidOutDiagram entry.
     test('rotation_carried_through_unchanged_on_node_and_annotation', () => {
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1173,7 +1174,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const annotation = Object.assign(new ResolvedAnnotation(), {
+        const annotation = init(new ResolvedAnnotation(), {
           id: 'a1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1185,7 +1186,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           content: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([node]),
@@ -1203,7 +1204,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
     // WHEN: layoutFromPins is invoked (bypassing the normal isFullyPinned gate) on a diagram where some node, group, or annotation lacks a written position
     // THEN: Throws/panics (programming-error failure) rather than producing a layout, since a missing position violates the isFullyPinned precondition this function assumes.
     test('missing_position_throws_as_programming_error', () => {
-        const node = Object.assign(new ResolvedNode(), {
+        const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
@@ -1212,7 +1213,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           }),
           label: [],
         });
-        const diagram = Object.assign(new ResolvedDiagram(), {
+        const diagram = init(new ResolvedDiagram(), {
           id: 'd1',
           canvas: create(CanvasStyleSchema, {}),
           nodes: byId([node]),

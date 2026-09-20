@@ -30,8 +30,8 @@ import {
   StrokeSchema,
   type Stylesheet,
   StylesheetSchema,
-  Vec2,
 } from '@archeglyph/proto/gen/style_pb';
+import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';

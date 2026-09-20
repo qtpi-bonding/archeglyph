@@ -14,6 +14,7 @@ import { ResolvedDiagram } from '../../resolver/resolved_diagram';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 import { measureLabel } from '../../text/font_metrics';
 import { seedNewcomers } from '../seed_newcomers';
+import { init } from '@archeglyph/proto/util/init';
 
 export interface LayoutAdapter {
   /**
@@ -323,7 +324,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const nodes = Object.values(diagram.nodes).map(node => {
         const pos = nodePositions[node.id] ?? { x: 0, y: 0, w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT };
-        return Object.assign(new LaidOutNode(), {
+        return init(new LaidOutNode(), {
           id: node.id,
           parentGroup: node.parentGroup,
           position: vec2(pos.x, pos.y),
@@ -340,13 +341,13 @@ export class ElkAdapterImpl implements LayoutAdapter {
         const point = (p: ElkPoint | undefined): Vec2 =>
           vec2(origin.x + (p?.x ?? 0), origin.y + (p?.y ?? 0));
         const sections = (edgeSectionsRaw[edge.id] ?? []).map(s =>
-          Object.assign(new EdgeSection(), {
+          init(new EdgeSection(), {
             startPoint: point(s.startPoint),
             bendPoints: (s.bendPoints ?? []).map(point),
             endPoint: point(s.endPoint),
           })
         );
-        return Object.assign(new LaidOutEdge(), {
+        return init(new LaidOutEdge(), {
           id: edge.id,
           source: edge.source,
           target: edge.target,
@@ -360,7 +361,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
 
       const groups = Object.values(diagram.groups).map(group => {
         const pos = nodePositions[group.id] ?? { x: 0, y: 0, w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT };
-        return Object.assign(new LaidOutGroup(), {
+        return init(new LaidOutGroup(), {
           id: group.id,
           parentGroup: group.parentGroup,
           position: vec2(pos.x, pos.y),
@@ -388,7 +389,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
           measuredHeight = Math.max(measuredHeight, measured.y);
         }
         const size: Vec2 = ann.layout?.size ?? vec2(measuredWidth, measuredHeight);
-        return Object.assign(new LaidOutAnnotation(), {
+        return init(new LaidOutAnnotation(), {
           id: ann.id,
           anchor: ann.anchor,
           position: ann.layout?.position ?? vec2(0, 0),
@@ -404,7 +405,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
         Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
 
-      return Ok(Object.assign(new LaidOutDiagram(), {
+      return Ok(init(new LaidOutDiagram(), {
         id: diagram.id,
         canvas: diagram.canvas,
         nodes: byId(nodes),
@@ -414,7 +415,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
       }));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      return Err(Object.assign(new LayoutError(), { message }));
+      return Err(init(new LayoutError(), { message }));
     }
   }
 }

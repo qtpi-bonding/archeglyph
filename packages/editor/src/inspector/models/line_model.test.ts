@@ -12,6 +12,8 @@ import {
   ArrowheadsSchema,
   StylesheetSchema,
   AnnotationEntrySchema,
+  Vec2Schema,
+  Glyph2DSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { LaidOutEdge } from '@archeglyph/core/layout/laid_out_edge';
@@ -22,9 +24,10 @@ import type { ElementRef } from '../../ui_state/ui_state';
 import { inspectorModel } from '../model';
 import { lineModel } from './line_model';
 import { ARROWHEAD_TABLE, PATTERN_TABLE } from './line_names';
+import { init } from '@archeglyph/proto/util/init';
 
 function edge(id: string): LaidOutEdge {
-  return Object.assign(new LaidOutEdge(), {
+  return init(new LaidOutEdge(), {
     id,
     source: 'a',
     target: 'b',
@@ -33,11 +36,11 @@ function edge(id: string): LaidOutEdge {
 }
 
 function annotation(id: string): LaidOutAnnotation {
-  return Object.assign(new LaidOutAnnotation(), {
+  return init(new LaidOutAnnotation(), {
     id,
-    position: { x: 0, y: 0 },
-    size: { x: 100, y: 50 },
-    shape: create(Glyph1DSchema, {}),
+    position: create(Vec2Schema, { x: 0, y: 0 }),
+    size: create(Vec2Schema, { x: 100, y: 50 }),
+    shape: create(Glyph2DSchema, {}),
   });
 }
 
@@ -45,7 +48,7 @@ const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
   Object.fromEntries(items.map((item: T): [string, T] => [item.id, item]));
 
 function geometryFrom(edges: LaidOutEdge[], annotations: LaidOutAnnotation[]): SceneGeometry {
-  const diagram = Object.assign(new LaidOutDiagram(), {
+  const diagram = init(new LaidOutDiagram(), {
     edges: byId(edges), annotations: byId(annotations), nodes: {}, groups: {},
   });
   return {
@@ -90,7 +93,7 @@ describe('lineModel', () => {
     const solidEntry = PATTERN_TABLE.find((e) => e.name === 'solid');
     expect(solidEntry).toBeDefined();
 
-    const laidOut = Object.assign(new LaidOutEdge(), {
+    const laidOut = init(new LaidOutEdge(), {
       id: 'e1',
       source: 'a',
       target: 'b',

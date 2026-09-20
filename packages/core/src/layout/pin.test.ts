@@ -29,6 +29,7 @@ import { LayoutEngineImpl } from './layout_engine/impl';
 import { LayoutRequest } from './layout_request';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
 import { ResolvedNode } from '../resolver/resolved_node';
+import { init } from '@archeglyph/proto/util/init';
 
 const require_ = createRequire(import.meta.url);
 
@@ -41,27 +42,27 @@ function engine(): LayoutEngineImpl {
 }
 
 function pinnedNode(id: string, x: number, y: number): ResolvedNode {
-  return Object.assign(new ResolvedNode(), {
+  return init(new ResolvedNode(), {
     id,
     layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x, y }) }),
   });
 }
 
 function unpinnedNode(id: string): ResolvedNode {
-  return Object.assign(new ResolvedNode(), { id });
+  return init(new ResolvedNode(), { id });
 }
 
 const byId = <T extends { id: string }>(items: T[]): Record<string, T> =>
   Object.fromEntries(items.map((item) => [item.id, item]));
 
 function diagramOf(nodes: ResolvedNode[]): ResolvedDiagram {
-  return Object.assign(new ResolvedDiagram(), {
+  return init(new ResolvedDiagram(), {
     id: 'd', nodes: byId(nodes), edges: {}, groups: {}, annotations: {},
   });
 }
 
 async function layoutOf(nodes: ResolvedNode[]) {
-  const request = Object.assign(new LayoutRequest(), { diagram: diagramOf(nodes) });
+  const request = init(new LayoutRequest(), { diagram: diagramOf(nodes) });
   const result = await engine().layout(request);
   if (result.kind === 'err') {
     throw new Error('layout failed');

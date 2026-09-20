@@ -20,7 +20,7 @@ import { seedComponentBindings } from './seed_bindings';
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { type Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
 import {
   AnnotationAnchorSchema,
   AnnotationEntrySchema,
@@ -41,6 +41,7 @@ import {
   StrokeSchema,
   StylesheetSchema,
   TypographySchema,
+  type Stylesheet,
 } from '@archeglyph/proto/gen/style_pb';
 import {
   FontSpecSchema,
@@ -56,13 +57,14 @@ import { ResolveTokensRequest } from './resolve_tokens_request';
 import { StyleCascadeImpl } from './style_cascade';
 import { TokenResolverImpl } from './token_resolver';
 import { VisibilityFilterImpl } from './visibility_filter';
+import { init } from '@archeglyph/proto/util/init';
 
 const filterImpl = new VisibilityFilterImpl();
 const cascadeImpl = new StyleCascadeImpl();
 const tokenImpl = new TokenResolverImpl();
 
-function filterReq(diagram: unknown, stylesheet?: unknown): FilterRequest {
-  return Object.assign(new FilterRequest(), { diagram, stylesheet });
+function filterReq(diagram: Diagram, stylesheet?: Stylesheet): FilterRequest {
+  return init(new FilterRequest(), { diagram, stylesheet });
 }
 
 // ============================================================================
@@ -335,7 +337,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -378,7 +380,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet: undefined, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: undefined, theme }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -403,7 +405,7 @@ describe('style_cascade', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
 
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
     );
     expect(result.kind).toBe('err');
   });
@@ -427,7 +429,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme: undefined }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme: undefined }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -451,7 +453,7 @@ describe('style_cascade', () => {
     const emptyTheme = create(ThemeSchema, { name: 'empty', tokens: create(TokensSchema, {}) });
 
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet: emptyStylesheet, theme: emptyTheme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: emptyStylesheet, theme: emptyTheme }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -479,7 +481,7 @@ describe('style_cascade', () => {
 
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -508,7 +510,7 @@ describe('style_cascade', () => {
 
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const result = cascadeImpl.cascade(
-      Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -541,7 +543,7 @@ function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
   const filtered = filterImpl.filter(filterReq(diagram, stylesheet));
   if (filtered.kind !== 'ok') throw new Error('filter failed in test helper');
   const cascaded = cascadeImpl.cascade(
-    Object.assign(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+    init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
   );
   if (cascaded.kind !== 'ok') throw new Error('cascade failed in test helper');
   return cascaded.value;
@@ -560,7 +562,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
@@ -581,7 +583,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
@@ -609,7 +611,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
@@ -632,7 +634,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
@@ -651,7 +653,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: undefined }),
+      init(new ResolveTokensRequest(), { resolved, tokens: undefined }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
@@ -669,7 +671,7 @@ describe('token_resolver', () => {
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
     const tokenResult = tokenImpl.resolveTokens(
-      Object.assign(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
     );
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {

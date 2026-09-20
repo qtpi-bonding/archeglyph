@@ -54,17 +54,18 @@ import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 
 import { captureSnapshot, pushUndoEntry, restoreFromSnapshot, type UndoEntry } from '../state/undo_log';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
+import { init } from '@archeglyph/proto/util/init';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function vec2(x: number, y: number): Vec2 {
+function vec2(x: number, y: number) {
   return { x, y };
 }
 
 function node(id: string, position: Vec2, size: Vec2, parentGroup?: string): LaidOutNode {
-  return Object.assign(new LaidOutNode(), {
+  return init(new LaidOutNode(), {
     id,
     parentGroup,
     position,
@@ -73,7 +74,7 @@ function node(id: string, position: Vec2, size: Vec2, parentGroup?: string): Lai
 }
 
 function group(id: string, position: Vec2, size: Vec2, parentGroup?: string): LaidOutGroup {
-  return Object.assign(new LaidOutGroup(), {
+  return init(new LaidOutGroup(), {
     id,
     parentGroup,
     position,
@@ -84,7 +85,7 @@ function group(id: string, position: Vec2, size: Vec2, parentGroup?: string): La
 }
 
 function annotation(id: string, position: Vec2, size: Vec2): LaidOutAnnotation {
-  return Object.assign(new LaidOutAnnotation(), {
+  return init(new LaidOutAnnotation(), {
     id,
     position,
     size,
@@ -95,14 +96,14 @@ function edge(id: string, source: string, target: string, points: Vec2[]): LaidO
   const sections: EdgeSection[] = [];
   if (points.length >= 2) {
     sections.push(
-      Object.assign(new EdgeSection(), {
+      init(new EdgeSection(), {
         startPoint: points[0],
         bendPoints: points.slice(1, -1),
         endPoint: points[points.length - 1],
       }),
     );
   }
-  return Object.assign(new LaidOutEdge(), {
+  return init(new LaidOutEdge(), {
     id,
     source,
     target,
@@ -121,7 +122,7 @@ interface DiagramParts {
 }
 
 function diagram(parts: DiagramParts): LaidOutDiagram {
-  return Object.assign(new LaidOutDiagram(), {
+  return init(new LaidOutDiagram(), {
     ...(parts.nodes === undefined ? {} : { nodes: byId(parts.nodes) }),
     ...(parts.edges === undefined ? {} : { edges: byId(parts.edges) }),
     ...(parts.groups === undefined ? {} : { groups: byId(parts.groups) }),
@@ -688,7 +689,7 @@ describe('resizeBounds', () => {
 
 describe('routeEdgeBetween', () => {
   function edgeWithLayout(routing?: EdgeRouting, waypoints: Vec2[] = []): LaidOutEdge {
-    return Object.assign(new LaidOutEdge(), {
+    return init(new LaidOutEdge(), {
       id: 'e1',
       source: 's',
       target: 't',

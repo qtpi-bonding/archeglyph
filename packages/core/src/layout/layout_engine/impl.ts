@@ -19,6 +19,7 @@ import { ResolvedNode } from '../../resolver/resolved_node';
 import { measureLabel } from '../../text/font_metrics';
 import { boundsFromRect, type Bounds } from '../../geometry/bounds';
 import { Ok, Result } from '@archeglyph/proto/util/result';
+import { init } from '@archeglyph/proto/util/init';
 
 export interface LayoutEngine {
   layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>>;
@@ -122,7 +123,7 @@ export class LayoutEngineImpl implements LayoutEngine {
     for (const edge of Object.values(laid.edges)) {
       const waypoints = request.diagram.edges[edge.id]?.layout?.waypoints;
       if (waypoints !== undefined && waypoints.length > 0) {
-        edge.sections = [Object.assign(new EdgeSection(), {
+        edge.sections = [init(new EdgeSection(), {
           startPoint: waypoints[0],
           endPoint: waypoints[waypoints.length - 1],
           bendPoints: waypoints.slice(1, -1),
@@ -157,7 +158,7 @@ export class LayoutEngineImpl implements LayoutEngine {
     const nodes: Record<string, LaidOutNode> = Object.fromEntries(Object.values(diagram.nodes).map(node => {
       const local = node.layout?.position!;
       const parent = node.parentGroup === undefined ? { x: 0, y: 0 } : absoluteGroupPosition(node.parentGroup);
-      return [node.id, Object.assign(new LaidOutNode(), {
+      return [node.id, init(new LaidOutNode(), {
         id: node.id, parentGroup: node.parentGroup,
         position: create(Vec2Schema, { x: local.x + parent.x, y: local.y + parent.y }),
         size: create(Vec2Schema, nodeSize(node)), shape: node.shape,
@@ -189,7 +190,7 @@ export class LayoutEngineImpl implements LayoutEngine {
     const groups: Record<string, LaidOutGroup> = Object.fromEntries(Object.values(diagram.groups).map(group => {
       const position = absoluteGroupPosition(group.id);
       const size = groupSize(group);
-      return [group.id, Object.assign(new LaidOutGroup(), {
+      return [group.id, init(new LaidOutGroup(), {
         id: group.id, parentGroup: group.parentGroup,
         position: create(Vec2Schema, position), size: create(Vec2Schema, size),
         shape: group.shape, typography: group.typography, label: group.label,
@@ -210,9 +211,9 @@ export class LayoutEngineImpl implements LayoutEngine {
         : layout?.routing === EdgeRouting.ROUTING_ORTHOGONAL
           ? routeOrthogonal(endpointBounds(edge.source), endpointBounds(edge.target), layout?.sourceAttach, layout?.targetAttach)
           : routeStraight(endpointBounds(edge.source), endpointBounds(edge.target), layout?.sourceAttach, layout?.targetAttach);
-      return [edge.id, Object.assign(new LaidOutEdge(), {
+      return [edge.id, init(new LaidOutEdge(), {
         id: edge.id, source: edge.source, target: edge.target,
-        sections: [Object.assign(new EdgeSection(), {
+        sections: [init(new EdgeSection(), {
           startPoint: waypoints[0], endPoint: waypoints[waypoints.length - 1], bendPoints: waypoints.slice(1, -1),
         })], connection: edge.connection, typography: edge.typography, label: edge.label, layout: edge.layout,
       })];
@@ -221,7 +222,7 @@ export class LayoutEngineImpl implements LayoutEngine {
       const measured = sizeForLabel(annotation.content, annotation.typography);
       const position = annotation.layout?.position ?? create(Vec2Schema, { x: 0, y: 0 });
       const size = annotation.layout?.size ?? create(Vec2Schema, measured);
-      return [annotation.id, Object.assign(new LaidOutAnnotation(), {
+      return [annotation.id, init(new LaidOutAnnotation(), {
         id: annotation.id,
         position,
         size,
@@ -233,7 +234,7 @@ export class LayoutEngineImpl implements LayoutEngine {
         content: annotation.content,
       })];
     }));
-    return Object.assign(new LaidOutDiagram(), {
+    return init(new LaidOutDiagram(), {
       id: diagram.id, canvas: diagram.canvas, nodes, groups, edges, annotations,
     });
   }

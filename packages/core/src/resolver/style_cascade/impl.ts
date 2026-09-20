@@ -37,6 +37,7 @@ import { ResolvedEdge } from '../resolved_edge';
 import { ResolvedGroup } from '../resolved_group';
 import { ResolvedNode } from '../resolved_node';
 import { StyleCascade } from './schema_gen';
+import { init } from '@archeglyph/proto/util/init';
 
 function compareIds(a: string, b: string): number {
   if (a < b) { return -1; } else if (a > b) { return 1; } else { return 0; }
@@ -163,7 +164,7 @@ export class StyleCascadeImpl implements StyleCascade {
     if (canvas.background === undefined) {
       canvas.background = create(ColorSchema, { value: '$colors.background' });
     }
-    const result: ResolvedDiagram = Object.assign(new ResolvedDiagram(), {
+    const result: ResolvedDiagram = init(new ResolvedDiagram(), {
       id: filtered.id,
       canvas,
     });
@@ -175,7 +176,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const componentName: string | undefined = componentNameFor(entry?.component);
       const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findNodeComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(Object.assign(new ResolveError(), { message: `node ${node.id}: theme component '${componentName}' not found` }));
+        return Err(init(new ResolveError(), { message: `node ${node.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
@@ -183,7 +184,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const typography: Typography = create(TypographySchema);
       if (themeComponent?.typography !== undefined) { mergeTypography(typography, themeComponent.typography); }
       if (entry?.typography !== undefined) { mergeTypography(typography, entry.typography); }
-      const resolved: ResolvedNode = Object.assign(new ResolvedNode(), {
+      const resolved: ResolvedNode = init(new ResolvedNode(), {
         id: node.id,
         parentGroup: node.parentGroup,
         shape,
@@ -201,7 +202,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const componentName: string | undefined = componentNameFor(entry?.component);
       const themeComponent: EdgeComponent | undefined = componentName === undefined ? undefined : findEdgeComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(Object.assign(new ResolveError(), { message: `edge ${edge.id}: theme component '${componentName}' not found` }));
+        return Err(init(new ResolveError(), { message: `edge ${edge.id}: theme component '${componentName}' not found` }));
       }
       const connection: Glyph1D = create(Glyph1DSchema);
       if (themeComponent?.connection !== undefined) { mergeGlyph1D(connection, themeComponent.connection); }
@@ -209,7 +210,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const typography: Typography = create(TypographySchema);
       if (themeComponent?.typography !== undefined) { mergeTypography(typography, themeComponent.typography); }
       if (entry?.typography !== undefined) { mergeTypography(typography, entry.typography); }
-      const resolved: ResolvedEdge = Object.assign(new ResolvedEdge(), {
+      const resolved: ResolvedEdge = init(new ResolvedEdge(), {
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -228,7 +229,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const componentName: string | undefined = componentNameFor(entry?.component);
       const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findGroupComponent(theme, componentName);
       if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(Object.assign(new ResolveError(), { message: `group ${group.id}: theme component '${componentName}' not found` }));
+        return Err(init(new ResolveError(), { message: `group ${group.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
@@ -236,7 +237,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const typography: Typography = create(TypographySchema);
       if (themeComponent?.typography !== undefined) { mergeTypography(typography, themeComponent.typography); }
       if (entry?.typography !== undefined) { mergeTypography(typography, entry.typography); }
-      const resolved: ResolvedGroup = Object.assign(new ResolvedGroup(), {
+      const resolved: ResolvedGroup = init(new ResolvedGroup(), {
         id: group.id,
         parentGroup: group.parentGroup,
         shape,
@@ -256,7 +257,7 @@ export class StyleCascadeImpl implements StyleCascade {
       const componentName: string | undefined = componentNameFor(entry.component);
       const themeComponent: AnnotationComponent | undefined = componentName === undefined ? undefined : findAnnotationComponent(theme, componentName);
       if (entry.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(Object.assign(new ResolveError(), { message: `annotation ${annotation.id}: theme component '${componentName}' not found` }));
+        return Err(init(new ResolveError(), { message: `annotation ${annotation.id}: theme component '${componentName}' not found` }));
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
@@ -269,7 +270,7 @@ export class StyleCascadeImpl implements StyleCascade {
         if (themeComponent?.callout !== undefined) { mergeGlyph1D(callout, themeComponent.callout); }
         if (entry.callout !== undefined) { mergeGlyph1D(callout, entry.callout); }
       }
-      const resolved: ResolvedAnnotation = Object.assign(new ResolvedAnnotation(), {
+      const resolved: ResolvedAnnotation = init(new ResolvedAnnotation(), {
         id: annotation.id,
         anchor: entry.anchor,
         shape,

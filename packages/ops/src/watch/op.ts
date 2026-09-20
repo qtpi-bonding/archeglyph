@@ -8,6 +8,7 @@ import { WatchOutput } from './watch_output';
 import { WatchOpError } from './watch_op_error';
 import { renderOp } from '../render/op';
 import { RenderParams } from '../render/render_params';
+import { init } from '@archeglyph/proto/util/init';
 
 export const watchOp: Operation<WatchParams, WatchOutput> = {
   name: 'watch',
@@ -15,7 +16,7 @@ export const watchOp: Operation<WatchParams, WatchOutput> = {
   params: watchParamsSchema as unknown as Operation<WatchParams, WatchOutput>['params'],
   format: (o) => `watched ${o.path} — ${o.cyclesCompleted} render(s) completed`,
   async execute(params: WatchParams, ctx: OpContext): Promise<WatchOutput> {
-    const renderParams = Object.assign(new RenderParams(), {
+    const renderParams = init(new RenderParams(), {
       diagram: params.diagram,
       style: params.style,
       theme: params.theme,
@@ -25,7 +26,7 @@ export const watchOp: Operation<WatchParams, WatchOutput> = {
     try {
       await renderOp.execute(renderParams, ctx);
     } catch (err) {
-      throw Object.assign(new WatchOpError(), { stage: 'initial_render', cause: err });
+      throw init(new WatchOpError(), { stage: 'initial_render', cause: err });
     }
     let cyclesCompleted = 1;
 
@@ -40,7 +41,7 @@ export const watchOp: Operation<WatchParams, WatchOutput> = {
       const cleanup = () => {
         if (debounceTimer !== undefined) clearTimeout(debounceTimer);
         for (const watcher of watchers) watcher.close();
-        done(Object.assign(new WatchOutput(), { cyclesCompleted, path: params.diagram }));
+        done(init(new WatchOutput(), { cyclesCompleted, path: params.diagram }));
       };
 
       const onSettle = async () => {
@@ -69,7 +70,7 @@ export const watchOp: Operation<WatchParams, WatchOutput> = {
       } catch (err) {
         process.off('SIGINT', cleanup);
         for (const watcher of watchers) watcher.close();
-        throw Object.assign(new WatchOpError(), { stage: 'setup_watch', cause: err });
+        throw init(new WatchOpError(), { stage: 'setup_watch', cause: err });
       }
     });
   },

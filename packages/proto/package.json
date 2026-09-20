@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./util/result": "./src/util/result.ts",
     "./util/json": "./src/util/json.ts",
-    "./gen/*": "./src/gen/*.ts"
+    "./gen/*": "./src/gen/*.ts",
+    "./util/init": "./src/util/init.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.0.0"

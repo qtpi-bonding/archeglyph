@@ -11,7 +11,7 @@ export type CommandId = 'undo' | 'redo' | 'delete' |
   'auto-layout' | 'reset-size' | 'focus-inspector' | 'save' |
   'tool-select' | 'tool-annotation' | 'add-annotation' | 'edit-text' |
   'duplicate' | 'hide' | 'tool-hand' | 'zoom-in' | 'zoom-out' |
-  'zoom-reset' | 'zoom-fit';
+  'zoom-reset' | 'zoom-fit' | 'open-palette' | 'open-help';
 
 export interface KeymapEntry {
   chord: Chord;

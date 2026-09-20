@@ -26,7 +26,8 @@ structs: [
   { name: "ValidatorImpl"
     implements: [{ named: { symbol: "Validator" } }]
     doc:
-      "Three structural checks against diagram.graph in a single pass.\n"
+      "Five structural checks: three against diagram.graph, two more when\n"
+      "the request carries a stylesheet.\n"
       "\n"
       "The checks:\n"
       "  1. Edge.source / Edge.target reference existing node keys.\n"
@@ -34,6 +35,11 @@ structs: [
       "     means top-level; not a violation).\n"
       "  3. Group.parent_group: references an existing group key AND the chain is "
       "     acyclic (DFS color marking — WHITE/GRAY/BLACK).\n"
+      "  4. Every stylesheet nodes/edges/groups key names an element the "
+      "     graph defines. Annotation keys are exempt: they are the "
+      "     annotation’s own id, not a graph reference.\n"
+      "  5. Every annotation anchor’s ref_id resolves in the map its "
+      "     ref_kind names, so a node id under REF_KIND_GROUP is a violation.\n"
       "\n"
       "Accumulate all violations into one list — don't bail on first. Sort the "
       "final list by (ViolationKind enum-declaration order, location string) "

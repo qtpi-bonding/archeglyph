@@ -22,6 +22,11 @@ import {
   type Diagram,
   DiagramSchema,
 } from '@archeglyph/proto/gen/content_pb';
+import {
+  type Stylesheet,
+  StylesheetSchema,
+  RefKind,
+} from '@archeglyph/proto/gen/style_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 
 import { loadDiagram } from '../loaders';
@@ -94,10 +99,11 @@ function validDiagram(): Diagram {
   return diagramFromJson(pipelineJson());
 }
 
-function validate(diagram: Diagram) {
+function validate(diagram: Diagram, stylesheet?: Stylesheet) {
   const validator = new ValidatorImpl();
   const request = new ValidateRequest();
   request.diagram = diagram;
+  request.stylesheet = stylesheet;
   return validator.validate(request);
 }
 
@@ -350,6 +356,92 @@ describe('validator: group hierarchy', () => {
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(violationKinds(result.value)).not.toContain(ViolationKind.GROUP_CYCLE);
+    }
+  });
+});
+
+
+describe('validator: stylesheet references the graph (design.md §14.1 "no orphaned style entry")', () => {
+  const sheet = (init: Parameters<typeof create<typeof StylesheetSchema>>[1]): Stylesheet =>
+    create(StylesheetSchema, { schemaVersion: 1, ...init });
+
+  test('a style entry keyed to a node the graph does not define is a violation', () => {
+    const result = validate(validDiagram(), sheet({ nodes: { notAThing: {} } }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(violationKinds(result.value)).toContain(ViolationKind.STYLE_TARGET_MISSING);
+      expect(result.value.violations[0]?.location).toBe('notAThing');
+    }
+  });
+
+  test('style entries matching real elements produce nothing', () => {
+    const result = validate(validDiagram(), sheet({
+      nodes: { load: {} },
+      edges: { load__resolve: {} },
+      groups: { core: {} },
+    }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.violations).toHaveLength(0);
+    }
+  });
+
+  test('each of the three maps is checked, not just nodes', () => {
+    const result = validate(validDiagram(), sheet({
+      nodes: { ghostNode: {} },
+      edges: { ghostEdge: {} },
+      groups: { ghostGroup: {} },
+    }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.violations).toHaveLength(3);
+    }
+  });
+
+  test('an annotation key is NOT checked -- annotations are keyed by their own ids', () => {
+    const result = validate(validDiagram(), sheet({ annotations: { note: { content: [] } } }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.violations).toHaveLength(0);
+    }
+  });
+
+  test('an annotation anchored to a missing element is a violation', () => {
+    const result = validate(validDiagram(), sheet({
+      annotations: { note: { content: [], anchor: { refId: 'gone', refKind: RefKind.NODE } } },
+    }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(violationKinds(result.value)).toEqual([ViolationKind.ANNOTATION_ANCHOR_MISSING]);
+    }
+  });
+
+  test('an annotation anchored to a real node produces nothing', () => {
+    const result = validate(validDiagram(), sheet({
+      annotations: { note: { content: [], anchor: { refId: 'load', refKind: RefKind.NODE } } },
+    }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.violations).toHaveLength(0);
+    }
+  });
+
+  test('the anchor must match the target\'s KIND, not merely exist somewhere', () => {
+    // 'load' is a node; anchoring to it as a group must not resolve.
+    const result = validate(validDiagram(), sheet({
+      annotations: { note: { content: [], anchor: { refId: 'load', refKind: RefKind.GROUP } } },
+    }));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(violationKinds(result.value)).toEqual([ViolationKind.ANNOTATION_ANCHOR_MISSING]);
+    }
+  });
+
+  test('no stylesheet means no stylesheet violations', () => {
+    const result = validate(validDiagram());
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.violations).toHaveLength(0);
     }
   });
 });

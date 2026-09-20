@@ -6,6 +6,8 @@ export enum ViolationKind {
   EDGE_TARGET_MISSING = 'EDGE_TARGET_MISSING',
   NODE_PARENT_GROUP_MISSING = 'NODE_PARENT_GROUP_MISSING',
   GROUP_PARENT_GROUP_MISSING = 'GROUP_PARENT_GROUP_MISSING',
+  STYLE_TARGET_MISSING = 'STYLE_TARGET_MISSING',
+  ANNOTATION_ANCHOR_MISSING = 'ANNOTATION_ANCHOR_MISSING',
 }
 
 // Declaration order for deterministic violation sort. Mirrors the enum above.
@@ -15,6 +17,8 @@ export const VIOLATION_KIND_ORDER: Record<ViolationKind, number> = {
   [ViolationKind.EDGE_TARGET_MISSING]: 2,
   [ViolationKind.NODE_PARENT_GROUP_MISSING]: 3,
   [ViolationKind.GROUP_PARENT_GROUP_MISSING]: 4,
+  [ViolationKind.STYLE_TARGET_MISSING]: 5,
+  [ViolationKind.ANNOTATION_ANCHOR_MISSING]: 6,
 };
 
 export class Violation {

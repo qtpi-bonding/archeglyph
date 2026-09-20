@@ -34,14 +34,6 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     }
     stagesRun.push('load');
 
-    const validateResult = new ValidatorImpl().validate(
-      Object.assign(new ValidateRequest(), { diagram: diagramResult.value }),
-    );
-    if (validateResult.kind === 'err') {
-      throw Object.assign(new ValidateOpError(), { stage: 'validate', cause: validateResult.error });
-    }
-    stagesRun.push('validate');
-
     const stylePath = params.style !== undefined
       ? resolve(ctx.projectRoot, params.style)
       : deriveDefaultStylePath(resolve(ctx.projectRoot, params.diagram));
@@ -59,6 +51,16 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
       }
       stylesheet = styleResult.value;
     }
+
+    // After the stylesheet load: supplied, it brings the stylesheet-to-graph
+    // reference checks, which cannot run on the diagram alone.
+    const validateResult = new ValidatorImpl().validate(
+      Object.assign(new ValidateRequest(), { diagram: diagramResult.value, stylesheet }),
+    );
+    if (validateResult.kind === 'err') {
+      throw Object.assign(new ValidateOpError(), { stage: 'validate', cause: validateResult.error });
+    }
+    stagesRun.push('validate');
 
     let theme: Theme;
     if (params.theme === undefined) {

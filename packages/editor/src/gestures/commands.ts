@@ -267,7 +267,7 @@ export const COMMANDS: Array<Command> = [
   { id: 'hide', label: 'Hide', run: runHide },
   { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => { ui.setTool('select'); } },
   { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => { ui.setTool('annotation'); } },
-  { id: 'tool-hand' as CommandId, label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); } },
+  { id: 'tool-hand', label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); } },
   { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
   { id: 'edit-text', label: 'Edit text', run: runEditText },
   { id: 'duplicate', label: 'Duplicate', run: runDuplicate },
@@ -295,10 +295,10 @@ export const COMMANDS: Array<Command> = [
   { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll },
   { id: 'reset-size', label: 'Reset size', run: runResetSize },
   { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
-  { id: 'zoom-in' as CommandId, label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP) },
-  { id: 'zoom-out' as CommandId, label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP) },
-  { id: 'zoom-reset' as CommandId, label: 'Reset zoom', run: runZoomReset },
-  { id: 'zoom-fit' as CommandId, label: 'Fit to screen', run: runZoomFit },
+  { id: 'zoom-in', label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP) },
+  { id: 'zoom-out', label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP) },
+  { id: 'zoom-reset', label: 'Reset zoom', run: runZoomReset },
+  { id: 'zoom-fit', label: 'Fit to screen', run: runZoomFit },
 ];
 
 export function runCommand(id: CommandId, context: CommandContext): void {

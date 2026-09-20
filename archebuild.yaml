@@ -252,6 +252,13 @@ execution:
           [ -e "$pkg/node_modules" ] || ln -s "../../../../../$pkg/node_modules" "$pkg/node_modules"
         done
 
+  # tsconfig.build.json, not tsconfig.json: the latter includes tests, and a
+  # red-step test naming a module a later node has not written yet fails every
+  # node. `bun test` strips types, so nothing else in the loop typechecks.
+  post_node_defaults:
+    - label: typecheck
+      command: npx tsc --noEmit -p tsconfig.build.json
+
   post_dag:
     - label: link-node-modules
       # bun keeps deps in packages/*/node_modules, not hoisted to root, so the

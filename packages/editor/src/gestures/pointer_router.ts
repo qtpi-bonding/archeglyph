@@ -18,6 +18,23 @@ export interface PressContext {
   onHandle?: Handle;
 }
 export function routePress(context: PressContext, current: Array<ElementRef>): GestureDecision {
+  // Right-click must not collapse a multi-selection: the menu acts on the
+  // whole selection, so narrowing it to the hit would change what the rows
+  // apply to before the user has picked one.
+  if (context.button === 2) {
+    if (context.hit === undefined) {
+      return { kind: 'none', selection: clearSelection() };
+    }
+
+    const alreadySelected = current.some(
+      (candidate) =>
+        candidate.id === context.hit?.id && candidate.kind === context.hit?.kind,
+    );
+    return alreadySelected
+      ? { kind: 'none', selection: current }
+      : { kind: 'none', selection: replaceSelection(context.hit) };
+  }
+
   // DOM button numbers use 1 for the middle button.  This check deliberately
   // comes first: panning must not alter selection, even when the pointer is
   // over a handle or an element.

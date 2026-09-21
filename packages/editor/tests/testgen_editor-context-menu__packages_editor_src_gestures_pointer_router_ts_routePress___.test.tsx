@@ -35,7 +35,7 @@ describe('testgen_gestures__routePress', () => {
 
     test('pan_press', () => {
         fc.assert(
-            fc.property(fc.record({ button: fc.integer().filter((button) => button !== 2), tool: fc.constantFrom('select', 'hand', 'annotation') }), (value) => {
+            fc.property(fc.oneof(fc.record({ button: fc.constant(1), tool: fc.constantFrom('select', 'hand', 'annotation') }), fc.record({ button: fc.integer().filter((button) => button !== 2), tool: fc.constant('hand' as const) })), (value) => {
         const decision = routePress({ point: { x: 0, y: 0 }, button: value.button, tool: value.tool, additive: true, hit: { id: 'hit', kind: 'node' }, onAnchorGrip: { id: 'anchor', kind: 'annotation' }, onHandle: {} as never }, [{ id: 'selected', kind: 'node' }]);
         expect(decision).toEqual({ kind: 'pan' });
             })

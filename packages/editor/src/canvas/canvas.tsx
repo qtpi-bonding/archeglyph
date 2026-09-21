@@ -16,7 +16,7 @@ import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
 import { OverlayLayer } from './overlay_layer';
-import { routePress, exceedsThreshold, GestureDecision } from '../gestures/pointer_router';
+import { routePress, exceedsThreshold, GestureDecision, PressContext } from '../gestures/pointer_router';
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
 import { applyWheel } from '../gestures/wheel_handler';
 import { handleKeyDown } from '../gestures/keyboard_handler';
@@ -34,7 +34,7 @@ import { init } from '@archeglyph/proto/util/init';
 import { modalPreview } from '../gestures/modal_apply';
 
 type Point = { x: number; y: number };
-type CanvasWheelEvent = PointerEvent | WheelEvent;
+type CanvasWheelEvent = MouseEvent;
 type GestureSession =
   | { kind: 'pending'; decision: GestureDecision; originScreen: Vec2; originDiagram: Vec2 }
   | { kind: 'pan'; session: PanSession }
@@ -58,6 +58,9 @@ export interface CanvasProps {
   onSave?: () => void;
   /** Registers an accessor for the live command context owned by the canvas. */
   registerCommandContext: (getContext: () => CommandContext) => void;
+  /** Receives a SCREEN point, not a diagram one: the menu is positioned in
+      viewport space and must not move when the diagram is panned. */
+  onContextMenu: (point: Vec2) => void;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -118,7 +121,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     setContainerRect({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
   }
 
-  function hitAt(event: PointerEvent): ElementRef | undefined {
+  function hitAt(event: MouseEvent): ElementRef | undefined {
     const currentGeometry: SceneGeometry | undefined = geometry();
     if (currentGeometry === undefined) { return undefined; }
     const diagramPoint: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), pointFromEvent(event));
@@ -126,6 +129,9 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
   }
 
   function onPointerDown(event: PointerEvent): void {
+    // A right-button pointerdown precedes contextmenu.  Do not let it start a
+    // drag (or cancel a modal gesture) underneath the menu being opened.
+    if (event.button === 2) { return; }
     props.ui.setModalGesture(undefined);
     event.preventDefault();
     const screen: Vec2 = pointFromEvent(event);
@@ -321,6 +327,25 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const observer: ResizeObserver = new ResizeObserver(refreshRect);
     observer.observe(containerRef);
     containerRef.addEventListener('wheel', onWheel, { passive: false });
+    const onContextMenu = (event: MouseEvent): void => {
+      event.preventDefault();
+      const screen: Vec2 = pointFromEvent(event);
+      const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
+      const hit: ElementRef | undefined = hitAt(event);
+      const context: PressContext = {
+        point: diagram,
+        hit,
+        tool: props.ui.tool(),
+        button: 2,
+        additive: event.shiftKey || event.metaKey,
+      };
+      const decision: GestureDecision = routePress(context, props.ui.selection());
+      if (decision.selection !== undefined) {
+        props.ui.setSelection(decision.selection);
+      }
+      props.onContextMenu(screen);
+    };
+    containerRef.addEventListener('contextmenu', onContextMenu);
     const beginTextEdit = (ref: ElementRef): void => {
       setEditorFallback(undefined);
       const currentGeometry: SceneGeometry | undefined = geometry();
@@ -369,6 +394,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     onCleanup((): void => {
       observer.disconnect();
       containerRef.removeEventListener('wheel', onWheel);
+      containerRef.removeEventListener('contextmenu', onContextMenu);
       document.removeEventListener('keydown', onKeyDown);
     });
   });

@@ -23,6 +23,12 @@ tests:
 
   # Prompt-only: cannot add imports to the emitted header.
   framework_notes: >-
+    FEWER CORRECT TESTS BEAT MORE TESTS. A case you decline costs nothing; a
+    case that asserts something false costs a whole build to diagnose, because
+    it fails against correct code and reads as if the code were wrong. When you
+    are unsure whether an assertion holds, drop it. When you are unsure whether
+    a case can be tested at all, decline it. Never pad.
+
     The test file imports ONLY: `describe`, `expect`, `test` from 'bun:test';
     `fc` from 'fast-check'; and the symbol under test plus the dependencies
     shown above. No other identifier is in scope, and you cannot add imports --
@@ -34,9 +40,10 @@ tests:
     Do not call `render`, `screen`, `fireEvent`, `waitFor` or `cleanup`: no DOM
     harness is imported and no DOM is registered, so a body that mounts a
     component is a guaranteed ReferenceError.
-    If a case genuinely cannot be tested within these limits, write the
-    strongest assertion that can be made about the symbol's exported value,
-    type, or pure behaviour instead of reaching for an unavailable helper.
+    If a case cannot be tested within these limits, decline it. In particular
+    never fall back to asserting that the symbol is a function, that a
+    generated value is defined, or that a member is absent -- the last is
+    actively wrong when the spec is about to add it.
     Assert only through the declared interface. Never add a field or
     collaborator to a parameter type to make a call observable -- a test that
     invents a seam passes only against a shape nobody implements. When a call
@@ -45,4 +52,17 @@ tests:
     Every assertion must hold for every member of the strategy's domain. Before
     adding an assertion beyond the one the case names, check it against the
     domain's edges; if it fails for any member, narrow the domain or drop the
-    assertion.
+    assertion. `fc.anything()` yields `undefined`, so pairing it with
+    `expect(value).toBeDefined()` fails on its own domain; `fc.string()`
+    includes the empty string.
+
+    You are writing tests for code THAT DOES NOT EXIST YET. The source you are
+    shown is the state before this change, and the spec's description is the
+    state after. Where they disagree, the description wins: a member the
+    description declares is one the code will have by the time this test runs.
+
+    A value you build as an object literal is NOT equal to one the code returns.
+    Protobuf messages carry internal fields, so `toEqual` between a literal you
+    wrote and a message the function produced fails on a difference that has
+    nothing to do with the behaviour. Compare the fields the case is about,
+    not whole objects.

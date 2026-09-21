@@ -1,0 +1,50 @@
+file: "packages/editor/src/shell/palette_items.ts"
+doc: "Builders turning commands and scene elements into palette rows."
+
+methods: [
+  { name: "commandPaletteItems"
+    change_type: MODIFIED
+    doc:
+      "The filter changes source. It stops consulting PALETTE_EXCLUDED, which\n"
+      "is deleted with its module, and reads command.appliesTo instead: a\n"
+      "command is offered when appliesTo is present, and skipped when it is\n"
+      "absent. Everything else -- the row shape, the chord lookup, the\n"
+      "`command:` key prefix, the order -- is unchanged.\n"
+      "\n"
+      "The palette does NOT apply the kind-list part of the rule. It is\n"
+      "reached from a chord with no pointer context and is a search over\n"
+      "everything the editor can do, so an element-specific command stays\n"
+      "listed whatever the selection; running it with a selection it does not\n"
+      "suit is already a no-op in its own body. Only the context menu filters\n"
+      "by selection, because only it is opened AT something.\n"
+      "\n"
+      "PALETTE_EXCLUDED held exactly eleven ids: 'escape', the four nudges,\n"
+      "'ring-next', 'ring-prev', 'open-palette', 'open-help', 'enter-grab'\n"
+      "and 'enter-resize'. Nine of those eleven are exactly the commands that\n"
+      "get no appliesTo, so the new rule excludes them for the same effect by\n"
+      "a different route. That leaves two, both 'global':\n"
+      "\n"
+      "  'open-palette'  STILL EXCLUDED, by a single explicit id check in\n"
+      "                  this function. A palette row that reopens the\n"
+      "                  palette you are already inside is a dead row.\n"
+      "  'open-help'     NOW LISTED, which is a deliberate change. There is\n"
+      "                  nothing self-referential about reaching the help\n"
+      "                  sheet from the palette, and 'Keyboard Shortcuts' is\n"
+      "                  a row people look for.\n"
+      "\n"
+      "One id, not a set, and that is the whole of the reinstated exclusion.\n"
+      "The objection to PALETTE_EXCLUDED was that an exclusion list grows\n"
+      "silently stale as commands are added; a single literal guarding a\n"
+      "single self-reference does not have that shape, because the only way\n"
+      "to need a second entry is to add a second command that opens the\n"
+      "palette. It stays local rather than becoming a Command field because\n"
+      "it is self-reference, not applicability -- the context menu should\n"
+      "offer 'open-palette' quite happily."
+    inputs: [
+      { name: "commands", type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "Command" } }] } } },
+      { name: "keymap",   type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "KeymapEntry" } }] } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "PaletteItem" } }] } }
+    uses: ["formatChord"]
+  }
+]

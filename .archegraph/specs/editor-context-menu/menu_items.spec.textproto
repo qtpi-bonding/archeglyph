@@ -1,0 +1,76 @@
+file: "packages/editor/src/shell/menu_items.ts"
+doc: "Rows for the right-click menu, chosen by what is selected."
+
+structs: [
+  { name: "MenuItem"
+    doc:
+      "One row. Mirrors PaletteItem's conventions deliberately, so the two\n"
+      "surfaces render the same way:\n"
+      "  `label` is what the user reads.\n"
+      "  `chord` is the dimmer right-hand text. contextMenuItems sets it:\n"
+      "  when the keymap has no entry for the command it uses the EMPTY\n"
+      "  STRING, and otherwise the result of calling formatChord on that\n"
+      "  entry's chord. So the empty case is decided here, not inside\n"
+      "  formatChord, which is never called for an unbound command. Never\n"
+      "  undefined, so every consumer renders it the same way.\n"
+      "\n"
+      "`id` is carried so the component can dispatch without a second lookup.\n"
+      "\n"
+      "NOT PaletteItem, though it is nearly that shape, and the difference is\n"
+      "worth stating because the two look interchangeable. PaletteItem\n"
+      "carries `key` and `action: PaletteAction`, and PaletteAction's second\n"
+      "variant is an element row -- 'go to node auth-service' -- which a\n"
+      "command menu never has. Reusing it would mean every menu row carrying\n"
+      "a union whose other half is unreachable here.\n"
+      "\n"
+      "The thing that could genuinely drift between the two surfaces is how a\n"
+      "chord is rendered, and that is already shared: both call formatChord,\n"
+      "which is the single place that decision lives."
+    fields: [
+      { name: "id",    type: { named: { symbol: "CommandId" } } },
+      { name: "label", type: { primitive: CHARACTER } },
+      { name: "chord", type: { primitive: CHARACTER } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "contextMenuItems"
+    doc:
+      "Pure. Takes the registry and the keymap as data rather than importing\n"
+      "them, for the same reason commandPaletteItems does: a widget test can\n"
+      "render against two commands instead of the whole editor's registry.\n"
+      "\n"
+      "SELECTION RULE, and this is the whole of it. A command is included\n"
+      "when its `appliesTo` is:\n"
+      "  absent       never. It is keyboard-only.\n"
+      "  'global'     always, whatever the selection, including empty.\n"
+      "  a kind list  only when the selection is non-empty AND at least one\n"
+      "               selected element's `kind` appears in that list.\n"
+      "\n"
+      "So with an empty selection the result is exactly the 'global'\n"
+      "commands. With one node selected it is the 'global' commands plus\n"
+      "those listing 'node'. With a node AND an annotation selected, a\n"
+      "command listing only ['node'] still appears: one match is enough, and\n"
+      "a command is never required to cover every selected kind.\n"
+      "\n"
+      "ORDER is the order of the `commands` ARGUMENT, filtered but never\n"
+      "grouped or sorted -- not the order of the real COMMANDS registry,\n"
+      "which this function never reads. A test may pass two commands in any\n"
+      "order and expect them back in that order. Two calls with the same\n"
+      "arguments give the same rows in the same order, and a selection change\n"
+      "never reorders the rows that survive it.\n"
+      "\n"
+      "An empty array is a legitimate result -- pass no commands, or only\n"
+      "commands that do not apply, and you get one. What the component does\n"
+      "with it is ContextMenu\'s business, stated there."
+    inputs: [
+      { name: "selection", type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "ElementRef" } }] } } },
+      { name: "commands",  type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "Command" } }] } } },
+      { name: "keymap",    type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "KeymapEntry" } }] } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "MenuItem" } }] } }
+    uses: ["formatChord"]
+  }
+]

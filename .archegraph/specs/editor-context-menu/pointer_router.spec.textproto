@@ -1,0 +1,48 @@
+file: "packages/editor/src/gestures/pointer_router.ts"
+doc: "Pure routing from a press to the gesture it should start."
+
+methods: [
+  { name: "routePress"
+    change_type: MODIFIED
+    doc:
+      "Gains one branch, placed FIRST. When context.button is 2, return\n"
+      "{ kind: 'none' } carrying the selection a right-click should produce,\n"
+      "and start no gesture.\n"
+      "\n"
+      "`selection` on GestureDecision is Array<ElementRef> -- an already\n"
+      "computed value, not a function or an operation for the caller to\n"
+      "invoke. clearSelection() and replaceSelection(hit) below are CALLED\n"
+      "here and their results returned, exactly as the existing branches do\n"
+      "it. The canvas writes the array it gets straight into ui.setSelection.\n"
+      "\n"
+      "The selection it carries is the SAME rule the existing branches below\n"
+      "already implement, and reusing them is the point of putting this here\n"
+      "rather than in the canvas component:\n"
+      "  nothing under the pointer     clearSelection()\n"
+      "  hit is already in `current`   `current`, unchanged\n"
+      "  hit is not selected           replaceSelection(hit)\n"
+      "The middle case is what makes a right-click on one of several selected\n"
+      "elements act on all of them rather than collapsing to the one under\n"
+      "the pointer.\n"
+      "\n"
+      "'none' is an existing member of GestureDecision.kind and needs no\n"
+      "change to that type. It means exactly what it says: the selection may\n"
+      "have changed, and no gesture was opened.\n"
+      "\n"
+      "FIRST means before the existing pan branch, which is a SINGLE\n"
+      "condition, `context.button === 1 || context.tool === 'hand'`, and not\n"
+      "two separate checks. Order matters because of its second half: a\n"
+      "right-click while the hand tool is active would otherwise be routed to\n"
+      "a pan, and it must open a menu instead.\n"
+      "\n"
+      "This branch is reached only from the canvas's contextmenu handler.\n"
+      "onPointerDown returns early for button 2, so the pointerdown path\n"
+      "never routes a right-click."
+    inputs: [
+      { name: "context", type: { named: { symbol: "PressContext" } } },
+      { name: "current", type: { named: { symbol: "Array", args: [{ named: { symbol: "ElementRef" } }] } } }
+    ]
+    output: { named: { symbol: "GestureDecision" } }
+    uses: ["clearSelection", "replaceSelection", "toggleSelection"]
+  }
+]

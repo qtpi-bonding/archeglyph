@@ -1,0 +1,99 @@
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The single SVG scene and its navigation and selection gestures."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc:
+      "Gains `onContextMenu`, called when the user right-clicks the canvas,\n"
+      "with the client point of the press. Every other field is unchanged\n"
+      "and is restated because a MODIFIED struct declares its whole shape.\n"
+      "\n"
+      "REQUIRED, not optional, and for the reason the two optional props\n"
+      "beside it are a cautionary tale rather than a precedent. An optional\n"
+      "prop is a promise that some construction site populates it, and\n"
+      "nothing checks that one does: `focus-inspector` resolved its chord\n"
+      "and called `undefined?.()` for months because CommandContext's field\n"
+      "was optional and the single construction site never wired it. There\n"
+      "is exactly one caller here, so requiring it costs nothing, and the\n"
+      "failure if it were optional and app.tsx's node landed without the\n"
+      "wiring is that right-click silently does nothing forever. A required\n"
+      "prop makes that a compile error. registerCommandContext above was\n"
+      "made required on the same argument.\n"
+      "\n"
+      "The canvas does not own the menu, render it, or know what is on it --\n"
+      "it reports a gesture and the shell decides. That keeps the menu a\n"
+      "sibling of the overlays in app.tsx rather than something inside the\n"
+      "SVG, which is the same split CommandPalette already has."
+    fields: [
+      { name: "diagram",                type: { named: { symbol: "Diagram" } } },
+      { name: "layoutEngine",           type: { named: { symbol: "LayoutEngine" } } },
+      { name: "scene",                  type: { named: { symbol: "Scene" } } },
+      { name: "stylesheet",             type: { named: { symbol: "Stylesheet" } } },
+      { name: "theme",                  type: { named: { symbol: "Theme" } } },
+      { name: "ui",                     type: { named: { symbol: "UiState" } } },
+      { name: "state",                  type: { named: { symbol: "EditorState" } } },
+      { name: "onFocusInspector",       type: { arrow: { output: { primitive: VOID } } }, is_optional: true },
+      { name: "onSave",                 type: { arrow: { output: { primitive: VOID } } }, is_optional: true },
+      { name: "registerCommandContext", type: { arrow: { inputs: [ { arrow: { output: { named: { symbol: "CommandContext" } } } } ], output: { primitive: VOID } } } },
+      { name: "onContextMenu",          type: { arrow: { inputs: [{ named: { symbol: "Vec2" } }], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "Two additions. Everything else -- the pan/zoom group, the three\n"
+      "layers, the wheel handler, the keydown listener, the text editor,\n"
+      "fit-on-load, the modal-gesture preview and dimming -- is untouched.\n"
+      "\n"
+      "1. onPointerDown RETURNS EARLY when event.button is 2, before it\n"
+      "   touches anything else.\n"
+      "\n"
+      "   This is not defensive. pointerdown fires BEFORE contextmenu for a\n"
+      "   right-click, and onPointerDown is currently unconditional: it\n"
+      "   preventDefaults, setPointerCaptures and routes the press. routePress\n"
+      "   special-cases only button 1, so button 2 falls through to the\n"
+      "   marquee, move and resize branches. Without this guard a right-click\n"
+      "   on empty canvas starts a marquee and clears the selection, and a\n"
+      "   right-click on a node captures the pointer and arms a move session\n"
+      "   that the right-button pointerup commits as a position edit --\n"
+      "   underneath the menu that is opening.\n"
+      "\n"
+      "   Return before `props.ui.setModalGesture(undefined)` too. A press is\n"
+      "   not a command dispatch, and cancelling a modal gesture because the\n"
+      "   user opened a menu is a surprise; the menu closes on Escape and\n"
+      "   leaves the gesture alone.\n"
+      "\n"
+      "2. A `contextmenu` listener on the container element, doing three\n"
+      "   things in this order:\n"
+      "     a. preventDefault, so the browser menu does not appear. Nothing\n"
+      "        handles right-click today, so that native menu is what a user\n"
+      "        gets over the canvas now.\n"
+      "     b. Build a PressContext with button 2 and the hit under the\n"
+      "        pointer, call routePress, and apply the `selection` it returns.\n"
+      "        The selection rule lives THERE, not here -- routePress already\n"
+      "        decides what a press selects, and a second copy in this\n"
+      "        component is a second thing to keep in step.\n"
+      "     c. Call props.onContextMenu with the event\'s clientX/clientY.\n"
+      "\n"
+      "   Widen the file-local `hitAt` helper to take a MouseEvent rather than\n"
+      "   a PointerEvent. A contextmenu event is a MouseEvent, PointerEvent\n"
+      "   extends MouseEvent, and hitAt only reads clientX/clientY -- so the\n"
+      "   widening is safe and the existing pointer callers are unaffected.\n"
+      "\n"
+      "   The order in (2) is the whole interaction. The shell builds the\n"
+      "   menu\'s rows from the selection, so reporting before selecting gives\n"
+      "   a menu for the PREVIOUS selection: right-click a node while another\n"
+      "   is selected and you get the other one\'s commands, which then act on\n"
+      "   the node you are looking at.\n"
+      "\n"
+      "The canvas does not own the menu, render it, or know what is on it. It\n"
+      "reports a gesture and the shell decides."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "CanvasProps" } }] } }
+    uses: ["ElementRef", "routePress", "PressContext"]
+  }
+]

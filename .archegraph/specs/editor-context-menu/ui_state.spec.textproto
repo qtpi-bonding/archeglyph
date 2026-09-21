@@ -1,0 +1,22 @@
+file: "packages/editor/src/ui_state/ui_state.ts"
+doc: "The one mutable UI-state store, and the element vocabulary it defines."
+
+structs: [
+  { name: "ElementKind"
+    doc:
+      "The four kinds an ElementRef can have, named so they can be written\n"
+      "once. ElementRef.kind keeps its inline literal union and is the\n"
+      "source; this alias is defined AS that field's type rather than as a\n"
+      "second copy of the four strings, so the two cannot drift.\n"
+      "\n"
+      "It exists because Command.appliesTo in gestures/commands.ts needs to\n"
+      "name a list of kinds, and writing the union out again there is the\n"
+      "duplication this pillar is removing elsewhere.\n"
+      "\n"
+      "Nothing else in this file changes. UiState gains no field: the\n"
+      "context menu's position is shell chrome that no command reads, so it\n"
+      "lives in shell/app.tsx as a local signal rather than in the store."
+    aliased: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "ElementRef['kind']" } }
+    typescript: {}
+  }
+]

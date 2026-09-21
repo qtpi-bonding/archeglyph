@@ -1,0 +1,48 @@
+file: "packages/editor/src/shell/app.tsx"
+doc: "The editor shell: islands, overlays, load and save wiring."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Everything already here stays. Three additions, all of them the\n"
+      "shell's half of the right-click gesture the canvas reports.\n"
+      "\n"
+      "1. A LOCAL SIGNAL holding the menu's client point, or undefined when\n"
+      "   no menu is open. Local, beside `dismissedError`, and deliberately\n"
+      "   NOT on UiState: no command reads it, and every field on that store\n"
+      "   is a field every stub UiState in the test suite must grow. Adding\n"
+      "   the modal-gesture pair there broke three hand-written test\n"
+      "   contexts, which is the cost being avoided.\n"
+      "\n"
+      "2. `onContextMenu` PASSED TO Canvas, setting that signal to the point\n"
+      "   it is given. The canvas has already set the selection by the time\n"
+      "   this runs.\n"
+      "\n"
+      "3. The MENU MOUNTED as a sibling of IslandFrame, under a Show keyed\n"
+      "   on the signal, exactly where CommandPalette and HelpSheet are\n"
+      "   mounted and for the same reason: IslandFrame positions inert\n"
+      "   corner boxes, which is the wrong geometry for a surface placed at\n"
+      "   an arbitrary point.\n"
+      "\n"
+      "   Its `items` come from contextMenuItems(ui.selection(), COMMANDS,\n"
+      "   KEYMAP) and its `at` from the signal.\n"
+      "\n"
+      "   Define ONE local function that clears the signal, and use it for\n"
+      "   both exits: `onClose` is that function, and `onChoose` calls it\n"
+      "   FIRST and then dispatches through the existing onCommand. One\n"
+      "   close, two callers -- not two separate places that each clear the\n"
+      "   signal. Close-before-dispatch matches onPaletteChoose, so a command\n"
+      "   that opens an overlay does not leave the menu sitting over it.\n"
+      "\n"
+      "`items` READS ui.selection() LIVE, at render, rather than capturing it\n"
+      "when the menu opens. That is what makes the canvas\'s select-then-report\n"
+      "order observable rather than academic: were the order inverted, the\n"
+      "menu would open against the previous selection and its rows would be\n"
+      "wrong -- and because this reads live, they would then CHANGE under the\n"
+      "user as soon as anything set the selection. Capturing would hide that\n"
+      "second half."
+    type: { named: { symbol: "Component", args: [{ unsupported: { reason: RAW_EXPRESSION, source_excerpt: "{}" } }] } }
+    uses: ["ContextMenu", "contextMenuItems", "COMMANDS", "KEYMAP"]
+  }
+]

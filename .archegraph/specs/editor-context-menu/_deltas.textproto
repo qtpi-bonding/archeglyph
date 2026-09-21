@@ -1,0 +1,32 @@
+# PALETTE_EXCLUDED is replaced by Command.appliesTo, which the palette and the
+# context menu both read. An exclusion list is the wrong default once there are
+# two pointer surfaces: it names what must NOT appear, so a command added later
+# shows up on both unless someone remembers to add it here. That has already
+# happened -- editor-modal-gestures added two commands and this set went stale
+# in the same build.
+#
+# The FILE node is deleted alongside its one symbol, so compose drops the
+# file->symbol containment edge automatically and no edge_deltas: block is
+# needed. One file, one symbol, one node -- the small case that convergence
+# handles cleanly.
+#
+# THREE files import this module. None of them is spec'd, so all three are
+# post-build hand cleanup:
+#
+#   tests/testgen_editor-shell-overlays__..._palette_excluded_....test.tsx
+#   tests/testgen_editor-modal-gestures__..._palette_excluded_....test.tsx
+#     Both pin the set's exact membership. Deleted with the module rather than
+#     updated -- the thing they test stops existing.
+#
+#   src/shell/overlays.test.ts
+#     Hand-written, and it needs two edits rather than deletion. Its membership
+#     assertion goes. Its `commands` fixture is [{id:'undo'},{id:'nudge-up'}]
+#     with no appliesTo, and a command without appliesTo is no longer offered,
+#     so the fixture yields zero rows and three commandPaletteItems tests fail.
+#     Give `undo` appliesTo: 'global' and leave `nudge-up` bare, which makes the
+#     fixture test exactly the distinction this pillar introduces.
+
+node_deltas: [
+  { symbol: "file://packages/editor/src/shell/palette_excluded.ts" change_type: DELETED },
+  { symbol: "packages/editor/src/shell/palette_excluded.ts/PALETTE_EXCLUDED." change_type: DELETED }
+]

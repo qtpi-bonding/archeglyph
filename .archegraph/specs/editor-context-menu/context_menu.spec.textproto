@@ -1,0 +1,88 @@
+file: "packages/editor/src/shell/context_menu.tsx"
+doc: "The right-click menu: a positioned list of commands, dispatching on choose."
+
+structs: [
+  { name: "ContextMenuProps"
+    doc:
+      "`items` are the rows, already filtered for the current selection. The\n"
+      "component does no filtering of its own and holds no selection.\n"
+      "\n"
+      "`at` is where the POINTER WAS, in CLIENT coordinates -- the same space\n"
+      "as PointerEvent.clientX/clientY -- not diagram coordinates, and not\n"
+      "necessarily where the menu\'s corner ends up. The component derives\n"
+      "the corner from it by clamping, below. The menu is chrome positioned\n"
+      "over the viewport and never pans or zooms with the diagram.\n"
+      "\n"
+      "`onChoose` receives the chosen command id. The component does NOT run\n"
+      "it: it has no CommandContext, and giving it one would put a second\n"
+      "dispatcher beside the registry, which is the same reason\n"
+      "CommandPalette takes onChoose rather than running commands itself.\n"
+      "\n"
+      "`onClose` is dismissal WITHOUT a choice: an outside click, Escape, a\n"
+      "scroll or a resize. Choosing a row calls onChoose and NOT onClose --\n"
+      "the component never calls both for one interaction. Closing is the\n"
+      "caller\'s job either way; see App, which routes both paths through a\n"
+      "single close function so there is one line that closes the menu."
+    fields: [
+      { name: "items",    type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "MenuItem" } }] } } },
+      { name: "at",       type: { named: { symbol: "Vec2" } } },
+      { name: "onChoose", type: { arrow: { inputs: [{ named: { symbol: "CommandId" } }], output: { primitive: VOID } } } },
+      { name: "onClose",  type: { arrow: { output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "ContextMenu"
+    doc:
+      "Renders `items` as a list at `at`, styled from the same island tokens\n"
+      "the palette uses -- --ag-panel, --ag-edge, --ag-radius, --ag-shadow --\n"
+      "so it reads as the same family of surface.\n"
+      "\n"
+      "KEYBOARD, and it owns these keys while open:\n"
+      "  ArrowDown / ArrowUp  move the highlight, CLAMPING at each end.\n"
+      "                       They do not wrap, for the same reason the\n"
+      "                       palette's do not: a wrap makes a held key\n"
+      "                       cycle silently.\n"
+      "  Enter                choose the highlighted row.\n"
+      "  Escape               onClose.\n"
+      "The highlight starts on the FIRST row when the menu opens.\n"
+      "\n"
+      "ALL FOUR are handled on the menu\'s own element and ALL FOUR call\n"
+      "stopPropagation, exactly as CommandPalette does. None of them reaches\n"
+      "the document keydown listener in canvas.tsx while the menu is open.\n"
+      "\n"
+      "Escape is the one with a visible failure mode, and it is worth naming\n"
+      "because it is not obvious: the menu is NOT on ui.overlay() -- its\n"
+      "position is a local signal in App -- so the `escape` command does not\n"
+      "see an open overlay and takes its second branch, clearing the\n"
+      "selection. Unstopped, one Escape would close the menu AND clear the\n"
+      "selection the menu was opened on. The arrows matter for the same\n"
+      "reason in miniature: unstopped, they would also nudge.\n"
+      "\n"
+      "Clicking anywhere outside closes via onClose. So does scrolling or\n"
+      "resizing -- a menu pinned to a stale client point is worse than no\n"
+      "menu.\n"
+      "\n"
+      "EDGE CLAMPING. `at` may be close enough to the right or bottom edge\n"
+      "that the menu would overflow. The corner is:\n"
+      "  x = min(at.x, window.innerWidth  - menuWidth),  then floored at 0\n"
+      "  y = min(at.y, window.innerHeight - menuHeight), then floored at 0\n"
+      "-- innerHeight against the menu\'s HEIGHT on the y axis, not a repeat\n"
+      "of the width expression.\n"
+      "\n"
+      "For any menu that fits in the window this puts the whole of it\n"
+      "on-screen. A menu TALLER than the window cannot be fully visible, and\n"
+      "the floor at 0 is what decides that case: the top-left is shown and\n"
+      "the overflow falls off the bottom, rather than the reverse. That is a\n"
+      "consequence of the rule, not a separate one, and no guarantee of full\n"
+      "visibility is made for it.\n"
+      "\n"
+      "An empty `items` array renders nothing at all rather than an empty\n"
+      "box, matching StateIsland's convention for a component with nothing\n"
+      "to say."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "ContextMenuProps" } }] } }
+    uses: ["MenuItem"]
+  }
+]

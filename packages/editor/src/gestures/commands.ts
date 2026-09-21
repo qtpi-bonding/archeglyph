@@ -34,10 +34,15 @@ import { beginModalGesture } from '../ui_state/modal_gesture';
  */
 export const ZOOM_STEP: number = 1.2;
 
+export type ElementKind = ElementRef['kind'];
+
+export type CommandApplicability = 'global' | Array<ElementKind>;
+
 export interface Command {
   id: CommandId;
   label: string;
   run: (context: CommandContext) => void;
+  appliesTo?: CommandApplicability;
 }
 
 export interface CommandContext {
@@ -257,22 +262,22 @@ function runZoomFit(context: CommandContext): void {
 }
 
 export const COMMANDS: Array<Command> = [
-  { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo() },
-  { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo() },
-  { id: 'delete', label: 'Delete', run: runDelete },
-  { id: 'hide', label: 'Hide', run: runHide },
-  { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => { ui.setTool('select'); } },
-  { id: 'tool-hand', label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); } },
-  { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => { ui.setTool('annotation'); } },
-  { id: 'zoom-in', label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP) },
-  { id: 'zoom-out', label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP) },
-  { id: 'zoom-reset', label: 'Reset zoom', run: (context: CommandContext): void => runZoom(context, 1 / context.ui.viewport().zoom) },
-  { id: 'zoom-fit', label: 'Fit zoom', run: runZoomFit },
-  { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation },
-  { id: 'edit-text', label: 'Edit text', run: runEditText },
-  { id: 'duplicate', label: 'Duplicate', run: runDuplicate },
-  { id: 'open-palette', label: 'Command Palette', run: ({ ui }: CommandContext): void => { ui.setOverlay('palette'); } },
-  { id: 'open-help', label: 'Keyboard Shortcuts', run: ({ ui }: CommandContext): void => { ui.setOverlay('help'); } },
+  { id: 'undo', label: 'Undo', run: ({ state }: CommandContext): void => state.undo(), appliesTo: 'global' },
+  { id: 'redo', label: 'Redo', run: ({ state }: CommandContext): void => state.redo(), appliesTo: 'global' },
+  { id: 'delete', label: 'Delete', run: runDelete, appliesTo: ['annotation'] },
+  { id: 'hide', label: 'Hide', run: runHide, appliesTo: ['node'] },
+  { id: 'tool-select', label: 'Select tool', run: ({ ui }: CommandContext): void => { ui.setTool('select'); }, appliesTo: 'global' },
+  { id: 'tool-hand', label: 'Hand tool', run: ({ ui }: CommandContext): void => { ui.setTool('hand'); }, appliesTo: 'global' },
+  { id: 'tool-annotation', label: 'Annotation tool', run: ({ ui }: CommandContext): void => { ui.setTool('annotation'); }, appliesTo: 'global' },
+  { id: 'zoom-in', label: 'Zoom in', run: (context: CommandContext): void => runZoom(context, ZOOM_STEP), appliesTo: 'global' },
+  { id: 'zoom-out', label: 'Zoom out', run: (context: CommandContext): void => runZoom(context, 1 / ZOOM_STEP), appliesTo: 'global' },
+  { id: 'zoom-reset', label: 'Reset zoom', run: (context: CommandContext): void => runZoom(context, 1 / context.ui.viewport().zoom), appliesTo: 'global' },
+  { id: 'zoom-fit', label: 'Fit zoom', run: runZoomFit, appliesTo: 'global' },
+  { id: 'add-annotation', label: 'Add annotation', run: runAddAnnotation, appliesTo: 'global' },
+  { id: 'edit-text', label: 'Edit text', run: runEditText, appliesTo: ['annotation'] },
+  { id: 'duplicate', label: 'Duplicate', run: runDuplicate, appliesTo: ['annotation'] },
+  { id: 'open-palette', label: 'Command Palette', run: ({ ui }: CommandContext): void => { ui.setOverlay('palette'); }, appliesTo: 'global' },
+  { id: 'open-help', label: 'Keyboard Shortcuts', run: ({ ui }: CommandContext): void => { ui.setOverlay('help'); }, appliesTo: 'global' },
   {
     id: 'enter-grab',
     label: 'Grab',
@@ -310,11 +315,13 @@ export const COMMANDS: Array<Command> = [
     run: (context: CommandContext): void => {
       context.ui.setSelection(context.geometry?.index.map((entry) => entry.ref) ?? []);
     },
+    appliesTo: 'global',
   },
   {
     id: 'focus-inspector' as CommandId,
     label: 'Focus inspector',
     run: ({ focusInspector }: CommandContext): void => focusInspector?.(),
+    appliesTo: ['node', 'edge', 'group', 'annotation'],
   },
   { id: 'nudge-up', label: 'Nudge up', run: (context: CommandContext): void => runNudge(context, 0, -1) },
   { id: 'nudge-down', label: 'Nudge down', run: (context: CommandContext): void => runNudge(context, 0, 1) },
@@ -322,11 +329,11 @@ export const COMMANDS: Array<Command> = [
   { id: 'nudge-right', label: 'Nudge right', run: (context: CommandContext): void => runNudge(context, 1, 0) },
   { id: 'ring-next', label: 'Next element', run: (context: CommandContext): void => runRing(context, 'next') },
   { id: 'ring-prev', label: 'Previous element', run: (context: CommandContext): void => runRing(context, 'prev') },
-  { id: 'pin-all', label: 'Pin all', run: runPinAll },
-  { id: 'unpin-all', label: 'Unpin all', run: runUnpinAll },
-  { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll },
-  { id: 'reset-size', label: 'Reset size', run: runResetSize },
-  { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save() },
+  { id: 'pin-all', label: 'Pin all', run: runPinAll, appliesTo: 'global' },
+  { id: 'unpin-all', label: 'Unpin all', run: runUnpinAll, appliesTo: 'global' },
+  { id: 'auto-layout', label: 'Auto layout', run: runUnpinAll, appliesTo: 'global' },
+  { id: 'reset-size', label: 'Reset size', run: runResetSize, appliesTo: ['node', 'group', 'annotation'] },
+  { id: 'save', label: 'Save', run: ({ save }: CommandContext): void => save(), appliesTo: 'global' },
 ];
 
 export function runCommand(id: CommandId, context: CommandContext): void {

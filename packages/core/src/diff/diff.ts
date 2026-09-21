@@ -11,6 +11,9 @@ import {
   Node,
   NodeDeltaSchema,
   NodeSchema,
+  Group,
+  GroupDeltaSchema,
+  GroupSchema,
   Diagram,
 } from '@archeglyph/proto/gen/content_pb';
 
@@ -19,6 +22,8 @@ export function diff(base: Diagram, target: Diagram, options?: DiffOptions): Del
   const targetNodes: { [key: string]: Node } = target.graph !== undefined ? target.graph.nodes : {};
   const baseEdges: { [key: string]: Edge } = base.graph !== undefined ? base.graph.edges : {};
   const targetEdges: { [key: string]: Edge } = target.graph !== undefined ? target.graph.edges : {};
+  const baseGroups: { [key: string]: Group } = base.graph !== undefined ? base.graph.groups : {};
+  const targetGroups: { [key: string]: Group } = target.graph !== undefined ? target.graph.groups : {};
   const includeUnchanged = options !== undefined && options.includeUnchanged === true;
 
   const nodeDeltas = [];
@@ -89,12 +94,47 @@ export function diff(base: Diagram, target: Diagram, options?: DiffOptions): Del
     }
   }
 
+  const groupDeltas = [];
+  const groupIds = Array.from(new Set([...Object.keys(baseGroups), ...Object.keys(targetGroups)])).sort();
+  for (const groupId of groupIds) {
+    const before = baseGroups[groupId];
+    const after = targetGroups[groupId];
+    if (before === undefined && after !== undefined) {
+      groupDeltas.push(create(GroupDeltaSchema, {
+        groupId,
+        changeType: ChangeType.ADDED,
+        after,
+      }));
+    } else if (before !== undefined && after === undefined) {
+      groupDeltas.push(create(GroupDeltaSchema, {
+        groupId,
+        changeType: ChangeType.DELETED,
+        before,
+      }));
+    } else if (before !== undefined && after !== undefined && !equals(GroupSchema, before, after)) {
+      groupDeltas.push(create(GroupDeltaSchema, {
+        groupId,
+        changeType: ChangeType.MODIFIED,
+        before,
+        after,
+      }));
+    } else if (includeUnchanged && before !== undefined && after !== undefined) {
+      groupDeltas.push(create(GroupDeltaSchema, {
+        groupId,
+        changeType: ChangeType.UNCHANGED,
+        before,
+        after,
+      }));
+    }
+  }
+
   return create(DeltaSchema, {
     schemaVersion: 1,
     baseRef: base.id,
     targetRef: target.id,
     nodeDeltas,
     edgeDeltas,
+    groupDeltas,
   });
 }
 export class DiffOptions {

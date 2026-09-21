@@ -132,6 +132,12 @@ message Delta {
 
   repeated NodeDelta node_deltas = 4;
   repeated EdgeDelta edge_deltas = 5;
+
+  // Groups are topology, not presentation: they live in Graph alongside nodes
+  // and edges, and only their render_mode (in the STYLE file) is presentational.
+  // Without this, adding or deleting a group produced nothing while re-parenting
+  // a node did -- so a containment change reported half of itself.
+  repeated GroupDelta group_deltas = 6;
 }
 
 message NodeDelta {
@@ -153,6 +159,20 @@ message EdgeDelta {
   ChangeType change_type = 2;
   optional Edge before = 3;
   optional Edge after = 4;
+  optional string description = 5;
+}
+
+message GroupDelta {
+  string group_id = 1;
+  ChangeType change_type = 2;
+
+  // Carries the group's own fields only. Membership is NOT here -- containment
+  // lives per-node on Node.parent_group -- so rendering a DELETED group means
+  // recovering its members from their own NodeDelta.before.parent_group. This
+  // message alone would draw an empty box.
+  optional Group before = 3;
+  optional Group after = 4;
+
   optional string description = 5;
 }
 

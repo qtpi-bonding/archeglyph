@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "nodes": {
+    "gateway": {
+      "layout": { "position": { "x": 56, "y": 136 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "checkout": {
+      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "payments": {
+      "layout": { "position": { "x": 16, "y": 96 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "inventory": {
+      "layout": { "position": { "x": 16, "y": 176 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "fraud": {
+      "layout": { "position": { "x": 16, "y": 256 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "orders": {
+      "layout": { "position": { "x": 600, "y": 240 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    },
+    "stripe": {
+      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } },
+      "component": "glyph"
+    }
+  },
+  "edges": {
+    "gateway__checkout": { "component": "glyph" },
+    "checkout__payments": { "component": "glyph" },
+    "checkout__inventory": { "component": "glyph" },
+    "checkout__fraud": { "component": "glyph" },
+    "fraud__payments": { "component": "glyph" },
+    "payments__stripe": { "component": "glyph" },
+    "checkout__orders": { "component": "glyph" },
+    "inventory__orders": { "component": "glyph" }
+  },
+  "groups": {
+    "services": {
+      "layout": { "position": { "x": 320, "y": 20 } },
+      "component": "glyph"
+    },
+    "external": {
+      "layout": { "position": { "x": 600, "y": 60 } },
+      "component": "glyph"
+    }
+  }
+}

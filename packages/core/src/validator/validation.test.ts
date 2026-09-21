@@ -19,8 +19,14 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
+  ChangeType,
   type Diagram,
   DiagramSchema,
+  GraphSchema,
+  GroupSchema,
+  LocalizationSchema,
+  type Node,
+  NodeSchema,
 } from '@archeglyph/proto/gen/content_pb';
 import {
   type Stylesheet,
@@ -718,5 +724,87 @@ describe('diff: added / removed / modified', () => {
     const delta = diff(base, target, { includeUnchanged: true });
     expect(delta.nodeDeltas.length).toBeGreaterThan(0);
     expect(delta.nodeDeltas.every((d) => d.changeType === 1 /* UNCHANGED */)).toBe(true);
+  });
+});
+
+describe('diff: groups', () => {
+  // Groups are topology, in Graph alongside nodes and edges. Only render_mode
+  // is presentational, and that lives in the style file.
+  const withGroups = (groups: Record<string, { label: string }>): Diagram =>
+    create(DiagramSchema, {
+      schemaVersion: 1,
+      id: 'g',
+      graph: create(GraphSchema, {
+        groups: Object.fromEntries(
+          Object.entries(groups).map(([id, g]) => [
+            id,
+            create(GroupSchema, { label: [create(LocalizationSchema, { locale: 'en', source: g.label })] }),
+          ]),
+        ),
+      }),
+    });
+
+  test('a group present only in target is ADDED, carrying its after', () => {
+    const delta = diff(withGroups({}), withGroups({ svc: { label: 'Services' } }));
+    expect(delta.groupDeltas.length).toBe(1);
+    expect(delta.groupDeltas[0]!.groupId).toBe('svc');
+    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.ADDED);
+    expect(delta.groupDeltas[0]!.after?.label[0]?.source).toBe('Services');
+    expect(delta.groupDeltas[0]!.before).toBeUndefined();
+  });
+
+  test('a group present only in base is DELETED, carrying its before', () => {
+    const delta = diff(withGroups({ svc: { label: 'Services' } }), withGroups({}));
+    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.DELETED);
+    expect(delta.groupDeltas[0]!.before?.label[0]?.source).toBe('Services');
+    expect(delta.groupDeltas[0]!.after).toBeUndefined();
+  });
+
+  test('a renamed group is MODIFIED and carries both sides', () => {
+    const delta = diff(
+      withGroups({ svc: { label: 'Services' } }),
+      withGroups({ svc: { label: 'Core services' } }),
+    );
+    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.MODIFIED);
+    expect(delta.groupDeltas[0]!.before?.label[0]?.source).toBe('Services');
+    expect(delta.groupDeltas[0]!.after?.label[0]?.source).toBe('Core services');
+  });
+
+  test('an unchanged group is omitted, and emitted under includeUnchanged', () => {
+    const same = withGroups({ svc: { label: 'Services' } });
+    expect(diff(same, same).groupDeltas).toEqual([]);
+    const verbose = diff(same, same, { includeUnchanged: true });
+    expect(verbose.groupDeltas[0]!.changeType).toBe(ChangeType.UNCHANGED);
+  });
+
+  test('group ids are emitted in sorted order, like nodes and edges', () => {
+    const delta = diff(withGroups({}), withGroups({
+      zeta: { label: 'Z' }, alpha: { label: 'A' }, mid: { label: 'M' },
+    }));
+    expect(delta.groupDeltas.map((d) => d.groupId)).toEqual(['alpha', 'mid', 'zeta']);
+  });
+
+  test('a deleted group keeps its members recoverable through their own deltas', () => {
+    // GroupDelta carries the group's own fields only -- containment lives on
+    // Node.parent_group. Rendering a deleted group means reading membership
+    // back out of the deleted members' before snapshots, so this has to hold.
+    const node = (parent: string): Node =>
+      create(NodeSchema, { parentGroup: parent, label: [create(LocalizationSchema, { locale: 'en', source: 'n' })] });
+    const base = create(DiagramSchema, {
+      schemaVersion: 1, id: 'g',
+      graph: create(GraphSchema, {
+        nodes: { a: node('box'), b: node('box') },
+        groups: { box: create(GroupSchema, {}) },
+      }),
+    });
+    const target = create(DiagramSchema, { schemaVersion: 1, id: 'g', graph: create(GraphSchema, {}) });
+
+    const delta = diff(base, target);
+    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.DELETED);
+
+    const members = delta.nodeDeltas
+      .filter((d) => d.changeType === ChangeType.DELETED && d.before?.parentGroup === 'box')
+      .map((d) => d.nodeId);
+    expect(members).toEqual(['a', 'b']);
   });
 });

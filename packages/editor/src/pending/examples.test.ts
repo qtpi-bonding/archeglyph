@@ -41,7 +41,7 @@ async function svgFor(diagram: Diagram, stylesheet: Stylesheet, themeName = 'blu
   return svg.value;
 }
 
-describe.each(['pipeline', 'checkout'])('examples/%s', (name: string) => {
+describe.each(['pipeline', 'checkout', 'checkout-v2'])('examples/%s', (name: string) => {
   test.each(BUNDLED_THEME_NAMES)('loads and renders under %s', async (themeName: string) => {
     const { diagram, stylesheet } = await open(name);
     expect((await svgFor(diagram, stylesheet, themeName)).length).toBeGreaterThan(0);

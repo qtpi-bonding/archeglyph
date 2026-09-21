@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "checkout",
+  "title": [{ "locale": "en", "source": "Checkout service" }],
+  "graph": {
+    "nodes": {
+      "gateway": {
+        "label": [{ "locale": "en", "source": "API gateway" }],
+        "tags": { "kind": "infra" }
+      },
+      "checkout": {
+        "label": [{ "locale": "en", "source": "checkout" }],
+        "parentGroup": "services",
+        "tags": { "kind": "service" }
+      },
+      "payments": {
+        "label": [{ "locale": "en", "source": "payments" }],
+        "parentGroup": "services",
+        "tags": { "kind": "service" }
+      },
+      "inventory": {
+        "label": [{ "locale": "en", "source": "inventory" }],
+        "parentGroup": "services",
+        "tags": { "kind": "service" }
+      },
+      "fraud": {
+        "label": [{ "locale": "en", "source": "fraud check" }],
+        "parentGroup": "services",
+        "tags": { "kind": "service" }
+      },
+      "orders": {
+        "label": [{ "locale": "en", "source": "orders (postgres)" }],
+        "tags": { "kind": "store" }
+      },
+      "stripe": {
+        "label": [{ "locale": "en", "source": "Stripe" }],
+        "parentGroup": "external",
+        "tags": { "kind": "external" }
+      }
+    },
+    "edges": {
+      "gateway__checkout": { "source": "gateway", "target": "checkout" },
+      "checkout__payments": { "source": "checkout", "target": "payments" },
+      "checkout__inventory": { "source": "checkout", "target": "inventory" },
+      "checkout__fraud": { "source": "checkout", "target": "fraud" },
+      "fraud__payments": { "source": "fraud", "target": "payments" },
+      "payments__stripe": {
+        "source": "payments",
+        "target": "stripe",
+        "tags": { "kind": "egress" }
+      },
+      "checkout__orders": { "source": "checkout", "target": "orders" },
+      "inventory__orders": { "source": "inventory", "target": "orders" }
+    },
+    "groups": {
+      "services": { "label": [{ "locale": "en", "source": "Core services" }] },
+      "external": { "label": [{ "locale": "en", "source": "Third party" }] }
+    }
+  },
+  "metadata": { "generator": "hand", "canonicalLocale": "en" }
+}

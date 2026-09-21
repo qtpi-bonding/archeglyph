@@ -2,7 +2,7 @@
 
 import { Accessor } from 'solid-js';
 import { Diagram } from '@archeglyph/proto/gen/content_pb';
-import { StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { Comment, StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
 /** Reactive handle for one editor session. */
 export interface EditorState {
@@ -17,4 +17,7 @@ export interface EditorState {
   adoptStylesheet(stylesheet: Stylesheet): void;
   dirty: Accessor<boolean>;
   version: Accessor<number>;
+  acceptPending(editId: string): void;
+  rejectPending(editId: string): void;
+  addComment(editRef: string, comment: Comment): void;
 }

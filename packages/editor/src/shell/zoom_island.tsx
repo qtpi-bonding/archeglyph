@@ -36,7 +36,6 @@ export const ZoomIsland: Component<ZoomIslandProps> = (
         onClick={command('zoom-fit')}
         style={{
           'margin-left': '6px',
-          'border-left': '1px solid var(--ag-edge)',
           color: 'var(--ag-purple)',
         }}
       >

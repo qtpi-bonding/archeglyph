@@ -29,6 +29,8 @@ import { FileIsland } from './file_island';
 import { ZoomIsland } from './zoom_island';
 import { UndoIsland } from './undo_island';
 import { StateIsland } from './state_island';
+import { EchoIsland } from './echo_island';
+import { ECHO_LINGER_MS, gestureTokens, type EchoToken } from './key_echo';
 import { StartScreen } from './start_screen';
 import { CommandContext, COMMANDS, runCommand } from '../gestures/commands';
 import { CommandId, KEYMAP } from '../ui_state/keymap';
@@ -205,15 +207,26 @@ export const App: Component<{}> = (): JSX.Element => {
 
   const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
   const mode = (): string | undefined => {
-    const gesture = ui.modalGesture();
-    if (gesture !== undefined) {
-      const label: string = gesture.kind === 'grab' ? 'Grab' : 'Resize';
-      return gesture.digits === '' ? label : `${label} ${gesture.digits}`;
-    }
     const tool = ui.tool();
     if (tool === 'select') { return undefined; }
     const id: CommandId = tool === 'hand' ? 'tool-hand' : 'tool-annotation';
     return COMMANDS.find((command): boolean => command.id === id)?.label;
+  };
+
+  const [flash, setFlash] = createSignal<ReadonlyArray<EchoToken>>([]);
+  let flashTimer: ReturnType<typeof setTimeout> | undefined;
+  const onKeyEcho = (tokens: ReadonlyArray<EchoToken> | undefined): void => {
+    if (flashTimer !== undefined) { clearTimeout(flashTimer); }
+    setFlash(tokens ?? []);
+    if (tokens === undefined) { return; }
+    flashTimer = setTimeout((): void => { setFlash([]); }, ECHO_LINGER_MS);
+  };
+  onCleanup((): void => {
+    if (flashTimer !== undefined) { clearTimeout(flashTimer); }
+  });
+  const echoTokens = (): ReadonlyArray<EchoToken> => {
+    const gesture = ui.modalGesture();
+    return gesture === undefined ? flash() : gestureTokens(gesture);
   };
 
   let lastSceneError: SceneError | undefined;
@@ -244,6 +257,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onFocusInspector={onFocusInspector}
             onSave={onSave}
             onContextMenu={(point: Vec2): void => { setContextMenuPoint(point); }}
+            onKeyEcho={onKeyEcho}
             registerCommandContext={(getContext: () => CommandContext): void => {
               setCommandContext((): CommandContextAccessor => getContext);
             }}
@@ -311,6 +325,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onDismiss={(): void => { setDismissedError(scene()?.error()); }}
           />
         }
+        echo={<EchoIsland tokens={echoTokens()} />}
       />
       <Show when={contextMenuPoint()} keyed>
         {(point) => (

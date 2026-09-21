@@ -25,6 +25,7 @@ export class IslandFrameProps {
   zoom?: JSX.Element;
   undo?: JSX.Element;
   state?: JSX.Element;
+  echo?: JSX.Element;
 }
 
 /** Render one positioning-only island slot. */
@@ -96,7 +97,14 @@ export const IslandFrame = (props: IslandFrameProps): JSX.Element => {
         style={{ bottom: 'var(--ag-island-inset)', right: 'var(--ag-island-inset)' }}
       />
       <IslandSlot
-        content={props.state}
+        content={
+          // Bottom-anchored, so the column grows upwards and the echo keeps
+          // the same spot on screen however tall the state island gets.
+          <div style={{ display: 'flex', 'flex-direction': 'column', 'align-items': 'center', gap: '8px' }}>
+            {props.state}
+            {props.echo}
+          </div>
+        }
         style={{ bottom: 'var(--ag-island-inset)', left: '50%', transform: 'translateX(-50%)' }}
       />
     </div>

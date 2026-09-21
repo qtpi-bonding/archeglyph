@@ -137,3 +137,4 @@ describe('no component freezes a prop at setup', () => {
     expect(offenders).toEqual([]);
   });
 });
+

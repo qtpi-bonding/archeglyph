@@ -7,7 +7,8 @@ import { create } from '@bufbuild/protobuf';
 import { createRoot } from 'solid-js';
 import { DiagramSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
 import { StylesheetSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
-import type { LayoutEngine, LayoutRequest } from '@archeglyph/core/layout/layout_engine';
+import type { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
+import type { LayoutRequest } from '@archeglyph/core/layout/layout_request';
 import { Err } from '@archeglyph/proto/util/result';
 import { getBundledTheme } from '@archeglyph/themes';
 

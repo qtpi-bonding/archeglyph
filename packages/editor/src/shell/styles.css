@@ -167,3 +167,28 @@ body {
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }
+
+/* The keystroke readout. Monospaced and tabular so a growing digit run does
+   not shift the keys to its left. */
+.ag-echo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 12px;
+  background: var(--ag-panel);
+  color: var(--ag-fg);
+  border: 1px solid var(--ag-edge);
+  border-radius: var(--ag-radius);
+  box-shadow: var(--ag-shadow);
+  font-family: var(--ag-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ag-echo-muted {
+  color: var(--ag-fg-3);
+  font-family: var(--ag-font-ui);
+  font-size: 11px;
+}

@@ -32,6 +32,7 @@ import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../st
 import { TextEditor } from './text_editor';
 import { init } from '@archeglyph/proto/util/init';
 import { modalPreview } from '../gestures/modal_apply';
+import { echoFor, type EchoToken } from '../shell/key_echo';
 
 type Point = { x: number; y: number };
 type CanvasWheelEvent = MouseEvent;
@@ -61,6 +62,9 @@ export interface CanvasProps {
   /** Receives a SCREEN point, not a diagram one: the menu is positioned in
       viewport space and must not move when the diagram is panned. */
   onContextMenu: (point: Vec2) => void;
+  /** The canvas owns the keydown listener, so it is the only place that can
+      report what a key did. Undefined for a key not worth showing. */
+  onKeyEcho?: (tokens: ReadonlyArray<EchoToken> | undefined) => void;
 }
 
 function pointFromEvent(event: CanvasWheelEvent): Vec2 {
@@ -409,8 +413,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     };
     containerRef.addEventListener('dblclick', onDoubleClick);
     const onKeyDown = (event: KeyboardEvent): void => {
+      const gestureBefore: boolean = props.ui.modalGesture() !== undefined;
       const handled: boolean = handleKeyDown(event, getCommandContext());
       if (handled) { event.preventDefault(); }
+      props.onKeyEcho?.(echoFor({
+        event,
+        handled,
+        gestureBefore,
+        gestureAfter: props.ui.modalGesture() !== undefined,
+      }));
     };
     document.addEventListener('keydown', onKeyDown);
     onCleanup((): void => {

@@ -11,6 +11,9 @@ const { render, cleanup } = await import('@solidjs/testing-library');
 const { createSignal } = await import('solid-js');
 const { StateIsland } = await import('./state_island');
 const { PendingBanner } = await import('../pending/pending_banner');
+const { EchoIsland } = await import('./echo_island');
+const { gestureTokens } = await import('./key_echo');
+const { beginModalGesture } = await import('../ui_state/modal_gesture');
 
 describe('StateIsland follows the model', () => {
   test('an error raised after mount is shown', () => {
@@ -85,6 +88,38 @@ describe('PendingBanner follows the model', () => {
 
     setCount(0);
     expect(container.querySelector('button')).toBeNull();
+
+    cleanup();
+  });
+});
+
+describe('EchoIsland follows the model', () => {
+  test('a gesture built key by key appears one part at a time', () => {
+    const [gesture, setGesture] = createSignal(beginModalGesture('grab', []));
+    const { container } = render(() => <EchoIsland tokens={gestureTokens(gesture())} />);
+
+    expect(container.textContent).toBe('g');
+
+    setGesture((g) => ({ ...g, direction: 'up' }));
+    expect(container.textContent).toBe('g↑');
+
+    setGesture((g) => ({ ...g, digits: '12' }));
+    expect(container.textContent).toBe('g↑12');
+
+    cleanup();
+  });
+
+  test('it is absent with nothing to show, so it takes no space', () => {
+    const [tokens, setTokens] = createSignal<Array<{ text: string }>>([]);
+    const { container } = render(() => <EchoIsland tokens={tokens()} />);
+
+    expect(container.querySelector('.ag-echo')).toBeNull();
+
+    setTokens([{ text: '⌫' }, { text: 'Delete' }]);
+    expect(container.querySelector('.ag-echo')).not.toBeNull();
+
+    setTokens([]);
+    expect(container.querySelector('.ag-echo')).toBeNull();
 
     cleanup();
   });

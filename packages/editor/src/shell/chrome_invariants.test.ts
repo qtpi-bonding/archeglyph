@@ -138,3 +138,25 @@ describe('no component freezes a prop at setup', () => {
   });
 });
 
+
+describe('the ghost layer shares the diagram layer frame', () => {
+  // The renderer emits a whole <svg viewBox width height>. Kept, it becomes a
+  // NESTED viewport: the ghost is rescaled against its own viewBox, so it no
+  // longer registers with the diagram it is a diff of, and the background
+  // <rect> it carries paints an opaque slab over the canvas. The two layers
+  // must therefore be injected the same way.
+  const ghost = (): string =>
+    readFileSync(join(here, '../canvas/ghost_layer.tsx'), 'utf8');
+
+  test('it unwraps through injectDiagram rather than innerHTML', () => {
+    const src = ghost();
+    expect(src).toContain('injectDiagram(host');
+    expect(/innerHTML=/.test(src)).toBe(false);
+  });
+
+  test('injectDiagram keeps defs and groups and drops the background rect', () => {
+    const src = readFileSync(join(here, '../canvas/diagram_layer.tsx'), 'utf8');
+    const fn = src.slice(src.indexOf('export function injectDiagram'), src.indexOf('/** Solid component'));
+    expect(fn).toContain("child.tagName === 'defs' || child.tagName === 'g'");
+  });
+});

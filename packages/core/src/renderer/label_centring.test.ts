@@ -5,9 +5,9 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import { LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
-import { TextAlign, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { ColorSchema, Glyph2DSchema, ShapeType, StrokeSchema, TextAlign, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 
-import { textElement } from './svg_painter';
+import { shapePath, textElement } from './svg_painter';
 
 const label = [create(LocalizationSchema, { locale: 'en', source: 'render' })];
 const at = create(Vec2Schema, { x: 100, y: 50 });
@@ -43,5 +43,21 @@ describe('centred labels', () => {
     const svg = textElement(label, plain, at, true);
     expect(svg).toContain('x="100.00"');
     expect(svg).toContain('y="50.00"');
+  });
+});
+
+describe('an unfilled shape', () => {
+  test('is painted with no fill, not with SVG default black', () => {
+    // style.proto: "Unset = no fill". Omitting the attribute hands SVG its own
+    // default, which is black -- a solid block where a themed outline belongs.
+    const bare = create(Glyph2DSchema, {
+      shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: '#8b98a9' }) },
+      }),
+    });
+    const svg = shapePath(bare, create(Vec2Schema, { x: 0, y: 0 }), create(Vec2Schema, { x: 100, y: 40 }));
+
+    expect(svg).toContain('fill="none"');
   });
 });

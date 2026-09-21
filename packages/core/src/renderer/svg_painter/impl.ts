@@ -22,7 +22,8 @@ function strokeAttrs(stroke: Stroke | undefined): string {
 
 function fillAttrs(fill: Fill | undefined): string {
   if (fill === undefined) {
-    return '';
+    // style.proto: "Unset = no fill". With no attribute SVG fills it black.
+    return ' fill="none"';
   } else {
     const colorStr: string = fill.paint.case === 'color' ? ` fill="${fill.paint.value.value}"` : '';
     const opacStr: string = fill.opacity !== undefined ? ` fill-opacity="${r(fill.opacity)}"` : '';

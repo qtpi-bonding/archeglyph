@@ -56,7 +56,8 @@ describe('an annotation added mid-session reaches layout with a resolved style',
 
       const annotation = request!.diagram.annotations['note'];
       expect(annotation).toBeDefined();
-      expect(annotation!.shape?.fill).toBeDefined();
+      // Not the fill: a themed annotation is outline-only.
+      expect(annotation!.shape?.stroke?.paint?.case).toBe('color');
       expect(annotation!.typography?.color?.value).toBeTruthy();
 
       dispose();

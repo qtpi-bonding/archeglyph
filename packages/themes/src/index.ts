@@ -67,7 +67,10 @@ function glyphGroupComponent(color: string) {
   });
 }
 
-function glyphAnnotationComponent(strokeColor: string, fillColor: string, textColor: string) {
+// No fill at all. A note is editorial, so it stays out of the way of whatever
+// it is placed over; the grey outline is what separates it from a node, which
+// is always filled.
+function glyphAnnotationComponent(strokeColor: string, textColor: string) {
   return create(AnnotationComponentSchema, {
     name: 'glyph',
     shape: create(Glyph2DSchema, {
@@ -76,10 +79,6 @@ function glyphAnnotationComponent(strokeColor: string, fillColor: string, textCo
       stroke: create(StrokeSchema, {
         paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) },
         width: 1,
-      }),
-      fill: create(FillSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: fillColor }) },
-        opacity: 0.94,
       }),
     }),
     typography: create(TypographySchema, {
@@ -158,36 +157,8 @@ function blueprintGroupComponent() {
   });
 }
 
-// A note is a pale card with dark ink, which is the one combination in this
-// theme that cannot be mistaken for a node: every graph element here is a
-// light line on the navy ground.
 function blueprintAnnotationComponent() {
-  return create(AnnotationComponentSchema, {
-    name: 'glyph',
-    shape: create(Glyph2DSchema, {
-      shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
-      cornerRadius: 2,
-      stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#9aa7b8' }) },
-        width: 1,
-      }),
-      fill: create(FillSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#d7dde6' }) },
-        opacity: 0.94,
-      }),
-    }),
-    typography: create(TypographySchema, {
-      color: create(ColorSchema, { value: '#1d2531' }),
-      size: 11,
-    }),
-    callout: create(Glyph1DSchema, {
-      stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#9aa7b8' }) },
-        width: 1,
-        dashing: { case: 'customDasharray', value: '2,3' },
-      }),
-    }),
-  });
+  return glyphAnnotationComponent('#8b98a9', '#b3c0cf');
 }
 
 export function darkTheme(): Theme {
@@ -238,7 +209,7 @@ export function darkTheme(): Theme {
     nodeComponents: [glyphNodeComponent('#FFFFFF', '#000000', '#c0caf5')],
     edgeComponents: [glyphEdgeComponent('#FFFFFF')],
     groupComponents: [glyphGroupComponent('#9aa5ce')],
-    annotationComponents: [glyphAnnotationComponent('#6b7280', '#d9dee6', '#1d2531')],
+    annotationComponents: [glyphAnnotationComponent('#7f8694', '#a7aec0')],
   });
 }
 export function lightTheme(): Theme {
@@ -286,7 +257,7 @@ export function lightTheme(): Theme {
     nodeComponents: [glyphNodeComponent('#000000', '#FFFFFF', '#1a1a1a')],
     edgeComponents: [glyphEdgeComponent('#000000')],
     groupComponents: [glyphGroupComponent('#8A8A8A')],
-    annotationComponents: [glyphAnnotationComponent('#9a9a9a', '#ECECEC', '#1E1E1E')],
+    annotationComponents: [glyphAnnotationComponent('#8A8A8A', '#5a5a5a')],
   });
 }
 

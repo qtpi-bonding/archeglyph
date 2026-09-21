@@ -8,7 +8,8 @@ import { layoutPipeline, PipelineError } from '@archeglyph/core/pipeline';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
-import { Component, createMemo, createResource, JSX, Show } from 'solid-js';
+import { injectDiagram } from './diagram_layer';
+import { Component, createEffect, createMemo, createResource, JSX, Show } from 'solid-js';
 import { Result } from '@archeglyph/proto/util/result';
 
 export interface GhostLayerProps {
@@ -83,12 +84,12 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
     },
   );
 
-  return (
-    <Show when={svg()}>
-      <g
-        opacity="0.3"
-        innerHTML={svg() ?? ''}
-      />
-    </Show>
-  );
+  let host!: SVGGElement;
+  createEffect((): void => {
+    // The renderer's root <svg> would nest a viewport here, rescaling the
+    // ghost against its own viewBox so it stops registering with the diagram.
+    injectDiagram(host, svg() ?? '');
+  });
+
+  return <g ref={host} opacity="0.3" />;
 };

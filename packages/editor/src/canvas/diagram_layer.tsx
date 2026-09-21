@@ -50,7 +50,7 @@ function isDimmed(element: Element, refs: Array<ElementRef>): boolean {
  * colour instead, edge to edge. Nothing inside the <defs> and <g> children is
  * touched, so editor and CLI still draw the same elements.
  */
-function injectDiagram(host: SVGGElement, svg: string): void {
+export function injectDiagram(host: SVGGElement, svg: string): void {
   host.replaceChildren();
   if (svg === '') {
     return;

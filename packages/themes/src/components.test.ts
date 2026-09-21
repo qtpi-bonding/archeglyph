@@ -33,8 +33,8 @@ describe.each(BUNDLED_THEME_NAMES)('%s', (name: string) => {
     const node = theme.nodeComponents[0]?.shape;
     const annotation = theme.annotationComponents[0]?.shape;
 
-    expect(colorOf(annotation, 'fill')).toBeDefined();
-    expect(colorOf(annotation, 'fill')).not.toBe(colorOf(node, 'fill')!);
+    expect(colorOf(node, 'fill')).toBeDefined();
+    expect(colorOf(annotation, 'fill')).toBeUndefined();
     expect(colorOf(annotation, 'stroke')).not.toBe(colorOf(node, 'stroke')!);
   });
 

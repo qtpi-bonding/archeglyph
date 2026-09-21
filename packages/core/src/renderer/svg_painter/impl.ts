@@ -164,7 +164,9 @@ export function edgePath(sections: EdgeSection[]): string {
   return parts.join(' ');
 }
 
-export function textElement(label: Localization[], typography: Typography, anchor: Vec2): string {
+// `centred`: the anchor is a box's middle, not a corner. SVG's defaults would
+// otherwise start the text at it and put the baseline on it.
+export function textElement(label: Localization[], typography: Typography, anchor: Vec2, centred: boolean = false): string {
   if (label.length === 0) {
     return '';
   }
@@ -174,7 +176,9 @@ export function textElement(label: Localization[], typography: Typography, ancho
 
   const entry: Localization = label[0];
   const weightStr: string = typography.weight !== undefined ? fontWeightValue(typography.weight) : '';
-  const anchorStr: string = typography.align !== undefined ? textAnchorValue(typography.align) : '';
+  const anchorStr: string = typography.align !== undefined
+    ? textAnchorValue(typography.align)
+    : (centred ? 'middle' : '');
   const fillStr: string = typography.color !== undefined ? typography.color.value : '';
 
   const attrParts: string[] = [
@@ -184,6 +188,7 @@ export function textElement(label: Localization[], typography: Typography, ancho
     typography.size !== undefined ? `font-size="${typography.size}"` : '',
     weightStr !== '' ? `font-weight="${weightStr}"` : '',
     anchorStr !== '' ? `text-anchor="${anchorStr}"` : '',
+    centred ? 'dominant-baseline="central"' : '',
     fillStr !== '' ? `fill="${fillStr}"` : '',
   ].filter((s: string): boolean => s !== '');
   const attrs: string = attrParts.join(' ');

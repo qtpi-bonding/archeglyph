@@ -138,7 +138,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerX: number = node.position.x + node.size.x / 2;
       const centerY: number = node.position.y + node.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
-      const labelSvg: string = textElement(node.label, node.typography, center);
+      const labelSvg: string = textElement(node.label, node.typography, center, true);
       nodesSvg += `<g id="node-${node.id}" data-element-id="${node.id}" data-kind="node">${shape}${labelSvg}</g>`;
     }
 
@@ -167,7 +167,8 @@ export class SvgRendererImpl implements SvgRenderer {
             create(Vec2Schema, {
               x: (edge.sections[0].startPoint.x + edge.sections[0].endPoint.x) / 2,
               y: (edge.sections[0].startPoint.y + edge.sections[0].endPoint.y) / 2,
-            })
+            }),
+            true,
           )
         : '';
       edgesSvg += `<g id="edge-${edge.id}" data-element-id="${edge.id}" data-kind="edge">${hitStroke}${visiblePath}${labelSvg}</g>`;
@@ -197,7 +198,7 @@ export class SvgRendererImpl implements SvgRenderer {
         ? `<path d="${calloutPath}" fill="none" stroke="${calloutStrokeColor}" stroke-width="${calloutStrokeWidth}"${calloutStartMarker}${calloutEndMarker}/>`
         : '';
       const shape: string = shapePath(ann.shape, ann.position, ann.size);
-      const labelSvg: string = textElement(ann.content, ann.typography, annCenter);
+      const labelSvg: string = textElement(ann.content, ann.typography, annCenter, true);
       annotationsSvg += `<g id="annotation-${ann.id}" data-element-id="${ann.id}" data-kind="annotation">${calloutSvg}${shape}${labelSvg}</g>`;
     }
 

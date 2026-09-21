@@ -1,0 +1,644 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/pending/comment_builder.ts/newComment().",
+      "codes": {
+        "string-body-and-author": {
+          "body": "const [body, author] = value;\nconst startedAt = BigInt(Date.now());\nconst result = newComment(body, author);\nexpect(result).toBeInstanceOf(Promise);\nreturn result.then((comment) => {\n  const finishedAt = BigInt(Date.now());\n  expect(comment.body).toBe(body);\n  expect(comment.author).toBe(author);\n  expect(comment.timestampMs >= startedAt).toBe(true);\n  expect(comment.timestampMs <= finishedAt).toBe(true);\n  expect(comment.replyTo).toBeUndefined();\n  expect(comment.id).toMatch(/^[0-9a-f]{16}$/);\n});",
+          "strategy": "fc.tuple(fc.string(), fc.string())",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/pending/merge_threads.ts/mergeThreads().",
+      "codes": {
+        "cross-thread-same-id-allowed": {
+          "body": "const shared = makeComment(value, \"target-copy\");\nconst stylesheet = makeStylesheet([makeComment(value, \"other-thread-copy\"), undefined]);\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", [shared])]);\nexpect(getComments(result, 1)).toEqual([shared]);",
+          "strategy": "fc.string({ minLength: 1 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "duplicate-editref-entry-order": {
+          "body": "const first = makeComment(`first-${value[0]}`, \"first\");\nconst second = makeComment(`second-${value[1]}`, \"second\");\nconst stylesheet = makeStylesheet([]);\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", [first]), makeEntry(\"edit-1\", [second])]);\nexpect(getComments(result, 0)).toEqual([first, second]);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 2, maxLength: 2 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "empty-entries": {
+          "body": "const stylesheet = makeStylesheet([]);\nconst result = mergeThreads(stylesheet, []);\nexpect(result).toEqual(stylesheet);\nexpect(result).not.toBe(stylesheet);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeStylesheet"
+          ]
+        },
+        "existing-comment-order-preserved": {
+          "body": "const existing = value.map((id: string) => makeComment(id, `existing-${id}`));\nconst appended = makeComment(\"new-comment\", \"new\");\nconst stylesheet = makeStylesheet(existing);\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", [appended])]);\nexpect(getComments(result, 0)).toEqual([...existing, appended]);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 8 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "matching-entry-adds-comments": {
+          "body": "const stylesheet = makeStylesheet([]);\nconst comments = value.map((id: string) => makeComment(id, `fetched-${id}`));\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", comments)]);\nexpect(getComments(result, 0)).toEqual(comments);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 8 })",
+          "helpersUsed": [
+            "makeStylesheet",
+            "makeComment",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "new-comments-append": {
+          "body": "const existing = makeComment(\"existing\", \"existing\");\nconst fetched = value.map((id: string) => makeComment(`new-${id}`, `new-${id}`));\nconst stylesheet = makeStylesheet([existing]);\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", fetched)]);\nexpect(getComments(result, 0)).toEqual([existing, ...fetched]);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 8 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "per-thread-duplicate-suppressed": {
+          "body": "const existing = makeComment(value, \"authoritative\");\nconst stylesheet = makeStylesheet([existing]);\nconst fetched = makeComment(value, \"stale-fetched-copy\");\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", [fetched])]);\nexpect(getComments(result, 0)).toEqual([existing]);",
+          "strategy": "fc.string({ minLength: 1 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        },
+        "pure-result-copy": {
+          "body": "const stylesheet = makeStylesheet([]);\nconst entries = value.map((id: string) => makeEntry(\"missing-edit\", [makeComment(id, `body-${id}`)]));\nconst before = JSON.stringify(stylesheet);\nconst result = mergeThreads(stylesheet, entries);\nexpect(result).not.toBe(stylesheet);\nexpect(JSON.stringify(stylesheet)).toBe(before);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { maxLength: 8 })",
+          "helpersUsed": [
+            "makeStylesheet",
+            "makeEntry",
+            "makeComment"
+          ]
+        },
+        "repeated-fetch-idempotent": {
+          "body": "const comments = value.map((id: string) => makeComment(id, `body-${id}`));\nconst stylesheet = makeStylesheet([]);\nconst entries = [makeEntry(\"edit-1\", comments)];\nconst once = mergeThreads(stylesheet, entries);\nconst twice = mergeThreads(once, entries);\nexpect(twice).toEqual(once);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 0, maxLength: 8 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry"
+          ]
+        },
+        "unmatched-entry-dropped": {
+          "body": "const stylesheet = makeStylesheet([]);\nconst result = mergeThreads(stylesheet, [makeEntry(value, [makeComment(\"orphan-comment\", \"orphan\")])]);\nexpect(result.pendingEdits).toHaveLength(0);",
+          "strategy": "fc.string({ minLength: 1 }).filter((id: string) => id !== \"present-edit\")",
+          "helpersUsed": [
+            "makeStylesheet",
+            "makeEntry",
+            "makeComment"
+          ]
+        },
+        "within-entry-comment-order": {
+          "body": "const comments = value.map((id: string) => makeComment(id, `body-${id}`));\nconst stylesheet = makeStylesheet([]);\nconst result = mergeThreads(stylesheet, [makeEntry(\"edit-1\", comments)]);\nexpect(getComments(result, 0)).toEqual(comments);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 2, maxLength: 8 })",
+          "helpersUsed": [
+            "makeComment",
+            "makeStylesheet",
+            "makeEntry",
+            "getComments"
+          ]
+        }
+      },
+      "helpers": {
+        "getComments": "const getComments = (stylesheet: Parameters<typeof mergeThreads>[0], index: number): unknown => stylesheet.pendingEdits[index].thread.comments;",
+        "makeComment": "const makeComment = (id: string, body: string): { id: string; body: string } => ({ id, body });",
+        "makeEntry": "const makeEntry = (editRef: string, comments: ReadonlyArray<{ id: string; body: string }>): Parameters<typeof mergeThreads>[1][number] => ({ editRef, thread: { comments: [...comments] } }) as Parameters<typeof mergeThreads>[1][number];",
+        "makeStylesheet": "const makeStylesheet = (comments: ReadonlyArray<{ id: string; body: string } | undefined>): Parameters<typeof mergeThreads>[0] => ({ schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: comments.map((threadComment: { id: string; body: string } | undefined, index: number) => ({ id: `edit-${index + 1}`, thread: { comments: threadComment === undefined ? [] : [threadComment] } })) } as Parameters<typeof mergeThreads>[0];"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_banner.tsx/PendingBanner.",
+      "codes": {
+        "bare-keydown": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "click-activation": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "expanded-state": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "fc.boolean()",
+          "helpersUsed": []
+        },
+        "multiple-proposals": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "fc.integer({ min: 2 })",
+          "helpersUsed": []
+        },
+        "one-proposal": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "zero-proposals": {
+          "body": "expect(typeof PendingBanner).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_model.ts/pendingItems().",
+      "codes": {
+        "empty-pending-edits": {
+          "body": "const result = pendingItems({ pendingEdits: [] } as any);\nexpect(result).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "ordered-pending-edits": {
+          "body": "const edits = value.map((id: string) => makePendingEdit(id, \"PENDING\", []));\nconst result = pendingItems({ pendingEdits: edits } as any);\nexpect(result).toHaveLength(value.length);\nexpect(result.map((item) => item.id)).toEqual(value);",
+          "strategy": "fc.array(fc.string(), { minLength: 1 })",
+          "helpersUsed": [
+            "makePendingEdit"
+          ]
+        },
+        "rejected-entry-retained": {
+          "body": "const edit = makePendingEdit(\"rejected-edit\", \"REJECTED\", []);\nconst result = pendingItems({ pendingEdits: [edit] } as any);\nexpect(result).toHaveLength(1);\nexpect(result[0].id).toBe(\"rejected-edit\");",
+          "strategy": "",
+          "helpersUsed": [
+            "makePendingEdit"
+          ]
+        },
+        "state-does-not-filter": {
+          "body": "const edits = value.map((state: string, index: number) => makePendingEdit(`edit-${index}`, state, []));\nconst result = pendingItems({ pendingEdits: edits } as any);\nexpect(result).toHaveLength(value.length);\nexpect(result.map((item) => item.id)).toEqual(value.map((_: string, index: number) => `edit-${index}`));",
+          "strategy": "fc.array(fc.constantFrom(\"PENDING\", \"REJECTED\", \"APPLIED\"), { minLength: 1 })",
+          "helpersUsed": [
+            "makePendingEdit"
+          ]
+        },
+        "stylesheet-thread-data": {
+          "body": "const edit = makePendingEdit(\"threaded-edit\", \"PENDING\", value);\nconst result = pendingItems({ pendingEdits: [edit] } as any);\nexpect(result).toHaveLength(1);\nexpect(result[0].comments).toBe(value);",
+          "strategy": "fc.array(fc.any())",
+          "helpersUsed": [
+            "makePendingEdit"
+          ]
+        }
+      },
+      "helpers": {
+        "makePendingEdit": "const makePendingEdit = (id: string, state: unknown, comments: unknown[]): any => ({\n  id,\n  state,\n  description: \"A change\",\n  author: \"author\",\n  nodeChanges: [],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [],\n  thread: { comments },\n});"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_panel.tsx/PendingPanel.",
+      "codes": {
+        "accept-action": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "empty-items": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.constant([])",
+          "helpersUsed": []
+        },
+        "many-items-with-open-thread": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.array(fc.string(), { minLength: 20 }).map((ids: string[]) => ({ ids, selectedId: ids[0] }))",
+          "helpersUsed": []
+        },
+        "no-sync-error": {
+          "body": "expect(typeof PendingPanel).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "non-empty-items": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.array(fc.string(), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "reject-action": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "selected-row": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.array(fc.string(), { minLength: 1 }).map((ids: string[]) => ({ ids, selectedId: ids[0] }))",
+          "helpersUsed": []
+        },
+        "sync-error": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "unselected-or-missing-row": {
+          "body": "void value;\nexpect(typeof PendingPanel).toBe('function');",
+          "strategy": "fc.oneof(fc.constant(undefined), fc.string())",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/pending/thread_view.tsx/ThreadView.",
+      "codes": {
+        "blank-reply-disabled": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.constantFrom('', ' ', '  ', '\\t', '\\n', ' \\t\\n ')",
+          "helpersUsed": []
+        },
+        "empty-comments": {
+          "body": "expect(typeof ThreadView).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "markdown-body-as-plain-text": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.oneof(fc.constant('**bold**'), fc.constant('_italic_'), fc.constant('[link](https://example.com)'), fc.constant('`code`'), fc.string())",
+          "helpersUsed": []
+        },
+        "missing-or-empty-author": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.constantFrom(undefined, '')",
+          "helpersUsed": []
+        },
+        "non-empty-comments-in-order": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.array(fc.any(), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "nonblank-reply-submitted": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.string().filter((text: string): boolean => text.trim().length > 0)",
+          "helpersUsed": []
+        },
+        "reply-to-ignored": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.oneof(fc.constant(null), fc.constant(undefined), fc.string(), fc.integer())",
+          "helpersUsed": []
+        },
+        "textarea-keydown-stopped": {
+          "body": "void value;\nexpect(typeof ThreadView).toBe('function');",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "accept-pending": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "backend-throws": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.anything()",
+          "helpersUsed": []
+        },
+        "collapsed-with-pending": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.array(fc.anything(), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "empty-pending-list": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.constant([])",
+          "helpersUsed": []
+        },
+        "expanded-with-pending": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.array(fc.anything(), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "fetch-threads-error": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.anything()",
+          "helpersUsed": []
+        },
+        "fetch-threads-success": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.anything()",
+          "helpersUsed": []
+        },
+        "initial-autoload": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.subarray(['d', 's', 'fetch', 'gh', 'pr', 'issue'], { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "initial-no-autoload": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "inspector-without-geometry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "load-error": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.record({ message: fc.string(), kind: fc.option(fc.constantFrom('io', 'unsupported'), { nil: undefined }) })",
+          "helpersUsed": []
+        },
+        "load-with-stylesheet": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.anything()",
+          "helpersUsed": []
+        },
+        "load-without-stylesheet": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "panel-replacement-clears-focus": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "panel-without-geometry": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pending-last-item-removed": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "reject-pending": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "reply-with-backend-error": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.tuple(fc.string(), fc.anything())",
+          "helpersUsed": []
+        },
+        "reply-with-backend-success": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.tuple(fc.string(), fc.anything())",
+          "helpersUsed": []
+        },
+        "reply-without-backend": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "retry-clears-sync-error": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.oneof(fc.constant('fetch'), fc.constant('post'))",
+          "helpersUsed": []
+        },
+        "stored-theme-missing-or-invalid": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.oneof(fc.constant(null), fc.string())",
+          "helpersUsed": []
+        },
+        "stored-theme-present": {
+          "body": "expect(typeof App).toBe('function'); expect(value).toBeDefined();",
+          "strategy": "fc.constantFrom('blueprint', 'graphite', 'paper')",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/select_adapters.ts/selectAdapters().",
+      "codes": {
+        "issue-parameter-present-without-pr": {
+          "body": "const params = new URLSearchParams();\nparams.set('issue', value.issue);\nif (value.fetch !== undefined) params.set('fetch', value.fetch);\nif (value.gh !== undefined) params.set('gh', value.gh);\nif (value.d !== undefined) params.set('d', value.d);\nif (value.s !== undefined) params.set('s', value.s);\n\nconst result = selectAdapters(params);\nexpect(result.adapter).toBeInstanceOf(UrlParamAdapter);\nexpect(result.backend).toBeInstanceOf(GitForgeIssueBackend);\nconst backend = result.backend as GitForgeIssueBackend;\nexpect(backend.issue).toBe(value.issue);\nexpect(backend.forge).toBeInstanceOf(GitHubForge);",
+          "strategy": "fc.record({\n  issue: fc.string(),\n  fetch: fc.option(fc.string(), { nil: undefined }),\n  gh: fc.option(fc.string(), { nil: undefined }),\n  d: fc.option(fc.string(), { nil: undefined }),\n  s: fc.option(fc.string(), { nil: undefined }),\n})",
+          "helpersUsed": []
+        },
+        "no-selection-parameters": {
+          "body": "const result = selectAdapters(new URLSearchParams());\nexpect(result.adapter).toBeInstanceOf(BrowserFsAdapter);\nexpect(result.backend).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pr-parameter-present": {
+          "body": "const params = new URLSearchParams();\nparams.set('pr', value.pr);\nif (value.issue !== undefined) params.set('issue', value.issue);\nif (value.fetch !== undefined) params.set('fetch', value.fetch);\nif (value.gh !== undefined) params.set('gh', value.gh);\nif (value.d !== undefined) params.set('d', value.d);\nif (value.s !== undefined) params.set('s', value.s);\n\nconst result = selectAdapters(params);\nexpect(result.adapter).toBeInstanceOf(UrlParamAdapter);\nexpect(result.backend).toBeInstanceOf(GitForgePrBackend);\nconst backend = result.backend as GitForgePrBackend;\nexpect(backend.pr).toBe(value.pr);\nexpect(backend.forge).toBeInstanceOf(GitHubForge);",
+          "strategy": "fc.record({\n  pr: fc.string(),\n  issue: fc.option(fc.string(), { nil: undefined }),\n  fetch: fc.option(fc.string(), { nil: undefined }),\n  gh: fc.option(fc.string(), { nil: undefined }),\n  d: fc.option(fc.string(), { nil: undefined }),\n  s: fc.option(fc.string(), { nil: undefined }),\n})",
+          "helpersUsed": []
+        },
+        "remote-parameter-present-without-pr-or-issue": {
+          "body": "const params = new URLSearchParams();\nif (value.fetch) params.set('fetch', value.fetchValue);\nif (value.gh) params.set('gh', value.ghValue);\nif (value.d) params.set('d', value.dValue);\nif (value.s) params.set('s', value.sValue);\n\nconst result = selectAdapters(params);\nexpect(result.adapter).toBeInstanceOf(UrlParamAdapter);\nexpect(result.backend).toBeUndefined();",
+          "strategy": "fc.record({\n  fetch: fc.boolean(),\n  gh: fc.boolean(),\n  d: fc.boolean(),\n  s: fc.boolean(),\n  fetchValue: fc.string(),\n  ghValue: fc.string(),\n  dValue: fc.string(),\n  sValue: fc.string(),\n}).filter((value) => value.fetch || value.gh || value.d || value.s)",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/state/create_editor_state.ts/createEditorState().",
+      "codes": {
+        "accept-existing-empty-proposal": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(\"proposal\")]));\nexpect(\"acceptPending\" in state).toBe(false);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "accept-existing-pending": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));\nexpect(\"acceptPending\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "accept-missing-pending": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nexpect(\"acceptPending\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "add-comment-entry-not-found": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(\"proposal\")]));\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "add-comment-missing-pending": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "add-comment-to-entry-with-thread": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "add-comment-to-entry-without-thread": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "adopt-stylesheet": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nconst next: Stylesheet = makeStylesheet([makeEmptyEdit(value)]);\nstate.adoptStylesheet(next);\nexpect(state.stylesheet()).toBe(next);\nexpect(state.version()).toBe(1);\nexpect(state.canUndo()).toBe(false);\nexpect(state.dirty()).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "append-pending-edit": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nconst edit: StyleEdit = makeEmptyEdit(value);\nstate.appendPendingEdit(edit);\nexpect(state.stylesheet().pendingEdits).toEqual([edit]);\nexpect(state.version()).toBe(1);\nexpect(state.canUndo()).toBe(false);\nexpect(state.dirty()).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "apply-style-edit-coalescing-key": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nstate.applyStyleEdit(makeChangedEdit(value), value);\nexpect(state.canUndo()).toBe(true);\nexpect(state.version()).toBe(1);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeChangedEdit"
+          ]
+        },
+        "apply-style-edit-empty": {
+          "body": "const stylesheet: Stylesheet = makeStylesheet([]);\nconst state = createEditorState(makeDiagram(), stylesheet);\nstate.applyStyleEdit(makeEmptyEdit(\"empty\"));\nexpect(state.stylesheet()).toBe(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "apply-style-edit-with-changes": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nstate.applyStyleEdit(makeChangedEdit(value));\nexpect(state.canUndo()).toBe(true);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(true);\nexpect(state.version()).toBe(1);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeChangedEdit"
+          ]
+        },
+        "initial-state": {
+          "body": "const diagram: Diagram = makeDiagram();\nconst stylesheet: Stylesheet = makeStylesheet([]);\nconst state = createEditorState(diagram, stylesheet);\nexpect(state.diagram()).toBe(diagram);\nexpect(state.stylesheet()).toBe(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "redo-ordinary-entry": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nstate.applyStyleEdit(makeChangedEdit(\"ordinary\"));\nstate.undo();\nconst beforeRedo: Stylesheet = state.stylesheet();\nstate.redo();\nexpect(state.stylesheet()).not.toBe(beforeRedo);\nexpect(state.canUndo()).toBe(true);\nexpect(state.canRedo()).toBe(false);\nexpect(state.stylesheet().pendingEdits).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeChangedEdit"
+          ]
+        },
+        "redo-pending-transition-entry": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nexpect(\"acceptPending\" in state).toBe(false);\nexpect(\"rejectPending\" in state).toBe(false);\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "redo-pending-transition-repeated": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nexpect(\"acceptPending\" in state).toBe(false);\nexpect(\"rejectPending\" in state).toBe(false);\nexpect(\"addComment\" in state).toBe(false);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "redo-without-history": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nconst before: Stylesheet = state.stylesheet();\nstate.redo();\nexpect(state.stylesheet()).toBe(before);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "reject-existing-pending": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));\nexpect(\"rejectPending\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeEmptyEdit"
+          ]
+        },
+        "reject-missing-pending": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nexpect(\"rejectPending\" in state).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        },
+        "undo-with-history": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nstate.applyStyleEdit(makeChangedEdit(value));\nconst afterApply: Stylesheet = state.stylesheet();\nstate.undo();\nexpect(state.stylesheet()).not.toBe(afterApply);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(true);\nexpect(state.dirty()).toBe(true);\nexpect(state.version()).toBe(2);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet",
+            "makeChangedEdit"
+          ]
+        },
+        "undo-without-history": {
+          "body": "const state = createEditorState(makeDiagram(), makeStylesheet([]));\nconst before: Stylesheet = state.stylesheet();\nstate.undo();\nexpect(state.stylesheet()).toBe(before);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeStylesheet"
+          ]
+        }
+      },
+      "helpers": {
+        "makeChangedEdit": "const makeChangedEdit = (id: string): StyleEdit => ({ schemaVersion: 1, id, nodeChanges: [{ nodeId: id, changeType: 1, after: {} }], edgeChanges: [], groupChanges: [], annotationChanges: [], timestampMs: 0n, state: 0 } as StyleEdit);",
+        "makeDiagram": "const makeDiagram = (): Diagram => ({ schemaVersion: 1, id: \"diagram\", title: [] } as Diagram);",
+        "makeEmptyEdit": "const makeEmptyEdit = (id: string): StyleEdit => ({ schemaVersion: 1, id, nodeChanges: [], edgeChanges: [], groupChanges: [], annotationChanges: [], timestampMs: 0n, state: 0 } as StyleEdit);",
+        "makeStylesheet": "const makeStylesheet = (pendingEdits: StyleEdit[]): Stylesheet => ({ schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits } as Stylesheet);"
+      }
+    }
+  ],
+  "schemaVersion": 5
+}

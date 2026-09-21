@@ -1,0 +1,719 @@
+{
+  "specName": "editor-pending",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-pending' --root . --plan '.archegraph/specs/editor-pending/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/pending/comment_builder.ts/newComment().",
+      "symbolName": "newComment",
+      "filePath": "packages/editor/src/pending/comment_builder.ts",
+      "cases": [
+        {
+          "name": "string-body-and-author",
+          "condition": "Called with a body string and an author string; the function asynchronously returns a Comment containing those values, a Date.now() timestamp, an unset replyTo, and an id derived from the canonical body, author, and timestamp values.",
+          "outcome": "Asynchronously returns a Comment containing the given body and author, a Date.now() timestamp, no replyTo, and an id derived from the canonical body, author, and timestamp values.",
+          "domain": "any pair of strings"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_comment_builder_ts_newComment___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/pending/merge_threads.ts/mergeThreads().",
+      "symbolName": "mergeThreads",
+      "filePath": "packages/editor/src/pending/merge_threads.ts",
+      "cases": [
+        {
+          "name": "empty-entries",
+          "condition": "The entries array is empty; the returned stylesheet is equal in content to the input stylesheet and is still a new Stylesheet rather than the same object.",
+          "outcome": "Returns a new Stylesheet equal in content to the input stylesheet."
+        },
+        {
+          "name": "matching-entry-adds-comments",
+          "condition": "A ThreadEntry has an editRef equal to the id of a pendingEdits entry, and it supplies comments not already present in that pending edit's thread; those comments are merged into that thread.",
+          "outcome": "Merges previously absent comments from a matching ThreadEntry into the pending edit's thread.",
+          "domain": "a matching editRef and one or more non-duplicate comments"
+        },
+        {
+          "name": "unmatched-entry-dropped",
+          "condition": "A ThreadEntry has an editRef that matches no pendingEdits entry; the entry and its comments are omitted, and no pending edit is invented.",
+          "outcome": "Drops the unmatched entry and its comments without inventing a pending edit.",
+          "domain": "any editRef absent from the stylesheet's pendingEdits"
+        },
+        {
+          "name": "per-thread-duplicate-suppressed",
+          "condition": "A fetched comment's id already occurs in the thread of the pending edit being merged into; the fetched comment is discarded and the existing comment remains authoritative.",
+          "outcome": "Discards a fetched comment whose id already exists in the target thread, preserving the existing comment.",
+          "domain": "any comment id already present in the target thread"
+        },
+        {
+          "name": "cross-thread-same-id-allowed",
+          "condition": "A fetched comment's id occurs in a different pending edit's thread but not in the target thread; the fetched comment is retained in the target thread.",
+          "outcome": "Retains a fetched comment when its id exists only in another thread.",
+          "domain": "any comment id shared by distinct threads"
+        },
+        {
+          "name": "existing-comment-order-preserved",
+          "condition": "The target thread already contains comments; merging does not reorder or replace those existing comments.",
+          "outcome": "Preserves the target thread's existing comments in their original order and content.",
+          "domain": "any non-empty existing comment sequence"
+        },
+        {
+          "name": "new-comments-append",
+          "condition": "A matching entry contributes at least one comment not already in the target thread; accepted comments are placed after all existing comments.",
+          "outcome": "Appends accepted new comments after all existing comments in the target thread.",
+          "domain": "any non-empty sequence of accepted fetched comments"
+        },
+        {
+          "name": "duplicate-editref-entry-order",
+          "condition": "Multiple entries carry the same editRef; their accepted comments are merged into the same thread in entries-array order.",
+          "outcome": "Merges comments from same-editRef entries into one thread in entries-array order.",
+          "domain": "two or more entries with the same matching editRef"
+        },
+        {
+          "name": "within-entry-comment-order",
+          "condition": "A matching entry contains multiple accepted comments; those comments are appended in their order within the entry.",
+          "outcome": "Appends accepted comments in the order they appear within their entry.",
+          "domain": "two or more non-duplicate comments in one entry"
+        },
+        {
+          "name": "repeated-fetch-idempotent",
+          "condition": "The same fetched entries are merged more than once; comments already merged into each target thread are skipped, so the resulting stylesheet is unchanged by the repeat merge.",
+          "outcome": "Skips comments already merged into each target thread so repeating the merge leaves the stylesheet unchanged.",
+          "domain": "any entries array reapplied to its merged stylesheet"
+        },
+        {
+          "name": "pure-result-copy",
+          "condition": "For any input stylesheet and entries array, the operation does not mutate the input stylesheet and returns a new Stylesheet.",
+          "outcome": "Does not mutate the input stylesheet and always returns a new Stylesheet.",
+          "domain": "all supported Stylesheet and ThreadEntry inputs"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_merge_threads_ts_mergeThreads___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_banner.tsx/PendingBanner.",
+      "symbolName": "PendingBanner",
+      "filePath": "packages/editor/src/pending/pending_banner.tsx",
+      "cases": [
+        {
+          "name": "zero-proposals",
+          "condition": "When count is exactly 0, PendingBanner renders nothing at all.",
+          "outcome": "When count is 0, PendingBanner renders nothing at all."
+        },
+        {
+          "name": "one-proposal",
+          "condition": "When count is exactly 1, PendingBanner renders one clickable button strip whose text is '1 proposed change'.",
+          "outcome": "When count is 1, PendingBanner renders one clickable button labeled '1 proposed change'."
+        },
+        {
+          "name": "multiple-proposals",
+          "condition": "When count is at least 2, PendingBanner renders one clickable button strip whose text is '<count> proposed changes'.",
+          "outcome": "When count is at least 2, PendingBanner renders one clickable button labeled '<count> proposed changes'.",
+          "domain": "an integer greater than or equal to 2"
+        },
+        {
+          "name": "expanded-state",
+          "condition": "The expanded input is reflected on the rendered button as aria-expanded, with true producing aria-expanded=\"true\" and false producing aria-expanded=\"false\".",
+          "outcome": "The button has aria-expanded=\"true\" when expanded is true and aria-expanded=\"false\" when expanded is false.",
+          "domain": "a boolean"
+        },
+        {
+          "name": "click-activation",
+          "condition": "When the rendered button receives one activation click, it calls onToggle exactly once.",
+          "outcome": "One activation click on the rendered button calls onToggle exactly once."
+        },
+        {
+          "name": "bare-keydown",
+          "condition": "When a bare keydown event is dispatched to the component, it does not call onToggle because the component registers no keydown handler.",
+          "outcome": "A bare keydown does not call onToggle because PendingBanner registers no keydown handler."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_pending_banner_tsx_PendingBanner_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_model.ts/pendingItems().",
+      "symbolName": "pendingItems",
+      "filePath": "packages/editor/src/pending/pending_model.ts",
+      "cases": [
+        {
+          "name": "empty-pending-edits",
+          "condition": "The stylesheet has an empty pendingEdits array; pendingItems returns an empty array.",
+          "outcome": "It returns an empty array when stylesheet.pendingEdits is empty."
+        },
+        {
+          "name": "ordered-pending-edits",
+          "condition": "The stylesheet has one or more entries in pendingEdits; every entry produces exactly one PendingItem and the results preserve the stylesheet pendingEdits order without filtering.",
+          "outcome": "It returns one PendingItem per pendingEdits entry in the stylesheet's original order, without filtering.",
+          "domain": "any non-empty ordered array of pending edits"
+        },
+        {
+          "name": "rejected-entry-retained",
+          "condition": "The stylesheet has a pendingEdits entry whose state is REJECTED; the entry is still included as a live proposal because membership in pendingEdits is the only inclusion signal.",
+          "outcome": "It includes a REJECTED entry still present in pendingEdits as a live proposal."
+        },
+        {
+          "name": "state-does-not-filter",
+          "condition": "Pending edits have any state values, including mixed states; state is not read to determine membership, so each pendingEdits entry remains represented.",
+          "outcome": "It ignores edit state values and represents every entry in pendingEdits, including mixed states.",
+          "domain": "any combination of state values on pending edits"
+        },
+        {
+          "name": "stylesheet-thread-data",
+          "condition": "A pending edit has thread data stored on the stylesheet entry at StyleEdit.thread; the returned PendingItem is derived from that stylesheet data, with no CommentBackend read.",
+          "outcome": "It derives each PendingItem's thread data from the stylesheet entry's StyleEdit.thread without reading a CommentBackend.",
+          "domain": "any stylesheet-stored thread data"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_pending_model_ts_pendingItems___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/pending/pending_panel.tsx/PendingPanel.",
+      "symbolName": "PendingPanel",
+      "filePath": "packages/editor/src/pending/pending_panel.tsx",
+      "cases": [
+        {
+          "name": "non-empty-items",
+          "condition": "items contains one or more proposals; the panel renders one row for each item in the supplied order, showing each description, author, changeCount, comment count, and Accept and Reject buttons.",
+          "outcome": "Renders one row per proposal in input order, showing its description, author, changeCount, comment count, and Accept and Reject buttons.",
+          "domain": "any non-empty array of proposal items"
+        },
+        {
+          "name": "empty-items",
+          "condition": "items is empty; the panel renders nothing rather than an empty panel box.",
+          "outcome": "Renders nothing when items is empty rather than an empty panel box.",
+          "domain": "an empty array"
+        },
+        {
+          "name": "selected-row",
+          "condition": "selectedId equals an item id; that row renders exactly one ThreadView beneath it, supplied with that item's comments.",
+          "outcome": "Renders exactly one ThreadView beneath the matching row and supplies it with that row's comments.",
+          "domain": "one selected id matching an item"
+        },
+        {
+          "name": "unselected-or-missing-row",
+          "condition": "selectedId is undefined or does not equal any item id; no ThreadView is rendered.",
+          "outcome": "Renders no ThreadView when selectedId is undefined or matches no item.",
+          "domain": "undefined or a non-matching selected id"
+        },
+        {
+          "name": "accept-action",
+          "condition": "The Accept button for a row is clicked; onAccept is called with that row's id, and onSelect is not called.",
+          "outcome": "Calls onAccept with the clicked row's id and does not call onSelect.",
+          "domain": "any row id"
+        },
+        {
+          "name": "reject-action",
+          "condition": "The Reject button for a row is clicked; onReject is called with that row's id, and onSelect is not called.",
+          "outcome": "Calls onReject with the clicked row's id and does not call onSelect.",
+          "domain": "any row id"
+        },
+        {
+          "name": "sync-error",
+          "condition": "syncError is defined; the error is rendered once at the top of the panel rather than once per row.",
+          "outcome": "Renders the defined sync error once at the top of the panel, not once per row.",
+          "domain": "any defined sync error value"
+        },
+        {
+          "name": "no-sync-error",
+          "condition": "syncError is undefined; no sync error is rendered.",
+          "outcome": "Renders no sync error when syncError is undefined."
+        },
+        {
+          "name": "many-items-with-open-thread",
+          "condition": "A large set of proposals is rendered while one row is selected and its thread is open; the root panel supplies its own max-height and overflow:auto so excess content scrolls instead of running off the viewport.",
+          "outcome": "Gives the root panel its own max-height and overflow:auto so excess content scrolls instead of running off the viewport.",
+          "domain": "any sufficiently large non-empty item array with a matching selected id"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_pending_panel_tsx_PendingPanel_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/pending/thread_view.tsx/ThreadView.",
+      "symbolName": "ThreadView",
+      "filePath": "packages/editor/src/pending/thread_view.tsx",
+      "cases": [
+        {
+          "name": "non-empty-comments-in-order",
+          "condition": "A non-empty comments list is rendered in its supplied order, with each comment showing its author, time, and body.",
+          "outcome": "Renders each comment in supplied order with its author, time, and body.",
+          "domain": "any non-empty comments array"
+        },
+        {
+          "name": "missing-or-empty-author",
+          "condition": "A comment whose author is absent or is an empty string displays the literal placeholder 'unknown'.",
+          "outcome": "Displays 'unknown' when a comment author is absent or empty.",
+          "domain": "missing author or empty string"
+        },
+        {
+          "name": "markdown-body-as-plain-text",
+          "condition": "A comment body containing markdown is displayed as plain text rather than parsed or rendered as markdown.",
+          "outcome": "Displays markdown-containing bodies as plain text without parsing markdown.",
+          "domain": "any markdown-formatted body string"
+        },
+        {
+          "name": "reply-to-ignored",
+          "condition": "Comments with reply_to values, including parent-child relationships, remain in the flat supplied list; reply_to does not assemble a tree or alter ordering.",
+          "outcome": "Keeps comments flat in supplied order and ignores reply_to when rendering.",
+          "domain": "any reply_to value or relationship"
+        },
+        {
+          "name": "empty-comments",
+          "condition": "An empty comments list displays the literal text 'No comments yet' above the reply box.",
+          "outcome": "Displays 'No comments yet' above the reply box when comments is empty."
+        },
+        {
+          "name": "blank-reply-disabled",
+          "condition": "The Reply button is disabled and onReply is not called when the textarea value is empty or contains only whitespace.",
+          "outcome": "Disables Reply and does not call onReply for an empty or whitespace-only textarea.",
+          "domain": "empty string or whitespace-only string"
+        },
+        {
+          "name": "nonblank-reply-submitted",
+          "condition": "Clicking an enabled Reply button calls onReply with the textarea value trimmed of leading and trailing whitespace, then clears the textarea.",
+          "outcome": "Calls onReply with trimmed text on click and then clears the textarea.",
+          "domain": "any string containing at least one non-whitespace character"
+        },
+        {
+          "name": "textarea-keydown-stopped",
+          "condition": "Keydown events in the textarea do not propagate to surrounding or document-level handlers.",
+          "outcome": "Stops textarea keydown events from propagating to surrounding or document-level handlers.",
+          "domain": "any textarea keydown event"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_pending_thread_view_tsx_ThreadView_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "initial-no-autoload",
+          "condition": "The app starts with no loaded EditorState and the URL has none of the auto-load parameters, so the StartScreen is shown without initiating a load.",
+          "outcome": "Shows the StartScreen without initiating a load."
+        },
+        {
+          "name": "initial-autoload",
+          "condition": "The app starts with no loaded EditorState and the URL contains at least one of d, s, fetch, gh, pr, or issue, so loading starts and the adapter load is initiated on mount.",
+          "outcome": "Starts in loading state and initiates the adapter load on mount.",
+          "domain": "any URL containing one or more auto-load parameter names"
+        },
+        {
+          "name": "load-error",
+          "condition": "The adapter load resolves to an Err result, so loading stops and the StartScreen displays the formatted load failure.",
+          "outcome": "Stops loading and shows the StartScreen with the formatted adapter load failure.",
+          "domain": "any AdapterError returned by adapter.load"
+        },
+        {
+          "name": "load-without-stylesheet",
+          "condition": "The adapter load succeeds but provides no stylesheet, so a new empty version-1 stylesheet is created, seeded, and used to create the editor state.",
+          "outcome": "Creates a new empty version-1 stylesheet, seeds it, and uses it to create the editor state."
+        },
+        {
+          "name": "load-with-stylesheet",
+          "condition": "The adapter load succeeds with a stylesheet, which is seeded and used to create the editor state.",
+          "outcome": "Seeds the supplied stylesheet and uses it to create the editor state.",
+          "domain": "any successfully loaded stylesheet"
+        },
+        {
+          "name": "fetch-threads-success",
+          "condition": "A successful load has a defined backend; before the EditorState is created, fetchThreads resolves Ok, its entries are merged into the stylesheet, and the merged stylesheet starts the session.",
+          "outcome": "Clears any sync error, merges the fetched thread entries into the stylesheet before state creation, and starts the session with the merged stylesheet.",
+          "domain": "any successful fetched thread entries"
+        },
+        {
+          "name": "fetch-threads-error",
+          "condition": "A successful load has a defined backend and fetchThreads resolves Err, so the sync-error signal is set and the session starts with the unmerged stylesheet.",
+          "outcome": "Clears the prior sync error, records the returned fetch error, and starts the session with the unmerged stylesheet.",
+          "domain": "any backend fetch error result"
+        },
+        {
+          "name": "empty-pending-list",
+          "condition": "The loaded stylesheet has no pending items, so PendingBanner renders and the Inspector branch is selected even if the expanded signal is true.",
+          "outcome": "Renders PendingBanner and selects the Inspector branch even when expanded is true.",
+          "domain": "a stylesheet with zero pending items"
+        },
+        {
+          "name": "collapsed-with-pending",
+          "condition": "Pending items exist while the panel is not expanded, so the inspector slot contains PendingBanner followed by the geometry-guarded Inspector.",
+          "outcome": "Places PendingBanner followed by the geometry-guarded Inspector in the inspector slot.",
+          "domain": "any non-empty pending item list with expanded false"
+        },
+        {
+          "name": "expanded-with-pending",
+          "condition": "Pending items exist while the panel is expanded, so the inspector slot contains PendingBanner followed by PendingPanel instead of Inspector.",
+          "outcome": "Places PendingBanner followed by PendingPanel in the inspector slot instead of Inspector.",
+          "domain": "any non-empty pending item list with expanded true"
+        },
+        {
+          "name": "pending-last-item-removed",
+          "condition": "Accepting or rejecting the final pending proposal while the panel is expanded makes the pending list empty, causing the Inspector to return automatically rather than leaving an empty panel slot.",
+          "outcome": "Returns to the Inspector automatically when the pending list becomes empty."
+        },
+        {
+          "name": "inspector-without-geometry",
+          "condition": "The panel is not being shown but scene geometry is unavailable, so Inspector is withheld while the pending banner remains eligible to render.",
+          "outcome": "Withholds Inspector while leaving PendingBanner eligible to render."
+        },
+        {
+          "name": "panel-without-geometry",
+          "condition": "The panel is shown while scene geometry is unavailable, so PendingPanel still renders because the geometry guard applies only to Inspector.",
+          "outcome": "Renders PendingPanel because its display is not guarded by scene geometry."
+        },
+        {
+          "name": "panel-replacement-clears-focus",
+          "condition": "The panel is shown, replacing a previously mounted Inspector, so the focusInspector callback is reset to undefined and focus commands cannot invoke a detached Inspector node.",
+          "outcome": "Resets focusInspector to undefined so focus commands cannot invoke the detached Inspector."
+        },
+        {
+          "name": "accept-pending",
+          "condition": "The user accepts a pending proposal, so state.acceptPending is called and no forge or backend operation is performed.",
+          "outcome": "Calls state.acceptPending and performs no forge or backend operation."
+        },
+        {
+          "name": "reject-pending",
+          "condition": "The user rejects a pending proposal, so state.rejectPending is called and no forge or backend operation is performed.",
+          "outcome": "Calls state.rejectPending and performs no forge or backend operation."
+        },
+        {
+          "name": "reply-without-backend",
+          "condition": "A reply is submitted when pair.backend is undefined; the sync-error signal is cleared, the comment is added locally before the asynchronous work completes, and no network post is attempted.",
+          "outcome": "Clears the sync error, adds the comment locally first, and performs no network post.",
+          "domain": "any comment body with no configured backend"
+        },
+        {
+          "name": "reply-with-backend-success",
+          "condition": "A reply is submitted with a defined backend and postComment resolves Ok; the comment is added first, the sync-error signal is cleared at attempt start, and no sync error remains.",
+          "outcome": "Adds the comment first, clears the sync error at attempt start, and leaves no sync error after a successful post.",
+          "domain": "any comment body and successful CommentBackend post result"
+        },
+        {
+          "name": "reply-with-backend-error",
+          "condition": "A reply is submitted with a defined backend and postComment resolves Err; the comment remains stored locally and the sync-error signal is set from the returned error.",
+          "outcome": "Adds the comment locally and sets the sync error from the returned post error.",
+          "domain": "any comment body and backend Err result"
+        },
+        {
+          "name": "retry-clears-sync-error",
+          "condition": "A fetch or comment-post attempt begins after a prior sync error, so the sync-error signal is cleared before the new Result is handled.",
+          "outcome": "Clears the sync error at the start of the new fetch or comment-post attempt.",
+          "domain": "any subsequent fetch or post attempt"
+        },
+        {
+          "name": "backend-throws",
+          "condition": "A backend method throws instead of returning a Result; the described Result-based error handling does not treat the thrown exception as the failure channel.",
+          "outcome": "Does not handle a thrown backend exception through the Result-based error path.",
+          "domain": "a thrown exception from fetchThreads or postComment"
+        },
+        {
+          "name": "stored-theme-present",
+          "condition": "localStorage contains a recognized editor theme name, so that theme is selected and applied.",
+          "outcome": "Selects and applies the recognized stored editor theme.",
+          "domain": "any recognized persisted theme name"
+        },
+        {
+          "name": "stored-theme-missing-or-invalid",
+          "condition": "localStorage is unavailable, returns null, or contains an unrecognized theme name, so the default editor theme resolution falls back to the first available editor theme.",
+          "outcome": "Falls back to and applies the first available editor theme.",
+          "domain": "storage access failure, no stored value, or any unrecognized theme name"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/select_adapters.ts/selectAdapters().",
+      "symbolName": "selectAdapters",
+      "filePath": "packages/editor/src/shell/select_adapters.ts",
+      "cases": [
+        {
+          "name": "pr-parameter-present",
+          "condition": "The URL parameters contain a `pr` parameter, regardless of its value or any other parameters; this takes precedence over `issue`, `fetch`, `gh`, `d`, and `s`. The result uses UrlParamAdapter and a GitForgePrBackend over a GitHubForge.",
+          "outcome": "Returns an AdapterPair with a UrlParamAdapter and a GitForgePrBackend over a GitHubForge.",
+          "domain": "any value of `pr`, including an empty string, with any combination of other parameters"
+        },
+        {
+          "name": "issue-parameter-present-without-pr",
+          "condition": "The URL parameters contain an `issue` parameter but no `pr` parameter, regardless of any `fetch`, `gh`, `d`, or `s` parameters. The result uses UrlParamAdapter and a GitForgeIssueBackend over a GitHubForge.",
+          "outcome": "Returns an AdapterPair with a UrlParamAdapter and a GitForgeIssueBackend over a GitHubForge.",
+          "domain": "any value of `issue`, including an empty string, with any combination of `fetch`, `gh`, `d`, and `s` parameters"
+        },
+        {
+          "name": "remote-parameter-present-without-pr-or-issue",
+          "condition": "No `pr` or `issue` parameter is present, and at least one of `fetch`, `gh`, `d`, or `s` is present. The result uses UrlParamAdapter and has no backend.",
+          "outcome": "Returns an AdapterPair with a UrlParamAdapter and no backend.",
+          "domain": "any non-empty subset of `fetch`, `gh`, `d`, and `s`, with arbitrary values"
+        },
+        {
+          "name": "no-selection-parameters",
+          "condition": "None of `pr`, `issue`, `fetch`, `gh`, `d`, or `s` is present. The result uses BrowserFsAdapter and has no backend.",
+          "outcome": "Returns an AdapterPair with a BrowserFsAdapter and no backend."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_shell_select_adapters_ts_selectAdapters___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/create_editor_state.ts/createEditorState().",
+      "symbolName": "createEditorState",
+      "filePath": "packages/editor/src/state/create_editor_state.ts",
+      "cases": [
+        {
+          "name": "initial-state",
+          "condition": "The function is called with a diagram and stylesheet, creating state with those values, empty undo/redo logs, clean dirty state, and version zero.",
+          "outcome": "It returns state exposing the supplied diagram and stylesheet with empty undo and redo logs, clean dirty state, and version zero."
+        },
+        {
+          "name": "apply-style-edit-with-changes",
+          "condition": "applyStyleEdit receives a StyleEdit with at least one non-empty change list; it applies the edit, records one undo entry, clears redo history, and marks the state changed.",
+          "outcome": "It applies the edit, records one undo entry, clears redo history, and marks the state changed.",
+          "domain": "any StyleEdit with one or more node, group, edge, or annotation changes"
+        },
+        {
+          "name": "apply-style-edit-empty",
+          "condition": "applyStyleEdit receives an edit whose node, group, edge, and annotation change lists are all empty; it is a no-op.",
+          "outcome": "It does nothing and leaves the stylesheet, history, dirty state, and version unchanged."
+        },
+        {
+          "name": "apply-style-edit-coalescing-key",
+          "condition": "applyStyleEdit receives a non-empty edit with an optional coalescing key; the key is stored on the undo entry and existing coalescing behavior applies.",
+          "outcome": "It stores the optional coalescing key on the undo entry and applies the existing coalescing behavior.",
+          "domain": "any string key or an omitted key"
+        },
+        {
+          "name": "undo-without-history",
+          "condition": "undo is called when the undo log is empty; it is a no-op.",
+          "outcome": "It does nothing when there is no undo history."
+        },
+        {
+          "name": "undo-with-history",
+          "condition": "undo is called when the undo log contains an entry; the stylesheet is restored from that entry, the entry moves to the redo log, and the state is marked changed.",
+          "outcome": "It restores the latest undo snapshot, moves that entry to the redo log, and marks the state changed.",
+          "domain": "one or more undo entries"
+        },
+        {
+          "name": "redo-without-history",
+          "condition": "redo is called when the redo log is empty; it is a no-op.",
+          "outcome": "It does nothing when there is no redo history."
+        },
+        {
+          "name": "redo-ordinary-entry",
+          "condition": "redo replays an entry produced by applyStyleEdit, whose pendingEditsAfter field is unset, leaving the pending-edits behavior otherwise unchanged.",
+          "outcome": "It reapplies the ordinary edit without changing pendingEdits beyond the edit's normal behavior."
+        },
+        {
+          "name": "redo-pending-transition-entry",
+          "condition": "redo replays an acceptPending, rejectPending, or addComment entry whose pendingEditsAfter field is defined; after applying the edit, it replaces the stylesheet pendingEdits with that recorded array.",
+          "outcome": "It reapplies the edit and replaces pendingEdits with the entry's recorded pendingEditsAfter array.",
+          "domain": "any pending-transition undo entry"
+        },
+        {
+          "name": "redo-pending-transition-repeated",
+          "condition": "A pending-transition entry is undone and redone repeatedly; each redo creates a fresh undo entry that propagates pendingEditsAfter, so a subsequent undo/redo preserves the pending-edits result.",
+          "outcome": "Each redo propagates pendingEditsAfter into its fresh undo entry so repeated undo and redo operations preserve the pending-edits result."
+        },
+        {
+          "name": "append-pending-edit",
+          "condition": "appendPendingEdit receives a StyleEdit and appends it to pendingEdits, increments version, and does not create an undo entry or change dirty state through markChanged.",
+          "outcome": "It appends the edit to pendingEdits and increments version without creating an undo entry or marking the state dirty.",
+          "domain": "any StyleEdit"
+        },
+        {
+          "name": "adopt-stylesheet",
+          "condition": "adoptStylesheet receives a stylesheet, replaces the current stylesheet, and increments version without creating an undo entry or changing dirty state through markChanged.",
+          "outcome": "It replaces the stylesheet and increments version without creating an undo entry or marking the state dirty.",
+          "domain": "any Stylesheet"
+        },
+        {
+          "name": "accept-existing-pending",
+          "condition": "acceptPending is called with an id that identifies an existing pending proposal; the proposal is folded into the stylesheet, removed from pendingEdits in the same write, and one undo entry is recorded with pendingEditsAfter set to the array being written.",
+          "outcome": "It applies and removes the matching proposal in one stylesheet write, records one undo entry, and sets its pendingEditsAfter to the written array.",
+          "domain": "any existing pending proposal id"
+        },
+        {
+          "name": "accept-existing-empty-proposal",
+          "condition": "acceptPending identifies an existing pending proposal whose StyleEdit has empty change lists; the proposal is still accepted and removed as a pending entry, with the normal single-write undo and change bookkeeping.",
+          "outcome": "It removes the matching empty proposal in the normal single-write operation, recording one undo entry and change bookkeeping."
+        },
+        {
+          "name": "accept-missing-pending",
+          "condition": "acceptPending is called with an id that has no matching pending entry; it is a no-op with no stylesheet write, undo entry, dirty change, or version bump.",
+          "outcome": "It does nothing, with no stylesheet write, undo entry, dirty change, or version bump.",
+          "domain": "any id absent from pendingEdits"
+        },
+        {
+          "name": "reject-existing-pending",
+          "condition": "rejectPending is called with an id that identifies an existing pending proposal; the proposal is removed without applying its element changes, and one undo entry is recorded with pendingEditsAfter set to the array being written.",
+          "outcome": "It removes the matching proposal without applying its changes in one recorded transition, setting pendingEditsAfter to the written array.",
+          "domain": "any existing pending proposal id"
+        },
+        {
+          "name": "reject-missing-pending",
+          "condition": "rejectPending is called with an id that has no matching pending entry; it is a no-op with no stylesheet write, undo entry, dirty change, or version bump.",
+          "outcome": "It does nothing, with no stylesheet write, undo entry, dirty change, or version bump.",
+          "domain": "any id absent from pendingEdits"
+        },
+        {
+          "name": "add-comment-to-entry-without-thread",
+          "condition": "addComment identifies an existing pending proposal and a matching entry that has no comment thread; it creates a CommentThread containing the comment, leaves all other entries and element maps unchanged, and records the pending transition for undo/redo.",
+          "outcome": "It creates a thread containing the comment on the matching entry, preserves all other entries and element maps, and records the pending transition for undo and redo.",
+          "domain": "any existing proposal and matching entry without a thread"
+        },
+        {
+          "name": "add-comment-to-entry-with-thread",
+          "condition": "addComment identifies an existing pending proposal and a matching entry that already has a comment thread; it appends the comment to that thread, leaves all other entries and element maps unchanged, and records the pending transition for undo/redo.",
+          "outcome": "It appends the comment to the matching thread, preserves all other entries and element maps, and records the pending transition for undo and redo.",
+          "domain": "any existing proposal and matching entry with a thread"
+        },
+        {
+          "name": "add-comment-missing-pending",
+          "condition": "addComment is called with an id that has no matching pending entry; it is a no-op with no stylesheet write, undo entry, dirty change, or version bump.",
+          "outcome": "It does nothing, with no stylesheet write, undo entry, dirty change, or version bump.",
+          "domain": "any id absent from pendingEdits"
+        },
+        {
+          "name": "add-comment-entry-not-found",
+          "condition": "addComment identifies an existing pending proposal but no matching entry within that proposal; no element entry or map is changed, while the pending transition is handled according to the operation's existing matching-entry behavior.",
+          "outcome": "It leaves element entries and maps unchanged while handling the existing proposal's pending transition according to the operation's matching-entry behavior.",
+          "domain": "any existing proposal with no matching entry"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_create_editor_state_ts_createEditorState___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#",
+      "symbolName": "EditorState",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "declared-editor-state-interface",
+          "condition": "An implementation conforms to the declared EditorState interface, providing the listed diagram, stylesheet, undo/redo, style-edit, pending-edit, stylesheet-adoption, dirty, and version members.",
+          "outcome": "An implementation conforms to the EditorState interface by providing diagram, stylesheet, undo/redo, style-edit, pending-edit, stylesheet-adoption, dirty, and version members."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#acceptPending().",
+      "symbolName": "acceptPending",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "matching-pending-proposal",
+          "condition": "The supplied editId matches a pendingEdits entry: the proposal is applied to the stylesheet, that entry is removed, its discussion thread (if present) is dropped, StyleEditState.APPLIED is not written, and the combined stylesheet-plus-pendingEdits change creates one undo entry that restores both halves.",
+          "outcome": "Applies the proposal, removes its pending entry and any thread without writing APPLIED, recording the combined change as one undoable operation that restores both halves.",
+          "domain": "any string identifying an existing pending proposal"
+        },
+        {
+          "name": "matching-proposal-with-thread",
+          "condition": "The supplied editId matches a pending proposal that contains a CommentThread: the proposal is applied and removed, and the thread is lost because it is stored inside the removed StyleEdit.",
+          "outcome": "Applies and removes the pending proposal, dropping its CommentThread because it is contained in the removed StyleEdit.",
+          "domain": "any existing pending proposal whose StyleEdit contains a thread"
+        },
+        {
+          "name": "no-matching-pending-proposal",
+          "condition": "No pendingEdits entry has the supplied editId: the call is a no-op, nothing is written, no undo entry is pushed, and dirty and version remain unchanged.",
+          "outcome": "Does nothing, leaving the stylesheet, pending edits, undo history, dirty state, and version unchanged.",
+          "domain": "any string that does not identify an existing pending proposal"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_acceptPending___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#addComment().",
+      "symbolName": "addComment",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "matching-entry-without-thread",
+          "condition": "A pendingEdits entry has the supplied editRef and currently has no comment thread; the supplied already-built Comment is appended by creating the thread through the undo log.",
+          "outcome": "Appends the supplied Comment by creating the entry's comment thread through the undo log.",
+          "domain": "any existing edit id and any already-built Comment"
+        },
+        {
+          "name": "matching-entry-with-existing-thread",
+          "condition": "A pendingEdits entry has the supplied editRef and already has a comment thread; the supplied already-built Comment is appended to that thread through the undo log.",
+          "outcome": "Appends the supplied Comment to the existing thread through the undo log.",
+          "domain": "any existing edit id, existing comment thread, and already-built Comment"
+        },
+        {
+          "name": "no-matching-entry",
+          "condition": "No pendingEdits entry has the supplied editRef; the call is a no-op and does not add the Comment.",
+          "outcome": "Does nothing and does not add the Comment.",
+          "domain": "any edit id absent from pendingEdits"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_addComment___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#dirty().",
+      "symbolName": "dirty",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "no-write-this-session",
+          "condition": "The accessor is evaluated before any write has run during the current session, so it returns false.",
+          "outcome": "It returns false because no write has run during the current session.",
+          "domain": "any session state before the first write"
+        },
+        {
+          "name": "write-has-run-this-session",
+          "condition": "The accessor is evaluated after at least one write has run during the current session, so it returns true.",
+          "outcome": "It returns true because at least one write has run during the current session.",
+          "domain": "any session state after one or more writes"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_dirty___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#rejectPending().",
+      "symbolName": "rejectPending",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "matching-pending-proposal",
+          "condition": "A pending edit has the supplied editId: remove that proposal from pendingEdits without applying its changes, including its embedded thread, as one write with one undo entry.",
+          "outcome": "Removes the matching proposal and its embedded thread from pendingEdits without applying changes, as one write with one undo entry.",
+          "domain": "any string that identifies an existing pending edit"
+        },
+        {
+          "name": "missing-pending-proposal",
+          "condition": "No pending edit has the supplied editId: perform a no-op, without applying changes or creating a rejection entry.",
+          "outcome": "Does nothing when no pending edit has the supplied editId, without applying changes or creating a rejection entry.",
+          "domain": "any string that identifies no existing pending edit"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_rejectPending___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editor_state.ts/EditorState#version().",
+      "symbolName": "version",
+      "filePath": "packages/editor/src/state/editor_state.ts",
+      "cases": [
+        {
+          "name": "read-current-counter",
+          "condition": "Reading the Solid accessor returns the current version as a number.",
+          "outcome": "Reading the Solid accessor returns the current version as a number."
+        },
+        {
+          "name": "read-without-write",
+          "condition": "Reading the accessor repeatedly without any intervening write returns the same version; the counter does not change merely from being read.",
+          "outcome": "Repeated reads without an intervening write return the same version without changing the counter.",
+          "domain": "any sequence of reads with no writes"
+        },
+        {
+          "name": "after-single-write",
+          "condition": "After one write, the version is incremented exactly once from its prior value.",
+          "outcome": "After one write, the version increases exactly once from its prior value."
+        },
+        {
+          "name": "after-multiple-writes",
+          "condition": "After multiple writes, the version increases monotonically by one for each write, with no missed or extra increments.",
+          "outcome": "After multiple writes, the version increases monotonically by exactly one for each write.",
+          "domain": "any positive number of writes"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-pending__packages_editor_src_state_editor_state_ts_EditorState_version___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "5db62e833bcd466850649d6d277994f5c421815bdd2fc6a3204d01d8f5fb6da3"
+}

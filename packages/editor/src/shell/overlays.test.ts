@@ -8,7 +8,6 @@ import { init } from '@archeglyph/proto/util/init';
 import { localized } from '../state/edits/annotation';
 import { filterPaletteItems } from './palette_search';
 import { commandPaletteItems, elementPaletteItems } from './palette_items';
-import { PALETTE_EXCLUDED } from './palette_excluded';
 import { formatChord } from './chord_label';
 import type { PaletteItem } from './palette_item';
 import { centerBoundsInRect } from '../ui_state/viewport_math';
@@ -49,7 +48,7 @@ describe('filterPaletteItems', () => {
 
 describe('commandPaletteItems', () => {
   const commands = [
-    { id: 'undo', label: 'Undo', run: (): void => undefined },
+    { id: 'undo', label: 'Undo', appliesTo: 'global', run: (): void => undefined },
     { id: 'nudge-up', label: 'Nudge up', run: (): void => undefined },
   ] as never;
   const keymap = [
@@ -69,12 +68,6 @@ describe('commandPaletteItems', () => {
     const labels = commandPaletteItems(commands, keymap).map((i) => i.label);
     expect(labels).toContain('Undo');
     expect(labels).not.toContain('Nudge up');
-  });
-
-  test('the exclusion set covers the chord-only verbs', () => {
-    for (const id of ['escape', 'nudge-up', 'ring-next', 'open-palette', 'open-help']) {
-      expect(PALETTE_EXCLUDED.has(id as never)).toBe(true);
-    }
   });
 });
 

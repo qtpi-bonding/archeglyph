@@ -3,7 +3,7 @@
 import { Accessor, Component, createSignal, For, JSX, onCleanup, onMount } from 'solid-js';
 import { CommandId } from '../ui_state/keymap';
 import { MenuItem } from './menu_items';
-import { Vec2 } from '../../../proto/src/gen/style_pb';
+import { Vec2 } from '@archeglyph/core/geometry/vec2';
 
 export interface ContextMenuProps {
   items: ReadonlyArray<MenuItem>;

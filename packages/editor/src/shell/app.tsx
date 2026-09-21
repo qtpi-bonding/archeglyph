@@ -2,7 +2,8 @@
 
 import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
-import { Stylesheet, StylesheetSchema, Vec2 } from '@archeglyph/proto/gen/style_pb';
+import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
+import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';

@@ -50,6 +50,23 @@ function sheet(): Stylesheet {
   });
 }
 
+// Every edit stamps itself with Date.now(), so two edits built from the same
+// inputs differ whenever the calls straddle a millisecond boundary. The claim
+// under test is about the delta, never about when it was built.
+function withoutTimestamps(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(withoutTimestamps);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([key]) => key !== 'timestampMs')
+        .map(([key, inner]) => [key, withoutTimestamps(inner)]),
+    );
+  }
+  return value;
+}
+
 describe('a modal grab is the same gesture as a drag', () => {
   const selection: Array<ElementRef> = [{ id: 'n1', kind: 'node' }];
   const geometry = (): SceneGeometry => geometryFrom([node('n1', v(10, 20), v(100, 50))]);
@@ -73,7 +90,7 @@ describe('a modal grab is the same gesture as a drag', () => {
     const viaDrag = moveCommit(dragSession, scene, sheet(), { x: 7, y: 53 });
 
     expect(viaModal).toBeDefined();
-    expect(viaModal).toEqual(viaDrag!);
+    expect(withoutTimestamps(viaModal)).toEqual(withoutTimestamps(viaDrag!));
   });
 
   test('the committed edit actually moves n1 40 down, not merely equals itself', () => {

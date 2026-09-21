@@ -21,14 +21,6 @@ const rowStyle: JSX.CSSProperties = {
 
 const inputStyle: JSX.CSSProperties = {
   flex: '1',
-  'min-width': '0',
-  'box-sizing': 'border-box',
-  padding: '2px 4px',
-  border: '1px solid var(--ag-edge)',
-  'border-radius': '2px',
-  'font-size': '12px',
-  background: 'var(--ag-field)',
-  color: 'var(--ag-fg)',
 };
 
 const swatchStyle: JSX.CSSProperties = {
@@ -115,7 +107,7 @@ export const ColorFieldInput: Component<TextFieldProps> = (props: TextFieldProps
 
   return (
     <label>
-      <span style={{ display: 'block', 'font-size': '10px', color: 'var(--ag-fg-3)' }}>{props.label}</span>
+      <span>{props.label}</span>
       <div style={rowStyle}>
         <input
           type='text'

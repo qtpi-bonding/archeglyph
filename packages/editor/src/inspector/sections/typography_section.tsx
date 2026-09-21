@@ -44,7 +44,6 @@ export const TypographySection: Component<TypographySectionProps> = (
 
   return (
     <section>
-      <div>Typography</div>
       <NumberFieldInput
         label="Size"
         field={model().size}

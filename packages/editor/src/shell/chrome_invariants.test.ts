@@ -24,12 +24,17 @@ describe('floating islands are clickable', () => {
   });
 
   // The rule alone is not enough: the class has to be on every root.
+  // Matched against the class LIST, not an exact attribute: a root may carry
+  // a second class, as the inspector does.
+  const hasIslandClass = (source: string): boolean =>
+    /class="[^"]*\bag-island\b[^"]*"/.test(source);
+
   test('every island root carries the class the rule keys on', () => {
     const roots = ['toolbar.tsx', 'zoom_island.tsx', 'state_island.tsx', 'undo_island.tsx', 'file_island.tsx'];
     for (const file of roots) {
-      expect(read(file)).toContain('class="ag-island"');
+      expect({ file, ok: hasIslandClass(read(file)) }).toEqual({ file, ok: true });
     }
-    expect(readFileSync(join(here, '../inspector/inspector.tsx'), 'utf8')).toContain('class="ag-island"');
+    expect(hasIslandClass(readFileSync(join(here, '../inspector/inspector.tsx'), 'utf8'))).toBe(true);
   });
 
   test('no island component is added without the class', () => {
@@ -39,7 +44,7 @@ describe('floating islands are clickable', () => {
       (f) => (f.endsWith('_island.tsx') || f === 'toolbar.tsx') && !f.includes('.test.'),
     );
     for (const file of suspects) {
-      expect({ file, hasClass: read(file).includes('class="ag-island"') })
+      expect({ file, hasClass: hasIslandClass(read(file)) })
         .toEqual({ file, hasClass: true });
     }
   });

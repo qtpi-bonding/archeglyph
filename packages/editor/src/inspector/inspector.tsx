@@ -53,6 +53,15 @@ export const Inspector: Component<InspectorProps> = (
     canvas?.focus();
   };
 
+  const SECTION_TITLES: Record<SectionId, string> = {
+    layout: 'Layout',
+    shape: 'Shape',
+    line: 'Line',
+    typography: 'Typography',
+    group: 'Group',
+    annotation: 'Annotation',
+  };
+
   const section = (id: SectionId): JSX.Element => {
     const current: InspectorModelOption = model();
     if (current === undefined) {
@@ -81,13 +90,12 @@ export const Inspector: Component<InspectorProps> = (
 
   return (
     <div
-      class="ag-island"
+      class="ag-island ag-inspector"
       ref={panel}
       tabIndex={-1}
       onKeyDown={leavePanel}
       style={{
-        width: '100%',
-        height: '100%',
+        'max-height': '100%',
         overflow: 'auto',
         padding: '8px',
         'box-sizing': 'border-box',
@@ -99,7 +107,12 @@ export const Inspector: Component<InspectorProps> = (
       <Show when={model()} fallback={<div style={{ color: 'var(--ag-fg-3)' }}>Nothing selected</div>}>
         {(current) => (
           <For each={renderableSections(current())}>
-            {(id) => section(id)}
+            {(id) => (
+              <div>
+                <div class="ag-section-title">{SECTION_TITLES[id]}</div>
+                {section(id)}
+              </div>
+            )}
           </For>
         )}
       </Show>

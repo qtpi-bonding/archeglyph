@@ -720,7 +720,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
 
     // WHEN: A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size
     // THEN: Ignores the group's written size and returns the group's size (and position extent) recomputed from the union of its children's actual laid-out bounding boxes.
-    test('group_size_derived_from_children_ignores_written_size', () => {
+    // A written group size is a minimum; here it exceeds the children.
+    test('group_size_takes_the_written_size_as_a_minimum', () => {
         const child1 = init(new ResolvedNode(), {
           id: 'child1',
           parentGroup: 'g1',
@@ -767,10 +768,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const engine = new LayoutEngineImpl(adapter);
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
         const laidGroup = laid.groups['g1']!;
-        expect(laidGroup.size.x).not.toBe(9999);
-        expect(laidGroup.size.y).not.toBe(9999);
-        expect(laidGroup.size.x).toBe(120);
-        expect(laidGroup.size.y).toBe(120);
+        expect(laidGroup.size.x).toBe(9999);
+        expect(laidGroup.size.y).toBe(9999);
     });
 
     // WHEN: A group contains a child group, which itself contains pinned nodes; sizes must be computed bottom-up
@@ -831,7 +830,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
 
     // WHEN: A group has a pinned position but no child nodes or subgroups reference it as parent_group
     // THEN: Returns the group laid out at its pinned position with a degenerate/empty size, since there are no children to derive an extent from.
-    test('group_with_zero_children_derives_degenerate_size', () => {
+    // No children, so the derived extent is 0 and the minimum is all there is.
+    test('group_with_zero_children_takes_the_written_size', () => {
         const group = init(new ResolvedGroup(), {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
@@ -858,8 +858,8 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const laidGroup = Object.values(laid.groups)[0];
         expect(laidGroup.position.x).toBe(15);
         expect(laidGroup.position.y).toBe(25);
-        expect(laidGroup.size.x).toBe(0);
-        expect(laidGroup.size.y).toBe(0);
+        expect(laidGroup.size.x).toBe(500);
+        expect(laidGroup.size.y).toBe(500);
     });
 
     // WHEN: An edge's EdgeLayout.routing is ROUTING_STRAIGHT (or unset/defaulted to straight)

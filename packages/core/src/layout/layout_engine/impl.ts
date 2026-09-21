@@ -183,7 +183,12 @@ export class LayoutEngineImpl implements LayoutEngine {
         width = Math.max(width, childOrigin.x - origin.x + childExtent.x);
         height = Math.max(height, childOrigin.y - origin.y + childExtent.y);
       }
-      const size = { x: width, y: height };
+      // Same rule the ELK path gets via nodeSize.minimum: an override is a
+      // MINIMUM, so a group grows on request and still contains its children.
+      const requested = group.layout?.size;
+      const size = requested === undefined
+        ? { x: width, y: height }
+        : { x: Math.max(width, requested.x), y: Math.max(height, requested.y) };
       computedGroupSize.set(group.id, size);
       return size;
     };

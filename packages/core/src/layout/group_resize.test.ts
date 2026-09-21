@@ -40,15 +40,19 @@ const CONTENT = {
   },
 };
 
-async function groupSize(size?: { x: number; y: number }): Promise<{ x: number; y: number }> {
+async function groupSize(
+  size?: { x: number; y: number },
+  position?: { x: number; y: number },
+): Promise<{ x: number; y: number }> {
   const diagram = fromJson(DiagramSchema, JSON.stringify(CONTENT));
   const sheet = create(StylesheetSchema, {
     schemaVersion: 1,
     groups: {
       box: create(GroupStyleEntrySchema, {
-        layout: size === undefined
-          ? create(GroupLayoutSchema, {})
-          : create(GroupLayoutSchema, { size: create(Vec2Schema, size) }),
+        layout: create(GroupLayoutSchema, {
+          ...(size === undefined ? {} : { size: create(Vec2Schema, size) }),
+          ...(position === undefined ? {} : { position: create(Vec2Schema, position) }),
+        }),
       }),
     },
   });
@@ -82,6 +86,17 @@ describe('resizing a group', () => {
     // Not 10x10: the group still contains everything it did before.
     expect(shrunk.x).toBe(derived.x);
     expect(shrunk.y).toBe(derived.y);
+  });
+
+  // Dragging a group writes a position as well as a size, which sends layout
+  // down the pinned path instead of ELK. Both must agree or a resize snaps
+  // back the moment the group has ever been moved.
+  test('the rule is the same once the group is pinned', async () => {
+    const at = { x: 50, y: 50 };
+    const derived = await groupSize(undefined, at);
+
+    expect((await groupSize({ x: 600, y: 400 }, at)).x).toBe(600);
+    expect((await groupSize({ x: 10, y: 10 }, at)).x).toBe(derived.x);
   });
 
   test('one axis can grow while the other clamps', async () => {

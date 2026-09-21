@@ -91,6 +91,10 @@ export const ContextMenu: Component<ContextMenuProps> = (
     'font-family': 'var(--ag-font-ui)',
     outline: 'none',
     position: 'fixed',
+    // Corner clamping bounds the position, not the height; a menu taller than
+    // the viewport needs this to stay reachable.
+    'max-height': 'calc(100vh - 16px)',
+    'overflow-y': 'auto',
   };
 
   return (

@@ -74,6 +74,14 @@ export const CommandPalette: Component<CommandPaletteProps> = (
     'font-family': 'var(--ag-font-ui)',
     'max-width': '640px',
     width: 'min(640px, calc(100vw - 32px))',
+    // Without a cap the surface grows past the viewport, and because the scrim
+    // centres it the overflow is split across the top AND bottom edges -- the
+    // first rows are unreachable, not just the last. Column layout keeps the
+    // input pinned while only the list scrolls.
+    'max-height': 'calc(100vh - 64px)',
+    display: 'flex',
+    'flex-direction': 'column',
+    overflow: 'hidden',
   };
   const inputStyle: JSX.CSSProperties = {
     background: 'var(--ag-field)',
@@ -100,7 +108,8 @@ export const CommandPalette: Component<CommandPaletteProps> = (
           style={inputStyle}
           type="text"
         />
-        <div role="listbox">
+        {/* min-height:0 or the flex item refuses to shrink and scrolls nothing. */}
+        <div role="listbox" style={{ 'overflow-y': 'auto', 'min-height': '0' }}>
           <For each={filtered()}>
             {(item: PaletteItem, index: Accessor<number>): JSX.Element => (
               <button

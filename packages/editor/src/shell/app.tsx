@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
+import { batch, Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -123,8 +123,14 @@ export const App: Component<{}> = (): JSX.Element => {
     saveController()?.dispose();
     fileSync?.stop();
     fileSync = undefined;
-    setState(nextState);
-    setScene(createScene(nextState, () => theme, layoutEngine));
+    // Batched: the Show below is gated on state(), and Canvas reads
+    // scene().geometry(). An unbatched setState flushes the render with
+    // scene() still null, which the `scene={scene()!}` assertion hides from
+    // tsc and which no test sees, because nothing mounts App.
+    batch((): void => {
+      setScene(createScene(nextState, () => theme, layoutEngine));
+      setState(nextState);
+    });
   }
 
   function startSession(nextState: EditorState, result: LoadResult): void {

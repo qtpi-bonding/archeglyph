@@ -189,6 +189,14 @@ export class ElkAdapterImpl implements LayoutAdapter {
             'org.eclipse.elk.fixed': 'true',
           };
         }
+        const requested = group.layout?.size;
+        if (requested !== undefined) {
+          elkGroup.layoutOptions = {
+            ...(elkGroup.layoutOptions ?? {}),
+            'org.eclipse.elk.nodeSize.constraints': 'MINIMUM_SIZE',
+            'org.eclipse.elk.nodeSize.minimum': `(${requested.x},${requested.y})`,
+          };
+        }
       }
 
       const layoutOptions: Record<string, string> = {

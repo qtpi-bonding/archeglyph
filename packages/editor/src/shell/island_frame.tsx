@@ -26,17 +26,25 @@ export class IslandFrameProps {
   undo?: JSX.Element;
   state?: JSX.Element;
   echo?: JSX.Element;
+  pending?: JSX.Element;
 }
 
+/** Matches the inspector, so the two columns frame the canvas evenly. */
+const SIDE_COLUMN_WIDTH: string = '268px';
+
 /** Render one positioning-only island slot. */
-function IslandSlot(props: { content?: JSX.Element; style: JSX.CSSProperties }): JSX.Element {
+function IslandSlot(props: {
+  content?: JSX.Element;
+  style: JSX.CSSProperties;
+  maxHeight?: string;
+}): JSX.Element {
   return (
     <div
       style={{
         position: 'absolute',
         ...props.style,
         'pointer-events': 'none',
-        'max-height': 'calc(50vh - (2 * var(--ag-island-inset)))',
+        'max-height': props.maxHeight ?? 'calc(50vh - (2 * var(--ag-island-inset)))',
       }}
     >
       {props.content}
@@ -85,7 +93,23 @@ export const IslandFrame = (props: IslandFrameProps): JSX.Element => {
         style={{ top: 'var(--ag-island-inset)', left: 'var(--ag-island-inset)' }}
       />
       <IslandSlot
-        content={props.file}
+        content={
+          // Proposals belong on the opposite side from the inspector: both are
+          // tall, and side by side one of them has to be hidden to show the
+          // other. Right-aligned so the file island keeps its own width.
+          <div style={{
+            display: 'flex',
+            'flex-direction': 'column',
+            'align-items': 'flex-end',
+            gap: '8px',
+            width: SIDE_COLUMN_WIDTH,
+            'max-height': '100%',
+          }}>
+            {props.file}
+            {props.pending}
+          </div>
+        }
+        maxHeight="calc(100vh - (2 * var(--ag-island-inset)) - 56px)"
         style={{ top: 'var(--ag-island-inset)', right: 'var(--ag-island-inset)' }}
       />
       <IslandSlot

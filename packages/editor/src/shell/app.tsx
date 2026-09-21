@@ -258,44 +258,17 @@ export const App: Component<{}> = (): JSX.Element => {
         }
         toolbar={<Toolbar tool={ui.tool()} onCommand={onCommand} />}
         inspector={
-          <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px', width: '100%', height: '100%' }}>
-            <PendingBanner
-              count={pendingItems(state()!.stylesheet()).length}
-              expanded={expanded()}
-              onToggle={(): void => { setExpanded(!expanded()); }}
-            />
-            <Show
-              when={expanded() && pendingItems(state()!.stylesheet()).length > 0}
-              fallback={
-                <Show when={scene()?.geometry()}>
-                  {(geometry) => (
-                    <Inspector
-                      state={state()!}
-                      ui={ui}
-                      geometry={geometry()}
-                      theme={theme}
-                      registerFocus={(focus: () => void): void => { focusInspector = focus; }}
-                    />
-                  )}
-                </Show>
-              }
-            >
-              {((): JSX.Element => {
-                focusInspector = undefined;
-                return (
-                  <PendingPanel
-                    items={pendingItems(state()!.stylesheet())}
-                    selectedId={selectedPendingId()}
-                    onSelect={setSelectedPendingId}
-                    onAccept={pendingAccept}
-                    onReject={pendingReject}
-                    onReply={(editRef: string, body: string): void => { void onReply(editRef, body); }}
-                    syncError={syncError()}
-                  />
-                );
-              })()}
-            </Show>
-          </div>
+          <Show when={scene()?.geometry()}>
+            {(geometry) => (
+              <Inspector
+                state={state()!}
+                ui={ui}
+                geometry={geometry()}
+                theme={theme}
+                registerFocus={(focus: () => void): void => { focusInspector = focus; }}
+              />
+            )}
+          </Show>
         }
         file={
           <FileIsland
@@ -308,6 +281,26 @@ export const App: Component<{}> = (): JSX.Element => {
             editorTheme={chrome().name}
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
           />
+        }
+        pending={
+          <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px', width: '100%', 'min-height': '0' }}>
+            <PendingBanner
+              count={pendingItems(state()!.stylesheet()).length}
+              expanded={expanded()}
+              onToggle={(): void => { setExpanded(!expanded()); }}
+            />
+            <Show when={expanded()}>
+              <PendingPanel
+                items={pendingItems(state()!.stylesheet())}
+                selectedId={selectedPendingId()}
+                onSelect={setSelectedPendingId}
+                onAccept={pendingAccept}
+                onReject={pendingReject}
+                onReply={(editRef: string, body: string): void => { void onReply(editRef, body); }}
+                syncError={syncError()}
+              />
+            </Show>
+          </div>
         }
         zoom={<ZoomIsland onCommand={onCommand} />}
         undo={<UndoIsland canUndo={state()!.canUndo()} canRedo={state()!.canRedo()} onCommand={onCommand} />}

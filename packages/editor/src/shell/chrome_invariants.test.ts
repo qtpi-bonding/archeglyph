@@ -160,3 +160,22 @@ describe('the ghost layer shares the diagram layer frame', () => {
     expect(fn).toContain("child.tagName === 'defs' || child.tagName === 'g'");
   });
 });
+
+describe('proposals and the inspector do not compete for one slot', () => {
+  test('the inspector is not unmounted while proposals are expanded', () => {
+    // A review compares a node's fields against the proposal that changes
+    // them, so both have to be on screen at once.
+    const src = read('app.tsx');
+    const slot = src.slice(src.indexOf('inspector={'), src.indexOf('file={'));
+
+    expect(slot).toContain('<Inspector');
+    expect(slot).not.toContain('expanded()');
+    expect(slot).not.toContain('PendingPanel');
+  });
+
+  test('the frame gives proposals a slot of their own', () => {
+    const frame = read('island_frame.tsx');
+    expect(frame).toContain('pending?: JSX.Element');
+    expect(frame).toContain('{props.pending}');
+  });
+});

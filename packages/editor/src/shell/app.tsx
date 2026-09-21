@@ -40,6 +40,12 @@ import { centerBoundsInRect } from '../ui_state/viewport_math';
 import { elementKey } from '../scene/element_key';
 import { ContextMenu } from './context_menu';
 import { contextMenuItems } from './menu_items';
+import { PendingBanner } from '../pending/pending_banner';
+import { PendingPanel } from '../pending/pending_panel';
+import { pendingItems } from '../pending/pending_model';
+import { mergeThreads } from '../pending/merge_threads';
+import { newComment } from '../pending/comment_builder';
+import { CommentBackend } from '../adapters/comment_backend';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -71,6 +77,9 @@ export const App: Component<{}> = (): JSX.Element => {
   const [commandContext, setCommandContext] = createSignal<MaybeCommandContextAccessor>(undefined);
   const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
   const [contextMenuPoint, setContextMenuPoint] = createSignal<Vec2 | undefined>(undefined);
+  const [expanded, setExpanded] = createSignal<boolean>(false);
+  const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(undefined);
+  const [syncError, setSyncError] = createSignal<string | undefined>(undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -127,17 +136,48 @@ export const App: Component<{}> = (): JSX.Element => {
     });
   }
 
-  function loadFrom(result: Result<LoadResult, AdapterError>): void {
+  async function loadFrom(result: Result<LoadResult, AdapterError>): Promise<void> {
     if (result.kind === 'err') {
       setLoading(false);
       setLoadError(`archeglyph: failed to load diagram: ${result.error.message}`);
       return;
     }
-    setLoading(false);
     setLoadError(undefined);
     const loaded: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 });
-    const stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
+    let stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
+    const backend: CommentBackend | undefined = pair.backend;
+    if (backend !== undefined) {
+      setSyncError(undefined);
+      const threads = await backend.fetchThreads();
+      if (threads.kind === 'ok') {
+        stylesheet = mergeThreads(stylesheet, threads.value);
+      } else {
+        setSyncError(threads.error.message);
+      }
+    }
+    setLoading(false);
     startSession(createEditorState(result.value.diagram, stylesheet), result.value);
+  }
+
+  async function onReply(editRef: string, body: string): Promise<void> {
+    setSyncError(undefined);
+    const comment = await newComment(body, 'user:local');
+    state()?.addComment(editRef, comment);
+    const backend: CommentBackend | undefined = pair.backend;
+    if (backend !== undefined) {
+      const posted = await backend.postComment(editRef, comment);
+      if (posted.kind === 'err') {
+        setSyncError(posted.error.message);
+      }
+    }
+  }
+
+  function pendingAccept(editId: string): void {
+    state()?.acceptPending(editId);
+  }
+
+  function pendingReject(editId: string): void {
+    state()?.rejectPending(editId);
   }
 
   function onOpen(): void {
@@ -205,17 +245,44 @@ export const App: Component<{}> = (): JSX.Element => {
         }
         toolbar={<Toolbar tool={ui.tool()} onCommand={onCommand} />}
         inspector={
-          <Show when={scene()?.geometry()}>
-            {(geometry) => (
-              <Inspector
-                state={state()!}
-                ui={ui}
-                geometry={geometry()}
-                theme={theme}
-                registerFocus={(focus: () => void): void => { focusInspector = focus; }}
-              />
-            )}
-          </Show>
+          <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px', width: '100%', height: '100%' }}>
+            <PendingBanner
+              count={pendingItems(state()!.stylesheet()).length}
+              expanded={expanded()}
+              onToggle={(): void => { setExpanded(!expanded()); }}
+            />
+            <Show
+              when={expanded() && pendingItems(state()!.stylesheet()).length > 0}
+              fallback={
+                <Show when={scene()?.geometry()}>
+                  {(geometry) => (
+                    <Inspector
+                      state={state()!}
+                      ui={ui}
+                      geometry={geometry()}
+                      theme={theme}
+                      registerFocus={(focus: () => void): void => { focusInspector = focus; }}
+                    />
+                  )}
+                </Show>
+              }
+            >
+              {((): JSX.Element => {
+                focusInspector = undefined;
+                return (
+                  <PendingPanel
+                    items={pendingItems(state()!.stylesheet())}
+                    selectedId={selectedPendingId()}
+                    onSelect={setSelectedPendingId}
+                    onAccept={pendingAccept}
+                    onReject={pendingReject}
+                    onReply={(editRef: string, body: string): void => { void onReply(editRef, body); }}
+                    syncError={syncError()}
+                  />
+                );
+              })()}
+            </Show>
+          </div>
         }
         file={
           <FileIsland

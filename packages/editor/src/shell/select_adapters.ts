@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { createSignal } from 'solid-js';
-import { create } from '@bufbuild/protobuf';
-import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { BrowserFsAdapter } from '../adapters/browser_fs_adapter';
 import { UrlParamAdapter, buildRemoteUrl } from '../adapters/url_param_adapter';
-import { FileBackend } from '../adapters/file_backend';
 import { GitHubForge } from '../adapters/github_forge';
 import { GitForgePrBackend } from '../adapters/git_forge_pr_backend';
 import { GitForgeIssueBackend } from '../adapters/git_forge_issue_backend';
@@ -28,17 +24,13 @@ export function selectAdapters(params: URLSearchParams): AdapterPair {
   }
   if (params.has('fetch') || params.has('gh') || params.has('d') || params.has('s')) {
     const adapter: HostAdapter = new UrlParamAdapter(params.get('d'), params.get('s'), buildRemoteUrl(params));
-    const [noopGet, noopSet] = createSignal<Stylesheet>(create(StylesheetSchema, {}));
-    const backend: CommentBackend = new FileBackend(noopGet, noopSet);
-    return init(new AdapterPair(), { adapter, backend });
+    return init(new AdapterPair(), { adapter });
   }
   const adapter: HostAdapter = new BrowserFsAdapter();
-  const [noopGet, noopSet] = createSignal<Stylesheet>(create(StylesheetSchema, {}));
-  const backend: CommentBackend = new FileBackend(noopGet, noopSet);
-  return init(new AdapterPair(), { adapter, backend });
+  return init(new AdapterPair(), { adapter });
 }
 
 export class AdapterPair {
   adapter!: HostAdapter;
-  backend!: CommentBackend;
+  backend?: CommentBackend;
 }

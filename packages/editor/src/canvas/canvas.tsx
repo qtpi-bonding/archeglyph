@@ -386,6 +386,18 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       beginTextEdit,
     });
     props.registerCommandContext(getCommandContext);
+    // Tool-independent: double-click is a direct-manipulation gesture, and a
+    // reviewer holding Hand still expects it to open the text.
+    const onDoubleClick = (event: MouseEvent): void => {
+      const hit: ElementRef | undefined = hitAt(event);
+      if (hit === undefined || hit.kind !== 'annotation') {
+        return;
+      }
+      event.preventDefault();
+      props.ui.setSelection([hit]);
+      beginTextEdit(hit);
+    };
+    containerRef.addEventListener('dblclick', onDoubleClick);
     const onKeyDown = (event: KeyboardEvent): void => {
       const handled: boolean = handleKeyDown(event, getCommandContext());
       if (handled) { event.preventDefault(); }
@@ -395,6 +407,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       observer.disconnect();
       containerRef.removeEventListener('wheel', onWheel);
       containerRef.removeEventListener('contextmenu', onContextMenu);
+      containerRef.removeEventListener('dblclick', onDoubleClick);
       document.removeEventListener('keydown', onKeyDown);
     });
   });

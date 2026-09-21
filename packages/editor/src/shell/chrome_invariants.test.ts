@@ -67,3 +67,21 @@ describe('overlays are bounded and scrollable', () => {
     expect(bounded(read('help_sheet.tsx'))).toBe(true);
   });
 });
+
+describe('direct manipulation gestures are wired', () => {
+  const canvas = (): string =>
+    readFileSync(join(here, '../canvas/canvas.tsx'), 'utf8');
+
+  test('double-click on the canvas opens the annotation editor', () => {
+    const src = canvas();
+    expect(src).toContain("addEventListener('dblclick'");
+
+    const handler = src.slice(src.indexOf('const onDoubleClick'), src.indexOf("addEventListener('dblclick'"));
+    expect(handler).toContain('beginTextEdit');
+    expect(handler).toContain("!== 'annotation'");
+  });
+
+  test('it is removed on cleanup, like every other canvas listener', () => {
+    expect(canvas()).toContain("removeEventListener('dblclick'");
+  });
+});

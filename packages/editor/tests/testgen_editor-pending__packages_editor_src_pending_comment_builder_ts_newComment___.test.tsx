@@ -7,22 +7,23 @@ import * as fc from 'fast-check';
 import { newComment } from '../src/pending/comment_builder';
 
 describe('testgen_pending__newComment', () => {
-    test('string_body_and_author', () => {
-        fc.assert(
-            fc.property(fc.tuple(fc.string(), fc.string()), (value) => {
+    // fast-check rejects a Promise returned from a synchronous fc.property;
+    // an async predicate needs asyncProperty and an awaited assert.
+    test('string_body_and_author', async () => {
+        await fc.assert(
+            fc.asyncProperty(fc.tuple(fc.string(), fc.string()), async (value) => {
         const [body, author] = value;
         const startedAt = BigInt(Date.now());
         const result = newComment(body, author);
         expect(result).toBeInstanceOf(Promise);
-        return result.then((comment) => {
-          const finishedAt = BigInt(Date.now());
-          expect(comment.body).toBe(body);
-          expect(comment.author).toBe(author);
-          expect(comment.timestampMs >= startedAt).toBe(true);
-          expect(comment.timestampMs <= finishedAt).toBe(true);
-          expect(comment.replyTo).toBeUndefined();
-          expect(comment.id).toMatch(/^[0-9a-f]{16}$/);
-        });
+        const comment = await result;
+        const finishedAt = BigInt(Date.now());
+        expect(comment.body).toBe(body);
+        expect(comment.author).toBe(author);
+        expect(comment.timestampMs >= startedAt).toBe(true);
+        expect(comment.timestampMs <= finishedAt).toBe(true);
+        expect(comment.replyTo).toBeUndefined();
+        expect(comment.id).toMatch(/^[0-9a-f]{16}$/);
             })
         );
     });

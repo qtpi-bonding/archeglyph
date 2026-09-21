@@ -9,7 +9,7 @@ import { ThreadView } from '../src/pending/thread_view';
 describe('testgen_pending__ThreadView', () => {
     test('non_empty_comments_in_order', () => {
         fc.assert(
-            fc.property(fc.array(fc.any(), { minLength: 1 }), (value) => {
+            fc.property(fc.array(fc.anything(), { minLength: 1 }), (value) => {
         void value;
         expect(typeof ThreadView).toBe('function');
             })

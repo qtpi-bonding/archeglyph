@@ -9,18 +9,6 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
 
-export function acceptPendingEdit(stylesheet: Stylesheet, editId: string): StyleEdit | undefined {
-  const pending: StyleEdit | undefined = findPendingEdit(stylesheet, editId);
-  if (pending === undefined) {
-    return undefined;
-  }
-
-  return create(StyleEditSchema, {
-    ...pending,
-    state: StyleEditState.APPLIED,
-  });
-}
-
 export function proposePendingEdit(stylesheet: Stylesheet, proposal: StyleEdit, author: string): Stylesheet {
   const pendingEdit: StyleEdit = create(StyleEditSchema, {
     ...proposal,

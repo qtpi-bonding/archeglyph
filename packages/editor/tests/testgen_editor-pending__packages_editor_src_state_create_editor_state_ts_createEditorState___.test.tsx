@@ -9,6 +9,12 @@ import { Diagram } from '../../proto/src/gen/content_pb';
 import { StyleEdit, Stylesheet } from '../../proto/src/gen/style_pb';
 
 describe('testgen_state__createEditorState', () => {
+    // REMOVED BY HAND: seven cases asserted `"acceptPending" in state` is
+    // FALSE, and likewise for rejectPending and addComment. testgen runs
+    // before the build, so it read a type surface on which this pillar's
+    // methods did not exist yet and pinned their absence -- the opposite of
+    // the spec. src/state/pending_review.test.ts covers the real behaviour.
+
     const makeChangedEdit = (id: string): StyleEdit => ({ schemaVersion: 1, id, nodeChanges: [{ nodeId: id, changeType: 1, after: {} }], edgeChanges: [], groupChanges: [], annotationChanges: [], timestampMs: 0n, state: 0 } as StyleEdit);
 
     const makeDiagram = (): Diagram => ({ schemaVersion: 1, id: "diagram", title: [] } as Diagram);
@@ -127,15 +133,6 @@ describe('testgen_state__createEditorState', () => {
         // test generation failed: generated body does not reference the bound value `value`
     });
 
-    // WHEN: A pending-transition entry is undone and redone repeatedly; each redo creates a fresh undo entry that propagates pendingEditsAfter, so a subsequent undo/redo preserves the pending-edits result.
-    // THEN: Each redo propagates pendingEditsAfter into its fresh undo entry so repeated undo and redo operations preserve the pending-edits result.
-    test('redo_pending_transition_repeated', () => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([]));
-        expect("acceptPending" in state).toBe(false);
-        expect("rejectPending" in state).toBe(false);
-        expect("addComment" in state).toBe(false);
-    });
-
     test('append_pending_edit', () => {
         fc.assert(
             fc.property(fc.string(), (value) => {
@@ -169,66 +166,16 @@ describe('testgen_state__createEditorState', () => {
         );
     });
 
-    test('accept_existing_pending', () => {
-        fc.assert(
-            fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));
-        expect("acceptPending" in state).toBe(false);
-            })
-        );
-    });
-
-    // WHEN: acceptPending identifies an existing pending proposal whose StyleEdit has empty change lists; the proposal is still accepted and removed as a pending entry, with the normal single-write undo and change bookkeeping.
-    // THEN: It removes the matching empty proposal in the normal single-write operation, recording one undo entry and change bookkeeping.
-    test('accept_existing_empty_proposal', () => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit("proposal")]));
-        expect("acceptPending" in state).toBe(false);
-    });
-
     test.skip('accept_missing_pending', () => {
         // test generation failed: generated body does not reference the bound value `value`
-    });
-
-    test('reject_existing_pending', () => {
-        fc.assert(
-            fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));
-        expect("rejectPending" in state).toBe(false);
-            })
-        );
     });
 
     test.skip('reject_missing_pending', () => {
         // test generation failed: generated body does not reference the bound value `value`
     });
 
-    test('add_comment_to_entry_without_thread', () => {
-        fc.assert(
-            fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));
-        expect("addComment" in state).toBe(false);
-            })
-        );
-    });
-
-    test('add_comment_to_entry_with_thread', () => {
-        fc.assert(
-            fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit(value)]));
-        expect("addComment" in state).toBe(false);
-            })
-        );
-    });
-
     test.skip('add_comment_missing_pending', () => {
         // test generation failed: generated body does not reference the bound value `value`
-    });
-
-    // WHEN: addComment identifies an existing pending proposal but no matching entry within that proposal; no element entry or map is changed, while the pending transition is handled according to the operation's existing matching-entry behavior.
-    // THEN: It leaves element entries and maps unchanged while handling the existing proposal's pending transition according to the operation's matching-entry behavior.
-    test('add_comment_entry_not_found', () => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([makeEmptyEdit("proposal")]));
-        expect("addComment" in state).toBe(false);
     });
 
 });

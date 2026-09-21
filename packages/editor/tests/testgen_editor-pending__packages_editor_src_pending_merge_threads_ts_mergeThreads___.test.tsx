@@ -3,17 +3,32 @@
 
 import { describe, expect, test } from 'bun:test';
 import * as fc from 'fast-check';
+// Hand-added: the generated helpers built proto messages as cast object
+// literals, so every toEqual compared a real message (with $typeName)
+// against a plain object. Building them properly fixes eight cases at once.
+import { create } from '@bufbuild/protobuf';
+import {
+  CommentSchema, CommentThreadSchema, StyleEditSchema, StylesheetSchema,
+} from '@archeglyph/proto/gen/style_pb';
 
 import { mergeThreads } from '../src/pending/merge_threads';
 
 describe('testgen_pending__mergeThreads', () => {
     const getComments = (stylesheet: Parameters<typeof mergeThreads>[0], index: number): unknown => stylesheet.pendingEdits[index].thread.comments;
 
-    const makeComment = (id: string, body: string): { id: string; body: string } => ({ id, body });
+    const makeComment = (id: string, body: string) => create(CommentSchema, { id, body, timestampMs: 0n });
 
-    const makeEntry = (editRef: string, comments: ReadonlyArray<{ id: string; body: string }>): Parameters<typeof mergeThreads>[1][number] => ({ editRef, thread: { comments: [...comments] } }) as Parameters<typeof mergeThreads>[1][number];
+    const makeEntry = (editRef: string, comments: ReadonlyArray<ReturnType<typeof makeComment>>): Parameters<typeof mergeThreads>[1][number] =>
+      ({ editRef, thread: create(CommentThreadSchema, { comments: [...comments] }) }) as Parameters<typeof mergeThreads>[1][number];
 
-    const makeStylesheet = (comments: ReadonlyArray<{ id: string; body: string } | undefined>): Parameters<typeof mergeThreads>[0] => ({ schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: comments.map((threadComment: { id: string; body: string } | undefined, index: number) => ({ id: `edit-${index + 1}`, thread: { comments: threadComment === undefined ? [] : [threadComment] } })) } as Parameters<typeof mergeThreads>[0];
+    const makeStylesheet = (comments: ReadonlyArray<ReturnType<typeof makeComment> | undefined>): Parameters<typeof mergeThreads>[0] =>
+      create(StylesheetSchema, {
+        schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {},
+        pendingEdits: comments.map((threadComment, index: number) => create(StyleEditSchema, {
+          id: `edit-${index + 1}`,
+          thread: create(CommentThreadSchema, { comments: threadComment === undefined ? [] : [threadComment] }),
+        })),
+      });
 
     // WHEN: The entries array is empty; the returned stylesheet is equal in content to the input stylesheet and is still a new Stylesheet rather than the same object.
     // THEN: Returns a new Stylesheet equal in content to the input stylesheet.
@@ -27,7 +42,7 @@ describe('testgen_pending__mergeThreads', () => {
     test('matching_entry_adds_comments', () => {
         fc.assert(
             fc.property(fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 8 }), (value) => {
-        const stylesheet = makeStylesheet([]);
+        const stylesheet = makeStylesheet([undefined]);
         const comments = value.map((id: string) => makeComment(id, `fetched-${id}`));
         const result = mergeThreads(stylesheet, [makeEntry("edit-1", comments)]);
         expect(getComments(result, 0)).toEqual(comments);
@@ -62,8 +77,10 @@ describe('testgen_pending__mergeThreads', () => {
             fc.property(fc.string({ minLength: 1 }), (value) => {
         const shared = makeComment(value, "target-copy");
         const stylesheet = makeStylesheet([makeComment(value, "other-thread-copy"), undefined]);
-        const result = mergeThreads(stylesheet, [makeEntry("edit-1", [shared])]);
+        const result = mergeThreads(stylesheet, [makeEntry("edit-2", [shared])]);
         expect(getComments(result, 1)).toEqual([shared]);
+        // edit-1 keeps its own copy: the merge never touched it.
+        expect(getComments(result, 0)).toHaveLength(1);
             })
         );
     });
@@ -73,7 +90,13 @@ describe('testgen_pending__mergeThreads', () => {
             fc.property(fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 8 }), (value) => {
         const existing = value.map((id: string) => makeComment(id, `existing-${id}`));
         const appended = makeComment("new-comment", "new");
-        const stylesheet = makeStylesheet(existing);
+        const stylesheet = create(StylesheetSchema, {
+          schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {},
+          pendingEdits: [create(StyleEditSchema, {
+            id: 'edit-1',
+            thread: create(CommentThreadSchema, { comments: existing }),
+          })],
+        });
         const result = mergeThreads(stylesheet, [makeEntry("edit-1", [appended])]);
         expect(getComments(result, 0)).toEqual([...existing, appended]);
             })
@@ -97,7 +120,7 @@ describe('testgen_pending__mergeThreads', () => {
             fc.property(fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 2, maxLength: 2 }), (value) => {
         const first = makeComment(`first-${value[0]}`, "first");
         const second = makeComment(`second-${value[1]}`, "second");
-        const stylesheet = makeStylesheet([]);
+        const stylesheet = makeStylesheet([undefined]);
         const result = mergeThreads(stylesheet, [makeEntry("edit-1", [first]), makeEntry("edit-1", [second])]);
         expect(getComments(result, 0)).toEqual([first, second]);
             })
@@ -108,7 +131,7 @@ describe('testgen_pending__mergeThreads', () => {
         fc.assert(
             fc.property(fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 2, maxLength: 8 }), (value) => {
         const comments = value.map((id: string) => makeComment(id, `body-${id}`));
-        const stylesheet = makeStylesheet([]);
+        const stylesheet = makeStylesheet([undefined]);
         const result = mergeThreads(stylesheet, [makeEntry("edit-1", comments)]);
         expect(getComments(result, 0)).toEqual(comments);
             })
@@ -119,7 +142,7 @@ describe('testgen_pending__mergeThreads', () => {
         fc.assert(
             fc.property(fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 0, maxLength: 8 }), (value) => {
         const comments = value.map((id: string) => makeComment(id, `body-${id}`));
-        const stylesheet = makeStylesheet([]);
+        const stylesheet = makeStylesheet([undefined]);
         const entries = [makeEntry("edit-1", comments)];
         const once = mergeThreads(stylesheet, entries);
         const twice = mergeThreads(once, entries);

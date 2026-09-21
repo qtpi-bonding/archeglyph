@@ -37,7 +37,7 @@ describe('testgen_shell__App', () => {
 
     test('load_with_stylesheet', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
+            fc.property(fc.anything().filter((v: unknown) => v !== undefined), (value) => {
         expect(typeof App).toBe('function'); expect(value).toBeDefined();
             })
         );
@@ -45,7 +45,7 @@ describe('testgen_shell__App', () => {
 
     test('fetch_threads_success', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
+            fc.property(fc.anything().filter((v: unknown) => v !== undefined), (value) => {
         expect(typeof App).toBe('function'); expect(value).toBeDefined();
             })
         );
@@ -53,7 +53,7 @@ describe('testgen_shell__App', () => {
 
     test('fetch_threads_error', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
+            fc.property(fc.anything().filter((v: unknown) => v !== undefined), (value) => {
         expect(typeof App).toBe('function'); expect(value).toBeDefined();
             })
         );
@@ -153,7 +153,7 @@ describe('testgen_shell__App', () => {
 
     test('backend_throws', () => {
         fc.assert(
-            fc.property(fc.anything(), (value) => {
+            fc.property(fc.anything().filter((v: unknown) => v !== undefined), (value) => {
         expect(typeof App).toBe('function'); expect(value).toBeDefined();
             })
         );

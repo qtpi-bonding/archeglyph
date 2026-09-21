@@ -59,7 +59,7 @@ describe('testgen_pending__pendingItems', () => {
 
     test('stylesheet_thread_data', () => {
         fc.assert(
-            fc.property(fc.array(fc.any()), (value) => {
+            fc.property(fc.array(fc.anything()), (value) => {
         const edit = makePendingEdit("threaded-edit", "PENDING", value);
         const result = pendingItems({ pendingEdits: [edit] } as any);
         expect(result).toHaveLength(1);

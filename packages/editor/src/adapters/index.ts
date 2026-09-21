@@ -6,7 +6,6 @@ export { BrowserFsAdapter } from './browser_fs_adapter';
 export { UrlParamAdapter } from './url_param_adapter';
 export type { CommentBackend } from './comment_backend';
 export { ThreadEntry } from './comment_backend';
-export { FileBackend } from './file_backend';
 export type { GitForge } from './git_forge';
 export { RawComment } from './git_forge';
 export { GitHubForge } from './github_forge';

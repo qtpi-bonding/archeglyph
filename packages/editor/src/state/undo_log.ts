@@ -113,6 +113,7 @@ export interface UndoEntry {
   edit: StyleEdit;
   tsMs: number;
   coalesceKey?: string;
+  pendingEditsAfter?: StyleEdit[];
 }
 export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
   const nodes: Map<string, Option<NodeStyleEntry>> = new Map();

@@ -64,7 +64,7 @@ import {
   setAnnotationGlyphEdit,
 } from './glyph';
 import { pinAllEdit, unpinAllEdit, unpinElementsEdit } from './layout_command';
-import { proposePendingEdit, findPendingEdit, acceptPendingEdit, removePendingEdit } from './pending';
+import { proposePendingEdit, findPendingEdit, removePendingEdit } from './pending';
 
 import type { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import type { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
@@ -967,24 +967,6 @@ describe('findPendingEdit', () => {
     });
     const sheet = emptyStylesheet({ pendingEdits: [proposal] });
     expect(findPendingEdit(sheet, 'edit-1')).toEqual(proposal);
-  });
-});
-
-describe('acceptPendingEdit', () => {
-  test('returns undefined for a missing id', () => {
-    const sheet = emptyStylesheet();
-    expect(acceptPendingEdit(sheet, 'missing')).toBeUndefined();
-  });
-
-  test('returns the edit restamped APPLIED, and does not itself remove it from pending_edits', () => {
-    const proposal = create(StyleEditSchema, { id: 'edit-1', state: StyleEditState.PENDING, description: 'do it' });
-    const sheet = emptyStylesheet({ pendingEdits: [proposal] });
-    const accepted = acceptPendingEdit(sheet, 'edit-1');
-    expect(accepted?.state).toBe(StyleEditState.APPLIED);
-    expect(accepted?.description).toBe('do it');
-    // acceptPendingEdit hands back the edit to apply; the panel is
-    // responsible for removing it afterward via removePendingEdit.
-    expect(sheet.pendingEdits[0].state).toBe(StyleEditState.PENDING);
   });
 });
 

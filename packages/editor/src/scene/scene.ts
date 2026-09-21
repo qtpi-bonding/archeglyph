@@ -4,6 +4,7 @@ import { boundsFromRect, boundsUnion, Bounds } from '@archeglyph/core/geometry/b
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import { layoutPipeline } from '@archeglyph/core/pipeline';
+import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
@@ -77,9 +78,12 @@ export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEn
   const [snapshot] = createResource<SceneResult, SceneSource>(
     () => ({ version: state.version(), theme: theme() }),
     async (source: SceneSource): Promise<SceneResult> => {
+      // Every rebuild, not just at load: an element created mid-session has no
+      // component and resolves with no shape or typography. Idempotent.
+      const seeded = seedComponentBindings(state.diagram(), state.stylesheet(), source.theme);
       const layoutResult = await layoutPipeline(
         state.diagram(),
-        state.stylesheet(),
+        seeded,
         source.theme,
         layoutEngine,
       );

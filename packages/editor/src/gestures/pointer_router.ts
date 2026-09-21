@@ -18,6 +18,22 @@ export interface PressContext {
   onHandle?: Handle;
 }
 export function routePress(context: PressContext, current: Array<ElementRef>): GestureDecision {
+  // A context-menu press updates the selection without opening a gesture.
+  // Preserve a multi-selection when the hit is already one of its members.
+  if (context.button === 2) {
+    if (context.hit === undefined) {
+      return { kind: 'none', selection: clearSelection() };
+    }
+
+    const alreadySelected = current.some(
+      (candidate) =>
+        candidate.id === context.hit?.id && candidate.kind === context.hit?.kind,
+    );
+    return alreadySelected
+      ? { kind: 'none', selection: current }
+      : { kind: 'none', selection: replaceSelection(context.hit) };
+  }
+
   // DOM button numbers use 1 for the middle button.  This check deliberately
   // comes first: panning must not alter selection, even when the pointer is
   // over a handle or an element.

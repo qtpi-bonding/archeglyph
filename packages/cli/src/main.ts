@@ -30,10 +30,10 @@ function messageOf(value: unknown): string | undefined {
 // `stage`/`cause` directly instead of trusting `.message`.
 function formatOpError(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'stage' in err) {
-    const errObj = err as { stage: unknown; cause?: unknown };
+    const errObj = err as { stage: unknown; cause?: unknown; detail?: unknown };
     const stage = String(errObj.stage);
-    const cause = errObj.cause;
-    const causeText = messageOf(cause);
+    const causeText = messageOf(errObj.cause)
+      ?? (typeof errObj.detail === 'string' ? errObj.detail : undefined);
     return causeText !== undefined ? `${stage}: ${causeText}` : stage;
   }
   return err instanceof Error ? err.message : String(err);

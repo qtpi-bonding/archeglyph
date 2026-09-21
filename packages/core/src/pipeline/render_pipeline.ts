@@ -20,7 +20,7 @@ export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | 
 
   const renderResult = new SvgRendererImpl().render(layoutResult.value);
   if (renderResult.kind === 'err') {
-    return Err(init(new PipelineError(), { stage: 'render' }));
+    return Err(init(new PipelineError(), { stage: 'render', detail: renderResult.error.message }));
   }
 
   return Ok(renderResult.value);
@@ -36,7 +36,7 @@ export async function layoutPipeline(diagram: Diagram, stylesheet: Stylesheet | 
     init(new LayoutRequest(), { diagram: resolveResult.value })
   );
   if (layoutResult.kind === 'err') {
-    return Err(init(new PipelineError(), { stage: 'layout' }));
+    return Err(init(new PipelineError(), { stage: 'layout', detail: layoutResult.error.message }));
   }
 
   return Ok(layoutResult.value);

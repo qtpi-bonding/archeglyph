@@ -88,11 +88,12 @@ export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEn
         layoutEngine,
       );
       if (layoutResult.kind === 'err') {
-        // PipelineError carries only `stage`, so compose a readable line
-        // rather than repeating the stage name twice in the banner.
+        const detail = layoutResult.error.detail;
         return Err({
           stage: layoutResult.error.stage,
-          message: `layout failed at stage "${layoutResult.error.stage}"`,
+          message: detail === undefined
+            ? `layout failed at stage "${layoutResult.error.stage}"`
+            : `${layoutResult.error.stage}: ${detail}`,
         });
       }
 

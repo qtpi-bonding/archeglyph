@@ -19,21 +19,21 @@ export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undef
     init(new FilterRequest(), { diagram, stylesheet })
   );
   if (filterResult.kind === 'err') {
-    return Err(init(new PipelineError(), { stage: 'filter' }));
+    return Err(init(new PipelineError(), { stage: 'filter', detail: filterResult.error.message }));
   }
 
   const cascadeResult = new StyleCascadeImpl().cascade(
     init(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme })
   );
   if (cascadeResult.kind === 'err') {
-    return Err(init(new PipelineError(), { stage: 'cascade' }));
+    return Err(init(new PipelineError(), { stage: 'cascade', detail: cascadeResult.error.message }));
   }
 
   const tokenResult = new TokenResolverImpl().resolveTokens(
     init(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens })
   );
   if (tokenResult.kind === 'err') {
-    return Err(init(new PipelineError(), { stage: 'tokens' }));
+    return Err(init(new PipelineError(), { stage: 'tokens', detail: tokenResult.error.message }));
   }
 
   return Ok(tokenResult.value);

@@ -45,6 +45,57 @@ function glyphEdgeComponent(strokeColor: string) {
   });
 }
 
+// A group is a dashed tint, never a filled body: it sits BEHIND its members
+// and an opaque one would hide them.
+function glyphGroupComponent(color: string) {
+  return create(NodeComponentSchema, {
+    name: 'glyph',
+    shape: create(Glyph2DSchema, {
+      shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
+      cornerRadius: 3,
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: color }) },
+        width: 1,
+        dashing: { case: 'customDasharray', value: '5,4' },
+      }),
+      fill: create(FillSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: color }) },
+        opacity: 0.06,
+      }),
+    }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: color }) }),
+  });
+}
+
+function glyphAnnotationComponent(strokeColor: string, fillColor: string, textColor: string) {
+  return create(AnnotationComponentSchema, {
+    name: 'glyph',
+    shape: create(Glyph2DSchema, {
+      shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
+      cornerRadius: 2,
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) },
+        width: 1,
+      }),
+      fill: create(FillSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: fillColor }) },
+        opacity: 0.94,
+      }),
+    }),
+    typography: create(TypographySchema, {
+      color: create(ColorSchema, { value: textColor }),
+      size: 11,
+    }),
+    callout: create(Glyph1DSchema, {
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) },
+        width: 1,
+        dashing: { case: 'customDasharray', value: '2,3' },
+      }),
+    }),
+  });
+}
+
 function blueprintNodeShape(strokeColor: string, fillColor: string) {
   return create(Glyph2DSchema, {
     shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
@@ -107,15 +158,33 @@ function blueprintGroupComponent() {
   });
 }
 
+// A note is a pale card with dark ink, which is the one combination in this
+// theme that cannot be mistaken for a node: every graph element here is a
+// light line on the navy ground.
 function blueprintAnnotationComponent() {
   return create(AnnotationComponentSchema, {
     name: 'glyph',
-    shape: blueprintNodeShape('#8ad1ff', '#122238'),
-    typography: create(TypographySchema, { color: create(ColorSchema, { value: '#bfe3ff' }) }),
+    shape: create(Glyph2DSchema, {
+      shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
+      cornerRadius: 2,
+      stroke: create(StrokeSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: '#9aa7b8' }) },
+        width: 1,
+      }),
+      fill: create(FillSchema, {
+        paint: { case: 'color', value: create(ColorSchema, { value: '#d7dde6' }) },
+        opacity: 0.94,
+      }),
+    }),
+    typography: create(TypographySchema, {
+      color: create(ColorSchema, { value: '#1d2531' }),
+      size: 11,
+    }),
     callout: create(Glyph1DSchema, {
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#73daca' }) },
-        width: 1.2,
+        paint: { case: 'color', value: create(ColorSchema, { value: '#9aa7b8' }) },
+        width: 1,
+        dashing: { case: 'customDasharray', value: '2,3' },
       }),
     }),
   });
@@ -168,6 +237,8 @@ export function darkTheme(): Theme {
     defaultAnnotationComponent: 'glyph',
     nodeComponents: [glyphNodeComponent('#FFFFFF', '#000000', '#c0caf5')],
     edgeComponents: [glyphEdgeComponent('#FFFFFF')],
+    groupComponents: [glyphGroupComponent('#9aa5ce')],
+    annotationComponents: [glyphAnnotationComponent('#6b7280', '#d9dee6', '#1d2531')],
   });
 }
 export function lightTheme(): Theme {
@@ -214,6 +285,8 @@ export function lightTheme(): Theme {
     defaultAnnotationComponent: 'glyph',
     nodeComponents: [glyphNodeComponent('#000000', '#FFFFFF', '#1a1a1a')],
     edgeComponents: [glyphEdgeComponent('#000000')],
+    groupComponents: [glyphGroupComponent('#8A8A8A')],
+    annotationComponents: [glyphAnnotationComponent('#9a9a9a', '#ECECEC', '#1E1E1E')],
   });
 }
 

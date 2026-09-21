@@ -120,10 +120,17 @@ describe('anchored annotations render a callout line', () => {
     // Glyph1D and the edge-styling fallback painted #000000 at width 1 -- a
     // black hairline on D12b's #0f1a2b canvas. Every other part of the feature
     // would have been correct and the line invisible.
+    // Read from the theme rather than repeating its hex here: the colour is a
+    // design choice that moves, the "not the fallback" claim is not.
+    const themeCallout = blueprintTheme().annotationComponents[0]
+      ?.callout?.stroke?.paint;
+    const expected = themeCallout?.case === 'color' ? themeCallout.value.value : undefined;
+    expect(expected).toBeDefined();
+
     const group = annotationGroup(await renderWith(true));
     const path = /<path[^>]*d="M [-\d.]+,[-\d.]+ L [-\d.]+,[-\d.]+"[^>]*>/.exec(group);
     expect(path).not.toBeNull();
-    expect(path![0]).toContain('#73daca');
+    expect(path![0]).toContain(expected!);
     expect(path![0]).not.toContain('#000000');
   });
 

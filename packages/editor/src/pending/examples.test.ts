@@ -4,7 +4,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadDiagram, loadStylesheet } from '@archeglyph/core/loaders';
-import { getBundledTheme } from '@archeglyph/themes';
+import { BUNDLED_THEME_NAMES, getBundledTheme } from '@archeglyph/themes';
 import { layoutPipeline } from '@archeglyph/core/pipeline';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
@@ -12,6 +12,8 @@ import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import ElkConstructor from 'elkjs/lib/elk.bundled.js';
 import type { Diagram } from '@archeglyph/proto/gen/content_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
+
+import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 
 import { applyAllPendingEdits } from '../canvas/ghost_layer';
 import { pendingItems } from './pending_model';
@@ -26,19 +28,31 @@ async function open(name: string): Promise<{ diagram: Diagram; stylesheet: Style
   return { diagram: diagram.value, stylesheet: stylesheet.value };
 }
 
-async function svgFor(diagram: Diagram, stylesheet: Stylesheet): Promise<string> {
+async function svgFor(diagram: Diagram, stylesheet: Stylesheet, themeName = 'blueprint'): Promise<string> {
+  const theme = getBundledTheme(themeName);
   const engine = new LayoutEngineImpl(new ElkAdapterImpl(new ElkConstructor()));
-  const laid = await layoutPipeline(diagram, stylesheet, getBundledTheme('blueprint'), engine);
-  if (laid.kind === 'err') { throw new Error(`layout: ${JSON.stringify(laid.error)}`); }
+  const seeded = seedComponentBindings(diagram, stylesheet, theme);
+  const laid = await layoutPipeline(diagram, seeded, theme, engine);
+  if (laid.kind === 'err') {
+    throw new Error(`${themeName} layout: ${laid.error.stage}: ${laid.error.detail ?? ''}`);
+  }
   const svg = new SvgRendererImpl().render(laid.value);
   if (svg.kind === 'err') { throw new Error(`render: ${JSON.stringify(svg.error)}`); }
   return svg.value;
 }
 
 describe.each(['pipeline', 'checkout'])('examples/%s', (name: string) => {
-  test('loads and renders', async () => {
+  test.each(BUNDLED_THEME_NAMES)('loads and renders under %s', async (themeName: string) => {
     const { diagram, stylesheet } = await open(name);
-    expect((await svgFor(diagram, stylesheet)).length).toBeGreaterThan(0);
+    expect((await svgFor(diagram, stylesheet, themeName)).length).toBeGreaterThan(0);
+  });
+
+  test('the pending layer renders under every theme too', async () => {
+    const { diagram, stylesheet } = await open(name);
+    const ghost = applyAllPendingEdits(stylesheet);
+    for (const themeName of BUNDLED_THEME_NAMES) {
+      expect((await svgFor(diagram, ghost, themeName)).length).toBeGreaterThan(0);
+    }
   });
 });
 

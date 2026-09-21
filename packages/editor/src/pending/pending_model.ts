@@ -3,7 +3,18 @@
 import { Stylesheet } from '../../../proto/src/gen/style_pb';
 
 export function pendingItems(stylesheet: Stylesheet): Array<PendingItem> {
-  throw new Error('not implemented');
+  return stylesheet.pendingEdits.map((edit): PendingItem => ({
+    id: edit.id,
+    description: edit.description !== undefined && edit.description.length > 0
+      ? edit.description
+      : 'Untitled change',
+    author: edit.author !== undefined ? edit.author : 'unknown',
+    changeCount: edit.nodeChanges.length
+      + edit.edgeChanges.length
+      + edit.groupChanges.length
+      + edit.annotationChanges.length,
+    comments: edit.thread !== undefined ? edit.thread.comments : [],
+  }));
 }
 import { Comment } from '../../../proto/src/gen/style_pb';
 

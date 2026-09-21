@@ -10,8 +10,12 @@ type JsonValue = JsonPrimitive | JsonValue[] | JsonObject;
 /**
  * Computes a stable short hash for the committed portion of a stylesheet.
  *
- * The editor's pending edits are transient UI state and must not affect the
- * optimistic-concurrency stamp used by host adapters. Object keys are sorted
+ * Pending edits are excluded from the stamp. They were once transient UI
+ * state; since threads are stored inside them they also carry durable user
+ * data, so a reply changes the document without changing this hash. Kept
+ * excluded anyway: the stamp exists to detect a concurrent write to the
+ * COMMITTED stylesheet, and no adapter gates a save on it today. Object keys
+ * are sorted
  * recursively so equivalent JSON with different key insertion order hashes
  * identically; array order remains significant.
  */

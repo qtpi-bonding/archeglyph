@@ -1,0 +1,73 @@
+file: "packages/editor/src/pending/pending_panel.tsx"
+doc: "The review list: every proposal, with Accept, Reject, and its discussion."
+
+structs: [
+  { name: "PendingPanelProps"
+    doc:
+      "`items` are the rows, already built by pendingItems. The panel does no\n"
+      "joining and never reads a Stylesheet or a CommentBackend itself.\n"
+      "\n"
+      "`selectedId` is which row's discussion is showing, or undefined for\n"
+      "none. `onSelect` is called with a row id when a row is clicked.\n"
+      "Selection lives in the caller for the same reason `expanded` does in\n"
+      "PendingBanner: one owner per piece of state.\n"
+      "\n"
+      "`onAccept` and `onReject` each receive the row's id. The panel does\n"
+      "NOT apply or remove anything -- it has no EditorState, and giving it\n"
+      "one would put a second writer beside the state layer.\n"
+      "\n"
+      "`onReply` receives the row id and the typed body. `syncError` is a\n"
+      "message to show when the last mirror to a forge failed, or undefined\n"
+      "when the last attempt succeeded or none was made."
+    fields: [
+      { name: "items",      type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "PendingItem" } }] } } },
+      { name: "selectedId", type: { primitive: CHARACTER }, is_optional: true },
+      { name: "onSelect",   type: { arrow: { inputs: [{ primitive: CHARACTER }], output: { primitive: VOID } } } },
+      { name: "onAccept",   type: { arrow: { inputs: [{ primitive: CHARACTER }], output: { primitive: VOID } } } },
+      { name: "onReject",   type: { arrow: { inputs: [{ primitive: CHARACTER }], output: { primitive: VOID } } } },
+      { name: "onReply",    type: { arrow: { inputs: [{ primitive: CHARACTER }, { primitive: CHARACTER }], output: { primitive: VOID } } } },
+      { name: "syncError",  type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "PendingPanel"
+    doc:
+      "One row per item, in `items` order. Each row shows its description,\n"
+      "its author, its changeCount, the number of comments, and two buttons\n"
+      "labelled 'Accept' and 'Reject'.\n"
+      "\n"
+      "Clicking Accept calls onAccept with that row's id; Reject calls\n"
+      "onReject. Neither also calls onSelect -- acting on a row does not\n"
+      "change which row is expanded.\n"
+      "\n"
+      "The row whose id equals `selectedId` additionally renders a ThreadView\n"
+      "beneath it, given that row's `comments`. At most one row is expanded,\n"
+      "because selectedId is a single value. When selectedId is undefined or\n"
+      "matches no row, no ThreadView is rendered.\n"
+      "\n"
+      "`syncError`, when defined, renders once at the top of the panel rather\n"
+      "than per row -- it describes the last sync attempt, not one proposal.\n"
+      "\n"
+      "The root sets its OWN max-height and overflow:auto, the way Inspector\n"
+      "does. IslandSlot has a max-height but no overflow, and a percentage\n"
+      "height does not resolve against a max-height, so the slot clips\n"
+      "nothing: a dozen proposals with a thread open would run off the\n"
+      "bottom of the viewport across the zoom island, with no scrollbar.\n"
+      "\n"
+      "The ROOT ELEMENT CARRIES class=\"ag-island\", like every other floating\n"
+      "surface. This is load-bearing, not cosmetic: IslandFrame's slots set\n"
+      "pointer-events:none and that inherits, so a root without the class\n"
+      "renders correctly and ignores every click -- which would make Accept,\n"
+      "Reject and the reply box all dead. The same class is what\n"
+      "island_frame.tsx's mousedown handler matches on.\n"
+      "\n"
+      "An empty `items` array renders nothing, matching PendingBanner and\n"
+      "StateIsland. The caller is expected not to open the panel in that\n"
+      "case, but a panel that renders an empty box would be worse."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "PendingPanelProps" } }] } }
+    uses: ["ThreadView"]
+  }
+]

@@ -1,0 +1,62 @@
+file: "packages/editor/src/state/create_editor_state.ts"
+doc: "The factory implements the three review writes. Each is one snapshot, one stylesheet write, one undo entry."
+
+methods: [
+  { name: "createEditorState"
+    change_type: MODIFIED
+    doc:
+      "The returned object gains acceptPending, rejectPending and addComment,\n"
+      "as declared on EditorState. Everything already returned is unchanged.\n"
+      "\n"
+      "All three share one shape, and it is the shape applyStyleEdit already\n"
+      "uses: capture a BeforeSnapshot, write the new stylesheet once, push a\n"
+      "single UndoEntry, clear the redo log, bump dirty and version.\n"
+      "\n"
+      "captureSnapshot takes the StyleEdit whose changed ids it should record.\n"
+      "For acceptPending that is the proposal being applied. For\n"
+      "rejectPending and addComment no element entry changes, so pass an edit\n"
+      "with empty change lists -- pendingEditsBefore is captured regardless,\n"
+      "and it is the only part those two need to restore.\n"
+      "\n"
+      "acceptPending folds the proposal over the stylesheet with\n"
+      "applyStyleEditToStylesheet and then drops it from pendingEdits.\n"
+      "Applying and dropping happen in the same write so the signal is set\n"
+      "once, not twice.\n"
+      "\n"
+      "rejectPending drops it without applying.\n"
+      "\n"
+      "addComment appends to the matching entry's thread, creating a\n"
+      "CommentThread when that entry has none, and leaves every other entry\n"
+      "and every element map untouched.\n"
+      "\n"
+      "Each is a no-op when pendingEdits has no entry with the given id:\n"
+      "return without writing the signal, without pushing an undo entry, and\n"
+      "without bumping dirty or version.\n"
+      "\n"
+      "REDO needs TWO changes, and missing either one breaks it.\n"
+      "\n"
+      "First, all three writes set pendingEditsAfter on the UndoEntry they\n"
+      "push, to the pendingEdits array they are about to write.\n"
+      "\n"
+      "Second, the redo body changes in two places. It applies the field:\n"
+      "after folding entry.edit with applyStyleEditToStylesheet, when\n"
+      "entry.pendingEditsAfter is defined, write it as the resulting\n"
+      "stylesheet's pendingEdits. AND it PROPAGATES the field: redo does not\n"
+      "re-push the entry it popped, it builds a fresh UndoEntry, and that\n"
+      "literal must copy pendingEditsAfter from the entry being redone\n"
+      "exactly as it already copies coalesceKey. Without the propagation the\n"
+      "FIRST redo is correct and the second is not -- accept, undo, redo,\n"
+      "undo, redo leaves the proposal applied and still listed, which is the\n"
+      "state this field exists to prevent.\n"
+      "\n"
+      "Entries pushed by applyStyleEdit leave the field unset and redo them\n"
+      "unchanged. pushUndoEntry's coalescing path spreads the whole entry, so\n"
+      "it already preserves the field."
+    inputs: [
+      { name: "diagram",    type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { named: { symbol: "EditorState" } }
+    uses: ["captureSnapshot", "restoreFromSnapshot", "pushUndoEntry", "applyStyleEditToStylesheet", "findPendingEdit", "removePendingEdit", "UndoEntry"]
+  }
+]

@@ -1,0 +1,155 @@
+file: "packages/editor/src/state/editor_state.ts"
+doc: "The reactive contract gains the three review writes. Every write to a thread or a proposal goes through here."
+
+interfaces: [
+  { name: "EditorState"
+    change_type: MODIFIED
+    doc:
+      "Three methods added at the end; the eleven before them are unchanged\n"
+      "and are re-declared here only because a MODIFIED decl states its whole\n"
+      "member list rather than a patch.\n"
+      "\n"
+      "The three live here rather than in the panel because each has to be\n"
+      "ONE undo entry, and only the state layer can snapshot before writing.\n"
+      "A panel that called applyStyleEdit and then rewrote pendingEdits would\n"
+      "produce two entries, so undoing an Accept would take two presses and\n"
+      "leave a visible half-state between them."
+    methods: [
+      { name: "diagram"
+        doc: "Solid Accessor. The loaded Diagram, read-only for the editor's lifetime."
+        output: { named: { symbol: "archeglyph.content.v1.Diagram" } }
+      },
+      { name: "stylesheet"
+        doc: "Solid Accessor. The current Stylesheet, updated by every write below."
+        output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+      },
+      { name: "canUndo"
+        doc: "Solid Accessor. True when the undo log has at least one entry."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "canRedo"
+        doc: "Solid Accessor. True when the redo log has at least one entry."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "applyStyleEdit"
+        doc: "Apply an edit, snapshot before-state, push one undo entry, clear redo. coalesceKey merges consecutive edits within the coalesce window."
+        inputs: [
+          { name: "edit",        type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+          { name: "coalesceKey", type: { primitive: CHARACTER }, is_optional: true }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "undo"
+        doc: "Restore the top undo entry's snapshot and push it to the redo log. No-op when canUndo is false."
+        output: { primitive: VOID }
+      },
+      { name: "redo"
+        doc: "Re-apply the top redo entry and push it back to the undo log. No-op when canRedo is false."
+        output: { primitive: VOID }
+      },
+      { name: "appendPendingEdit"
+        doc: "Append a proposal to pendingEdits without applying it. Used when a loaded document carries proposals."
+        inputs: [
+          { name: "edit", type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "adoptStylesheet"
+        doc: "Replace the stylesheet wholesale WITHOUT marking the document dirty and without an undo entry. For state the user did not author -- an external file change, or discussion pulled from a forge."
+        inputs: [
+          { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "dirty"
+        doc: "Solid Accessor. True once any write has run this session."
+        output: { primitive: BOOLEAN }
+      },
+      { name: "version"
+        doc: "Solid Accessor. Monotonic counter, bumped once per write."
+        output: { primitive: INTEGER }
+      },
+      { name: "acceptPending"
+        change_type: ADDED
+        doc:
+          "Apply the proposal with this id and take it out of pendingEdits, as\n"
+          "a single write with a single undo entry.\n"
+          "\n"
+          "NO-OP when no pendingEdits entry has this id: nothing is written,\n"
+          "no undo entry is pushed, and dirty and version are unchanged.\n"
+          "\n"
+          "After it returns, the element changes the proposal described are\n"
+          "present in the stylesheet and pendingEdits no longer contains an\n"
+          "entry with this id. One undo restores both halves at once.\n"
+          "\n"
+          "It DROPS THE PROPOSAL'S THREAD, exactly as rejectPending does and\n"
+          "for the same reason: the thread is stored inside the StyleEdit,\n"
+          "the entry leaves pendingEdits, and applyStyleEditToStylesheet has\n"
+          "nowhere to put a CommentThread. Accepting a proposal therefore\n"
+          "loses the discussion about it, which is accepted on both paths --\n"
+          "on a PR the discussion also lives on the forge and survives there.\n"
+          "\n"
+          "StyleEditState.APPLIED is NOT written, symmetrically with REJECTED\n"
+          "on rejectPending. The entry leaves pendingEdits and is recorded\n"
+          "nowhere with a state: its effect is in the element maps, and there\n"
+          "is no surviving StyleEdit to stamp. The deleted acceptPendingEdit\n"
+          "in state/edits/pending.ts did stamp one, because it returned the\n"
+          "edit for a caller to apply; this does both halves itself and has\n"
+          "no such value to hand back."
+        inputs: [
+          { name: "editId", type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "rejectPending"
+        change_type: ADDED
+        doc:
+          "Take the proposal with this id out of pendingEdits WITHOUT applying\n"
+          "its changes, as a single write with a single undo entry.\n"
+          "\n"
+          "Reject is a delete, matching Word and Google Docs: the entry is\n"
+          "gone rather than kept in a rejected state. StyleEditState.REJECTED\n"
+          "is never written by the editor -- it remains meaningful for\n"
+          "external producers, and recovery of a rejected proposal is git, not\n"
+          "an in-document history.\n"
+          "\n"
+          "This drops the proposal's thread along with it, because the thread\n"
+          "is stored inside the StyleEdit. On a PR the discussion also exists\n"
+          "on the forge and survives there; in a local file it does not, and\n"
+          "git is the recovery path.\n"
+          "\n"
+          "NO-OP when no entry has this id, on the same terms as acceptPending."
+        inputs: [
+          { name: "editId", type: { primitive: CHARACTER } }
+        ]
+        output: { primitive: VOID }
+      },
+      { name: "addComment"
+        change_type: ADDED
+        doc:
+          "Append a comment to the thread of the pendingEdits entry with this\n"
+          "id, creating the thread when the entry has none.\n"
+          "\n"
+          "It goes through the undo log, and that is a CORRECTNESS\n"
+          "requirement rather than a convenience. undo_log's BeforeSnapshot\n"
+          "captures pendingEditsBefore and restoreFromSnapshot writes it back\n"
+          "wholesale, so a comment written outside the log is destroyed by the\n"
+          "next undo of any unrelated edit.\n"
+          "\n"
+          "NO-OP when no entry has this id.\n"
+          "\n"
+          "Takes an already-built Comment, so it stays synchronous: building\n"
+          "one needs a sha256 id and therefore an await. See newComment.\n"
+          "\n"
+          "It does NOT contact a forge. Mirroring a comment outward is the\n"
+          "caller's job -- see App."
+        inputs: [
+          { name: "editRef", type: { primitive: CHARACTER } },
+          { name: "comment", type: { named: { symbol: "archeglyph.style.v1.Comment" } } }
+        ]
+        output: { primitive: VOID }
+      }
+    ]
+    typescript: {}
+  }
+]

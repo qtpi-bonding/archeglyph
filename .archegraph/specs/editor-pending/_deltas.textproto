@@ -1,0 +1,65 @@
+# --- FileBackend ---------------------------------------------------------
+#
+# Deleted because it is a second writer to data the editor now owns.
+#
+# Threads live in Stylesheet.pendingEdits[].thread. Once every comment write
+# goes through EditorState.addComment, a backend whose whole job is to read and
+# write that same field is not a backend at all -- it is a duplicate of the
+# state layer with no undo log and no snapshot. Keeping it would mean two
+# writers to one store, which is exactly what the "always local, optionally
+# forge" decision rules out.
+#
+# It has never run. Both construction sites in select_adapters.ts hand it a
+# `createSignal<Stylesheet>(create(StylesheetSchema, {}))` pair created inline
+# and referenced nowhere else, so every comment it has ever written went into an
+# object that was immediately unreachable. There are no tests over it.
+#
+# CommentBackend, GitForgePrBackend and GitForgeIssueBackend all stay. The
+# interface is now what its name suggests -- a remote to sync with -- and the
+# two forge implementations are its only members.
+#
+# --- acceptPendingEdit ---------------------------------------------------
+#
+# Deleted because EditorState.acceptPending replaces it.
+#
+# It returns the StyleEdit stamped APPLIED and leaves removal to its caller --
+# a two-step contract its own test documents: "acceptPendingEdit hands back the
+# edit to apply; the panel is responsible for removing it afterward via
+# removePendingEdit" (builders.test.ts:985). That split is precisely what this
+# pillar rejects, because two writes cannot be one undo entry. Its only callers
+# are in that test file.
+#
+# proposePendingEdit is deliberately NOT deleted despite also having no
+# production caller. It is not replaced by anything -- authoring proposals from
+# the editor is stated out of scope for this pillar -- so it is unwired rather
+# than superseded, and deleting it would remove a capability instead of a
+# duplicate. findPendingEdit and removePendingEdit both gain callers here.
+#
+# --- hand cleanup after the build ----------------------------------------
+#
+#   packages/editor/src/adapters/index.ts
+#     Re-exports FileBackend on its own line. A re-export is not a decl, so no
+#     node covers it and the barrel fails to resolve until the line goes.
+#
+#   packages/editor/src/state/edits/builders.test.ts
+#     Its `describe('acceptPendingEdit')` block and the import on line 67 both
+#     name a symbol that stops existing. The block is deleted rather than
+#     rewritten: what it tests is the two-step contract, and that contract is
+#     what is being removed.
+
+node_deltas: [
+  { symbol: "file://packages/editor/src/adapters/file_backend.ts" change_type: DELETED },
+  { symbol: "packages/editor/src/adapters/file_backend.ts/FileBackend#" change_type: DELETED },
+  { symbol: "packages/editor/src/state/edits/pending.ts/acceptPendingEdit()." change_type: DELETED }
+]
+
+# pending.ts SURVIVES -- only one of its four functions goes -- so the file's
+# containment edge to it has to be dropped explicitly. FileBackend needs no
+# such entry: its FILE node is deleted, and compose drops dangling edges once
+# the file goes.
+edge_deltas: [
+  { source: "file://packages/editor/src/state/edits/pending.ts"
+    target: "packages/editor/src/state/edits/pending.ts/acceptPendingEdit()."
+    edge_kind: CONTAINMENT
+    change_type: DELETED }
+]

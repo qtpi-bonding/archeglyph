@@ -1,0 +1,53 @@
+file: "packages/editor/src/pending/thread_view.tsx"
+doc: "One proposal's discussion, and the box for adding to it."
+
+structs: [
+  { name: "ThreadViewProps"
+    doc:
+      "`comments` are the thread's comments in stored order. An empty array\n"
+      "is a legitimate value and means nobody has commented yet.\n"
+      "\n"
+      "`onReply` receives the typed body, already trimmed and guaranteed\n"
+      "non-empty by this component. It does NOT receive an edit id -- the\n"
+      "view does not know which proposal it belongs to, and the panel that\n"
+      "renders it supplies that."
+    fields: [
+      { name: "comments", type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "archeglyph.style.v1.Comment" } }] } } },
+      { name: "onReply",  type: { arrow: { inputs: [{ primitive: CHARACTER }], output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "ThreadView"
+    doc:
+      "Renders each comment as its author, its time, and its body, in\n"
+      "`comments` order. Comment.reply_to is IGNORED -- the list is flat in\n"
+      "v1 and no tree is assembled from it.\n"
+      "\n"
+      "Comment.author is `optional string` and may be absent or empty. When\n"
+      "it is either, render the literal string 'unknown', the same\n"
+      "placeholder PendingItem uses for an authorless StyleEdit.\n"
+      "\n"
+      "Bodies are markdown in the schema and are rendered as PLAIN TEXT\n"
+      "here. Rendering untrusted markdown fetched from a public PR is a\n"
+      "separate decision with a security surface, and a flat string is the\n"
+      "honest v1.\n"
+      "\n"
+      "An empty `comments` renders the literal string 'No comments yet'\n"
+      "above the reply box, not nothing -- unlike the panel and the banner,\n"
+      "this component is only mounted once a row is deliberately expanded,\n"
+      "so there is always something the reader is asking to see.\n"
+      "\n"
+      "REPLY BOX. A textarea plus a button labelled 'Reply'. The button is\n"
+      "DISABLED when the textarea's value is empty or whitespace only, so\n"
+      "onReply is never called with a blank body. On a successful click it\n"
+      "calls onReply with the trimmed text and then CLEARS the textarea.\n"
+      "\n"
+      "The textarea stops keydown propagation, for the same reason\n"
+      "CommandPalette's input does: the document listener in canvas.tsx\n"
+      "would otherwise read typing as chords and nudge the selection."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "ThreadViewProps" } }] } }
+  }
+]

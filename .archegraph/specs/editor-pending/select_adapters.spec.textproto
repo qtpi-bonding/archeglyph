@@ -1,0 +1,53 @@
+file: "packages/editor/src/shell/select_adapters.ts"
+doc: "Adapter selection stops manufacturing a comment backend for the local-file case."
+
+# CONVERGENCE NOTE. Two decls in one existing file, which is the shape that has
+# failed to converge before. They are here together because they cannot be
+# separated -- AdapterPair.backend becoming optional is what lets selectAdapters
+# stop constructing one. If convergence fails, take the whole file from whichever
+# branch is complete rather than splicing.
+
+structs: [
+  { name: "AdapterPair"
+    change_type: MODIFIED
+    doc:
+      "`backend` becomes OPTIONAL. It is present only when the URL names a\n"
+      "GitHub PR or issue, and absent for every local-file session.\n"
+      "\n"
+      "Absent means 'no remote to mirror to', NOT 'comments unavailable'.\n"
+      "Threads are stored in the stylesheet either way; a backend only adds\n"
+      "a forge to sync with. Making it optional is what removes the need for\n"
+      "a local backend that reads and writes the same stylesheet the editor\n"
+      "already owns."
+    fields: [
+      { name: "adapter", type: { named: { symbol: "HostAdapter" } } },
+      { name: "backend", type: { named: { symbol: "CommentBackend" } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "selectAdapters"
+    change_type: MODIFIED
+    doc:
+      "The two forge branches are unchanged: '?pr=' still yields a\n"
+      "GitForgePrBackend over a GitHubForge, '?issue=' a GitForgeIssueBackend.\n"
+      "\n"
+      "Every other branch now returns an AdapterPair with NO backend. The\n"
+      "throwaway `createSignal<Stylesheet>` pairs those branches used to\n"
+      "construct a FileBackend with are removed along with it, and this file\n"
+      "stops importing createSignal and FileBackend.\n"
+      "\n"
+      "ADAPTER selection is untouched and is a SEPARATE decision from backend\n"
+      "selection -- the two are not branches of one chain. Every branch that\n"
+      "names a remote uses UrlParamAdapter, and that includes '?pr=' and\n"
+      "'?issue=', which build one exactly as they do today. BrowserFsAdapter\n"
+      "is returned only when none of 'pr', 'issue', 'fetch', 'gh', 'd' or 's'\n"
+      "is present."
+    inputs: [
+      { name: "params", type: { named: { symbol: "URLSearchParams" } } }
+    ]
+    output: { named: { symbol: "AdapterPair" } }
+  }
+]

@@ -1,0 +1,40 @@
+file: "packages/editor/src/pending/merge_threads.ts"
+doc: "Folding discussion fetched from a forge back into the stylesheet, which is where threads live."
+
+methods: [
+  { name: "mergeThreads"
+    doc:
+      "Pure. Returns a NEW Stylesheet; never mutates the argument.\n"
+      "\n"
+      "WHY THIS EXISTS. The stylesheet is the only store of comment threads.\n"
+      "A GitHub PR or issue is a transport, not a second store, so fetched\n"
+      "comments have to be folded back in rather than displayed from a\n"
+      "parallel list. That is what makes pendingItems able to read one place.\n"
+      "\n"
+      "MATCHING. Each ThreadEntry carries an `editRef`. Its comments join the\n"
+      "thread of the pendingEdits entry whose `id` equals that editRef. An\n"
+      "entry whose editRef matches no pending edit is DROPPED -- a PR can\n"
+      "carry discussion about a proposal that is not in the stylesheet this\n"
+      "reader loaded, and inventing a pending edit for it would put a\n"
+      "proposal on the canvas that nobody proposed.\n"
+      "\n"
+      "DEDUPE by Comment.id, PER THREAD, not across the stylesheet. A fetched\n"
+      "comment is skipped when its id already appears in THE THREAD IT IS\n"
+      "BEING MERGED INTO; the same id appearing in some other pending edit's\n"
+      "thread does not suppress it. So fetching twice produces the same\n"
+      "stylesheet as fetching once. On a collision the comment ALREADY IN\n"
+      "THAT THREAD wins and the fetched copy is discarded.\n"
+      "\n"
+      "ORDER. Existing comments keep their positions; new ones append after\n"
+      "them. Where two entries carry the SAME editRef -- which is allowed --\n"
+      "they are processed in `entries` array order, and within each entry its\n"
+      "comments are appended in their own order.\n"
+      "\n"
+      "An empty `entries` array returns a stylesheet equal to the input."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } },
+      { name: "entries",    type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "ThreadEntry" } }] } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Stylesheet" } }
+  }
+]

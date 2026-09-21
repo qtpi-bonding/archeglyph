@@ -1,0 +1,43 @@
+file: "packages/editor/src/state/undo_log.ts"
+doc: "An undo entry learns to carry the pendingEdits list its redo should restore."
+
+structs: [
+  { name: "UndoEntry"
+    change_type: MODIFIED
+    doc:
+      "One optional field added: `pendingEditsAfter`. The other four are\n"
+      "unchanged.\n"
+      "\n"
+      "WHY. Redo re-applies an entry by folding entry.edit over the current\n"
+      "stylesheet, and applyStyleEditToStylesheet copies pendingEdits through\n"
+      "untouched -- a StyleEdit describes element changes and cannot describe\n"
+      "a change to the proposal list. So redoing an accept would re-apply the\n"
+      "element changes and leave the proposal still listed and still drawn by\n"
+      "the ghost layer: the applied-and-still-pending state acceptPending\n"
+      "exists to avoid. Redoing a reject, or a comment, would do nothing at\n"
+      "all.\n"
+      "\n"
+      "WHEN SET, redo writes this array as the stylesheet's pendingEdits\n"
+      "after folding entry.edit, instead of carrying the current one through.\n"
+      "The three review writes on EditorState set it; ordinary applyStyleEdit\n"
+      "does not, and when it is absent redo behaves exactly as before.\n"
+      "\n"
+      "It is the symmetric partner of BeforeSnapshot.pendingEditsBefore,\n"
+      "which undo already restores the same way -- and it inherits that\n"
+      "field's one flaw, deliberately. Both hold the WHOLE array rather than\n"
+      "a delta, so a write that changes pendingEdits without touching either\n"
+      "log makes a stored copy stale, and a later redo reverts it. The\n"
+      "writes that can do that are appendPendingEdit and adoptStylesheet via\n"
+      "the external-file sync. The cost is accepted here rather than fixed:\n"
+      "a targeted delta is the right shape, but changing pendingEditsBefore\n"
+      "to match is a rewrite of the undo model and is not this pillar."
+    fields: [
+      { name: "beforeSnapshot",    type: { named: { symbol: "BeforeSnapshot" } } },
+      { name: "edit",              type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+      { name: "tsMs",              type: { primitive: REAL } },
+      { name: "coalesceKey",       type: { primitive: CHARACTER }, is_optional: true },
+      { name: "pendingEditsAfter", type: { named: { symbol: "Array", args: [{ named: { symbol: "archeglyph.style.v1.StyleEdit" } }] } }, is_optional: true }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]

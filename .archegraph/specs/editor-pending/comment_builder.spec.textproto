@@ -1,0 +1,46 @@
+file: "packages/editor/src/pending/comment_builder.ts"
+doc: "Constructing a Comment, including the id everything else matches on."
+
+methods: [
+  { name: "newComment"
+    doc:
+      "Build a Comment with its id, author and timestamp filled in.\n"
+      "\n"
+      "ASYNC, and that is forced rather than chosen: Comment.id is specified\n"
+      "as a sha256 prefix, the only digest available in the browser is\n"
+      "crypto.subtle.digest, and it returns a Promise. Mirror\n"
+      "state/stylesheet_hash.ts, which computes StyleEdit-adjacent hashes the\n"
+      "same way -- canonical JSON, SHA-256, first 8 bytes as 16 hex\n"
+      "characters. EditorState.addComment stays synchronous by taking the\n"
+      "finished Comment rather than building one.\n"
+      "\n"
+      "WHY THE ID MATTERS. mergeThreads dedupes by it. A comment posted to a\n"
+      "PR carries this id inside its metadata envelope and is parsed back out\n"
+      "with the same id, so fetching after posting recognises the comment as\n"
+      "one already held rather than appending a second copy. An id that did\n"
+      "not round-trip would make every fetch duplicate every reply.\n"
+      "\n"
+      "The digest covers `body`, `author` and `timestampMs`. timestampMs is\n"
+      "read from Date.now() INSIDE this function, so it is NOT a pure\n"
+      "function of its two arguments: calling it twice with the same body and\n"
+      "author in different milliseconds yields two different ids. The\n"
+      "determinism that matters is over the digest's three values -- the same\n"
+      "body, author and timestamp always hash to the same id, which is what\n"
+      "makes a posted comment recognisable when it is fetched back.\n"
+      "\n"
+      "`author` is passed in rather than discovered. The editor has no\n"
+      "signed-in user: edit_builder.ts already stamps its StyleEdits\n"
+      "'user:local', and callers here pass the same. On a PR the forge also\n"
+      "records its own author from the OAuth token, which is the identity a\n"
+      "human reader sees; this field is what archeglyph's own parser reads\n"
+      "back.\n"
+      "\n"
+      "replyTo is left unset. v1 threads are flat -- see ThreadView."
+    inputs: [
+      { name: "body",   type: { primitive: CHARACTER } },
+      { name: "author", type: { primitive: CHARACTER } }
+    ]
+    is_async: true
+    output: { named: { symbol: "archeglyph.style.v1.Comment" } }
+  }
+]

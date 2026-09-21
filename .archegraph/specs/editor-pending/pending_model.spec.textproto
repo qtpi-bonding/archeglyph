@@ -1,0 +1,70 @@
+file: "packages/editor/src/pending/pending_model.ts"
+doc: "What the review panel renders: one row per proposed edit, joined with its discussion."
+
+structs: [
+  { name: "PendingItem"
+    doc:
+      "One row of the review panel.\n"
+      "\n"
+      "`id` is StyleEdit.id and is what Accept, Reject and a reply are\n"
+      "addressed to.\n"
+      "\n"
+      "`description` is StyleEdit.description when that field is a non-empty\n"
+      "string, and otherwise the literal string 'Untitled change'. The field\n"
+      "is optional in the schema and a blank row is worse than a placeholder.\n"
+      "\n"
+      "`author` is StyleEdit.author when set, otherwise the literal string\n"
+      "'unknown'. Same reason.\n"
+      "\n"
+      "`changeCount` is the total number of element changes in the edit --\n"
+      "nodeChanges.length + edgeChanges.length + groupChanges.length +\n"
+      "annotationChanges.length. It exists so a row can say how big a\n"
+      "proposal is without the panel reaching into the StyleEdit itself.\n"
+      "\n"
+      "`comments` is thread.comments HANDED THROUGH VERBATIM -- the schema's\n"
+      "CommentThread.comments is already a flat repeated field, so there is\n"
+      "no tree to flatten and reply_to is not consulted here. It is the EMPTY\n"
+      "ARRAY when the edit has no thread. Never undefined, so every consumer\n"
+      "counts and renders it the same way."
+    fields: [
+      { name: "id",          type: { primitive: CHARACTER } },
+      { name: "description", type: { primitive: CHARACTER } },
+      { name: "author",      type: { primitive: CHARACTER } },
+      { name: "changeCount", type: { primitive: INTEGER } },
+      { name: "comments",    type: { named: { symbol: "ReadonlyArray", args: [{ named: { symbol: "archeglyph.style.v1.Comment" } }] } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "pendingItems"
+    doc:
+      "Pure. Reads ONLY the stylesheet -- never a CommentBackend.\n"
+      "\n"
+      "That is the whole point of this function and the reason it can be\n"
+      "tested without a network. Threads are stored in the stylesheet at\n"
+      "StyleEdit.thread; a forge backend is a sync mechanism that writes\n"
+      "there, not a second place to read from. See mergeThreads.\n"
+      "\n"
+      "ORDER is stylesheet.pendingEdits order, unfiltered. Every entry in\n"
+      "pendingEdits produces exactly one PendingItem. An empty pendingEdits\n"
+      "gives an empty array.\n"
+      "\n"
+      "`state` IS NOT READ, and that is a decision rather than an omission.\n"
+      "Membership of pendingEdits is the only signal the editor treats as\n"
+      "meaningful: ghost_layer's applyAllPendingEdits already folds every\n"
+      "entry with no state filter, so an entry this function hid would still\n"
+      "be drawn on the canvas with no row to act on it. The two must agree,\n"
+      "and drawing is the harder one to filter.\n"
+      "\n"
+      "A stylesheet arriving from an external producer with an entry marked\n"
+      "REJECTED still in pendingEdits is therefore shown as a live proposal.\n"
+      "That producer is expected to remove what it rejected, exactly as\n"
+      "EditorState.rejectPending does."
+    inputs: [
+      { name: "stylesheet", type: { named: { symbol: "archeglyph.style.v1.Stylesheet" } } }
+    ]
+    output: { named: { symbol: "Array", args: [{ named: { symbol: "PendingItem" } }] } }
+  }
+]

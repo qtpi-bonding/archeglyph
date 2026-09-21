@@ -1,0 +1,50 @@
+file: "packages/editor/src/pending/pending_banner.tsx"
+doc: "The always-visible half of review: a count you can click to open the panel."
+
+structs: [
+  { name: "PendingBannerProps"
+    doc:
+      "`count` is how many proposals exist. `expanded` is whether the panel\n"
+      "is currently open. `onToggle` is called with no arguments on click and\n"
+      "on Enter or Space; the banner does NOT hold the expanded state, so it\n"
+      "is the caller that flips it and passes it back down."
+    fields: [
+      { name: "count",    type: { primitive: INTEGER } },
+      { name: "expanded", type: { primitive: BOOLEAN } },
+      { name: "onToggle", type: { arrow: { output: { primitive: VOID } } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "PendingBanner"
+    doc:
+      "Renders NOTHING AT ALL when `count` is 0 -- not an empty bar. A file\n"
+      "with no proposals is the normal case and must look untouched.\n"
+      "\n"
+      "With count >= 1 it renders one clickable strip reading '1 proposed\n"
+      "change' when count is exactly 1 and '<count> proposed changes'\n"
+      "otherwise, so the singular case is not '1 proposed changes'.\n"
+      "\n"
+      "Styled from the same island tokens the other floating surfaces use --\n"
+      "--ag-panel, --ag-edge, --ag-radius, --ag-shadow -- so it reads as part\n"
+      "of the same chrome family rather than as a browser notification.\n"
+      "\n"
+      "It is a <button>, not a div, and that is the WHOLE keyboard story: the\n"
+      "component registers a click handler and NO keydown handler at all.\n"
+      "Enter and Space reach onToggle through the browser's own synthesized\n"
+      "click on a focused button. So one activation calls onToggle exactly\n"
+      "once, and a bare keydown dispatched in a DOM test calls it zero times.\n"
+      "`expanded` is reflected as aria-expanded.\n"
+      "\n"
+      "The ROOT CARRIES class=\"ag-island\", for the reason given on\n"
+      "PendingPanel: IslandFrame's slots set pointer-events:none, it\n"
+      "inherits, and a root without the class cannot be clicked at all.\n"
+      "\n"
+      "It is NOT given a slot of its own on IslandFrame, whose slot list is\n"
+      "fixed. App puts it at the top of a column it passes into the existing\n"
+      "inspector slot; what sits beneath it is App's decision, stated there."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "PendingBannerProps" } }] } }
+  }
+]

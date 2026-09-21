@@ -206,13 +206,6 @@ export const App: Component<{}> = (): JSX.Element => {
   });
 
   const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
-  const mode = (): string | undefined => {
-    const tool = ui.tool();
-    if (tool === 'select') { return undefined; }
-    const id: CommandId = tool === 'hand' ? 'tool-hand' : 'tool-annotation';
-    return COMMANDS.find((command): boolean => command.id === id)?.label;
-  };
-
   const [flash, setFlash] = createSignal<ReadonlyArray<EchoToken>>([]);
   let flashTimer: ReturnType<typeof setTimeout> | undefined;
   const onKeyEcho = (tokens: ReadonlyArray<EchoToken> | undefined): void => {
@@ -320,7 +313,6 @@ export const App: Component<{}> = (): JSX.Element => {
         undo={<UndoIsland canUndo={state()!.canUndo()} canRedo={state()!.canRedo()} onCommand={onCommand} />}
         state={
           <StateIsland
-            mode={mode()}
             error={scene()?.error() !== dismissedError() ? scene()?.error()?.message : undefined}
             onDismiss={(): void => { setDismissedError(scene()?.error()); }}
           />

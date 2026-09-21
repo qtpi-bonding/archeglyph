@@ -17,7 +17,6 @@ const { beginModalGesture } = await import('../ui_state/modal_gesture');
 
 describe('StateIsland follows the model', () => {
   test('an error raised after mount is shown', () => {
-    // Mount state: no error and no mode is exactly where a frozen read sticks.
     const [error, setError] = createSignal<string | undefined>(undefined);
     const { container } = render(() => <StateIsland error={error()} />);
 
@@ -25,34 +24,6 @@ describe('StateIsland follows the model', () => {
 
     setError('layout failed: cyclic containment');
     expect(container.textContent).toContain('cyclic containment');
-
-    cleanup();
-  });
-
-  test('a mode entered after mount is shown, and clears again', () => {
-    const [mode, setMode] = createSignal<string | undefined>(undefined);
-    const { container } = render(() => <StateIsland mode={mode()} />);
-
-    setMode('g');
-    expect(container.textContent).toContain('g');
-
-    setMode(undefined);
-    expect(container.textContent).toBe('');
-
-    cleanup();
-  });
-
-  test('an error arriving over a mode takes the error styling', () => {
-    // `hasError` picks the background AND which of the two strings is shown,
-    // so it has to be re-read, not just `hasState`.
-    const [error, setError] = createSignal<string | undefined>(undefined);
-    const { container } = render(() => <StateIsland mode="r" error={error()} />);
-
-    expect(container.textContent).toContain('r');
-
-    setError('boom');
-    expect(container.textContent).toContain('boom');
-    expect(container.textContent).not.toContain('r');
 
     cleanup();
   });

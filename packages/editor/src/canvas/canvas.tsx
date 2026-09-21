@@ -16,7 +16,7 @@ import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
 import { OverlayLayer } from './overlay_layer';
-import { routePress, exceedsThreshold, GestureDecision } from '../gestures/pointer_router';
+import { routePress, exceedsThreshold, GestureDecision, PressContext } from '../gestures/pointer_router';
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
 import { applyWheel } from '../gestures/wheel_handler';
 import { handleKeyDown } from '../gestures/keyboard_handler';
@@ -331,13 +331,14 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       const screen: Vec2 = pointFromEvent(event);
       const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
       const hit: ElementRef | undefined = hitAt(event);
-      const decision: GestureDecision = routePress({
+      const context: PressContext = {
         point: diagram,
         hit,
         tool: props.ui.tool(),
         button: 2,
         additive: event.shiftKey || event.metaKey,
-      }, props.ui.selection());
+      };
+      const decision: GestureDecision = routePress(context, props.ui.selection());
       if (decision.selection !== undefined) {
         props.ui.setSelection(decision.selection);
       }

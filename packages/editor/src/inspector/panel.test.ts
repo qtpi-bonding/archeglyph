@@ -24,10 +24,9 @@ describe('renderableSections', () => {
     expect(renderableSections(model)).toEqual(['layout', 'shape', 'typography']);
   });
 
-  test('a group drops its container section, which is not shipped', () => {
+  test('a group renders its own container section, in model order', () => {
     const model = inspectorModel(refs('group', 'g1'))!;
-    expect(model.sections).toContain('group');
-    expect(renderableSections(model)).toEqual(['layout', 'shape', 'typography']);
+    expect(renderableSections(model)).toEqual(['layout', 'group', 'shape', 'typography']);
   });
 
   test('an edge renders line and typography', () => {
@@ -35,10 +34,9 @@ describe('renderableSections', () => {
     expect(renderableSections(model)).toEqual(['line', 'typography']);
   });
 
-  test('an annotation drops only its own content section', () => {
+  test('an annotation renders its own section, in model order', () => {
     const model = inspectorModel(refs('annotation', 'a1'))!;
-    expect(model.sections).toContain('annotation');
-    expect(renderableSections(model)).toEqual(['layout', 'shape', 'line', 'typography']);
+    expect(renderableSections(model)).toEqual(['layout', 'annotation', 'shape', 'line', 'typography']);
   });
 
   test('display order follows the model, not the registry', () => {
@@ -56,9 +54,11 @@ describe('renderableSections', () => {
     }
   });
 
-  test('the registry is exactly what this pillar ships', () => {
-    // This is the line the follow-on pillar edits. If it drifts without the
-    // components existing, the panel renders a section that cannot commit.
-    expect([...SECTION_IDS].sort()).toEqual(['layout', 'line', 'shape', 'typography']);
+  test('the registry is exactly the set with components behind it', () => {
+    // A section id here with no branch in inspector.tsx renders nothing and
+    // cannot commit, which looks like a broken panel rather than a missing
+    // feature. Every id below has a component; add to both or neither.
+    expect([...SECTION_IDS].sort())
+      .toEqual(['annotation', 'group', 'layout', 'line', 'shape', 'typography']);
   });
 });

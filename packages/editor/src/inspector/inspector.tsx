@@ -12,6 +12,8 @@ import { LayoutSection } from './sections/layout_section';
 import { ShapeSection } from './sections/shape_section';
 import { LineSection } from './sections/line_section';
 import { TypographySection } from './sections/typography_section';
+import { GroupSection } from './sections/group_section';
+import { AnnotationSection } from './sections/annotation_section';
 
 export interface InspectorProps {
   state: EditorState;
@@ -64,6 +66,12 @@ export const Inspector: Component<InspectorProps> = (
     }
     if (id === 'line') {
       return <LineSection state={props.state} model={current} geometry={props.geometry} />;
+    }
+    if (id === 'group') {
+      return <GroupSection state={props.state} model={current} geometry={props.geometry} />;
+    }
+    if (id === 'annotation') {
+      return <AnnotationSection state={props.state} model={current} geometry={props.geometry} />;
     }
     if (id === 'typography') {
       return <TypographySection state={props.state} model={current} geometry={props.geometry} theme={props.theme} />;

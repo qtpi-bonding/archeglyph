@@ -289,6 +289,16 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     }));
   }
 
+  // The canvas ground, so an annotation whose fill does not resolve still
+  // hides its label rather than showing two texts at once.
+  const EDITOR_FALLBACK_BACKGROUND: string = 'var(--ag-bg)';
+
+  function editorBackground(ref: ElementRef): string {
+    const annotation = geometry()?.diagram.annotations[ref.id];
+    const paint = annotation?.shape?.fill?.paint;
+    return paint?.case === 'color' ? paint.value.value : EDITOR_FALLBACK_BACKGROUND;
+  }
+
   function annotationText(ref: ElementRef): string {
     return props.stylesheet.annotations[ref.id]?.content.find((entry) => entry.locale === 'en')?.source ?? NEW_ANNOTATION_TEXT;
   }
@@ -450,6 +460,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
           <Show when={props.ui.textEditTarget() !== undefined && editorBounds(props.ui.textEditTarget()!) !== undefined}>
             <TextEditor
               text={annotationText(props.ui.textEditTarget()!)}
+              background={editorBackground(props.ui.textEditTarget()!)}
               bounds={editorBounds(props.ui.textEditTarget()!)!}
               onCommit={(text: string): void => {
                 const target = props.ui.textEditTarget();

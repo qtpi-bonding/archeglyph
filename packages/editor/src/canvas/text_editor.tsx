@@ -6,6 +6,8 @@ import type { Bounds } from '@archeglyph/core/geometry/bounds';
 export interface TextEditorProps {
   text: string;
   bounds: Bounds;
+  /** Opaque, or the annotation's own label stays legible underneath. */
+  background: string;
   onCommit: (text: string) => void;
   onCancel: () => void;
 }
@@ -84,7 +86,7 @@ export const TextEditor: Component<TextEditorProps> = (props: TextEditorProps): 
           outline: 'none',
           resize: 'none',
           overflow: 'hidden',
-          'background-color': 'transparent',
+          'background-color': props.background,
           'font-family': 'inherit',
           'font-size': 'inherit',
           color: 'inherit',

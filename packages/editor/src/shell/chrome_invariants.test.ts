@@ -85,3 +85,23 @@ describe('direct manipulation gestures are wired', () => {
     expect(canvas()).toContain("removeEventListener('dblclick'");
   });
 });
+
+describe('the inline text editor hides what it replaces', () => {
+  const editor = (): string =>
+    readFileSync(join(here, '../canvas/text_editor.tsx'), 'utf8');
+
+  test('the textarea is not transparent', () => {
+    const src = editor();
+    expect(src).toContain("'background-color': props.background");
+    expect(src).not.toContain("'background-color': 'transparent'");
+  });
+
+  test('the canvas supplies the annotation its own resolved fill', () => {
+    const src = readFileSync(join(here, '../canvas/canvas.tsx'), 'utf8');
+    expect(src).toContain('background={editorBackground(');
+
+    const fn = src.slice(src.indexOf('function editorBackground'), src.indexOf('function annotationText'));
+    expect(fn).toContain("paint?.case === 'color'");
+    expect(fn).toContain('EDITOR_FALLBACK_BACKGROUND');
+  });
+});

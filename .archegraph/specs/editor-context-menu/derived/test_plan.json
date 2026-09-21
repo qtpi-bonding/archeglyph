@@ -1,0 +1,483 @@
+{
+  "specName": "editor-context-menu",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-context-menu' --root . --plan '.archegraph/specs/editor-context-menu/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "symbolName": "Canvas",
+      "filePath": "packages/editor/src/canvas/canvas.tsx",
+      "cases": [
+        {
+          "name": "right-button-pointerdown",
+          "condition": "A pointerdown event has button 2 anywhere in the canvas, including over empty space or an element. The handler returns immediately before clearing a modal gesture, preventing the default, computing a hit, capturing the pointer, changing selection, or routing the press.",
+          "outcome": "Returns immediately for button 2 without clearing modal state, preventing default, hit testing, pointer capture, selection changes, or press routing.",
+          "domain": "any canvas location and hit target"
+        },
+        {
+          "name": "right-button-with-modal-gesture",
+          "condition": "A button-2 pointerdown occurs while a modal gesture is active. The modal gesture remains unchanged because the early return occurs before setModalGesture(undefined).",
+          "outcome": "Returns immediately and leaves the active modal gesture unchanged.",
+          "domain": "any active modal gesture"
+        },
+        {
+          "name": "ordinary-pointerdown",
+          "condition": "A pointerdown event has a button other than 2. The existing pointer handling runs, including hit testing, pointer capture, routePress, selection application, annotation double-click editing, and gesture setup as determined by the event and current state.",
+          "outcome": "Runs the existing pointerdown handling, including hit testing, capture, routing, selection, annotation editing, and gesture setup as applicable.",
+          "domain": "any non-2 mouse button, pointer location, tool, hit, modifier state, and click detail"
+        },
+        {
+          "name": "contextmenu-over-hit",
+          "condition": "A contextmenu event occurs over a hittable canvas element. The native menu is prevented; a PressContext using button 2, the pointer location, the current tool, modifiers, and the hit is passed to routePress; any selection returned by routePress is applied; then onContextMenu is called with the event client coordinates.",
+          "outcome": "Prevents the native menu, routes a button-2 press with the hit and current context, applies any returned selection, then calls onContextMenu with the client coordinates.",
+          "domain": "one of: node, edge, group, annotation, or other hittable element"
+        },
+        {
+          "name": "contextmenu-over-empty-canvas",
+          "condition": "A contextmenu event occurs over empty canvas space. The native menu is prevented, routePress receives button 2 with an undefined hit and determines the selection according to its own rules, and onContextMenu is called only after that selection handling with the event client coordinates.",
+          "outcome": "Prevents the native menu, routes a button-2 press with no hit so routePress determines selection, then calls onContextMenu with the client coordinates.",
+          "domain": "any empty canvas location"
+        },
+        {
+          "name": "contextmenu-without-geometry",
+          "condition": "A contextmenu event occurs before scene geometry is available. Hit testing yields no hit, routePress still receives a button-2 PressContext, any returned selection is applied, and onContextMenu is then called with the event client coordinates.",
+          "outcome": "Prevents the native menu, routes a button-2 press with no hit despite missing geometry, applies any returned selection, then calls onContextMenu with the client coordinates."
+        },
+        {
+          "name": "contextmenu-selection-report-order",
+          "condition": "A contextmenu event targets an element different from the current selection. The routePress result is applied before props.onContextMenu is invoked, so the shell builds its menu from the newly selected target rather than the previous selection.",
+          "outcome": "Applies routePress selection before calling onContextMenu, so the shell builds the menu for the newly targeted element.",
+          "domain": "current selection differs from the context-menu hit"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_canvas_canvas_tsx_Canvas_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "symbolName": "COMMANDS",
+      "filePath": "packages/editor/src/gestures/commands.ts",
+      "cases": [
+        {
+          "name": "global-command",
+          "condition": "The command is one of the seventeen global commands and is offered without a selection-kind restriction: undo, redo, select-all, save, auto-layout, pin-all, unpin-all, add-annotation, open-palette, open-help, tool-select, tool-hand, tool-annotation, zoom-in, zoom-out, zoom-reset, or zoom-fit.",
+          "outcome": "It should add no appliesTo restriction to each of the seventeen global commands.",
+          "domain": "one of: undo, redo, select-all, save, auto-layout, pin-all, unpin-all, add-annotation, open-palette, open-help, tool-select, tool-hand, tool-annotation, zoom-in, zoom-out, zoom-reset, zoom-fit"
+        },
+        {
+          "name": "annotation-delete",
+          "condition": "Delete is offered only when the selection kind is annotation; its existing run behavior already skips non-annotations, but those selections should not advertise a no-op.",
+          "outcome": "It should set Delete's appliesTo to ['annotation'] without changing its run behavior.",
+          "domain": "annotation selection"
+        },
+        {
+          "name": "annotation-edit-text",
+          "condition": "Edit text is offered only when the selection kind is annotation; its existing run behavior requires exactly one annotation.",
+          "outcome": "It should set Edit text's appliesTo to ['annotation'] without changing its run behavior.",
+          "domain": "annotation selection"
+        },
+        {
+          "name": "annotation-duplicate",
+          "condition": "Duplicate is offered only when the selection kind is annotation; its existing run behavior skips non-annotations.",
+          "outcome": "It should set Duplicate's appliesTo to ['annotation'] without changing its run behavior.",
+          "domain": "annotation selection"
+        },
+        {
+          "name": "node-hide",
+          "condition": "Hide is offered only when the selection kind is node; its existing run behavior filters to node ids.",
+          "outcome": "It should set Hide's appliesTo to ['node'] without changing its run behavior.",
+          "domain": "node selection"
+        },
+        {
+          "name": "sized-element-reset",
+          "condition": "Reset size is offered for selections whose kind carries a size: node, group, or annotation, but not edge.",
+          "outcome": "It should set Reset size's appliesTo to ['node', 'group', 'annotation'], excluding edges.",
+          "domain": "one of: node, group, annotation"
+        },
+        {
+          "name": "inspector-supported-selection",
+          "condition": "Focus inspector is offered for any non-empty selection kind because the inspector shows the selection.",
+          "outcome": "It should set Focus inspector's appliesTo to ['node', 'edge', 'group', 'annotation'].",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "nudge-without-keyboard",
+          "condition": "Nudge up, nudge down, nudge left, and nudge right have no appliesTo restriction because they require a keyboard to be meaningful, repeat under a held key, and a palette click moves only one pixel.",
+          "outcome": "It should leave all four nudge commands without an appliesTo restriction.",
+          "domain": "one of: nudge-up, nudge-down, nudge-left, nudge-right"
+        },
+        {
+          "name": "ring-without-keyboard",
+          "condition": "Ring next and ring previous have no appliesTo restriction because they require a keyboard to be meaningful and are designed to repeat under a held key.",
+          "outcome": "It should leave Ring next and Ring previous without an appliesTo restriction.",
+          "domain": "one of: ring-next, ring-prev"
+        },
+        {
+          "name": "contextual-escape",
+          "condition": "Escape has no appliesTo restriction because its action depends on hidden context: it closes an overlay when one exists, otherwise it clears the selection; it is not a stable selection-kind-specific palette row.",
+          "outcome": "It should leave Escape without an appliesTo restriction because its behavior depends on overlay state."
+        },
+        {
+          "name": "keyboard-modal-entry",
+          "condition": "Enter grab and enter resize have no appliesTo restriction because they open modal modes whose next keystrokes are the feature, making them unsuitable as mouse-oriented selection rows.",
+          "outcome": "It should leave Enter grab and Enter resize without an appliesTo restriction because they are keyboard-oriented modal entries.",
+          "domain": "one of: enter-grab, enter-resize"
+        },
+        {
+          "name": "missing-contract-command",
+          "condition": "There is no contract command in the registry, so a group-specific Contract action is not offered; groups receive only the applicable globals plus reset-size and focus-inspector.",
+          "outcome": "It should add no Contract command, leaving groups with only applicable globals plus Reset size and Focus inspector.",
+          "domain": "group selection"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_gestures_commands_ts_COMMANDS_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/pointer_router.ts/routePress().",
+      "symbolName": "routePress",
+      "filePath": "packages/editor/src/gestures/pointer_router.ts",
+      "cases": [
+        {
+          "name": "right-click-empty-space",
+          "condition": "The function is reached for a context-menu press with context.button === 2 and context.hit is undefined; it returns kind 'none' carrying clearSelection(), and opens no gesture.",
+          "outcome": "Returns kind 'none' with clearSelection() and opens no gesture."
+        },
+        {
+          "name": "right-click-selected-hit",
+          "condition": "The function is reached for a context-menu press with context.button === 2 and context.hit is already represented in current by matching id and kind; it returns kind 'none' carrying current unchanged, and opens no gesture.",
+          "outcome": "Returns kind 'none' with the unchanged current selection and opens no gesture.",
+          "domain": "any non-empty current selection and any hit matching one of its id/kind pairs"
+        },
+        {
+          "name": "right-click-unselected-hit",
+          "condition": "The function is reached for a context-menu press with context.button === 2 and context.hit is defined but is not already selected; it returns kind 'none' carrying replaceSelection(context.hit), and opens no gesture.",
+          "outcome": "Returns kind 'none' with replaceSelection(context.hit) and opens no gesture.",
+          "domain": "any hit not matching an element in current"
+        },
+        {
+          "name": "pan-press",
+          "condition": "The press is not a right-click and context.button === 1 or context.tool === 'hand'; the single pan branch wins before annotation, anchor, handle, hit, or selection logic and returns kind 'pan'.",
+          "outcome": "Returns kind 'pan' before any annotation, affordance, hit, or selection logic.",
+          "domain": "any non-right-click button and any tool, or any non-right-click press while the hand tool is active"
+        },
+        {
+          "name": "create-annotation",
+          "condition": "The press is not a right-click, does not satisfy the pan condition, and context.tool === 'annotation'; it returns kind 'create-annotation' carrying clearSelection().",
+          "outcome": "Returns kind 'create-annotation' with clearSelection()."
+        },
+        {
+          "name": "anchor-grip-press",
+          "condition": "The press is not a right-click or annotation press, does not satisfy the pan condition, and context.onAnchorGrip is defined; it returns kind 'anchor' with that reference.",
+          "outcome": "Returns kind 'anchor' with the onAnchorGrip reference.",
+          "domain": "any defined anchor-grip reference"
+        },
+        {
+          "name": "selected-handle-press",
+          "condition": "No higher-priority branch applies, context.onHandle is defined, and current is non-empty; it returns kind 'resize' with that handle.",
+          "outcome": "Returns kind 'resize' with the onHandle value.",
+          "domain": "any defined handle and any non-empty current selection"
+        },
+        {
+          "name": "stale-handle-with-empty-selection",
+          "condition": "No higher-priority branch applies, context.onHandle is defined, and current is empty; the handle is ignored and normal hit processing continues.",
+          "outcome": "Ignores the stale handle and continues with normal hit processing.",
+          "domain": "any defined handle"
+        },
+        {
+          "name": "marquee-empty-space",
+          "condition": "No higher-priority branch applies and context.hit is undefined; it returns kind 'marquee' carrying clearSelection().",
+          "outcome": "Returns kind 'marquee' with clearSelection()."
+        },
+        {
+          "name": "additive-hit",
+          "condition": "No higher-priority branch applies, context.hit is defined, and context.additive is true; it returns kind 'none' carrying toggleSelection(current, context.hit), without opening a gesture.",
+          "outcome": "Returns kind 'none' with toggleSelection(current, context.hit) without opening a gesture.",
+          "domain": "any defined hit and either empty or non-empty current selection"
+        },
+        {
+          "name": "move-selected-hit",
+          "condition": "No higher-priority branch applies, context.hit is defined, context.additive is false, and the hit is already selected by matching id and kind; it returns kind 'move' carrying current unchanged.",
+          "outcome": "Returns kind 'move' with the unchanged current selection.",
+          "domain": "any defined hit matching an element in current"
+        },
+        {
+          "name": "move-unselected-hit",
+          "condition": "No higher-priority branch applies, context.hit is defined, context.additive is false, and the hit is not already selected; it returns kind 'move' carrying replaceSelection(context.hit).",
+          "outcome": "Returns kind 'move' with replaceSelection(context.hit).",
+          "domain": "any defined hit not matching an element in current"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_gestures_pointer_router_ts_routePress___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "no-context-menu-point",
+          "condition": "The local menu-point signal is undefined, so the context menu is not mounted.",
+          "outcome": "The context menu is not mounted when the local menu-point signal is undefined."
+        },
+        {
+          "name": "context-menu-at-client-point",
+          "condition": "The canvas reports a right-click client point; the shell stores that point and mounts the menu at it.",
+          "outcome": "The shell stores the canvas-reported client point and mounts the context menu at that point.",
+          "domain": "any client point"
+        },
+        {
+          "name": "menu-items-use-current-selection",
+          "condition": "The context menu is rendered while the menu-point signal is set, and its items are computed from the selection currently returned by ui.selection(), together with COMMANDS and KEYMAP.",
+          "outcome": "The mounted menu computes its items from the current ui.selection(), COMMANDS, and KEYMAP.",
+          "domain": "any current UI selection"
+        },
+        {
+          "name": "selection-changes-while-open",
+          "condition": "The selection changes while the context menu remains open; because items read ui.selection() live at render, the menu items update to reflect the new selection.",
+          "outcome": "The open menu updates its items to reflect changes in ui.selection() because the selection is read live during rendering.",
+          "domain": "any selection transition"
+        },
+        {
+          "name": "context-menu-close",
+          "condition": "The menu requests closure through onClose; the shared close function clears the menu-point signal and the menu is unmounted.",
+          "outcome": "The shared close function clears the menu-point signal, causing the menu to unmount."
+        },
+        {
+          "name": "context-menu-command-choice",
+          "condition": "The user chooses a context-menu command; the shared close function clears the menu-point signal first, then the existing onCommand dispatches the selected command.",
+          "outcome": "The shared close function clears the menu-point signal first, after which the existing onCommand dispatches the chosen command.",
+          "domain": "any available context-menu command"
+        },
+        {
+          "name": "command-choice-without-context",
+          "condition": "A context-menu command is chosen when no command-context accessor is available; the menu still closes first, while onCommand performs no command dispatch.",
+          "outcome": "The menu closes first, while onCommand performs no dispatch when no command-context accessor is available."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/context_menu.tsx/ContextMenu.",
+      "symbolName": "ContextMenu",
+      "filePath": "packages/editor/src/shell/context_menu.tsx",
+      "cases": [
+        {
+          "name": "non-empty-items",
+          "condition": "A non-empty items array is provided; the menu renders its rows and initially highlights the first row.",
+          "outcome": "Renders all rows and initially highlights the first row.",
+          "domain": "any non-empty items array"
+        },
+        {
+          "name": "empty-items",
+          "condition": "An empty items array is provided; the component renders nothing rather than an empty menu box.",
+          "outcome": "Renders nothing instead of an empty menu box."
+        },
+        {
+          "name": "arrow-down-with-room",
+          "condition": "ArrowDown is pressed while the highlighted row is not the last row; the highlight moves to the next row and the key event does not propagate.",
+          "outcome": "Moves the highlight to the next row and stops propagation.",
+          "domain": "a highlighted row before the final row"
+        },
+        {
+          "name": "arrow-down-at-end",
+          "condition": "ArrowDown is pressed while the last row is highlighted; the highlight remains on the last row and the key event does not propagate.",
+          "outcome": "Keeps the highlight on the last row and stops propagation."
+        },
+        {
+          "name": "arrow-up-with-room",
+          "condition": "ArrowUp is pressed while the highlighted row is not the first row; the highlight moves to the previous row and the key event does not propagate.",
+          "outcome": "Moves the highlight to the previous row and stops propagation.",
+          "domain": "a highlighted row after the first row"
+        },
+        {
+          "name": "arrow-up-at-start",
+          "condition": "ArrowUp is pressed while the first row is highlighted; the highlight remains on the first row and the key event does not propagate.",
+          "outcome": "Keeps the highlight on the first row and stops propagation."
+        },
+        {
+          "name": "enter-highlighted-row",
+          "condition": "Enter is pressed while the menu is open; the highlighted row is chosen and the key event does not propagate.",
+          "outcome": "Chooses the highlighted row and stops propagation.",
+          "domain": "any highlighted menu row"
+        },
+        {
+          "name": "escape-open-menu",
+          "condition": "Escape is pressed while the menu is open; onClose is called and the key event is stopped so the document escape handler does not also clear the selection.",
+          "outcome": "Calls onClose and stops propagation so the document escape handler does not clear the selection."
+        },
+        {
+          "name": "outside-click",
+          "condition": "A click occurs anywhere outside the menu; onClose is called.",
+          "outcome": "Calls onClose when a click occurs outside the menu."
+        },
+        {
+          "name": "scroll-while-open",
+          "condition": "A scroll occurs while the menu is open; onClose is called instead of leaving the menu pinned to a stale client point.",
+          "outcome": "Calls onClose instead of leaving the menu pinned to a stale client point."
+        },
+        {
+          "name": "resize-while-open",
+          "condition": "A resize occurs while the menu is open; onClose is called instead of leaving the menu pinned to a stale client point.",
+          "outcome": "Calls onClose instead of leaving the menu pinned to a stale client point."
+        },
+        {
+          "name": "position-within-window",
+          "condition": "The menu fits within the window and at is far enough from both edges; its top-left corner is positioned at at and the whole menu remains on-screen.",
+          "outcome": "Positions the menu's top-left corner at at and keeps the whole menu on-screen.",
+          "domain": "an at point with sufficient right and bottom space"
+        },
+        {
+          "name": "right-edge-clamping",
+          "condition": "The menu would overflow the right edge at at.x; its x coordinate is clamped to window.innerWidth minus the menu width, then floored at zero.",
+          "outcome": "Clamps x to window.innerWidth minus the menu width and then floors it at zero.",
+          "domain": "at.x values near or beyond the right edge"
+        },
+        {
+          "name": "bottom-edge-clamping",
+          "condition": "The menu would overflow the bottom edge at at.y; its y coordinate is clamped to window.innerHeight minus the menu height, then floored at zero.",
+          "outcome": "Clamps y to window.innerHeight minus the menu height and then floors it at zero.",
+          "domain": "at.y values near or beyond the bottom edge"
+        },
+        {
+          "name": "negative-clamped-position",
+          "condition": "The edge-clamping calculation produces a negative x or y coordinate; that coordinate is floored at zero.",
+          "outcome": "Floors any negative x or y coordinate at zero.",
+          "domain": "a menu dimension larger than the corresponding available window dimension"
+        },
+        {
+          "name": "menu-taller-than-window",
+          "condition": "The menu is taller than the window; the y floor places its top-left at the top of the window and the excess content overflows below the viewport.",
+          "outcome": "Places the menu's top-left at the top of the window and lets excess content overflow below the viewport.",
+          "domain": "menu heights greater than window.innerHeight"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_shell_context_menu_tsx_ContextMenu_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/menu_items.ts/contextMenuItems().",
+      "symbolName": "contextMenuItems",
+      "filePath": "packages/editor/src/shell/menu_items.ts",
+      "cases": [
+        {
+          "name": "empty-selection-keeps-global-commands",
+          "condition": "The selection is empty; only commands whose appliesTo is exactly 'global' are included, while absent appliesTo and kind-list commands are excluded.",
+          "outcome": "With an empty selection, it returns only commands whose appliesTo is exactly 'global'.",
+          "domain": "any empty selection and any command list"
+        },
+        {
+          "name": "global-command-applies-to-any-selection",
+          "condition": "A command has appliesTo set to 'global'; it is included regardless of whether the selection is empty, contains one element, or contains multiple elements of any kinds.",
+          "outcome": "It includes a command with appliesTo 'global' for any selection, including empty, single-element, and multi-element selections.",
+          "domain": "any selection"
+        },
+        {
+          "name": "single-kind-selection-matches-kind-list",
+          "condition": "The selection is non-empty and contains a selected element whose kind appears in a command's appliesTo kind list; that command is included.",
+          "outcome": "For a non-empty selection, it includes a command when at least one selected element's kind appears in its appliesTo kind list.",
+          "domain": "any non-empty selection and any matching kind"
+        },
+        {
+          "name": "mixed-selection-uses-any-kind-match",
+          "condition": "The selection contains elements of multiple kinds, and a command's kind list matches at least one selected kind but not necessarily every selected kind; the command is included.",
+          "outcome": "For a mixed selection, it includes a command when its kind list matches at least one selected kind.",
+          "domain": "any multi-kind selection and any kind list with at least one match"
+        },
+        {
+          "name": "nonmatching-kind-list-is-excluded",
+          "condition": "The selection is non-empty, but none of its selected element kinds appears in a command's appliesTo kind list; that command is excluded.",
+          "outcome": "It excludes a kind-list command when none of the selected kinds appears in that list.",
+          "domain": "any non-empty selection with no matching kind"
+        },
+        {
+          "name": "absent-applies-to-is-excluded",
+          "condition": "A command has no appliesTo property; it is never included because it is keyboard-only.",
+          "outcome": "It excludes commands without appliesTo because they are keyboard-only.",
+          "domain": "any selection"
+        },
+        {
+          "name": "commands-retain-input-order",
+          "condition": "Multiple commands apply to the current selection; the returned menu items preserve their relative order from the commands argument without grouping or sorting.",
+          "outcome": "It returns applicable menu items in their original commands-argument order without grouping or sorting.",
+          "domain": "any ordered list of two or more applicable commands"
+        },
+        {
+          "name": "selection-change-does-not-reorder-survivors",
+          "condition": "The selection changes and some commands are filtered out; the commands that remain retain their original relative order from the commands argument.",
+          "outcome": "When selection changes, surviving menu items retain their original relative order from the commands argument.",
+          "domain": "any pair of selections and command list"
+        },
+        {
+          "name": "empty-command-list-returns-empty",
+          "condition": "No commands are supplied; the result is an empty array.",
+          "outcome": "With no commands supplied, it returns an empty array."
+        },
+        {
+          "name": "no-applicable-commands-returns-empty",
+          "condition": "Commands are supplied, but none applies to the current selection; the result is an empty array.",
+          "outcome": "When no supplied command applies to the selection, it returns an empty array.",
+          "domain": "any command list with no applicable commands"
+        },
+        {
+          "name": "keymap-data-formats-command-chords",
+          "condition": "The supplied keymap is used when constructing menu items, with chord labels formatted through formatChord rather than reading an imported keymap.",
+          "outcome": "It uses the supplied keymap to construct menu items and formats chord labels through formatChord.",
+          "domain": "any supplied keymap entries"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_shell_menu_items_ts_contextMenuItems___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/commandPaletteItems().",
+      "symbolName": "commandPaletteItems",
+      "filePath": "packages/editor/src/shell/palette_items.ts",
+      "cases": [
+        {
+          "name": "eligible-command",
+          "condition": "A command has a present appliesTo value and its id is not 'open-palette'; it is included as a palette item with key 'command:<id>', its label, a command action, and detail derived from the first matching keymap entry when one exists.",
+          "outcome": "Includes the command as a palette item with key command:<id>, its label, a command action, and detail from the first matching keymap entry or an empty string.",
+          "domain": "any command with appliesTo present except 'open-palette'"
+        },
+        {
+          "name": "inapplicable-command",
+          "condition": "A command has no appliesTo value and its id is not 'open-palette'; it is skipped and produces no palette item.",
+          "outcome": "Skips the command and produces no palette item.",
+          "domain": "any command with appliesTo absent except 'open-palette'"
+        },
+        {
+          "name": "palette-self-reference",
+          "condition": "A command has id 'open-palette'; it is skipped even when appliesTo is present.",
+          "outcome": "Skips the command even when appliesTo is present."
+        },
+        {
+          "name": "help-command-listed",
+          "condition": "A command has id 'open-help'; it is included when it has appliesTo present, rather than being excluded merely because it is a global command.",
+          "outcome": "Includes open-help when appliesTo is present, despite it being a global command."
+        },
+        {
+          "name": "matching-keymap-entry",
+          "condition": "An included command has one or more keymap entries whose command equals its id; detail uses the chord from the first matching entry formatted by formatChord.",
+          "outcome": "Uses the first matching entry's chord, formatted by formatChord, as the item's detail.",
+          "domain": "any non-empty set of matching keymap entries"
+        },
+        {
+          "name": "missing-keymap-entry",
+          "condition": "An included command has no keymap entry whose command equals its id; its detail is the empty string.",
+          "outcome": "Sets the included command's detail to the empty string."
+        },
+        {
+          "name": "command-order-preserved",
+          "condition": "Multiple commands are supplied; included palette items appear in the same relative order as their source commands, with skipped commands omitted.",
+          "outcome": "Keeps included items in the source commands' relative order while omitting skipped commands.",
+          "domain": "any ordered command list"
+        },
+        {
+          "name": "empty-command-list",
+          "condition": "The commands input is empty; the function returns an empty array.",
+          "outcome": "Returns an empty array."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-context-menu__packages_editor_src_shell_palette_items_ts_commandPaletteItems___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "7128cbc463b46580d28683576dc3ee015e2c86d04f1ed8d92932a6cafc9830bc"
+}

@@ -1,0 +1,469 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "codes": {
+        "contextmenu-over-empty-canvas": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(value).toBeDefined();",
+          "strategy": "fc.record({clientX: fc.integer(), clientY: fc.integer()})",
+          "helpersUsed": []
+        },
+        "contextmenu-over-hit": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(['node', 'edge', 'group', 'annotation']).toContain(value);",
+          "strategy": "fc.constantFrom('node', 'edge', 'group', 'annotation')",
+          "helpersUsed": []
+        },
+        "contextmenu-selection-report-order": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(value.current).not.toEqual(value.hit);",
+          "strategy": "fc.record({current: fc.record({kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string()}), hit: fc.record({kind: fc.constantFrom('node', 'edge', 'group', 'annotation'), id: fc.string()})}).filter((value) => value.current.kind !== value.hit.kind || value.current.id !== value.hit.id)",
+          "helpersUsed": []
+        },
+        "contextmenu-without-geometry": {
+          "body": "expect(typeof Canvas).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "ordinary-pointerdown": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(value.button).not.toBe(2);\nexpect(['select', 'hand', 'annotation']).toContain(value.tool);\nexpect(value.detail).toBeGreaterThanOrEqual(0);",
+          "strategy": "fc.record({button: fc.integer({ min: -1, max: 5 }).filter((button) => button !== 2), tool: fc.constantFrom('select', 'hand', 'annotation'), detail: fc.nat({ max: 3 }), clientX: fc.integer(), clientY: fc.integer(), shiftKey: fc.boolean(), metaKey: fc.boolean(), hit: fc.constantFrom('empty', 'node', 'edge', 'group', 'annotation')})",
+          "helpersUsed": []
+        },
+        "right-button-pointerdown": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(['empty', 'node', 'edge', 'group', 'annotation']).toContain(value);",
+          "strategy": "fc.constantFrom('empty', 'node', 'edge', 'group', 'annotation')",
+          "helpersUsed": []
+        },
+        "right-button-with-modal-gesture": {
+          "body": "expect(typeof Canvas).toBe('function');\nexpect(['grab', 'resize']).toContain(value);",
+          "strategy": "fc.constantFrom('grab', 'resize')",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/commands.ts/COMMANDS.",
+      "codes": {
+        "annotation-delete": {
+          "body": "void value;\nexpect(findCommand('delete')).toMatchObject({ appliesTo: ['annotation'] });",
+          "strategy": "fc.record({ kind: fc.constant('annotation'), id: fc.string() })",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "annotation-duplicate": {
+          "body": "void value;\nexpect(findCommand('duplicate')).toMatchObject({ appliesTo: ['annotation'] });",
+          "strategy": "fc.record({ kind: fc.constant('annotation'), id: fc.string() })",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "annotation-edit-text": {
+          "body": "void value;\nexpect(findCommand('edit-text')).toMatchObject({ appliesTo: ['annotation'] });",
+          "strategy": "fc.record({ kind: fc.constant('annotation'), id: fc.string() })",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "contextual-escape": {
+          "body": "expect(findCommand('escape')).not.toHaveProperty('appliesTo');",
+          "strategy": "",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "global-command": {
+          "body": "void value;\nexpect(findCommand(value)).toMatchObject({ appliesTo: 'global' });",
+          "strategy": "fc.constantFrom('undo', 'redo', 'select-all', 'save', 'auto-layout', 'pin-all', 'unpin-all', 'add-annotation', 'open-palette', 'open-help', 'tool-select', 'tool-hand', 'tool-annotation', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "inspector-supported-selection": {
+          "body": "void value;\nexpect(findCommand('focus-inspector')).toMatchObject({ appliesTo: ['node', 'edge', 'group', 'annotation'] });",
+          "strategy": "fc.constantFrom('node', 'edge', 'group', 'annotation')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "keyboard-modal-entry": {
+          "body": "void value;\nexpect(findCommand(value)).not.toHaveProperty('appliesTo');",
+          "strategy": "fc.constantFrom('enter-grab', 'enter-resize')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "missing-contract-command": {
+          "body": "void value;\nexpect(COMMANDS.some((command) => command.id === 'contract')).toBe(false);\nexpect(findCommand('reset-size')).toMatchObject({ appliesTo: ['node', 'group', 'annotation'] });\nexpect(findCommand('focus-inspector')).toMatchObject({ appliesTo: ['node', 'edge', 'group', 'annotation'] });",
+          "strategy": "fc.constant('group')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "node-hide": {
+          "body": "void value;\nexpect(findCommand('hide')).toMatchObject({ appliesTo: ['node'] });",
+          "strategy": "fc.record({ kind: fc.constant('node'), id: fc.string() })",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "nudge-without-keyboard": {
+          "body": "void value;\nexpect(findCommand(value)).not.toHaveProperty('appliesTo');",
+          "strategy": "fc.constantFrom('nudge-up', 'nudge-down', 'nudge-left', 'nudge-right')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "ring-without-keyboard": {
+          "body": "void value;\nexpect(findCommand(value)).not.toHaveProperty('appliesTo');",
+          "strategy": "fc.constantFrom('ring-next', 'ring-prev')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        },
+        "sized-element-reset": {
+          "body": "void value;\nexpect(findCommand('reset-size')).toMatchObject({ appliesTo: ['node', 'group', 'annotation'] });",
+          "strategy": "fc.constantFrom('node', 'group', 'annotation')",
+          "helpersUsed": [
+            "findCommand"
+          ]
+        }
+      },
+      "helpers": {
+        "findCommand": "const findCommand = (id: string): unknown => COMMANDS.find((command) => command.id === id);"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/gestures/pointer_router.ts/routePress().",
+      "codes": {
+        "additive-hit": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: true, hit: value.hit }, value.current);\nexpect(decision.kind).toBe('none');\nexpect(decision.selection).toEqual(value.current.some((ref) => ref.id === value.hit.id && ref.kind === value.hit.kind) ? value.current.filter((ref) => !(ref.id === value.hit.id && ref.kind === value.hit.kind)) : [...value.current, value.hit]);",
+          "strategy": "fc.record({ current: fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') })), hit: fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }) })",
+          "helpersUsed": []
+        },
+        "anchor-grip-press": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false, onAnchorGrip: value }, []);\nexpect(decision).toEqual({ kind: 'anchor', ref: value });",
+          "strategy": "fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') })",
+          "helpersUsed": []
+        },
+        "create-annotation": {
+          "body": "const decision = routePress({ point: { x: 10, y: 20 }, button: 0, tool: 'annotation', additive: false, hit: { id: 'under', kind: 'node' }, onAnchorGrip: { id: 'anchor', kind: 'annotation' }, onHandle: {} as never }, [{ id: 'under', kind: 'node' }]);\nexpect(decision).toEqual({ kind: 'create-annotation', selection: [] });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "marquee-empty-space": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false }, []);\nexpect(decision).toEqual({ kind: 'marquee', selection: [] });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "move-selected-hit": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false, hit: value.hit }, value.current);\nexpect(decision.kind).toBe('move');\nexpect(decision.selection).toBe(value.current);",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }), { minLength: 1 }).map((current) => ({ current, hit: current[current.length - 1] }))",
+          "helpersUsed": []
+        },
+        "move-unselected-hit": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false, hit: value.hit }, value.current);\nexpect(decision).toEqual({ kind: 'move', selection: [value.hit] });",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') })).map((current) => current.map((ref, index) => ({ ...ref, id: `selected-${index}-${ref.id}` }))).map((current) => ({ current, hit: { id: 'outside', kind: 'node' } }))",
+          "helpersUsed": []
+        },
+        "pan-press": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: value.button, tool: value.tool, additive: true, hit: { id: 'hit', kind: 'node' }, onAnchorGrip: { id: 'anchor', kind: 'annotation' }, onHandle: {} as never }, [{ id: 'selected', kind: 'node' }]);\nexpect(decision).toEqual({ kind: 'pan' });",
+          "strategy": "fc.record({ button: fc.integer().filter((button) => button !== 2), tool: fc.constantFrom('select', 'hand', 'annotation') })",
+          "helpersUsed": []
+        },
+        "right-click-empty-space": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 2, tool: 'select', additive: false }, []);\nexpect(decision).toEqual({ kind: 'none', selection: [] });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "right-click-selected-hit": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 2, tool: 'select', additive: false, hit: value.hit }, value.current);\nexpect(decision.kind).toBe('none');\nexpect(decision.selection).toBe(value.current);",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }), { minLength: 1 }).map((current) => ({ current, hit: current[0] }))",
+          "helpersUsed": []
+        },
+        "right-click-unselected-hit": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 2, tool: 'select', additive: false, hit: value.hit }, value.current);\nexpect(decision).toEqual({ kind: 'none', selection: [value.hit] });",
+          "strategy": "fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') })).map((current) => current.map((ref, index) => ({ ...ref, id: `selected-${index}-${ref.id}` }))).map((current) => ({ current, hit: { id: 'outside', kind: 'node' } }))",
+          "helpersUsed": []
+        },
+        "selected-handle-press": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false, onHandle: value as never }, [{ id: 'selected', kind: 'node' }]);\nexpect(decision.kind).toBe('resize');\nexpect(decision.handle).toBe(value);",
+          "strategy": "fc.anything().filter((handle) => handle !== undefined)",
+          "helpersUsed": []
+        },
+        "stale-handle-with-empty-selection": {
+          "body": "const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: false, onHandle: value as never }, []);\nexpect(decision).toEqual({ kind: 'marquee', selection: [] });",
+          "strategy": "fc.anything().filter((handle) => handle !== undefined)",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "command-choice-without-context": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "context-menu-at-client-point": {
+          "body": "expect(value).toBeDefined();\nexpect(typeof App).toBe('function');",
+          "strategy": "fc.record({ x: fc.integer(), y: fc.integer() })",
+          "helpersUsed": []
+        },
+        "context-menu-close": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "context-menu-command-choice": {
+          "body": "expect(value).toBeDefined();\nexpect(typeof App).toBe('function');",
+          "strategy": "fc.constantFrom('undo', 'redo', 'delete', 'hide', 'tool-select', 'tool-hand', 'tool-annotation', 'zoom-in', 'zoom-out', 'zoom-reset', 'zoom-fit', 'add-annotation', 'edit-text', 'duplicate', 'open-palette', 'open-help', 'enter-grab', 'enter-resize', 'escape', 'select-all', 'focus-inspector', 'pin-all', 'unpin-all', 'auto-layout', 'reset-size', 'save')",
+          "helpersUsed": []
+        },
+        "menu-items-use-current-selection": {
+          "body": "expect(value).toBeDefined();\nexpect(typeof App).toBe('function');",
+          "strategy": "fc.array(fc.constantFrom({ kind: 'node', id: 'node-1' }, { kind: 'edge', id: 'edge-1' }, { kind: 'group', id: 'group-1' }, { kind: 'annotation', id: 'annotation-1' }), { maxLength: 4 })",
+          "helpersUsed": []
+        },
+        "no-context-menu-point": {
+          "body": "expect(typeof App).toBe('function');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "selection-changes-while-open": {
+          "body": "expect(value).toBeDefined();\nexpect(typeof App).toBe('function');",
+          "strategy": "fc.record({ before: fc.array(fc.constantFrom({ kind: 'node', id: 'node-1' }, { kind: 'edge', id: 'edge-1' }, { kind: 'group', id: 'group-1' }, { kind: 'annotation', id: 'annotation-1' }), { maxLength: 4 }), after: fc.array(fc.constantFrom({ kind: 'node', id: 'node-1' }, { kind: 'edge', id: 'edge-1' }, { kind: 'group', id: 'group-1' }, { kind: 'annotation', id: 'annotation-1' }), { maxLength: 4 }) })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/context_menu.tsx/ContextMenu.",
+      "codes": {
+        "arrow-down-at-end": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-down-with-room": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 0, max: 99 })",
+          "helpersUsed": []
+        },
+        "arrow-up-at-start": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "arrow-up-with-room": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 1, max: 100 })",
+          "helpersUsed": []
+        },
+        "bottom-edge-clamping": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 0, max: 10000 })",
+          "helpersUsed": []
+        },
+        "empty-items": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "enter-highlighted-row": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 0, max: 100 })",
+          "helpersUsed": []
+        },
+        "escape-open-menu": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "menu-taller-than-window": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 1, max: 10000 })",
+          "helpersUsed": []
+        },
+        "negative-clamped-position": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.record({ width: fc.integer({ min: 1, max: 10000 }), height: fc.integer({ min: 1, max: 10000 }) })",
+          "helpersUsed": []
+        },
+        "non-empty-items": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.array(fc.record({ id: fc.string(), label: fc.string(), chord: fc.string() }), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "outside-click": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "position-within-window": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.record({ x: fc.integer({ min: 0, max: 100 }), y: fc.integer({ min: 0, max: 100 }) })",
+          "helpersUsed": []
+        },
+        "resize-while-open": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "right-edge-clamping": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "fc.integer({ min: 0, max: 10000 })",
+          "helpersUsed": []
+        },
+        "scroll-while-open": {
+          "body": "expect(ContextMenu).toBeDefined();",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/menu_items.ts/contextMenuItems().",
+      "codes": {
+        "absent-applies-to-is-excluded": {
+          "body": "const selection = value.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, String(index)));\nconst items = contextMenuItems(selection, [makeCommand('keyboard-only')], []);\nexpect(items).toEqual([]);",
+          "strategy": "fc.array(fc.constantFrom('node', 'edge', 'group', 'annotation') as const)",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        },
+        "commands-retain-input-order": {
+          "body": "const commands = value.map((id: string) => makeCommand(id, 'global'));\nconst items = contextMenuItems([], commands, []);\nexpect(items.map((item: { id: unknown }) => item.id)).toEqual(value);",
+          "strategy": "fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 2 })",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "empty-command-list-returns-empty": {
+          "body": "expect(contextMenuItems([], [], [])).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "empty-selection-keeps-global-commands": {
+          "body": "const commands = value.map((tag: 'global' | 'absent' | 'node' | 'edge' | 'group' | 'annotation', index: number) => makeCommand(String(index), tag === 'absent' ? undefined : tag === 'global' ? 'global' : [tag]));\nconst items = contextMenuItems([], commands, []);\nexpect(items.map((item: { id: unknown }) => item.id)).toEqual(commands.filter((command: { appliesTo?: unknown }) => command.appliesTo === 'global').map((command: { id: unknown }) => command.id));",
+          "strategy": "fc.array(fc.constantFrom('global', 'absent', 'node', 'edge', 'group', 'annotation') as const)",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "global-command-applies-to-any-selection": {
+          "body": "const selection = value.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, String(index)));\nconst items = contextMenuItems(selection, [makeCommand('global', 'global')], []);\nexpect(items.map((item: { id: unknown }) => item.id)).toEqual(['global']);",
+          "strategy": "fc.array(fc.constantFrom('node', 'edge', 'group', 'annotation') as const)",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        },
+        "keymap-data-formats-command-chords": {
+          "body": "const command = makeCommand('bound', 'global');\nconst keymap = [makeKeymap('bound', value[0])];\nconst items = contextMenuItems([], [command], keymap);\nconst expected = value[0] === 'ArrowUp' ? 'Up' : value[0] === 'ArrowDown' ? 'Down' : value[0] === 'ArrowLeft' ? 'Left' : value[0] === 'ArrowRight' ? 'Right' : value[0] === 'Escape' ? 'Esc' : value[0].toUpperCase();\nexpect(items).toHaveLength(1);\nexpect(items[0].chord).toBe(expected);",
+          "strategy": "fc.array(fc.constantFrom('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'x', 'q') as const, { minLength: 1 }).map((keys: readonly ('ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | 'Escape' | 'x' | 'q')[]) => [keys[0]] as const)",
+          "helpersUsed": [
+            "makeCommand",
+            "makeKeymap"
+          ]
+        },
+        "mixed-selection-uses-any-kind-match": {
+          "body": "const selection = value.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, String(index)));\nconst items = contextMenuItems(selection, [makeCommand('partial-match', [value[0]])], []);\nexpect(items.map((item: { id: unknown }) => item.id)).toEqual(['partial-match']);",
+          "strategy": "fc.uniqueArray(fc.constantFrom('node', 'edge', 'group', 'annotation') as const, { minLength: 2 })",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        },
+        "no-applicable-commands-returns-empty": {
+          "body": "const commands = value.map((id: string) => makeCommand(id));\nexpect(contextMenuItems([], commands, [])).toEqual([]);",
+          "strategy": "fc.array(fc.string({ minLength: 1 }))",
+          "helpersUsed": [
+            "makeCommand"
+          ]
+        },
+        "nonmatching-kind-list-is-excluded": {
+          "body": "const selection = [makeElement(value[0], 'selected')];\nconst items = contextMenuItems(selection, [makeCommand('nonmatch', [value[1]])], []);\nexpect(items).toEqual([]);",
+          "strategy": "fc.tuple(fc.constantFrom('node', 'edge', 'group', 'annotation') as const, fc.constantFrom('node', 'edge', 'group', 'annotation') as const).filter((pair: readonly ['node' | 'edge' | 'group' | 'annotation', 'node' | 'edge' | 'group' | 'annotation']) => pair[0] !== pair[1])",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        },
+        "selection-change-does-not-reorder-survivors": {
+          "body": "const firstSelection = value.first.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, `first-${index}`));\nconst secondSelection = value.second.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, `second-${index}`));\nconst commands = value.commands.map((tag: 'global' | 'node' | 'edge' | 'group' | 'annotation', index: number) => makeCommand(String(index), tag === 'global' ? 'global' : [tag]));\nconst firstItems = contextMenuItems(firstSelection, commands, []);\nconst secondItems = contextMenuItems(secondSelection, commands, []);\nconst firstIds = firstItems.map((item: { id: unknown }) => item.id);\nconst secondIds = secondItems.map((item: { id: unknown }) => item.id);\nconst applicable = (selection: ReadonlyArray<{ kind: 'node' | 'edge' | 'group' | 'annotation' }>, tag: 'global' | 'node' | 'edge' | 'group' | 'annotation'): boolean => tag === 'global' || (selection.length > 0 && selection.some((element: { kind: 'node' | 'edge' | 'group' | 'annotation' }) => element.kind === tag));\nexpect(firstIds).toEqual(value.commands.map((_: 'global' | 'node' | 'edge' | 'group' | 'annotation', index: number) => String(index)).filter((_: string, index: number) => applicable(firstSelection, value.commands[index])));\nexpect(secondIds).toEqual(value.commands.map((_: 'global' | 'node' | 'edge' | 'group' | 'annotation', index: number) => String(index)).filter((_: string, index: number) => applicable(secondSelection, value.commands[index])));",
+          "strategy": "fc.record({ first: fc.array(fc.constantFrom('node', 'edge', 'group', 'annotation') as const), second: fc.array(fc.constantFrom('node', 'edge', 'group', 'annotation') as const), commands: fc.array(fc.constantFrom('global', 'node', 'edge', 'group', 'annotation') as const, { minLength: 1 }) })",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        },
+        "single-kind-selection-matches-kind-list": {
+          "body": "const selection = value.map((kind: 'node' | 'edge' | 'group' | 'annotation', index: number) => makeElement(kind, String(index)));\nconst items = contextMenuItems(selection, [makeCommand('matching', [value[0]])], []);\nexpect(items.map((item: { id: unknown }) => item.id)).toEqual(['matching']);",
+          "strategy": "fc.array(fc.constantFrom('node', 'edge', 'group', 'annotation') as const, { minLength: 1 })",
+          "helpersUsed": [
+            "makeElement",
+            "makeCommand"
+          ]
+        }
+      },
+      "helpers": {
+        "makeCommand": "const makeCommand = (id: string, appliesTo?: 'global' | Array<'node' | 'edge' | 'group' | 'annotation'>): Parameters<typeof contextMenuItems>[1][number] => ({ id: id as Parameters<typeof contextMenuItems>[1][number]['id'], label: id, run: () => {}, ...(appliesTo === undefined ? {} : { appliesTo }) } as Parameters<typeof contextMenuItems>[1][number]);",
+        "makeElement": "const makeElement = (kind: 'node' | 'edge' | 'group' | 'annotation', id: string): Parameters<typeof contextMenuItems>[0][number] => ({ id, kind } as Parameters<typeof contextMenuItems>[0][number]);",
+        "makeKeymap": "const makeKeymap = (command: string, key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | 'Escape' | 'x' | 'q'): Parameters<typeof contextMenuItems>[2][number] => ({ command: command as Parameters<typeof contextMenuItems>[2][number]['command'], chord: { key } } as Parameters<typeof contextMenuItems>[2][number]);"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/shell/palette_items.ts/commandPaletteItems().",
+      "codes": {
+        "command-order-preserved": {
+          "body": "const commands = value.map((included, index) => ({\n  id: 'copy',\n  label: String(index),\n  ...(included ? { appliesTo: 'global' } : {}),\n  run: () => undefined,\n}));\nconst items = commandPaletteItems(commands, []);\nexpect(items.map((item) => item.label)).toEqual(\n  value\n    .map((included, index) => (included ? String(index) : undefined))\n    .filter((label) => label !== undefined),\n);",
+          "strategy": "fc.array(fc.boolean())",
+          "helpersUsed": []
+        },
+        "eligible-command": {
+          "body": "const command = {\n  id: 'copy',\n  label: value.label,\n  appliesTo: value.appliesTo,\n  run: () => undefined,\n};\nconst keymap = value.hasBinding\n  ? [{ command: 'copy', chord: { key: 'x', meta: false, shift: false } }]\n  : [];\nconst items = commandPaletteItems([command], keymap);\nexpect(items).toEqual([\n  {\n    key: 'command:copy',\n    label: value.label,\n    detail: value.hasBinding ? 'X' : '',\n    action: { kind: 'command', command: 'copy' },\n  },\n]);",
+          "strategy": "fc.record({ label: fc.string(), appliesTo: fc.constantFrom('global', ['node']) , hasBinding: fc.boolean() })",
+          "helpersUsed": []
+        },
+        "empty-command-list": {
+          "body": "expect(commandPaletteItems([], [])).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "help-command-listed": {
+          "body": "const command = {\n  id: 'open-help',\n  label: 'Keyboard Shortcuts',\n  appliesTo: 'global',\n  run: () => undefined,\n};\nexpect(commandPaletteItems([command], [])).toEqual([\n  {\n    key: 'command:open-help',\n    label: 'Keyboard Shortcuts',\n    detail: '',\n    action: { kind: 'command', command: 'open-help' },\n  },\n]);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "inapplicable-command": {
+          "body": "const command = {\n  id: 'copy',\n  label: value,\n  run: () => undefined,\n};\nexpect(commandPaletteItems([command], [])).toEqual([]);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "matching-keymap-entry": {
+          "body": "const command = {\n  id: 'copy',\n  label: 'Copy',\n  appliesTo: 'global',\n  run: () => undefined,\n};\nconst keymap = value.map((chord) => ({ command: 'copy', chord }));\nconst items = commandPaletteItems([command], keymap);\nexpect(items[0]?.detail).toBe('X');",
+          "strategy": "fc.array(fc.record({ key: fc.constant('x'), meta: fc.constant(false), shift: fc.constant(false) }), { minLength: 1 })",
+          "helpersUsed": []
+        },
+        "missing-keymap-entry": {
+          "body": "const command = {\n  id: 'copy',\n  label: 'Copy',\n  appliesTo: 'global',\n  run: () => undefined,\n};\nconst items = commandPaletteItems([command], []);\nexpect(items).toEqual([\n  {\n    key: 'command:copy',\n    label: 'Copy',\n    detail: '',\n    action: { kind: 'command', command: 'copy' },\n  },\n]);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "palette-self-reference": {
+          "body": "const command = {\n  id: 'open-palette',\n  label: 'Open palette',\n  appliesTo: 'global',\n  run: () => undefined,\n};\nexpect(commandPaletteItems([command], [])).toEqual([]);",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

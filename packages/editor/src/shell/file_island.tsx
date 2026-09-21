@@ -21,7 +21,7 @@ export class FileIslandProps {
  */
 export const FileIsland: Component<FileIslandProps> = (props: FileIslandProps): JSX.Element => {
   return (
-    <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '0 8px', height: '40px', background: 'var(--ag-panel)', 'border-bottom': '1px solid var(--ag-edge)' }}>
+    <div class="ag-island" style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '0 8px', height: '40px', background: 'var(--ag-panel)', 'border-bottom': '1px solid var(--ag-edge)' }}>
       <span style={{ flex: '1', 'font-size': '14px' }}>{props.fileName}</span>
       <Show when={props.dirty && props.status !== 'error'}>
         <span

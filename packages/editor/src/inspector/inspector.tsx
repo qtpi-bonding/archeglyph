@@ -81,6 +81,7 @@ export const Inspector: Component<InspectorProps> = (
 
   return (
     <div
+      class="ag-island"
       ref={panel}
       tabIndex={-1}
       onKeyDown={leavePanel}

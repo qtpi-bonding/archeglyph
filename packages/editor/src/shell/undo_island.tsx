@@ -28,7 +28,7 @@ export const UndoIsland: Component<UndoIslandProps> = (props: UndoIslandProps): 
   }
 
   return (
-    <div style={{ display: 'flex', 'align-items': 'center', gap: '4px' }}>
+    <div class="ag-island" style={{ display: 'flex', 'align-items': 'center', gap: '4px' }}>
       <button
         type="button"
         disabled={!props.canUndo}

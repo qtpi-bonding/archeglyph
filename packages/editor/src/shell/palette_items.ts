@@ -3,7 +3,6 @@
 import type { Command } from '../gestures/commands';
 import type { KeymapEntry } from '../ui_state/keymap';
 import { formatChord } from './chord_label';
-import { PALETTE_EXCLUDED } from './palette_excluded';
 import type { PaletteItem } from './palette_item';
 import type { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { elementKey } from '../scene/element_key';
@@ -12,7 +11,7 @@ import type { ElementRef } from '../ui_state/ui_state';
 export function commandPaletteItems(commands: ReadonlyArray<Command>, keymap: ReadonlyArray<KeymapEntry>): Array<PaletteItem> {
   const items: Array<PaletteItem> = [];
   for (const command of commands) {
-    if (PALETTE_EXCLUDED.has(command.id)) {
+    if (command.appliesTo === undefined || command.id === 'open-palette') {
       continue;
     }
     const binding = keymap.find((entry) => entry.command === command.id);

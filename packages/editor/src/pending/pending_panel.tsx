@@ -19,92 +19,92 @@ export interface PendingPanelProps {
 export const PendingPanel: Component<PendingPanelProps> = (
   props: PendingPanelProps,
 ): JSX.Element => {
-  if (props.items.length === 0) {
-    return <></>;
-  }
-
+  // In the JSX, not an early return: a setup-scope read of `props.items`
+  // runs once, when the list is empty, and the panel never opens.
   function stopClick(event: MouseEvent): void {
     event.stopPropagation();
   }
 
   return (
-    <div
-      class="ag-island"
-      style={{
-        width: '100%',
-        'max-height': 'calc(50vh - (2 * var(--ag-island-inset)))',
-        overflow: 'auto',
-        padding: '8px',
-        'box-sizing': 'border-box',
-        'font-size': '12px',
-        color: 'var(--ag-fg)',
-        background: 'var(--ag-panel)',
-      }}
-    >
-      <Show when={props.syncError !== undefined}>
-        <div
-          class="ag-pending-sync-error"
-          role="alert"
-          style={{
-            padding: '6px 8px',
-            margin: '0 0 8px',
-            color: 'var(--ag-error-text)',
-            background: 'var(--ag-error)',
-          }}
-        >
-          {props.syncError}
-        </div>
-      </Show>
-      <For each={props.items}>
-        {(item: PendingItem): JSX.Element => (
+    <Show when={props.items.length > 0}>
+      <div
+        class="ag-island"
+        style={{
+          width: '100%',
+          'max-height': 'calc(50vh - (2 * var(--ag-island-inset)))',
+          overflow: 'auto',
+          padding: '8px',
+          'box-sizing': 'border-box',
+          'font-size': '12px',
+          color: 'var(--ag-fg)',
+          background: 'var(--ag-panel)',
+        }}
+      >
+        <Show when={props.syncError !== undefined}>
           <div
-            class="ag-pending-row"
-            onClick={(): void => props.onSelect(item.id)}
+            class="ag-pending-sync-error"
+            role="alert"
             style={{
-              padding: '8px 0',
-              'border-bottom': '1px solid var(--ag-edge)',
-              cursor: 'pointer',
+              padding: '6px 8px',
+              margin: '0 0 8px',
+              color: 'var(--ag-error-text)',
+              background: 'var(--ag-error)',
             }}
           >
-            <div class="ag-pending-row-summary">
-              <div class="ag-pending-description">{item.description}</div>
-              <div class="ag-pending-meta">
-                <span class="ag-pending-author">{item.author}</span>
-                <span>{item.changeCount} changes</span>
-                <span>{item.comments.length} comments</span>
-              </div>
-              <div class="ag-pending-actions">
-                <button
-                  type="button"
-                  onClick={(event: MouseEvent): void => {
-                    stopClick(event);
-                    props.onAccept(item.id);
-                  }}
-                >
-                  Accept
-                </button>
-                <button
-                  type="button"
-                  onClick={(event: MouseEvent): void => {
-                    stopClick(event);
-                    props.onReject(item.id);
-                  }}
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-            <Show when={props.selectedId === item.id}>
-              <div class="ag-pending-thread" onClick={stopClick}>
-                <ThreadView
-                  comments={item.comments}
-                  onReply={(body: string): void => props.onReply(item.id, body)}
-                />
-              </div>
-            </Show>
+            {props.syncError}
           </div>
-        )}
-      </For>
-    </div>
+        </Show>
+        <For each={props.items}>
+          {(item: PendingItem): JSX.Element => (
+            <div
+              class="ag-pending-row"
+              onClick={(): void => props.onSelect(item.id)}
+              style={{
+                padding: '8px 0',
+                'border-bottom': '1px solid var(--ag-edge)',
+                cursor: 'pointer',
+              }}
+            >
+              <div class="ag-pending-row-summary">
+                <div class="ag-pending-description">{item.description}</div>
+                <div class="ag-pending-meta">
+                  <span class="ag-pending-author">{item.author}</span>
+                  <span>{item.changeCount} changes</span>
+                  <span>{item.comments.length} comments</span>
+                </div>
+                <div class="ag-pending-actions">
+                  <button
+                    type="button"
+                    onClick={(event: MouseEvent): void => {
+                      stopClick(event);
+                      props.onAccept(item.id);
+                    }}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event: MouseEvent): void => {
+                      stopClick(event);
+                      props.onReject(item.id);
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+              <Show when={props.selectedId === item.id}>
+                <div class="ag-pending-thread" onClick={stopClick}>
+                  <ThreadView
+                    comments={item.comments}
+                    onReply={(body: string): void => props.onReply(item.id, body)}
+                  />
+                </div>
+              </Show>
+            </div>
+          )}
+        </For>
+      </div>
+    </Show>
   );
 };

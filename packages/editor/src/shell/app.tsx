@@ -302,7 +302,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
           />
         }
-        zoom={<ZoomIsland zoom={ui.viewport().zoom} onCommand={onCommand} />}
+        zoom={<ZoomIsland onCommand={onCommand} />}
         undo={<UndoIsland canUndo={state()!.canUndo()} canRedo={state()!.canRedo()} onCommand={onCommand} />}
         state={
           <StateIsland

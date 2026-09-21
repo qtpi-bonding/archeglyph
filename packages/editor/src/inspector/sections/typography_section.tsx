@@ -38,7 +38,7 @@ export const TypographySection: Component<TypographySectionProps> = (
     }
   };
 
-  const fontTokens: string[] = Object.keys(props.theme.tokens?.fonts ?? {}).map(
+  const fontTokens = (): string[] => Object.keys(props.theme.tokens?.fonts ?? {}).map(
     (name: string): string => `$fonts.${name}`,
   );
 
@@ -61,7 +61,7 @@ export const TypographySection: Component<TypographySectionProps> = (
       <TokenFieldInput
         label="Font"
         field={model().font}
-        tokens={fontTokens}
+        tokens={fontTokens()}
         onCommit={(value: string | undefined): void => {
           apply('font', value);
         }}

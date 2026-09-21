@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Accessor, Component, createSignal, For, JSX, onCleanup, onMount } from 'solid-js';
+import { Accessor, Component, createSignal, For, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { CommandId } from '../ui_state/keymap';
 import { MenuItem } from './menu_items';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -73,10 +73,8 @@ export const ContextMenu: Component<ContextMenuProps> = (
     }
   }
 
-  if (props.items.length === 0) {
-    return <></>;
-  }
-
+  // In the JSX, not an early return -- a setup-scope read of `props.items`
+  // is frozen at the value it had when the menu mounted.
   const scrimStyle: JSX.CSSProperties = {
     inset: '0',
     position: 'fixed',
@@ -98,48 +96,50 @@ export const ContextMenu: Component<ContextMenuProps> = (
   };
 
   return (
-    <div
-      style={scrimStyle}
-      onClick={(): void => props.onClose()}
-    >
+    <Show when={props.items.length > 0}>
       <div
-        ref={menu}
-        aria-label="Context menu"
-        onClick={(event: MouseEvent): void => event.stopPropagation()}
-        onKeyDown={onKeyDown}
-        role="menu"
-        style={{ ...surfaceStyle, left: `${corner().x}px`, top: `${corner().y}px` }}
-        tabindex={-1}
+        style={scrimStyle}
+        onClick={(): void => props.onClose()}
       >
-        <For each={props.items}>
-          {(item: MenuItem, index: Accessor<number>): JSX.Element => (
-            <button
-              aria-checked={index() === highlighted()}
-              onClick={(): void => choose(item)}
-              role="menuitemradio"
-              style={{
-                background: index() === highlighted() ? 'var(--ag-blue-soft)' : 'var(--ag-panel)',
-                border: '0',
-                'border-bottom': '1px solid var(--ag-edge)',
-                color: 'var(--ag-fg)',
-                display: 'flex',
-                'font-family': 'var(--ag-font-ui)',
-                'justify-content': 'space-between',
-                padding: '10px 16px',
-                'text-align': 'left',
-                width: '100%',
-              }}
-            >
-              <span>{item.label}</span>
-              <span style={{
-                color: 'var(--ag-fg-2)',
-                'font-family': 'var(--ag-font-mono)',
-                'margin-left': '24px',
-              }}>{item.chord}</span>
-            </button>
-          )}
-        </For>
+        <div
+          ref={menu}
+          aria-label="Context menu"
+          onClick={(event: MouseEvent): void => event.stopPropagation()}
+          onKeyDown={onKeyDown}
+          role="menu"
+          style={{ ...surfaceStyle, left: `${corner().x}px`, top: `${corner().y}px` }}
+          tabindex={-1}
+        >
+          <For each={props.items}>
+            {(item: MenuItem, index: Accessor<number>): JSX.Element => (
+              <button
+                aria-checked={index() === highlighted()}
+                onClick={(): void => choose(item)}
+                role="menuitemradio"
+                style={{
+                  background: index() === highlighted() ? 'var(--ag-blue-soft)' : 'var(--ag-panel)',
+                  border: '0',
+                  'border-bottom': '1px solid var(--ag-edge)',
+                  color: 'var(--ag-fg)',
+                  display: 'flex',
+                  'font-family': 'var(--ag-font-ui)',
+                  'justify-content': 'space-between',
+                  padding: '10px 16px',
+                  'text-align': 'left',
+                  width: '100%',
+                }}
+              >
+                <span>{item.label}</span>
+                <span style={{
+                  color: 'var(--ag-fg-2)',
+                  'font-family': 'var(--ag-font-mono)',
+                  'margin-left': '24px',
+                }}>{item.chord}</span>
+              </button>
+            )}
+          </For>
+        </div>
       </div>
-    </div>
+    </Show>
   );
 };

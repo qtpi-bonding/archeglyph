@@ -59,15 +59,17 @@ export const TextEditor: Component<TextEditorProps> = (props: TextEditorProps): 
     editor.select();
   });
 
-  const width: number = props.bounds.maxX - props.bounds.minX;
-  const height: number = props.bounds.maxY - props.bounds.minY;
+  // Read through a function, or the editor keeps the size the annotation had
+  // when the edit began and stops tracking a zoom or a re-layout under it.
+  const width = (): number => props.bounds.maxX - props.bounds.minX;
+  const height = (): number => props.bounds.maxY - props.bounds.minY;
 
   return (
     <foreignObject
       x={props.bounds.minX}
       y={props.bounds.minY}
-      width={width}
-      height={height}
+      width={width()}
+      height={height()}
       class="text-editor"
     >
       <textarea

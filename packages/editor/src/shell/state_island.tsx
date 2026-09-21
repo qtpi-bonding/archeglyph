@@ -12,11 +12,14 @@ export class StateIslandProps {
 export const StateIsland: Component<StateIslandProps> = (
   props: StateIslandProps,
 ): JSX.Element => {
-  const hasError: boolean = props.error !== undefined;
-  const hasState: boolean = hasError || props.mode !== undefined;
+  // Functions, not consts: `props.error` is a getter and is only reactive
+  // where it is READ. A const reads it once during setup -- when both are
+  // undefined -- and the island could never appear.
+  const hasError = (): boolean => props.error !== undefined;
+  const hasState = (): boolean => hasError() || props.mode !== undefined;
 
   return (
-    <Show when={hasState}>
+    <Show when={hasState()}>
       <div
         class="ag-island"
         style={{
@@ -24,8 +27,8 @@ export const StateIsland: Component<StateIslandProps> = (
           'align-items': 'flex-start',
           gap: '8px',
           padding: '8px 12px',
-          background: hasError ? 'var(--ag-error)' : 'var(--ag-panel)',
-          color: hasError ? 'var(--ag-error-text)' : 'var(--ag-fg-2)',
+          background: hasError() ? 'var(--ag-error)' : 'var(--ag-panel)',
+          color: hasError() ? 'var(--ag-error-text)' : 'var(--ag-fg-2)',
           border: '1px solid var(--ag-edge)',
           'border-radius': 'var(--ag-radius)',
           'box-shadow': 'var(--ag-shadow)',
@@ -38,9 +41,9 @@ export const StateIsland: Component<StateIslandProps> = (
             'word-break': 'break-word',
           }}
         >
-          {hasError ? props.error : props.mode}
+          {hasError() ? props.error : props.mode}
         </span>
-        <Show when={hasError && props.onDismiss !== undefined}>
+        <Show when={hasError() && props.onDismiss !== undefined}>
           <button
             type="button"
             aria-label="Dismiss error"

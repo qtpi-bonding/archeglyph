@@ -110,3 +110,30 @@ describe('the inline text editor hides what it replaces', () => {
     expect(fn).toContain('EDITOR_FALLBACK_BACKGROUND');
   });
 });
+
+describe('no component freezes a prop at setup', () => {
+  // Setup scope is the two-space indent: deeper is inside a function, where
+  // the read is tracked. A createSignal initialiser is meant to read once.
+  const frozen = (source: string): Array<string> =>
+    source
+      .split('\n')
+      .filter((line: string): boolean => {
+        if (!/^ {2}(const|let|var|if|return) .*\bprops\./.test(line)) { return false; }
+        if (line.includes('=>')) { return false; }
+        if (/createSignal|createMemo|createStore/.test(line)) { return false; }
+        return true;
+      });
+
+  const componentFiles = (dir: string): Array<string> =>
+    readdirSync(join(here, dir), { recursive: true, encoding: 'utf8' })
+      .filter((f: string): boolean => f.endsWith('.tsx') && !f.includes('.test.'))
+      .map((f: string): string => join(dir, f));
+
+  test('no editor component reads props in its body', () => {
+    const files = ['.', '../canvas', '../inspector', '../pending'].flatMap(componentFiles);
+    const offenders = files.flatMap((f: string): Array<string> =>
+      frozen(readFileSync(join(here, f), 'utf8')).map((line: string): string => `${f}: ${line.trim()}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

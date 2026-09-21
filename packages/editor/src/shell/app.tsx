@@ -2,7 +2,7 @@
 
 import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
-import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
+import { Stylesheet, StylesheetSchema, Vec2 } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
@@ -37,6 +37,8 @@ import { commandPaletteItems, elementPaletteItems } from './palette_items';
 import { PaletteAction } from './palette_item';
 import { centerBoundsInRect } from '../ui_state/viewport_math';
 import { elementKey } from '../scene/element_key';
+import { ContextMenu } from './context_menu';
+import { contextMenuItems } from './menu_items';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -67,6 +69,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [loadError, setLoadError] = createSignal<string | undefined>(undefined);
   const [commandContext, setCommandContext] = createSignal<MaybeCommandContextAccessor>(undefined);
   const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
+  const [contextMenuPoint, setContextMenuPoint] = createSignal<Vec2 | undefined>(undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -80,6 +83,15 @@ export const App: Component<{}> = (): JSX.Element => {
 
   function onOverlayClose(): void {
     ui.setOverlay(undefined);
+  }
+
+  function onContextMenuClose(): void {
+    setContextMenuPoint(undefined);
+  }
+
+  function onContextMenuChoose(id: CommandId): void {
+    onContextMenuClose();
+    onCommand(id);
   }
 
   function onPaletteChoose(action: PaletteAction): void {
@@ -184,6 +196,7 @@ export const App: Component<{}> = (): JSX.Element => {
             state={state()!}
             onFocusInspector={onFocusInspector}
             onSave={onSave}
+            onContextMenu={(point: Vec2): void => { setContextMenuPoint(point); }}
             registerCommandContext={(getContext: () => CommandContext): void => {
               setCommandContext((): CommandContextAccessor => getContext);
             }}
@@ -225,6 +238,16 @@ export const App: Component<{}> = (): JSX.Element => {
           />
         }
       />
+      <Show when={contextMenuPoint()} keyed>
+        {(point) => (
+          <ContextMenu
+            items={contextMenuItems(ui.selection(), COMMANDS, KEYMAP)}
+            at={point}
+            onChoose={onContextMenuChoose}
+            onClose={onContextMenuClose}
+          />
+        )}
+      </Show>
       <Show when={ui.overlay() === 'palette'} keyed>
         <CommandPalette
           items={commandPaletteItems(COMMANDS, KEYMAP).concat(

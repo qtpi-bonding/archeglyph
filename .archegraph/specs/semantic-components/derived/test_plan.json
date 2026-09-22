@@ -1,0 +1,184 @@
+{
+  "specName": "semantic-components",
+  "runnerCommand": "archegraph testgen-run-node --spec 'semantic-components' --root . --plan '.archegraph/specs/semantic-components/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/derive.ts/deriveComponent().",
+      "symbolName": "deriveComponent",
+      "filePath": "packages/core/src/resolver/seed_bindings/derive.ts",
+      "cases": [
+        {
+          "name": "missing-theme-default",
+          "condition": "The theme has no default for this element type: themeDefault is undefined or the empty string. The function returns undefined without considering kind or componentNames.",
+          "outcome": "It returns undefined without considering kind or componentNames.",
+          "domain": "undefined or empty string"
+        },
+        {
+          "name": "exact-component-kind",
+          "condition": "themeDefault is non-empty and kind exactly equals an entry in componentNames as a raw string. The function returns kind unchanged, without stripping or adding qualifiers.",
+          "outcome": "It returns kind unchanged when kind exactly matches an entry in componentNames.",
+          "domain": "any non-empty kind string that is an exact componentNames entry"
+        },
+        {
+          "name": "undefined-kind-falls-back",
+          "condition": "themeDefault is non-empty and kind is undefined. With no exact kind to select, the function returns themeDefault.",
+          "outcome": "It returns themeDefault when kind is undefined."
+        },
+        {
+          "name": "empty-kind-falls-back",
+          "condition": "themeDefault is non-empty and kind is the empty string. The function returns themeDefault.",
+          "outcome": "It returns themeDefault when kind is the empty string."
+        },
+        {
+          "name": "qualified-kind-does-not-match",
+          "condition": "themeDefault is non-empty and kind is a qualified string such as \"default.store\", while componentNames contains only the unqualified counterpart such as \"store\". Exact raw-string comparison fails, so the function returns themeDefault.",
+          "outcome": "It returns themeDefault because the qualified kind does not exactly match the unqualified component name.",
+          "domain": "a qualified kind and its unqualified componentNames counterpart"
+        },
+        {
+          "name": "other-unmatched-kind-falls-back",
+          "condition": "themeDefault is non-empty and kind is a non-empty string that is not exactly present in componentNames. The function returns themeDefault unchanged; no theme name is added to the result.",
+          "outcome": "It returns themeDefault unchanged when the non-empty kind is not exactly present in componentNames.",
+          "domain": "any non-empty kind string absent from componentNames"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_semantic-components__packages_core_src_resolver_seed_bindings_derive_ts_deriveComponent___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/derive.ts/isThemeDefault().",
+      "symbolName": "isThemeDefault",
+      "filePath": "packages/core/src/resolver/seed_bindings/derive.ts",
+      "cases": [
+        {
+          "name": "undefined-current",
+          "condition": "current is undefined; the function returns true without comparing it to themeDefault.",
+          "outcome": "Return true immediately without comparing current to themeDefault.",
+          "domain": "any non-empty themeDefault string"
+        },
+        {
+          "name": "empty-current",
+          "condition": "current is the empty string; the function returns true without comparing it to themeDefault.",
+          "outcome": "Return true immediately without comparing current to themeDefault.",
+          "domain": "any non-empty themeDefault string"
+        },
+        {
+          "name": "matching-split-parts",
+          "condition": "current is non-empty, and splitting current and themeDefault produces the same theme name and the same component name; the function returns true. This includes an unqualified current equal to an unqualified themeDefault, and a qualified default-theme current equivalent to the unqualified default.",
+          "outcome": "Split both values and return true when their theme and component names are equal.",
+          "domain": "any non-empty current/themeDefault pair with identical split theme and component halves"
+        },
+        {
+          "name": "different-theme-name",
+          "condition": "current is non-empty, and its split theme name differs from themeDefault's split theme name, even if the component names match; the function returns false.",
+          "outcome": "Return false because the split theme names differ, even though the component names match.",
+          "domain": "any non-empty pair whose split theme names differ"
+        },
+        {
+          "name": "different-component-name",
+          "condition": "current is non-empty, and its split component name differs from themeDefault's split component name, even if the theme names match; the function returns false.",
+          "outcome": "Return false because the split component names differ, even though the theme names match.",
+          "domain": "any non-empty pair with equal split theme names and different split component names"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_semantic-components__packages_core_src_resolver_seed_bindings_derive_ts_isThemeDefault___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/impl.ts/seedComponentBindings().",
+      "symbolName": "seedComponentBindings",
+      "filePath": "packages/core/src/resolver/seed_bindings/impl.ts",
+      "cases": [
+        {
+          "name": "theme-absent",
+          "condition": "The theme argument is undefined; the function returns the stylesheet argument unchanged and does not seed any element.",
+          "outcome": "Returns the original stylesheet unchanged without seeding any element."
+        },
+        {
+          "name": "graph-absent-with-annotations",
+          "condition": "The diagram has no graph but a theme is present; nodes, edges, and groups have no elements to enumerate, while existing stylesheet annotations are still considered for seeding.",
+          "outcome": "With a present theme, skips graph elements and still seeds existing stylesheet annotations."
+        },
+        {
+          "name": "derived-component-absent",
+          "condition": "An element's kind does not derive a component name for its element type under the supplied theme; its component is not written, whether its stylesheet entry is absent, unset, empty, or already names a component.",
+          "outcome": "Leaves the element's component untouched regardless of whether its stylesheet entry is absent, unset, empty, or already named.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "derived-component-for-missing-entry",
+          "condition": "A graph element, or an existing stylesheet annotation, has a kind that derives a component name and has no stylesheet entry; a new entry is created with that bare derived component name.",
+          "outcome": "Creates the missing entry with the bare component name derived from the element's kind.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "derived-component-for-unset-entry",
+          "condition": "An element has an existing stylesheet entry whose component is undefined or empty, and its kind derives a component name; the entry is populated with the bare derived name.",
+          "outcome": "Populates the existing unset or empty component with the bare derived name.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "theme-default-current-component",
+          "condition": "An element's kind derives a component name and its existing component is recognized by isThemeDefault as the current theme's default, including an unset or empty component; the component is replaced with the bare derived name.",
+          "outcome": "Replaces a current-theme-default, unset, or empty component with the bare derived name, creating an entry when needed.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "explicit-current-component",
+          "condition": "An element's kind derives a component name but its existing component is not the current theme default; the existing component is left untouched, including when it names a component from another theme.",
+          "outcome": "Leaves a non-default existing component untouched, including one belonging to another theme.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "node-tags-from-graph",
+          "condition": "A node is enumerated from the diagram graph and its kind is read from the node's graph tags when deciding whether and which component to seed.",
+          "outcome": "Enumerates nodes from the graph and uses each node's graph tags to derive its component.",
+          "domain": "any graph node"
+        },
+        {
+          "name": "edge-tags-from-graph",
+          "condition": "An edge is enumerated from the diagram graph and its kind is read from the edge's graph tags when deciding whether and which component to seed.",
+          "outcome": "Enumerates edges from the graph and uses each edge's graph tags to derive its component.",
+          "domain": "any graph edge"
+        },
+        {
+          "name": "group-tags-from-graph",
+          "condition": "A group is enumerated from the diagram graph and its kind is read from the group's graph tags when deciding whether and which component to seed.",
+          "outcome": "Enumerates groups from the graph and uses each group's graph tags to derive its component.",
+          "domain": "any graph group"
+        },
+        {
+          "name": "annotation-tags-from-stylesheet",
+          "condition": "An annotation is enumerated from the stylesheet's annotations map and its kind is read from AnnotationEntry.tags; annotations are not required to exist in the diagram.",
+          "outcome": "Enumerates stylesheet annotations and uses each AnnotationEntry's tags, without requiring a diagram element.",
+          "domain": "any existing stylesheet annotation"
+        },
+        {
+          "name": "default-theme-bare-output",
+          "condition": "A component is seeded successfully; the returned entry contains exactly the bare name returned by deriveComponent, never a qualified name such as \"default.name\".",
+          "outcome": "Writes exactly the bare name returned by deriveComponent, never a qualified name.",
+          "domain": "one of: node, edge, group, annotation"
+        },
+        {
+          "name": "stylesheet-not-mutated",
+          "condition": "Seeding completes with any combination of writes or no-ops; the input stylesheet remains unchanged, and the returned stylesheet is a new stylesheet that carries the changes.",
+          "outcome": "Leaves the input stylesheet unchanged and returns a new stylesheet containing any seeding changes.",
+          "domain": "any valid stylesheet and theme combination"
+        },
+        {
+          "name": "idempotent-repeat",
+          "condition": "The returned stylesheet is passed through seeding again with the same diagram and theme; the second result is equal to the first, with no component names rewritten to different values.",
+          "outcome": "Produces the same stylesheet on a second seeding pass without rewriting component names.",
+          "domain": "any seedable diagram, stylesheet, and theme"
+        },
+        {
+          "name": "empty-graph-without-annotations",
+          "condition": "A present graph contains no nodes, edges, or groups and the stylesheet has no annotations; seeding has no element-level writes but still follows the normal new-result behavior when a theme is present.",
+          "outcome": "Performs no element-level writes and still returns the normal new stylesheet result for a present theme."
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_semantic-components__packages_core_src_resolver_seed_bindings_impl_ts_seedComponentBindings___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "178e749a73a050acd94491486e026053ae4da406d016781959c67c6d155e9b05"
+}

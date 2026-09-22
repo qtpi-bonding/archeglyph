@@ -1,0 +1,94 @@
+# Phase 3 of the semantic-components design
+# (docs/superpowers/specs/2026-09-21-semantic-presets-design.md, "The binding
+# rule"). Structurally archeglyph has four element types; semantically people
+# draw databases, queues, clients and third-party services. Those are all
+# nodes. This is the rule that closes the gap.
+#
+# The rule lives here rather than beside the traversal in impl.ts because it
+# is pure: given a tag, a theme's component names and that theme's default, it
+# answers what the component should be, with no stylesheet and no diagram.
+#
+# VOCABULARY, fixed for both files in this pillar. A "component name" is the
+# value of a style entry's `component` field. A "theme name" is a key of
+# Stylesheet.themes. A component name may be qualified by a theme name
+# ("acme.glyph"); unqualified means the theme name `default`. This file never
+# says "binding" for either.
+
+file: "packages/core/src/resolver/seed_bindings/derive.ts"
+doc: "What component name an element should carry, given its `kind` tag."
+
+methods: [
+  { name: "deriveComponent"
+    doc:
+      "The component name an element should carry, or undefined for none.\n"
+      "\n"
+      "Three branches, tested in this order. The first is a guard that runs\n"
+      "before `kind` is looked at at all:\n"
+      "\n"
+      "1. `themeDefault` undefined or empty -> undefined, whatever `kind` is.\n"
+      "   A theme stating no default for this element type has no value that\n"
+      "   means \"nobody chose\", so it opts out of the mechanism entirely.\n"
+      "   deriveComponent(\"store\", [\"store\"], undefined) is undefined, NOT\n"
+      "   \"store\".\n"
+      "2. `componentNames` contains `kind` -> `kind`.\n"
+      "3. otherwise -> `themeDefault`. An undefined or empty `kind` lands\n"
+      "   here.\n"
+      "\n"
+      "Branch 2 compares `kind` to the entries of `componentNames` as exact\n"
+      "raw strings. No qualifier is stripped from either side and none is\n"
+      "added: a `kind` of \"default.store\" does not match a componentNames\n"
+      "entry of \"store\" and falls to branch 3. A `kind` tag is diagram\n"
+      "content, not a reference to a theme, so it never carries a theme name.\n"
+      "\n"
+      "Branch 3 is the common path and must not throw: the bundled themes\n"
+      "ship no kind vocabulary on purpose, because design.md §4 makes themes\n"
+      "shareable artifacts that cannot predict a consumer's tag scheme.\n"
+      "deriveComponent(\"wormhole\", [\"glyph\"], \"glyph\") is \"glyph\".\n"
+      "\n"
+      "`componentNames` holds the names the theme defines for ONE element\n"
+      "type; the caller chooses which list to pass. The returned string is\n"
+      "always bare — this function never produces a qualified name."
+    inputs: [
+      { name: "kind", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } } },
+      { name: "componentNames", type: { named: { symbol: "Array", args: [{ primitive: CHARACTER }] } } },
+      { name: "themeDefault", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } } }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } }
+  },
+  { name: "isThemeDefault"
+    doc:
+      "Whether `current` is a component name meaning nobody chose it.\n"
+      "\n"
+      "True when `current` is undefined or the empty string.\n"
+      "\n"
+      "Otherwise both `current` and `themeDefault` are split by\n"
+      "splitQualified into a theme name and a component name, with an\n"
+      "unqualified string taking the theme name `default`. True when BOTH\n"
+      "halves are equal; false when either differs.\n"
+      "\n"
+      "Splitting both sides is what makes the comparison survive a\n"
+      "round-trip through something that writes qualified names. Worked\n"
+      "cases, all with `themeDefault` = \"glyph\":\n"
+      "  current = undefined        -> true\n"
+      "  current = \"\"               -> true\n"
+      "  current = \"glyph\"          -> true   (default/glyph vs default/glyph)\n"
+      "  current = \"default.glyph\"  -> true   (default/glyph vs default/glyph)\n"
+      "  current = \"acme.glyph\"     -> false  (theme name acme differs)\n"
+      "  current = \"queue\"          -> false  (component name differs)\n"
+      "\n"
+      "\"acme.glyph\" being false is not an oversight: seeding acts only on\n"
+      "the theme named `default`, so a component name pointing at any other\n"
+      "theme was written deliberately and is left alone.\n"
+      "\n"
+      "`themeDefault` is never undefined or empty here. Its caller stops\n"
+      "before calling this when the theme states no default for the element\n"
+      "type, because deriveComponent has already returned undefined in that\n"
+      "case and no component name is written at all."
+    inputs: [
+      { name: "current", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | undefined" } } },
+      { name: "themeDefault", type: { primitive: CHARACTER } }
+    ]
+    output: { primitive: BOOLEAN }
+    uses: ["splitQualified"]
+  }
+]

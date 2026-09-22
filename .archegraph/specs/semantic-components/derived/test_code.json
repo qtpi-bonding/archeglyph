@@ -1,0 +1,153 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/derive.ts/deriveComponent().",
+      "codes": {
+        "empty-kind-falls-back": {
+          "body": "expect(deriveComponent(\"\", [\"store\"], \"fallback\")).toBe(\"fallback\");",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "exact-component-kind": {
+          "body": "expect(deriveComponent(value, [value], \"fallback\")).toBe(value);",
+          "strategy": "fc.string({ minLength: 1 })",
+          "helpersUsed": []
+        },
+        "missing-theme-default": {
+          "body": "expect(deriveComponent(\"store\", [\"store\"], value)).toBeUndefined();",
+          "strategy": "fc.constantFrom<string | undefined>(undefined, \"\")",
+          "helpersUsed": []
+        },
+        "other-unmatched-kind-falls-back": {
+          "body": "expect(deriveComponent(value, [`${value}-other`], \"fallback\")).toBe(\"fallback\");",
+          "strategy": "fc.string({ minLength: 1 })",
+          "helpersUsed": []
+        },
+        "qualified-kind-does-not-match": {
+          "body": "const unqualified = value.slice(\"default.\".length);\nexpect(deriveComponent(value, [unqualified], \"fallback\")).toBe(\"fallback\");",
+          "strategy": "fc.string({ minLength: 1 }).map((name) => `default.${name}`)",
+          "helpersUsed": []
+        },
+        "undefined-kind-falls-back": {
+          "body": "expect(deriveComponent(undefined, [\"store\"], \"fallback\")).toBe(\"fallback\");",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/derive.ts/isThemeDefault().",
+      "codes": {
+        "different-component-name": {
+          "body": "expect(isThemeDefault(value.current, value.themeDefault)).toBe(false);",
+          "strategy": "fc.record({ theme: fc.string().filter((theme) => !theme.includes('.')), currentComponent: fc.string().filter((component) => !component.includes('.')), defaultComponent: fc.string().filter((component) => !component.includes('.')) }).filter(({ currentComponent, defaultComponent }) => currentComponent !== defaultComponent).map(({ theme, currentComponent, defaultComponent }) => ({ current: `${theme}.${currentComponent}`, themeDefault: `${theme}.${defaultComponent}` }))",
+          "helpersUsed": []
+        },
+        "different-theme-name": {
+          "body": "expect(isThemeDefault(value.current, value.themeDefault)).toBe(false);",
+          "strategy": "fc.record({ currentTheme: fc.string().filter((theme) => !theme.includes('.')), defaultTheme: fc.string().filter((theme) => !theme.includes('.')), component: fc.string().filter((component) => component.length > 0 && !component.includes('.')) }).filter(({ currentTheme, defaultTheme }) => currentTheme !== defaultTheme).map(({ currentTheme, defaultTheme, component }) => ({ current: `${currentTheme}.${component}`, themeDefault: `${defaultTheme}.${component}` }))",
+          "helpersUsed": []
+        },
+        "empty-current": {
+          "body": "expect(isThemeDefault('', value)).toBe(true);",
+          "strategy": "fc.string().filter((themeDefault) => themeDefault.length > 0)",
+          "helpersUsed": []
+        },
+        "matching-split-parts": {
+          "body": "expect(isThemeDefault(value.current, value.themeDefault)).toBe(true);",
+          "strategy": "fc.record({ theme: fc.constantFrom('default', 'acme'), component: fc.string().filter((component) => component.length > 0 && !component.includes('.')) }).map(({ theme, component }) => ({ current: theme === 'default' ? component : `${theme}.${component}`, themeDefault: `${theme}.${component}` }))",
+          "helpersUsed": []
+        },
+        "undefined-current": {
+          "body": "expect(isThemeDefault(undefined, value)).toBe(true);",
+          "strategy": "fc.string().filter((themeDefault) => themeDefault.length > 0)",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/resolver/seed_bindings/impl.ts/seedComponentBindings().",
+      "codes": {
+        "annotation-tags-from-stylesheet": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "default-theme-bare-output": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "derived-component-absent": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "derived-component-for-missing-entry": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "derived-component-for-unset-entry": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "edge-tags-from-graph": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "empty-graph-without-annotations": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "explicit-current-component": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "graph-absent-with-annotations": {
+          "body": "const stylesheet = create(StylesheetSchema, {\n  annotations: { note: create(AnnotationEntrySchema, {}) },\n});\nconst diagram = create(DiagramSchema, {});\nconst theme = create(ThemeSchema, { defaultAnnotationComponent: 'glyph' });\nconst result = seedComponentBindings(diagram, stylesheet, theme);\nexpect(result.annotations.note.component).toBe('glyph');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "group-tags-from-graph": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "idempotent-repeat": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "node-tags-from-graph": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "stylesheet-not-mutated": {
+          "body": "const stylesheet = create(StylesheetSchema, {});\nconst diagram = create(DiagramSchema, {});\nconst theme = create(ThemeSchema, {});\nconst result = seedComponentBindings(diagram, stylesheet, theme);\nexpect(result).not.toBe(stylesheet);\nexpect(stylesheet).toEqual(create(StylesheetSchema, {}));",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "theme-absent": {
+          "body": "const stylesheet = create(StylesheetSchema, {});\nconst diagram = create(DiagramSchema, {});\nexpect(seedComponentBindings(diagram, stylesheet, undefined)).toBe(stylesheet);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "theme-default-current-component": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

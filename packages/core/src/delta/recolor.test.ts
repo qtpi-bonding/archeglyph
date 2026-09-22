@@ -71,7 +71,7 @@ describe('recolorShape', () => {
   // Ghosting is relative to what the theme already set. The bundled group
   // components ship dashed at opacity 0.06, so an absolute rule would be
   // invisible on one channel and backwards on the other.
-  test('DELETED dots the stroke and scales fill opacity to 0.4 of its old value', () => {
+  test('DELETED marks the stroke with minuses and scales fill opacity to 0.4 of its old value', () => {
     const glyph = create(Glyph2DSchema, {
       stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '5,4' } }),
       fill: create(FillSchema, { opacity: 0.06 }),
@@ -80,7 +80,7 @@ describe('recolorShape', () => {
     const out = recolorShape(glyph, ChangeType.DELETED, TABLE);
 
     expect(out.stroke?.dashing.case).toBe('pattern');
-    expect(out.stroke?.dashing.value).toBe(StrokePattern.DOTTED);
+    expect(out.stroke?.dashing.value).toBe(StrokePattern.MINUS);
     expect(out.fill?.opacity).toBeCloseTo(0.024, 6);
   });
 
@@ -97,16 +97,40 @@ describe('recolorShape', () => {
     expect(out.fill).toBeUndefined();
   });
 
-  test('a change type other than DELETED leaves dashing and opacity alone', () => {
+  // Every change type overrides the author's dashing, because the glyph IS the
+  // marking; only DELETED also ghosts the fill.
+  test('MODIFIED marks the stroke with deltas and leaves opacity alone', () => {
     const glyph = create(Glyph2DSchema, {
-      stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '5,4' } }),
+      stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '2,3' } }),
       fill: create(FillSchema, { opacity: 0.06 }),
     });
 
     const out = recolorShape(glyph, ChangeType.MODIFIED, TABLE);
 
-    expect(out.stroke?.dashing.case).toBe('customDasharray');
+    expect(out.stroke?.dashing.case).toBe('pattern');
+    expect(out.stroke?.dashing.value).toBe(StrokePattern.DELTA);
     expect(out.fill?.opacity).toBeCloseTo(0.06, 6);
+  });
+
+  test('ADDED marks the stroke with pluses', () => {
+    const glyph = create(Glyph2DSchema, {
+      stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '2,3' } }),
+    });
+
+    const out = recolorShape(glyph, ChangeType.ADDED, TABLE);
+
+    expect(out.stroke?.dashing.value).toBe(StrokePattern.PLUS);
+  });
+
+  test('UNCHANGED keeps the author\'s own dashing', () => {
+    const glyph = create(Glyph2DSchema, {
+      stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '2,3' } }),
+    });
+
+    const out = recolorShape(glyph, ChangeType.UNCHANGED, TABLE);
+
+    expect(out.stroke?.dashing.case).toBe('customDasharray');
+    expect(out.stroke?.dashing.value).toBe('2,3');
   });
 
   test('geometry and stroke metrics are carried through', () => {
@@ -160,13 +184,13 @@ describe('recolorLine', () => {
   });
 
   // A Glyph1D has no fill, so ghosting is one edit here rather than two.
-  test('DELETED dots the stroke and invents no fill', () => {
+  test('DELETED marks the stroke with minuses and invents no fill', () => {
     const glyph = create(Glyph1DSchema, { stroke: create(StrokeSchema, {}) });
 
     const out = recolorLine(glyph, ChangeType.DELETED, TABLE);
 
     expect(out.stroke?.dashing.case).toBe('pattern');
-    expect(out.stroke?.dashing.value).toBe(StrokePattern.DOTTED);
+    expect(out.stroke?.dashing.value).toBe(StrokePattern.MINUS);
     expect('fill' in out).toBe(false);
   });
 

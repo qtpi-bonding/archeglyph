@@ -212,7 +212,7 @@ function glyphGroupComponent() {
       stroke: create(StrokeSchema, {
         paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_outline' }) },
         width: 1,
-        dashing: { case: 'customDasharray', value: '5,4' },
+        dashing: { case: 'customDasharray', value: '2,3' },
       }),
       fill: create(FillSchema, {
         paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_fill' }) },
@@ -302,7 +302,7 @@ function blueprintGroupComponent() {
       stroke: create(StrokeSchema, {
         paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_outline' }) },
         width: 1,
-        dashing: { case: 'customDasharray', value: '5,4' },
+        dashing: { case: 'customDasharray', value: '2,3' },
       }),
       fill: create(FillSchema, {
         paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_fill' }) },

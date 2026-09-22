@@ -268,7 +268,7 @@ message Stroke {
   optional double width = 2;
   // Dash pattern — exactly one of standard or custom. Unset = solid.
   oneof dashing {
-    StrokePattern pattern = 3;        // SOLID | DASHED | DOTTED
+    StrokePattern pattern = 3;        // SOLID | DASHED | DOTTED | PLUS | MINUS | DELTA
     string custom_dasharray = 7;      // "5,5", "2,2,5,5", etc.
   }
   optional StrokeCap cap = 5;
@@ -280,6 +280,18 @@ enum StrokePattern {
   STROKE_PATTERN_SOLID = 1;
   STROKE_PATTERN_DASHED = 2;
   STROKE_PATTERN_DOTTED = 3;
+
+  // Glyph textures. The stroke is painted with a repeating mark instead of a
+  // dash rhythm, which gives a second channel alongside colour: the mark still
+  // reads in greyscale, in print, and to a colour-blind reader.
+  //
+  // Marks are axis-aligned and do not rotate to follow the path, so a glyph
+  // looks the same on a vertical edge as on a horizontal one. A stroke
+  // carrying one is widened to the tile size by the renderer -- a mark has no
+  // room to show inside a hairline.
+  STROKE_PATTERN_PLUS = 4;
+  STROKE_PATTERN_MINUS = 5;
+  STROKE_PATTERN_DELTA = 6;
 }
 
 enum StrokeCap {

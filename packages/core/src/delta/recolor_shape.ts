@@ -22,8 +22,16 @@ import { diffColorFor } from './diff_color';
 
 const GHOST_OPACITY_SCALE = 0.4;
 
+// A second channel alongside colour. The mark survives greyscale, print and a
+// colour-blind reader, none of which the diff palette does on its own, and it
+// borrows the notation a reader of the PR already has: + added, - deleted.
+const GLYPH_FOR_CHANGE: ReadonlyMap<ChangeType, StrokePattern> = new Map([
+  [ChangeType.ADDED, StrokePattern.PLUS],
+  [ChangeType.DELETED, StrokePattern.MINUS],
+  [ChangeType.MODIFIED, StrokePattern.DELTA],
+]);
+
 function recolorStroke(stroke: Stroke, change: ChangeType, diffRoles: DiffRoles | undefined): Stroke {
-  const ghosted = change === ChangeType.DELETED;
   const next = create(StrokeSchema, { ...stroke });
   if (stroke.paint.case === 'color') {
     next.paint = {
@@ -31,8 +39,9 @@ function recolorStroke(stroke: Stroke, change: ChangeType, diffRoles: DiffRoles 
       value: { ...stroke.paint.value, value: diffColorFor(stroke.paint.value.value, change, diffRoles) },
     };
   }
-  if (ghosted) {
-    next.dashing = { case: 'pattern', value: StrokePattern.DOTTED };
+  const glyph = GLYPH_FOR_CHANGE.get(change);
+  if (glyph !== undefined) {
+    next.dashing = { case: 'pattern', value: glyph };
   }
   return next;
 }

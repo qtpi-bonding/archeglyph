@@ -4,6 +4,7 @@ import { create } from '@bufbuild/protobuf';
 import {
   ArrowheadVariant,
   GroupLabelPosition,
+  type Stroke,
   TextAlign,
   type Typography,
   TypographySchema,
@@ -19,7 +20,7 @@ import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
 import { calloutSections } from '../../layout/callout_line/impl';
 import { RenderError } from '../render_error';
-import { arrowMarkers, backgroundRect, edgePath, shapePath, textElement, viewBox } from '../svg_painter';
+import { arrowMarkers, backgroundRect, edgePath, glyphPatternOf, glyphPatterns, lineStrokeAttrs, shapePath, textElement, viewBox } from '../svg_painter';
 import { init } from '@archeglyph/proto/util/init';
 
 /**
@@ -119,7 +120,24 @@ export class SvgRendererImpl implements SvgRenderer {
       }
     }
 
-    const defs: string = arrowMarkers([...variantsSeen]);
+    // Sorted so the defs block is byte-stable: a Set iterates in insertion
+    // order, which follows whichever element happened to be painted first.
+    const glyphKeys: Set<string> = new Set();
+    const noteGlyph = (stroke: Stroke | undefined): void => {
+      const glyph = glyphPatternOf(stroke);
+      if (glyph !== undefined && stroke?.paint.case === 'color') {
+        glyphKeys.add(`${glyph}\u0000${stroke.paint.value.value}`);
+      }
+    };
+    for (const group of sortedGroups) { noteGlyph(group.shape.stroke); }
+    for (const node of sortedNodes) { noteGlyph(node.shape.stroke); }
+    for (const edge of sortedEdges) { noteGlyph(edge.connection.stroke); }
+    for (const annotation of sortedAnnotations) {
+      noteGlyph(annotation.shape.stroke);
+      noteGlyph(annotation.callout?.stroke);
+    }
+
+    const defs: string = arrowMarkers([...variantsSeen]) + glyphPatterns([...glyphKeys].sort());
 
     let groupsSvg: string = '';
     for (const group of sortedGroups) {
@@ -145,10 +163,6 @@ export class SvgRendererImpl implements SvgRenderer {
     let edgesSvg: string = '';
     for (const edge of sortedEdges) {
       const d: string = edgePath(edge.sections);
-      const strokeColor: string = edge.connection.stroke?.paint.case === 'color'
-        ? edge.connection.stroke.paint.value.value
-        : '#000000';
-      const strokeWidth: number = edge.connection.stroke?.width ?? 1;
       const startVariant: ArrowheadVariant | undefined = edge.connection.arrowheads?.start;
       const endVariant: ArrowheadVariant | undefined = edge.connection.arrowheads?.end;
       const startMarkerAttr: string = startVariant !== undefined && startVariant !== ArrowheadVariant.ARROWHEAD_NONE
@@ -158,7 +172,7 @@ export class SvgRendererImpl implements SvgRenderer {
         ? ` marker-end="url(#${markerId(endVariant)})"`
         : '';
       const hitStroke: string = `<path d="${d}" fill="none" stroke="transparent" stroke-width="12" style="pointer-events: stroke"/>`;
-      const visiblePath: string = `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"${startMarkerAttr}${endMarkerAttr}/>`;
+      const visiblePath: string = `<path d="${d}" fill="none"${lineStrokeAttrs(edge.connection.stroke)}${startMarkerAttr}${endMarkerAttr}/>`;
       const hasLabel: boolean = edge.label.length > 0 && edge.sections.length > 0;
       const labelSvg: string = hasLabel
         ? textElement(
@@ -182,10 +196,6 @@ export class SvgRendererImpl implements SvgRenderer {
       });
       const calloutSectionsForAnnotation: EdgeSection[] = calloutSections(diagram, ann);
       const calloutPath: string = edgePath(calloutSectionsForAnnotation);
-      const calloutStrokeColor: string = ann.callout?.stroke?.paint.case === 'color'
-        ? ann.callout.stroke.paint.value.value
-        : '#000000';
-      const calloutStrokeWidth: number = ann.callout?.stroke?.width ?? 1;
       const calloutStartVariant: ArrowheadVariant | undefined = ann.callout?.arrowheads?.start;
       const calloutEndVariant: ArrowheadVariant | undefined = ann.callout?.arrowheads?.end;
       const calloutStartMarker: string = calloutStartVariant !== undefined && calloutStartVariant !== ArrowheadVariant.ARROWHEAD_NONE
@@ -195,7 +205,7 @@ export class SvgRendererImpl implements SvgRenderer {
         ? ` marker-end="url(#${markerId(calloutEndVariant)})"`
         : '';
       const calloutSvg: string = calloutPath !== ''
-        ? `<path d="${calloutPath}" fill="none" stroke="${calloutStrokeColor}" stroke-width="${calloutStrokeWidth}"${calloutStartMarker}${calloutEndMarker}/>`
+        ? `<path d="${calloutPath}" fill="none"${lineStrokeAttrs(ann.callout?.stroke)}${calloutStartMarker}${calloutEndMarker}/>`
         : '';
       const shape: string = shapePath(ann.shape, ann.position, ann.size);
       const labelSvg: string = textElement(ann.content, ann.typography, annCenter, true);

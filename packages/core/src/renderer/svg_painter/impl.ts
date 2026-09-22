@@ -10,6 +10,50 @@ function r(n: number): string {
   return n.toFixed(2);
 }
 
+// The tile a glyph pattern repeats on, and the stroke width a glyph-patterned
+// stroke is forced to. A mark only shows where the stroke is wide enough to
+// expose the whole tile, so the author's width cannot be honoured here.
+const GLYPH_TILE: number = 9;
+const GLYPH_WIDTH: number = 8;
+
+// Marks are drawn on the tile, not along the path, so they never rotate. Each
+// is inset from the tile edge so neighbouring tiles do not run together.
+const GLYPH_MARKS: ReadonlyMap<StrokePattern, string> = new Map([
+  [StrokePattern.PLUS, '<path d="M 4.5,1.4 L 4.5,7.6 M 1.4,4.5 L 7.6,4.5" fill="none" stroke-width="1.4"/>'],
+  [StrokePattern.MINUS, '<path d="M 1.2,4.5 L 7.8,4.5" fill="none" stroke-width="1.4"/>'],
+  [StrokePattern.DELTA, '<path d="M 4.5,1.5 L 7.7,7.3 L 1.3,7.3 Z" stroke-width="1.1"/>'],
+]);
+
+export function glyphPatternOf(stroke: Stroke | undefined): StrokePattern | undefined {
+  if (stroke === undefined || stroke.dashing.case !== 'pattern') {
+    return undefined;
+  }
+  return GLYPH_MARKS.has(stroke.dashing.value) ? stroke.dashing.value : undefined;
+}
+
+// Keyed by colour as well as glyph: a pattern carries its own paint, so two
+// elements marked the same way in different colours need separate tiles.
+export function glyphPatternId(pattern: StrokePattern, color: string): string {
+  return `ag-glyph-${pattern}-${color.replace('#', '')}`;
+}
+
+function glyphPattern(pattern: StrokePattern, color: string): string {
+  const mark: string = GLYPH_MARKS.get(pattern) ?? '';
+  const id: string = glyphPatternId(pattern, color);
+  return `<pattern id="${id}" width="${GLYPH_TILE}" height="${GLYPH_TILE}" patternUnits="userSpaceOnUse" fill="${color}" stroke="${color}">${mark}</pattern>`;
+}
+
+// `keys` are `${pattern}\u0000${color}`, sorted by the caller so the defs
+// block is byte-stable across runs.
+export function glyphPatterns(keys: ReadonlyArray<string>): string {
+  if (keys.length === 0) { return ''; }
+  const defs: string = keys.map((key: string): string => {
+    const parts: string[] = key.split('\u0000');
+    return glyphPattern(Number(parts[0]) as StrokePattern, parts[1]!);
+  }).join('');
+  return `<defs>${defs}</defs>`;
+}
+
 // Pattern values are fixed rather than scaled to stroke width: the width is
 // not known here, and these match what the bundled themes write by hand.
 function dashAttr(stroke: Stroke): string {
@@ -31,10 +75,28 @@ function strokeAttrs(stroke: Stroke | undefined): string {
   if (stroke === undefined) {
     return '';
   } else {
+    const glyph: StrokePattern | undefined = glyphPatternOf(stroke);
+    if (glyph !== undefined && stroke.paint.case === 'color') {
+      const id: string = glyphPatternId(glyph, stroke.paint.value.value);
+      return ` stroke="url(#${id})" stroke-width="${r(GLYPH_WIDTH)}"`;
+    }
     const colorStr: string = stroke.paint.case === 'color' ? ` stroke="${stroke.paint.value.value}"` : '';
     const widthStr: string = stroke.width !== undefined ? ` stroke-width="${r(stroke.width)}"` : '';
     return colorStr + widthStr + dashAttr(stroke);
   }
+}
+
+// An unstyled line is a 1px black line, where an unstyled shape is no stroke
+// at all. That default is the only difference from the shape path.
+export function lineStrokeAttrs(stroke: Stroke | undefined): string {
+  const glyph: StrokePattern | undefined = glyphPatternOf(stroke);
+  if (glyph !== undefined && stroke?.paint.case === 'color') {
+    return ` stroke="url(#${glyphPatternId(glyph, stroke.paint.value.value)})" stroke-width="${r(GLYPH_WIDTH)}"`;
+  }
+  const color: string = stroke?.paint.case === 'color' ? stroke.paint.value.value : '#000000';
+  const width: number = stroke?.width ?? 1;
+  const dash: string = stroke === undefined ? '' : dashAttr(stroke);
+  return ` stroke="${color}" stroke-width="${r(width)}"${dash}`;
 }
 
 function fillAttrs(fill: Fill | undefined): string {

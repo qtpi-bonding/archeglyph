@@ -35,6 +35,9 @@ const LIGHT_PALETTE: Record<string, string> = {
   grey:   '#8A8A8A',
   dim:    '#5a5a5a',
   ground: '#F5F5F5',
+  green:  '#2e7d32',
+  blue:   '#1565c0',
+  red:    '#c62828',
 };
 
 const DARK_PALETTE: Record<string, string> = {
@@ -45,6 +48,9 @@ const DARK_PALETTE: Record<string, string> = {
   slate:    '#7f8694',
   mist:     '#a7aec0',
   ground:   '#1a1b26',
+  green:    '#9ece6a',
+  blue:     '#7aa2f7',
+  red:      '#f7768e',
 };
 
 // Exhaustive, including the fifteen slots no bundled component fills: a
@@ -113,6 +119,13 @@ const LIGHT_ROLES: Record<string, string> = {
   annotation_callout_glow:     '$palette.grey',
 
   background:                  '$palette.ground',
+
+  // Declaring all three selects table mode for a diff render. A theme that
+  // declares none of them -- blueprint -- gets hue rotation instead, which
+  // needs a saturated palette to say anything. This one is greyscale.
+  diff_added:                  '$palette.green',
+  diff_modified:               '$palette.blue',
+  diff_deleted:                '$palette.red',
 };
 
 const DARK_ROLES: Record<string, string> = {
@@ -145,6 +158,13 @@ const DARK_ROLES: Record<string, string> = {
   annotation_callout_glow:     '$palette.slate',
 
   background:                  '$palette.ground',
+
+  // Declaring all three selects table mode for a diff render. A theme that
+  // declares none of them -- blueprint -- gets hue rotation instead, which
+  // needs a saturated palette to say anything. This one is mostly grey.
+  diff_added:                  '$palette.green',
+  diff_modified:               '$palette.blue',
+  diff_deleted:                '$palette.red',
 };
 
 // --- components: no literal colours below ---

@@ -1,0 +1,107 @@
+file: "packages/core/src/delta/recolor_shape.ts"
+doc:
+  "Applies the diff treatment to the two glyph types: every colour they carry, plus ghosting on deletion.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto.\n"
+  "\n"
+  "GHOSTING is the extra treatment a DELETED element gets, applied in both\n"
+  "table mode and rotate mode. It is defined per glyph type, and the two types\n"
+  "do different amounts of it: recolorShape performs two edits on a Glyph2D,\n"
+  "recolorLine performs one on a Glyph1D. Each decl below states its own,\n"
+  "and there is no count that governs both.\n"
+  "\n"
+  "Neither function reads a theme or a token. Both take an already-chosen\n"
+  "DiffRoles (or undefined) and hand it straight to diffColorFor."
+
+methods: [
+  { name: "recolorShape"
+    doc:
+      "A copy of `glyph` with the diff treatment applied. `glyph` is not\n"
+      "mutated.\n"
+      "\n"
+      "Every colour the glyph carries is replaced by diffColorFor of its\n"
+      "current value, in four places:\n"
+      "  stroke.color             (only when stroke.paint is the color case)\n"
+      "  fill.color               (only when fill.paint is the color case)\n"
+      "  glow.color\n"
+      "  decorations[].color      every entry that sets one\n"
+      "An unset optional is left unset -- no colour is invented for a field\n"
+      "the theme did not fill.\n"
+      "\n"
+      "A stroke or fill whose paint is the GRADIENT case is left exactly as\n"
+      "it is, and no colour is derived from it. A gradient has no single hue\n"
+      "to rotate and no single value to replace. No bundled theme uses one\n"
+      "today, so this path is untested by the bundled renders.\n"
+      "\n"
+      "GHOSTING, when and only when `change` is DELETED -- two edits:\n"
+      "  stroke.dashing is set to STROKE_PATTERN_DOTTED, discarding whatever\n"
+      "    dashing it had. If the glyph has no stroke at all, no stroke is\n"
+      "    created.\n"
+      "  fill.opacity is set to its current value multiplied by 0.4. A Fill\n"
+      "    that is present with `opacity` unset counts as 1.0, so it becomes\n"
+      "    0.4. If the glyph has NO fill at all, no Fill is created and no\n"
+      "    opacity is set -- an absent fill stays absent.\n"
+      "For every other change type, dashing and opacity are left untouched.\n"
+      "\n"
+      "The opacity edit is computed FROM the prior value; the dashing edit\n"
+      "discards it. They are asymmetric on purpose, and the reason is what\n"
+      "the bundled themes already set. Group components ship already dashed\n"
+      "(customDasharray \"5,4\") at fill opacity 0.06. A fixed opacity of 0.25\n"
+      "would render a deleted group four times MORE solid than an unchanged\n"
+      "one, so opacity has to scale. DOTTED needs no scaling because it is\n"
+      "already distinct both from a solid node outline and from that \"5,4\".\n"
+      "\n"
+      "CARRIED THROUGH UNTOUCHED, in full: shape_kind (both the standard and\n"
+      "custom_path_ref cases), corner_radius, stroke.width, stroke.cap,\n"
+      "stroke.join, glow.radius, glow.intensity, decorations[].id,\n"
+      "decorations[].kind, decorations[].badge_text, decorations[].icon_ref\n"
+      "and decorations[].position. This function changes colours, one dash\n"
+      "pattern and one opacity, and nothing else -- no geometry and no size.\n"
+      "\n"
+      "Ghosting matters beyond looks: it is the only channel that still\n"
+      "separates DELETED from ADDED when hue is disregarded, which is the\n"
+      "case for a red-green colourblind reader in table mode and for a fully\n"
+      "desaturated palette in rotate mode."
+    inputs: [
+      { name: "glyph",     type: { named: { symbol: "archeglyph.style.v1.Glyph2D" } } },
+      { name: "change",    type: { named: { symbol: "archeglyph.content.v1.ChangeType" } } },
+      { name: "diffRoles", type: { named: { symbol: "DiffRoles" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Glyph2D" } }
+    uses: ["diffColorFor", "archeglyph.style.v1.StrokePattern"]
+  },
+  { name: "recolorLine"
+    doc:
+      "A copy of `glyph` with the diff treatment applied. `glyph` is not\n"
+      "mutated.\n"
+      "\n"
+      "Every colour the glyph carries is replaced by diffColorFor of its\n"
+      "current value, in two places:\n"
+      "  stroke.color             (only when stroke.paint is the color case)\n"
+      "  glow.color\n"
+      "The unset-stays-unset rule and the leave-a-gradient-alone rule are\n"
+      "identical to recolorShape's.\n"
+      "\n"
+      "GHOSTING, when and only when `change` is DELETED -- ONE edit:\n"
+      "  stroke.dashing is set to STROKE_PATTERN_DOTTED, discarding whatever\n"
+      "    dashing it had. If the glyph has no stroke at all, no stroke is\n"
+      "    created.\n"
+      "There is no second edit here. A Glyph1D has no fill field at all, so\n"
+      "the opacity half of recolorShape's ghosting has nothing to act on and\n"
+      "no Fill is invented. A deleted edge is therefore dotted but at full\n"
+      "strength, which is the most this glyph type can carry.\n"
+      "\n"
+      "CARRIED THROUGH UNTOUCHED, in full: stroke.width, stroke.cap,\n"
+      "stroke.join, glow.radius, glow.intensity, and arrowheads entirely --\n"
+      "both variants and the size. Arrowheads have no colour of their own in\n"
+      "style.proto, since the renderer paints them from the stroke, so they\n"
+      "follow the recoloured stroke without needing a rule."
+    inputs: [
+      { name: "glyph",     type: { named: { symbol: "archeglyph.style.v1.Glyph1D" } } },
+      { name: "change",    type: { named: { symbol: "archeglyph.content.v1.ChangeType" } } },
+      { name: "diffRoles", type: { named: { symbol: "DiffRoles" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Glyph1D" } }
+    uses: ["diffColorFor", "archeglyph.style.v1.StrokePattern"]
+  }
+]

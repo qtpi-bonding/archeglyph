@@ -1,0 +1,82 @@
+file: "packages/core/src/delta/diff_roles.ts"
+doc:
+  "Reads a theme's three diff roles, which is also how a render lands in table mode or rotate mode.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto.\n"
+  "\n"
+  "The mode is decided by RESOLUTION, not by declaration. A theme whose three\n"
+  "diff roles all resolve to a value puts the render in table mode; anything\n"
+  "else puts it in rotate mode. Declaring a role that names a palette entry\n"
+  "which does not exist is therefore the same as not declaring it."
+
+structs: [
+  { name: "DiffRoles"
+    doc:
+      "The three colours a table-mode render paints, already resolved to\n"
+      "literal values.\n"
+      "\n"
+      "Each field holds whatever the theme's role resolved to. By the\n"
+      "convention every bundled theme follows that is a six-digit hex\n"
+      "string, but nothing here enforces it and nothing downstream requires\n"
+      "it -- a value that is not a hex colour is passed through to the SVG\n"
+      "the same way any other style value is.\n"
+      "\n"
+      "A plain data carrier with no methods. A DiffRoles existing is what\n"
+      "table mode MEANS; see resolveDiffRoles.\n"
+      "\n"
+      "Deliberately a class rather than a STRUCT_KIND_INTERFACE struct, for\n"
+      "the same reason DeltaOverlay is: every sibling data carrier in this\n"
+      "repo is a definite-assignment class built with init(new X(), {...})."
+    fields: [
+      { name: "added",    type: { primitive: CHARACTER } },
+      { name: "modified", type: { primitive: CHARACTER } },
+      { name: "deleted",  type: { primitive: CHARACTER } }
+    ]
+    typescript: {}
+  }
+]
+
+methods: [
+  { name: "resolveDiffRoles"
+    doc:
+      "A theme's three diff roles resolved to literal values, or undefined.\n"
+      "\n"
+      "`tokens` being undefined returns undefined immediately, doing none of\n"
+      "what follows.\n"
+      "\n"
+      "Otherwise: build an object whose three properties hold the strings\n"
+      "\"$roles.diff_added\", \"$roles.diff_modified\" and\n"
+      "\"$roles.diff_deleted\", and pass it to resolveTokensIn together with\n"
+      "`tokens`.\n"
+      "\n"
+      "resolveTokensIn RESOLVES IN PLACE and RETURNS A LIST. It rewrites each\n"
+      "string property of the object it is given to that reference's resolved\n"
+      "value, and returns an Array<string> naming every reference it could\n"
+      "not resolve. A returned array of length 0 therefore means all three\n"
+      "resolved and the object now holds three literal values; a non-empty\n"
+      "array means at least one did not, and the corresponding property still\n"
+      "holds its original \"$roles.\" string.\n"
+      "\n"
+      "So, reading that returned array's length:\n"
+      "  0                  -> return a DiffRoles carrying the three values\n"
+      "                        the object now holds.\n"
+      "  1, 2 or 3          -> return undefined.\n"
+      "\n"
+      "Going through resolveTokensIn rather than reading tokens.roles\n"
+      "directly is what makes a role value of \"$palette.green\" work: a role\n"
+      "may name a palette entry, and resolveTokensIn already performs that\n"
+      "one-hop chase. Reading the map directly would yield the literal\n"
+      "string \"$palette.green\" and paint it into the SVG.\n"
+      "\n"
+      "Any non-zero count returning undefined -- rather than filling the gaps\n"
+      "-- is the all-or-none rule, and it fails toward the mode that always\n"
+      "produces a colour. A theme with only diff_added resolvable would\n"
+      "otherwise render added elements from the table and the other two from\n"
+      "rotation, which is two visual languages in one picture."
+    inputs: [
+      { name: "tokens", type: { named: { symbol: "archeglyph.theme.v1.Tokens" } }, is_optional: true }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "DiffRoles | undefined" } }
+    uses: ["DiffRoles", "resolveTokensIn"]
+  }
+]

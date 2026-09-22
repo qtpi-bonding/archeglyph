@@ -1,0 +1,57 @@
+file: "packages/core/src/delta/diff_color.ts"
+doc:
+  "The one rule that maps a resolved colour and a change type to the colour a diff render paints.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto."
+
+methods: [
+  { name: "diffColorFor"
+    doc:
+      "The colour a diff render should paint in place of `color`, given the\n"
+      "change type of the element it belongs to.\n"
+      "\n"
+      "Two branches, tested in this order:\n"
+      "\n"
+      "1. UNCHANGED, or CHANGE_TYPE_UNSPECIFIED -> desaturate(color). This\n"
+      "   runs whether `diffRoles` is defined or not, and never reads it.\n"
+      "   Unchanged context is muted the same way in every theme.\n"
+      "2. ADDED, MODIFIED or DELETED -> table mode when `diffRoles` is\n"
+      "   defined, rotate mode when it is undefined.\n"
+      "     table mode  -> diffRoles.added, diffRoles.modified or\n"
+      "       diffRoles.deleted, the one matching the change type, returned\n"
+      "       as-is. `color` is discarded; nothing is derived from it.\n"
+      "     rotate mode -> rotateHue(color, degrees), with degrees taken from\n"
+      "       the change type:\n"
+      "         ADDED    -> 300\n"
+      "         MODIFIED -> 60\n"
+      "         DELETED  -> 180\n"
+      "\n"
+      "The three angles sit 120 degrees apart. For an input whose saturation\n"
+      "is greater than zero that guarantees the three change types land on\n"
+      "three different hues, and so on three different strings. For a FULLY\n"
+      "DESATURATED input it guarantees nothing: rotateHue is the identity on\n"
+      "a grey at every angle, so ADDED, MODIFIED and DELETED all return the\n"
+      "same string, and only ghosting distinguishes DELETED from the other\n"
+      "two. That is the whole reason a theme whose palette is grey declares\n"
+      "the diff roles and gets table mode instead; of the bundled three, only\n"
+      "blueprint is saturated enough for rotate mode to say anything.\n"
+      "\n"
+      "Which NAMED colour each angle produces depends on the input. Against\n"
+      "blueprint's blues they read green, violet and orange respectively,\n"
+      "which is why those angles were chosen; the same angles against a\n"
+      "violet source produce a different trio. Rotation preserves the\n"
+      "SEPARATION of the three, not their absolute identity.\n"
+      "\n"
+      "This function performs no validation on `color` and never inspects\n"
+      "its format. A `color` that is not a hex string reaches rotateHue or\n"
+      "desaturate, both of which return it unchanged; in table mode it is\n"
+      "not read at all."
+    inputs: [
+      { name: "color",     type: { primitive: CHARACTER } },
+      { name: "change",    type: { named: { symbol: "archeglyph.content.v1.ChangeType" } } },
+      { name: "diffRoles", type: { named: { symbol: "DiffRoles" } }, is_optional: true }
+    ]
+    output: { primitive: CHARACTER }
+    uses: ["rotateHue", "desaturate"]
+  }
+]

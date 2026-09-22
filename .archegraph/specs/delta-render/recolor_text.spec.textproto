@@ -1,0 +1,39 @@
+file: "packages/core/src/delta/recolor_text.ts"
+doc:
+  "Applies the diff treatment to an element's text styling.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto."
+
+methods: [
+  { name: "recolorTypography"
+    doc:
+      "A copy of `typography` with the diff treatment applied.\n"
+      "`typography` is not mutated.\n"
+      "\n"
+      "Both colours a Typography carries are replaced by diffColorFor of\n"
+      "their current value:\n"
+      "  color        the text itself\n"
+      "  background   the text's highlight\n"
+      "An unset optional is left unset. Neither Color is a oneof, so there\n"
+      "is no gradient case to skip here.\n"
+      "\n"
+      "There is NO ghosting on text, at any change type including DELETED.\n"
+      "Typography has no dashing and no opacity in style.proto, so there is\n"
+      "nothing on it for ghosting's two edits to act on. A deleted element's\n"
+      "label is recoloured like any other and nothing further is done to it.\n"
+      "Its SHAPE still ghosts -- that is recolorShape's job, not this\n"
+      "function's.\n"
+      "\n"
+      "CARRIED THROUGH UNTOUCHED: font, size, weight, align and visible. A\n"
+      "diff render changes what things look like, never whether or how they\n"
+      "are laid out, because layout runs downstream of this and a changed\n"
+      "metric would move elements that did not change."
+    inputs: [
+      { name: "typography", type: { named: { symbol: "archeglyph.style.v1.Typography" } } },
+      { name: "change",     type: { named: { symbol: "archeglyph.content.v1.ChangeType" } } },
+      { name: "diffRoles",  type: { named: { symbol: "DiffRoles" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.Typography" } }
+    uses: ["diffColorFor"]
+  }
+]

@@ -1,0 +1,696 @@
+{
+  "specName": "delta-render",
+  "runnerCommand": "archegraph testgen-run-node --spec 'delta-render' --root . --plan '.archegraph/specs/delta-render/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/core/src/delta/diff_color.ts/diffColorFor().",
+      "symbolName": "diffColorFor",
+      "filePath": "packages/core/src/delta/diff_color.ts",
+      "cases": [
+        {
+          "name": "unchanged-color",
+          "condition": "The change type is UNCHANGED; the function desaturates color regardless of whether diffRoles is defined and never reads diffRoles.",
+          "outcome": "Desaturates color regardless of whether diffRoles is defined and never reads diffRoles.",
+          "domain": "any color string and either an omitted or defined diffRoles"
+        },
+        {
+          "name": "unspecified-color",
+          "condition": "The change type is CHANGE_TYPE_UNSPECIFIED; the function desaturates color regardless of whether diffRoles is defined and never reads diffRoles.",
+          "outcome": "Desaturates color regardless of whether diffRoles is defined and never reads diffRoles.",
+          "domain": "any color string and either an omitted or defined diffRoles"
+        },
+        {
+          "name": "added-table-mode",
+          "condition": "The change type is ADDED and diffRoles is defined; the function returns diffRoles.added as-is and discards color.",
+          "outcome": "Returns diffRoles.added as-is and discards color.",
+          "domain": "any color string and any defined diffRoles object"
+        },
+        {
+          "name": "modified-table-mode",
+          "condition": "The change type is MODIFIED and diffRoles is defined; the function returns diffRoles.modified as-is and discards color.",
+          "outcome": "Returns diffRoles.modified as-is and discards color.",
+          "domain": "any color string and any defined diffRoles object"
+        },
+        {
+          "name": "deleted-table-mode",
+          "condition": "The change type is DELETED and diffRoles is defined; the function returns diffRoles.deleted as-is and discards color.",
+          "outcome": "Returns diffRoles.deleted as-is and discards color.",
+          "domain": "any color string and any defined diffRoles object"
+        },
+        {
+          "name": "added-rotate-mode",
+          "condition": "The change type is ADDED and diffRoles is undefined; the function returns rotateHue(color, 300).",
+          "outcome": "Returns rotateHue(color, 300).",
+          "domain": "any color input, including hex strings and non-hex strings"
+        },
+        {
+          "name": "modified-rotate-mode",
+          "condition": "The change type is MODIFIED and diffRoles is undefined; the function returns rotateHue(color, 60).",
+          "outcome": "Returns rotateHue(color, 60).",
+          "domain": "any color input, including hex strings and non-hex strings"
+        },
+        {
+          "name": "deleted-rotate-mode",
+          "condition": "The change type is DELETED and diffRoles is undefined; the function returns rotateHue(color, 180).",
+          "outcome": "Returns rotateHue(color, 180).",
+          "domain": "any color input, including hex strings and non-hex strings"
+        },
+        {
+          "name": "desaturated-rotate-input",
+          "condition": "In rotate mode, color is fully desaturated; rotation is the identity, so ADDED, MODIFIED, and DELETED all produce the same color string.",
+          "outcome": "In rotate mode, rotation is the identity, so ADDED, MODIFIED, and DELETED all produce the same color string.",
+          "domain": "any fully desaturated color input"
+        },
+        {
+          "name": "non-hex-color",
+          "condition": "color is not a hex string; the function performs no validation, and desaturate or rotateHue returns it unchanged when reached, while table mode ignores it entirely.",
+          "outcome": "Performs no validation, returning a non-hex color unchanged when desaturate or rotateHue is reached and ignoring it entirely in table mode.",
+          "domain": "any non-hex color string"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_diff_color_ts_diffColorFor___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/diff_palette.ts/applyDiffPalette().",
+      "symbolName": "applyDiffPalette",
+      "filePath": "packages/core/src/delta/diff_palette.ts",
+      "cases": [
+        {
+          "name": "empty-resolved-diagram",
+          "condition": "resolved contains no nodes, edges, groups, or annotations; the result remains an empty diagram and its canvas is carried through unchanged.",
+          "outcome": "Returns an empty diagram and carries the canvas through unchanged."
+        },
+        {
+          "name": "node-with-mapped-change",
+          "condition": "A resolved node has an entry in overlay.nodes; its shape is replaced with recolorShape's result and its typography with recolorTypography's result for that entry's change type.",
+          "outcome": "Replaces the node's shape and typography with recolorShape and recolorTypography results for its mapped change type.",
+          "domain": "any supported node change type"
+        },
+        {
+          "name": "node-without-map-entry",
+          "condition": "A resolved node's id is absent from overlay.nodes; it is treated as UNCHANGED without throwing, and its shape and typography are recoloured accordingly.",
+          "outcome": "Treats the node as UNCHANGED without throwing and recolours its shape and typography accordingly.",
+          "domain": "any node id absent from overlay.nodes"
+        },
+        {
+          "name": "group-with-mapped-change",
+          "condition": "A resolved group has an entry in overlay.groups; its shape and typography are replaced using the entry's change type.",
+          "outcome": "Replaces the group's shape and typography using recolouring results for its mapped change type.",
+          "domain": "any supported group change type"
+        },
+        {
+          "name": "group-without-map-entry",
+          "condition": "A resolved group's id is absent from overlay.groups; it is treated as UNCHANGED without throwing, and its shape and typography are recoloured accordingly.",
+          "outcome": "Treats the group as UNCHANGED without throwing and recolours its shape and typography accordingly.",
+          "domain": "any group id absent from overlay.groups"
+        },
+        {
+          "name": "edge-with-mapped-change",
+          "condition": "A resolved edge has an entry in overlay.edges; its connection is replaced with recolorLine's result and its typography with recolorTypography's result for that entry's change type.",
+          "outcome": "Replaces the edge's connection and typography with recolour results for its mapped change type.",
+          "domain": "any supported edge change type"
+        },
+        {
+          "name": "edge-without-map-entry",
+          "condition": "A resolved edge's id is absent from overlay.edges; it is treated as UNCHANGED without throwing, and its connection and typography are recoloured accordingly.",
+          "outcome": "Treats the edge as UNCHANGED without throwing and recolours its connection and typography accordingly.",
+          "domain": "any edge id absent from overlay.edges"
+        },
+        {
+          "name": "annotation-recoloured-as-unchanged",
+          "condition": "A resolved annotation is present; no overlay map is consulted, and it is always passed as UNCHANGED through recolorShape, recolorLine for its callout, and recolorTypography, desaturating its carried colours.",
+          "outcome": "Does not consult an overlay map and recolours the annotation's shape, callout, and typography as UNCHANGED, desaturating its colours.",
+          "domain": "any resolved annotation"
+        },
+        {
+          "name": "mixed-element-types",
+          "condition": "resolved contains any combination of nodes, edges, groups, and annotations; each element uses its own type-specific styling fields and map, while annotations always use UNCHANGED.",
+          "outcome": "Recolours each element using its type-specific fields and map, while always treating annotations as UNCHANGED.",
+          "domain": "any finite combination of the four element types"
+        },
+        {
+          "name": "mixed-change-types",
+          "condition": "Different mapped nodes, edges, or groups have different change types; each element is recoloured using the change type found by its own id rather than a shared per-element resolution.",
+          "outcome": "Recolours each mapped element using the change type associated with its own id.",
+          "domain": "any finite set of map entries with supported change types"
+        },
+        {
+          "name": "single-diff-role-resolution",
+          "condition": "The tokens input is used to resolve diff roles once before walking the elements, and that single result is passed to every recolour call, preventing per-element palette-mode mixing.",
+          "outcome": "Resolves diff roles once from tokens before the walk and passes that shared result to every recolour call.",
+          "domain": "any resolved diagram with zero or more recoloured elements"
+        },
+        {
+          "name": "optional-tokens-omitted",
+          "condition": "The optional tokens argument is omitted; the function still accepts the call and applies the recolouring pipeline using the recolour helpers' token behavior.",
+          "outcome": "Accepts an omitted tokens argument and applies recolouring using the helpers' default token behaviour."
+        },
+        {
+          "name": "canvas-untouched",
+          "condition": "resolved has a canvas, including alongside recoloured elements; the returned canvas is the original canvas value and is not recoloured.",
+          "outcome": "Carries the original canvas value through without recolouring it.",
+          "domain": "any canvas value"
+        },
+        {
+          "name": "element-nonstyle-fields-preserved",
+          "condition": "Elements contain fields such as id, parentGroup, layout, label, content, anchor, isSuperNode, or hiddenDescendantCount; all such non-styling fields are carried through untouched while only the declared styling fields are replaced.",
+          "outcome": "Carries all non-styling element fields through unchanged while replacing only the declared styling fields.",
+          "domain": "any values of the listed non-styling fields"
+        },
+        {
+          "name": "resolved-input-not-mutated",
+          "condition": "After applying the palette, the input resolved diagram and its element data remain unchanged; the function returns a copy with replaced styling fields.",
+          "outcome": "Leaves the input diagram and its element data unchanged and returns a copy with recoloured styling fields.",
+          "domain": "any resolved diagram"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_diff_palette_ts_applyDiffPalette___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/diff_roles.ts/resolveDiffRoles().",
+      "symbolName": "resolveDiffRoles",
+      "filePath": "packages/core/src/delta/diff_roles.ts",
+      "cases": [
+        {
+          "name": "tokens-undefined",
+          "condition": "The optional tokens argument is undefined; the function immediately returns undefined without attempting resolution.",
+          "outcome": "It immediately returns undefined without attempting resolution."
+        },
+        {
+          "name": "all-three-resolve",
+          "condition": "tokens is defined and all three references, $roles.diff_added, $roles.diff_modified, and $roles.diff_deleted, resolve successfully; this includes role values that one-hop resolve through references such as $palette.green. The function returns DiffRoles containing the three resolved literal values.",
+          "outcome": "It resolves all three references, including one-hop palette references, and returns a DiffRoles containing the three literal values.",
+          "domain": "any defined token map in which all three diff-role references resolve"
+        },
+        {
+          "name": "one-role-unresolved",
+          "condition": "tokens is defined and exactly one of the three diff-role references cannot be resolved. resolveTokensIn returns a list of length 1, so the function returns undefined rather than filling the unresolved property.",
+          "outcome": "It returns undefined because any single unresolved role causes the all-or-none resolution to fail.",
+          "domain": "which one of the three diff roles is unresolved"
+        },
+        {
+          "name": "two-roles-unresolved",
+          "condition": "tokens is defined and exactly two of the three diff-role references cannot be resolved. resolveTokensIn returns a list of length 2, so the function returns undefined.",
+          "outcome": "It returns undefined because two unresolved roles produce a non-empty unresolved-reference list.",
+          "domain": "which two of the three diff roles are unresolved"
+        },
+        {
+          "name": "all-three-unresolved",
+          "condition": "tokens is defined and none of the three diff-role references can be resolved. resolveTokensIn returns a list of length 3, so the function returns undefined.",
+          "outcome": "It returns undefined because all three unresolved references produce a list of length three."
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_diff_roles_ts_resolveDiffRoles___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/hue.ts/desaturate().",
+      "symbolName": "desaturate",
+      "filePath": "packages/core/src/delta/hue.ts",
+      "cases": [
+        {
+          "name": "accepted-colour-string",
+          "condition": "A colour string that rotateHue accepts is converted to the same colour's lightness with saturation set to zero, then returned as a lowercase #rrggbb string.",
+          "outcome": "Converts an accepted colour to zero saturation while preserving lightness and returns it as lowercase #rrggbb.",
+          "domain": "any string accepted by rotateHue"
+        },
+        {
+          "name": "already-grey-colour",
+          "condition": "An accepted colour whose red, green, and blue channels are already equal keeps those channel values in VALUE while the returned string is normalized to lowercase.",
+          "outcome": "Preserves the equal channel values and normalizes the accepted colour to lowercase.",
+          "domain": "any accepted grayscale colour"
+        },
+        {
+          "name": "uppercase-hex-input",
+          "condition": "An accepted uppercase or mixed-case hexadecimal colour is returned in lowercase hexadecimal notation.",
+          "outcome": "Returns an accepted uppercase or mixed-case hexadecimal colour in lowercase notation.",
+          "domain": "any accepted hexadecimal colour containing uppercase letters"
+        },
+        {
+          "name": "rejected-string",
+          "condition": "A string that rotateHue rejects is returned byte-for-byte unchanged, including its original casing and characters.",
+          "outcome": "Returns a rejected string byte-for-byte unchanged, including its casing and characters.",
+          "domain": "any string rejected by rotateHue"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_hue_ts_desaturate___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/hue.ts/rotateHue().",
+      "symbolName": "rotateHue",
+      "filePath": "packages/core/src/delta/hue.ts",
+      "cases": [
+        {
+          "name": "accepted-saturated-color-rotation",
+          "condition": "A six-digit hexadecimal sRGB string with nonzero HSL saturation is parsed, its hue is advanced by the finite degrees value modulo 360, and the result is emitted as lowercase #rrggbb with channels rounded to the nearest integer.",
+          "outcome": "Parses the accepted six-digit sRGB color, advances its HSL hue by degrees modulo 360, and returns lowercase #rrggbb with channels rounded to the nearest integer.",
+          "domain": "a string matching /^#[0-9a-fA-F]{6}$/ whose saturation is greater than zero, with any finite degrees"
+        },
+        {
+          "name": "accepted-zero-degree-rotation",
+          "condition": "An accepted six-digit hexadecimal color rotated by zero degrees keeps its color value, subject to the required lowercase output normalization and channel formatting.",
+          "outcome": "Returns the accepted color unchanged in value, normalized to lowercase with the required #rrggbb formatting.",
+          "domain": "any accepted six-digit hexadecimal color"
+        },
+        {
+          "name": "accepted-full-turn-rotation",
+          "condition": "An accepted six-digit hexadecimal color rotated by a whole number of full turns has the same color value, subject to the required lowercase output normalization and channel formatting.",
+          "outcome": "Returns the accepted color unchanged in value after any whole-number full turn, normalized to lowercase with the required #rrggbb formatting.",
+          "domain": "any accepted six-digit hexadecimal color and any degrees value congruent to 0 modulo 360"
+        },
+        {
+          "name": "negative-degree-modulo",
+          "condition": "A negative finite degrees value is reduced modulo 360 before the hue rotation.",
+          "outcome": "Reduces the negative finite degrees value modulo 360 before rotating the hue.",
+          "domain": "any negative finite number"
+        },
+        {
+          "name": "over-360-degree-modulo",
+          "condition": "A finite degrees value above 360 is reduced modulo 360 before the hue rotation.",
+          "outcome": "Reduces the finite degrees value above 360 modulo 360 before rotating the hue.",
+          "domain": "any finite number greater than 360"
+        },
+        {
+          "name": "uppercase-accepted-color",
+          "condition": "An accepted hexadecimal color containing uppercase letters is parsed normally and always emitted in lowercase, even if rotation does not change its color channels.",
+          "outcome": "Parses the uppercase-containing accepted color normally and returns it in lowercase even when its channels do not change.",
+          "domain": "any accepted six-digit hexadecimal color containing one or more uppercase hexadecimal letters"
+        },
+        {
+          "name": "achromatic-color-identity",
+          "condition": "An accepted fully desaturated color has no hue to advance and is returned as the same color value for every finite rotation angle, with lowercase output normalization.",
+          "outcome": "Returns an accepted fully desaturated color unchanged in value for every finite angle, with lowercase output normalization.",
+          "domain": "any accepted six-digit hexadecimal color whose HSL saturation is zero"
+        },
+        {
+          "name": "three-digit-hex-rejected",
+          "condition": "A three-digit hexadecimal color string is rejected and returned byte for byte without parsing, transformation, or lowercasing.",
+          "outcome": "Returns the three-digit hexadecimal string byte for byte without parsing, transformation, or lowercasing.",
+          "domain": "a three-digit hex string such as #abc"
+        },
+        {
+          "name": "named-color-rejected",
+          "condition": "A named color string is rejected and returned byte for byte without parsing, transformation, or lowercasing.",
+          "outcome": "Returns the named color string byte for byte without parsing, transformation, or lowercasing.",
+          "domain": "a named color such as none"
+        },
+        {
+          "name": "unresolved-color-rejected",
+          "condition": "An unresolved role or token reference is rejected and returned byte for byte without parsing, transformation, or lowercasing.",
+          "outcome": "Returns the unresolved role or token reference byte for byte without parsing, transformation, or lowercasing.",
+          "domain": "an unresolved reference such as $roles.node_fill"
+        },
+        {
+          "name": "empty-color-rejected",
+          "condition": "An empty string is rejected and returned byte for byte without parsing, transformation, or lowercasing.",
+          "outcome": "Returns the empty string byte for byte without parsing, transformation, or lowercasing."
+        },
+        {
+          "name": "other-invalid-color-rejected",
+          "condition": "Any string that does not match the exact six-digit hexadecimal pattern is rejected and returned identically, byte for byte, without an error or lowercasing.",
+          "outcome": "Returns any string outside the exact six-digit hexadecimal pattern identically, byte for byte, without error or lowercasing.",
+          "domain": "any string not matching /^#[0-9a-fA-F]{6}$/"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_hue_ts_rotateHue___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/merge_delta.ts/mergeDelta().",
+      "symbolName": "mergeDelta",
+      "filePath": "packages/core/src/delta/merge_delta.ts",
+      "cases": [
+        {
+          "name": "empty-input",
+          "condition": "The target diagram and all three delta maps are empty; the result is an empty overlay.",
+          "outcome": "Returns an empty overlay with empty diagram maps and change-type maps."
+        },
+        {
+          "name": "target-elements-copied-unchanged",
+          "condition": "The target contains nodes, edges, and/or groups, and no applicable delta entry changes them; every target key is copied and recorded UNCHANGED.",
+          "outcome": "Copies every target node, edge, and group into the new overlay and records each as UNCHANGED.",
+          "domain": "any subset of node, edge, and group keys"
+        },
+        {
+          "name": "existing-key-nondelete-change",
+          "condition": "A delta entry for an existing target key has change type ADDED, MODIFIED, or UNCHANGED; the target element is retained without applying the entry's after value, and that change type is recorded.",
+          "outcome": "Retains the target element without applying after and records the entry's ADDED, MODIFIED, or UNCHANGED type.",
+          "domain": "one of: ADDED, MODIFIED, UNCHANGED; one of: node, edge, group"
+        },
+        {
+          "name": "absent-key-nondelete-skipped",
+          "condition": "A delta entry with change type ADDED, MODIFIED, or UNCHANGED names a key absent from the target; the entry is skipped and neither an element nor a change-type entry is created.",
+          "outcome": "Skips the entry without creating an element or change-type record.",
+          "domain": "one of: ADDED, MODIFIED, UNCHANGED; one of: node, edge, group"
+        },
+        {
+          "name": "deleted-element-with-before",
+          "condition": "A DELETED node, edge, or group entry has before set; that before element is restored under its key and DELETED is recorded.",
+          "outcome": "Restores before under the key and records the element as DELETED.",
+          "domain": "one of: node, edge, group"
+        },
+        {
+          "name": "deleted-element-without-before",
+          "condition": "A DELETED node, edge, or group entry has before unset; the entry is skipped because there is no element to restore.",
+          "outcome": "Skips the deletion because there is no element to restore.",
+          "domain": "one of: node, edge, group"
+        },
+        {
+          "name": "unspecified-change-skipped",
+          "condition": "A delta entry has CHANGE_TYPE_UNSPECIFIED; it is skipped regardless of its key or element fields.",
+          "outcome": "Skips the entry regardless of its key or element fields.",
+          "domain": "one of: node, edge, group"
+        },
+        {
+          "name": "restored-edge-with-finished-endpoints",
+          "condition": "A deleted edge is restored and both values of its own source and target fields name keys present in the finished union diagram's nodes map; the edge remains in the overlay and is recorded DELETED.",
+          "outcome": "Keeps the restored edge and records it as DELETED.",
+          "domain": "any restored edge whose two endpoint keys are present after all entries are applied"
+        },
+        {
+          "name": "restored-edge-missing-endpoint",
+          "condition": "A deleted edge is restored but its own source or target names a key absent from the finished union diagram's nodes map; the edge is dropped and receives no change-type entry.",
+          "outcome": "Drops the restored edge and records no change type for it.",
+          "domain": "a missing source, a missing target, or both"
+        },
+        {
+          "name": "edge-between-restored-deleted-nodes",
+          "condition": "A deleted edge refers to nodes that are also restored from their DELETED entries; endpoint validation occurs after all entries are applied, so the edge survives.",
+          "outcome": "Keeps the deleted edge because its restored endpoints are present in the finished union."
+        },
+        {
+          "name": "restored-parent-preserved",
+          "condition": "A restored deleted node or group has parentGroup set to a key present in the finished union diagram's groups map; its parentGroup is retained.",
+          "outcome": "Retains the restored element's parentGroup when that group exists in the finished union.",
+          "domain": "one of: node, group"
+        },
+        {
+          "name": "restored-parent-missing-cleared",
+          "condition": "A restored deleted node or group has parentGroup set to a key absent from the finished union diagram's groups map; the element is kept but parentGroup is unset as undefined, not set to an empty string.",
+          "outcome": "Keeps the restored element but sets its missing parentGroup to undefined.",
+          "domain": "one of: node, group"
+        },
+        {
+          "name": "deleted-group-deleted-members-restored",
+          "condition": "A deleted group and members that are themselves reported DELETED are restored; those restored members carry their before.parentGroup values and rejoin the group.",
+          "outcome": "Restores each deleted member with its before.parentGroup so it rejoins the restored group.",
+          "domain": "any number of deleted members"
+        },
+        {
+          "name": "deleted-group-modified-members-stay-current",
+          "condition": "A deleted group has a member reported MODIFIED; that member remains the target's current element and parentGroup is not changed back to its old group.",
+          "outcome": "Leaves each modified member at its target version and does not restore its former parentGroup.",
+          "domain": "any number of modified members"
+        },
+        {
+          "name": "deleted-group-with-surviving-members",
+          "condition": "A deleted group has members that survive in the target rather than being reported DELETED; the group is restored as an empty group because surviving members are not reparented.",
+          "outcome": "Restores the group without reparenting surviving members, so it renders empty.",
+          "domain": "any number of surviving members"
+        },
+        {
+          "name": "target-remains-unmutated",
+          "condition": "The target contains any graph content while mergeDelta is applied; the returned diagram is a new value and target is not mutated.",
+          "outcome": "Builds and returns a new overlay without mutating the target diagram.",
+          "domain": "any target diagram"
+        },
+        {
+          "name": "annotations-not-merged",
+          "condition": "The inputs or surrounding document contain annotations in the stylesheet; annotations are outside Diagram and Delta, so mergeDelta copies or changes none of them.",
+          "outcome": "Ignores annotations because they are outside Diagram and Delta.",
+          "domain": "any annotation entries"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_merge_delta_ts_mergeDelta___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_shape.ts/recolorLine().",
+      "symbolName": "recolorLine",
+      "filePath": "packages/core/src/delta/recolor_shape.ts",
+      "cases": [
+        {
+          "name": "nondeleted-color-recolor",
+          "condition": "A Glyph1D has a stroke whose paint is the color case and/or a glow with a set color, and change is any ChangeType other than DELETED. Each such color is replaced with diffColorFor of its current value; no ghosting edit is made.",
+          "outcome": "Returns an unmutated copy with each set solid stroke and glow color replaced by diffColorFor, without changing dashing.",
+          "domain": "any non-DELETED ChangeType; any color values and either or both color-bearing properties"
+        },
+        {
+          "name": "deleted-stroked-glyph",
+          "condition": "A Glyph1D has a stroke and change is DELETED. Its applicable stroke and glow colors are recolored, and stroke.dashing is set to STROKE_PATTERN_DOTTED regardless of its prior dashing; the stroke is not otherwise changed.",
+          "outcome": "Returns an unmutated copy with applicable set solid colors recolored and the existing stroke's dashing set to STROKE_PATTERN_DOTTED while all other stroke properties remain unchanged.",
+          "domain": "any stroked Glyph1D, any prior dashing, and any supported color configuration"
+        },
+        {
+          "name": "deleted-strokeless-glyph",
+          "condition": "A Glyph1D has no stroke and change is DELETED. No stroke is created; any existing glow color is still recolored.",
+          "outcome": "Returns an unmutated copy without creating a stroke, while recoloring any set glow color."
+        },
+        {
+          "name": "unset-stroke-color",
+          "condition": "The glyph has a stroke whose paint is the unset paint case. That stroke color remains unset rather than being passed through diffColorFor; if change is DELETED and the stroke exists, only its dashing is changed to dotted.",
+          "outcome": "Leaves an unset stroke color unset and, when deleted, changes only the existing stroke's dashing to STROKE_PATTERN_DOTTED.",
+          "domain": "any existing stroke with an unset paint color"
+        },
+        {
+          "name": "gradient-stroke-paint",
+          "condition": "The glyph has a stroke whose paint is a gradient. The gradient is left unchanged rather than recolored; DELETED still changes the existing stroke's dashing to dotted.",
+          "outcome": "Leaves a gradient stroke paint unchanged and, when deleted, sets the existing stroke's dashing to STROKE_PATTERN_DOTTED.",
+          "domain": "any stroke gradient"
+        },
+        {
+          "name": "unset-glow-color",
+          "condition": "The glyph's glow color is unset. It remains unset rather than being passed through diffColorFor.",
+          "outcome": "Leaves an unset glow color unset.",
+          "domain": "any Glyph1D with an unset glow color"
+        },
+        {
+          "name": "gradient-glow-color",
+          "condition": "The glyph's glow color is a gradient. The gradient is left unchanged rather than being recolored.",
+          "outcome": "Leaves a gradient glow color unchanged.",
+          "domain": "any Glyph1D with a gradient glow color"
+        },
+        {
+          "name": "copy-preserves-noncolor-style",
+          "condition": "For every input, recolorLine returns a copy without mutating glyph and carries through stroke.width, stroke.cap, stroke.join, glow.radius, glow.intensity, and both arrowhead variants and their size unchanged; Glyph1D has no fill, so DELETED does not create a fill or alter opacity.",
+          "outcome": "Returns a copy without mutating the glyph, preserving all specified noncolor stroke, glow, and arrowhead styling and creating no fill or opacity change for deletion.",
+          "domain": "any Glyph1D and any values of the carried-through style fields"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_recolor_shape_ts_recolorLine___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_shape.ts/recolorShape().",
+      "symbolName": "recolorShape",
+      "filePath": "packages/core/src/delta/recolor_shape.ts",
+      "cases": [
+        {
+          "name": "color-stroke-paint",
+          "condition": "The glyph has a stroke whose paint is the color case and whose color is set; the returned copy replaces stroke.color with diffColorFor of its prior value.",
+          "outcome": "Returns a copy with the set color-case stroke color replaced by diffColorFor of its prior value.",
+          "domain": "any set stroke color"
+        },
+        {
+          "name": "gradient-stroke-paint",
+          "condition": "The glyph has a stroke whose paint is the GRADIENT case; the stroke, including its gradient data, is left unchanged and no color is derived.",
+          "outcome": "Returns a copy leaving the gradient stroke and all its gradient data unchanged without deriving a color."
+        },
+        {
+          "name": "color-fill-paint",
+          "condition": "The glyph has a fill whose paint is the color case and whose color is set; the returned copy replaces fill.color with diffColorFor of its prior value.",
+          "outcome": "Returns a copy with the set color-case fill color replaced by diffColorFor of its prior value.",
+          "domain": "any set fill color"
+        },
+        {
+          "name": "gradient-fill-paint",
+          "condition": "The glyph has a fill whose paint is the GRADIENT case; the fill, including its gradient data, is left unchanged and no color is derived.",
+          "outcome": "Returns a copy leaving the gradient fill and all its gradient data unchanged without deriving a color."
+        },
+        {
+          "name": "glow-color-set",
+          "condition": "The glyph has a glow with its color set; the returned copy replaces glow.color with diffColorFor of its prior value.",
+          "outcome": "Returns a copy with the set glow color replaced by diffColorFor of its prior value.",
+          "domain": "any set glow color"
+        },
+        {
+          "name": "decoration-colors-set",
+          "condition": "The glyph has one or more decorations with color set; every such decoration has its color replaced with diffColorFor of its prior value.",
+          "outcome": "Returns a copy with every set decoration color replaced by diffColorFor of its prior value.",
+          "domain": "any number of decorations with colors"
+        },
+        {
+          "name": "optional-colors-unset",
+          "condition": "One or more optional color fields that would otherwise be considered (stroke.color, fill.color, glow.color, or a decoration color) are unset; each remains unset and no color is invented.",
+          "outcome": "Leaves every unset optional color field unset and does not invent a color for it.",
+          "domain": "any subset of applicable optional color fields"
+        },
+        {
+          "name": "deleted-with-stroke",
+          "condition": "change is DELETED and the glyph has a stroke; the returned copy sets stroke.dashing to STROKE_PATTERN_DOTTED, discarding the prior dashing while preserving the rest of the stroke.",
+          "outcome": "For DELETED, returns a copy whose existing stroke dashing is STROKE_PATTERN_DOTTED while preserving the rest of the stroke.",
+          "domain": "any existing stroke and any prior dashing"
+        },
+        {
+          "name": "deleted-without-stroke",
+          "condition": "change is DELETED and the glyph has no stroke; no stroke is created and therefore no dashing is added.",
+          "outcome": "For DELETED, returns a copy without creating a stroke or adding dashing."
+        },
+        {
+          "name": "deleted-fill-explicit-opacity",
+          "condition": "change is DELETED and the glyph has a fill with opacity set; the returned copy sets fill.opacity to its prior value multiplied by 0.4.",
+          "outcome": "For DELETED, returns a copy whose existing fill opacity is its prior value multiplied by 0.4.",
+          "domain": "any explicitly set fill opacity"
+        },
+        {
+          "name": "deleted-fill-unset-opacity",
+          "condition": "change is DELETED and the glyph has a fill whose opacity is unset; it is treated as 1.0 and the returned copy sets fill.opacity to 0.4.",
+          "outcome": "For DELETED, treats the present fill's unset opacity as 1.0 and sets it to 0.4 in the copy."
+        },
+        {
+          "name": "deleted-without-fill",
+          "condition": "change is DELETED and the glyph has no fill; no fill is created and no opacity is set.",
+          "outcome": "For DELETED, returns a copy without creating a fill or setting opacity."
+        },
+        {
+          "name": "nondeleted-preserves-ghosting-fields",
+          "condition": "change is any value other than DELETED; existing stroke.dashing and fill.opacity are left untouched, including when the stroke or fill is absent.",
+          "outcome": "For every non-DELETED change, leaves existing stroke dashing and fill opacity untouched, including absent fields.",
+          "domain": "any non-DELETED change type"
+        },
+        {
+          "name": "copy-preserves-geometry-and-style",
+          "condition": "For any supported glyph and change, recolorShape returns a copy without mutating the input; shape_kind, corner_radius, stroke dimensions and joins, glow dimensions and intensity, and the listed decoration identity, kind, text, icon, and position fields are carried through unchanged.",
+          "outcome": "Returns an independent copy without mutating the input, carrying all specified geometry and non-edited style and decoration fields through unchanged.",
+          "domain": "any supported glyph"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_recolor_shape_ts_recolorShape___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_text.ts/recolorTypography().",
+      "symbolName": "recolorTypography",
+      "filePath": "packages/core/src/delta/recolor_text.ts",
+      "cases": [
+        {
+          "name": "both-colors-set",
+          "condition": "Typography has both color and background set; each current color is replaced with diffColorFor of that value, while all other typography fields are carried through unchanged.",
+          "outcome": "Returns a copy with both color and background replaced by diffColorFor of their current values while all other typography fields remain unchanged.",
+          "domain": "any Typography with both optional colours present"
+        },
+        {
+          "name": "color-unset",
+          "condition": "Typography has no color value but has a background value; the unset color remains unset and the background is replaced with diffColorFor of its current value.",
+          "outcome": "Leaves color unset and replaces the set background with diffColorFor of its current value.",
+          "domain": "any Typography with color unset and background set"
+        },
+        {
+          "name": "background-unset",
+          "condition": "Typography has a color value but no background value; the color is replaced with diffColorFor of its current value and the unset background remains unset.",
+          "outcome": "Replaces the set color with diffColorFor of its current value and leaves background unset.",
+          "domain": "any Typography with color set and background unset"
+        },
+        {
+          "name": "both-colors-unset",
+          "condition": "Typography has neither optional color set; both optional colors remain unset and the remaining typography fields are carried through unchanged.",
+          "outcome": "Leaves both colors unset and carries the remaining typography fields through unchanged.",
+          "domain": "any Typography with both optional colours unset"
+        },
+        {
+          "name": "non-deleted-change",
+          "condition": "The change type is any non-DELETED change type; recoloring is applied to the typography colours without ghosting, and font, size, weight, align, and visible are unchanged.",
+          "outcome": "Recolors the typography colors without ghosting and leaves font, size, weight, align, and visible unchanged.",
+          "domain": "any non-DELETED ChangeType"
+        },
+        {
+          "name": "deleted-change",
+          "condition": "The change type is DELETED; the typography colours are recolored like any other change, with no ghosting or additional treatment of the label.",
+          "outcome": "Recolors the typography colors as usual without ghosting or any additional label treatment."
+        },
+        {
+          "name": "diff-roles-omitted",
+          "condition": "No diffRoles argument is supplied; the function still applies diffColorFor to each set colour and preserves unset optionals and all non-colour typography fields.",
+          "outcome": "Applies diffColorFor to each set color, preserves unset optionals and non-color fields, and returns a copy when diffRoles is omitted."
+        },
+        {
+          "name": "diff-roles-supplied",
+          "condition": "A diffRoles argument is supplied; the function uses it as part of the diff-color computation while still returning a copy and preserving the typography fields that are not colours.",
+          "outcome": "Uses the supplied diffRoles in computing diff colors while returning a copy and preserving all non-color typography fields.",
+          "domain": "any supplied DiffRoles value"
+        },
+        {
+          "name": "input-not-mutated",
+          "condition": "For every supported combination of typography colours, change type, and optional diff roles, the input Typography object is not mutated; the returned value is a recolored copy.",
+          "outcome": "Returns a recolored copy without mutating the input Typography for any supported colors, change type, or diff roles.",
+          "domain": "all supported function inputs"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_delta_recolor_text_ts_recolorTypography___.test.tsx"
+    },
+    {
+      "nodeId": "packages/core/src/pipeline/delta_render_pipeline.ts/renderDeltaPipeline().",
+      "symbolName": "renderDeltaPipeline",
+      "filePath": "packages/core/src/pipeline/delta_render_pipeline.ts",
+      "cases": [
+        {
+          "name": "ordinary-successful-render",
+          "condition": "A valid target diagram, delta, stylesheet, theme bindings, and layout engine pass through merge, binding seeding, resolution, diff palette application, layout, and SVG rendering successfully, producing an SVG string.",
+          "outcome": "Runs all six stages in order and returns the successfully rendered SVG string.",
+          "domain": "any valid renderable diagram and delta"
+        },
+        {
+          "name": "empty-delta",
+          "condition": "The delta contains no changes, so the merged overlay represents the target without diff changes and the pipeline renders it successfully.",
+          "outcome": "Merges the unchanged target and successfully renders it without diff changes.",
+          "domain": "an empty delta"
+        },
+        {
+          "name": "undefined-stylesheet",
+          "condition": "The stylesheet argument is undefined; stage 2 uses a newly created empty Stylesheet with schemaVersion 1 before resolving and rendering.",
+          "outcome": "Creates an empty schemaVersion-1 Stylesheet for stage 2, then resolves, lays out, and renders successfully."
+        },
+        {
+          "name": "stylesheet-with-default-theme-binding",
+          "condition": "The stylesheet binds a theme under the reserved binding name default; themes.get('default') supplies that bound theme for component seeding and diff roles, regardless of the theme's literal name.",
+          "outcome": "Uses the theme bound to default, regardless of its literal name, for component seeding and diff roles.",
+          "domain": "any theme bound to default"
+        },
+        {
+          "name": "stylesheet-without-theme-bindings",
+          "condition": "The stylesheet binds no themes; resolveThemes supplies the default binding using the documented fallback [['default', 'dark']], which is then used for default component and diff styling.",
+          "outcome": "Uses the resolveThemes fallback default binding of [['default', 'dark']] for default components and diff styling."
+        },
+        {
+          "name": "multiple-theme-bindings",
+          "condition": "The stylesheet binds a default theme and one or more additional themes; the additional bindings style their own elements while the default binding alone determines the whole-picture diff mode and roles.",
+          "outcome": "Uses each additional binding for its elements while the default binding alone selects whole-picture diff mode and roles.",
+          "domain": "a stylesheet with two or more theme bindings"
+        },
+        {
+          "name": "merged-deleted-element-with-component-kind",
+          "condition": "The delta causes a deleted element to be present in the merged overlay, and that element has a kind such as database; seeding after merge assigns its component from the bound theme vocabulary so it renders consistently with surviving elements.",
+          "outcome": "Seeds the merged deleted element from the bound theme's kind vocabulary so it renders consistently with surviving elements.",
+          "domain": "a deleted or restored element whose kind maps to a theme component"
+        },
+        {
+          "name": "resolve-pipeline-failure",
+          "condition": "resolvePipeline fails for the merged union diagram and seeded stylesheet; the returned PipelineError is propagated unchanged, including the resolvePipeline-provided stage name.",
+          "outcome": "Propagates the resolvePipeline PipelineError unchanged, including its stage name.",
+          "domain": "any resolvePipeline failure"
+        },
+        {
+          "name": "layout-failure",
+          "condition": "Resolution and diff palette application succeed, but layoutEngine.layout returns an error; the function returns an Err with stage layout.",
+          "outcome": "Returns an Err with stage layout when layoutEngine.layout fails.",
+          "domain": "any layout engine failure"
+        },
+        {
+          "name": "render-failure",
+          "condition": "All earlier stages including layout succeed, but SvgRendererImpl().render fails; the function returns an Err with stage render.",
+          "outcome": "Returns an Err with stage render when SVG rendering fails.",
+          "domain": "any SVG renderer failure"
+        }
+      ],
+      "outputFilePath": "packages/core/tests/testgen_delta-render__packages_core_src_pipeline_delta_render_pipeline_ts_renderDeltaPipeline___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "70ac39dce1019971295a0c43bedbe6effdb30451e71b4aee7c75468f91ae6815"
+}

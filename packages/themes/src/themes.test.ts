@@ -23,6 +23,9 @@ const ROLES: string[] = [
   'background',
 ];
 
+// Optional, and all-or-none: a theme declares all three or none.
+const DIFF_ROLES: string[] = ['diff_added', 'diff_modified', 'diff_deleted'];
+
 // Only the component region is hex-free; palettes above it are literal.
 const COMPONENT_REGION_START = '// --- components: no literal colours below ---';
 const COMPONENT_REGION_END = '// --- end components ---';
@@ -41,7 +44,20 @@ describe('bundled themes are layered palette -> roles -> components', () => {
 
     test(`${name} declares no role outside the vocabulary`, () => {
       const theme: Theme = getBundledTheme(name);
-      expect(Object.keys(theme.tokens?.roles ?? {}).sort()).toEqual([...ROLES].sort());
+      const declared: string[] = Object.keys(theme.tokens?.roles ?? {});
+      const unknown: string[] = declared.filter(
+        (r: string): boolean => !ROLES.includes(r) && !DIFF_ROLES.includes(r),
+      );
+      expect(unknown).toEqual([]);
+    });
+
+    test(`${name} declares all three diff roles or none of them`, () => {
+      const theme: Theme = getBundledTheme(name);
+      const roles: Record<string, string> = theme.tokens?.roles ?? {};
+      const present: number = DIFF_ROLES.filter(
+        (r: string): boolean => roles[r] !== undefined,
+      ).length;
+      expect([0, DIFF_ROLES.length]).toContain(present);
     });
 
     test(`${name} palette values are literals, never references`, () => {

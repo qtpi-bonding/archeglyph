@@ -1,0 +1,82 @@
+file: "packages/core/src/delta/hue.ts"
+doc:
+  "The two colour transforms a diff render is built from. Pure string-to-string; no proto types, no theme.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto.\n"
+  "\n"
+  "Both functions here are total on strings: anything that is not a six-digit\n"
+  "hex colour comes back untouched. That is deliberate rather than lax. These\n"
+  "run over already-resolved style values, and a resolved value is only\n"
+  "CONVENTIONALLY a literal hex -- Color.value is a bare string in style.proto,\n"
+  "so a stylesheet can put \"none\" or \"transparent\" there and the renderer will\n"
+  "pass it to SVG verbatim. Throwing on those would make a diff render fail on\n"
+  "diagrams that render fine normally."
+
+methods: [
+  { name: "rotateHue"
+    doc:
+      "The input colour with its hue advanced by `degrees`, keeping its\n"
+      "saturation and lightness.\n"
+      "\n"
+      "ACCEPTED input is a string matching /^#[0-9a-fA-F]{6}$/. Any other\n"
+      "string -- a three-digit hex like \"#abc\", a named colour like \"none\",\n"
+      "an unresolved \"$roles.node_fill\", or the empty string -- is REJECTED\n"
+      "and returned as the identical string, byte for byte, with no error.\n"
+      "\n"
+      "For an accepted input: interpret the three pairs as sRGB channels,\n"
+      "convert to HSL, add `degrees` to the hue modulo 360, convert back, and\n"
+      "emit lowercase \"#rrggbb\" with each channel rounded to the nearest\n"
+      "integer. An accepted input is ALWAYS lowercased on the way out, even\n"
+      "when the transform changed no channel -- so rotateHue(\"#8A8A8A\", 180)\n"
+      "is \"#8a8a8a\" and not \"#8A8A8A\". Rejected inputs are not lowercased,\n"
+      "because they are not parsed at all.\n"
+      "\n"
+      "`degrees` may be any finite number; a negative or above-360 value is\n"
+      "reduced by the same modulo.\n"
+      "\n"
+      "Worked cases, all at 180 degrees:\n"
+      "  \"#8ad1ff\" -> \"#ffb88a\"\n"
+      "  \"#73daca\" -> \"#da7383\"\n"
+      "  \"#122238\" -> \"#382812\"\n"
+      "  \"#8A8A8A\" -> \"#8a8a8a\"\n"
+      "\n"
+      "The last case is a fully-desaturated input, and it returns its own\n"
+      "colour because a grey has no hue to advance. That is a correct result\n"
+      "rather than a failure to handle, and it holds at EVERY angle: for an\n"
+      "input whose saturation is zero, rotateHue is the identity on the\n"
+      "colour. diffColorFor states what follows for the three change types."
+    inputs: [
+      { name: "color",   type: { primitive: CHARACTER } },
+      { name: "degrees", type: { primitive: REAL } }
+    ]
+    output: { primitive: CHARACTER }
+  },
+  { name: "desaturate"
+    doc:
+      "The input colour with its saturation set to zero, keeping its\n"
+      "lightness.\n"
+      "\n"
+      "Accepts and rejects exactly what rotateHue accepts and rejects, with\n"
+      "the same byte-identical pass-through for a rejected string and the\n"
+      "same always-lowercase \"#rrggbb\" output for an accepted one.\n"
+      "\n"
+      "Worked cases:\n"
+      "  \"#8ad1ff\" -> \"#c4c4c4\"\n"
+      "  \"#bb9af7\" -> \"#c8c8c8\"\n"
+      "  \"#122238\" -> \"#252525\"\n"
+      "  \"#FFFFFF\" -> \"#ffffff\"\n"
+      "\n"
+      "The last case is an already-grey input: its three channels are\n"
+      "unchanged in VALUE, and the returned string is still lowercased, so\n"
+      "the result is \"#ffffff\" and not \"#FFFFFF\".\n"
+      "\n"
+      "Preserving lightness is what makes one rule work for every theme: an\n"
+      "unchanged element keeps its place in the theme's own light-to-dark\n"
+      "range, so it reads as muted context on a dark ground and on a light\n"
+      "one without either being special-cased."
+    inputs: [
+      { name: "color", type: { primitive: CHARACTER } }
+    ]
+    output: { primitive: CHARACTER }
+  }
+]

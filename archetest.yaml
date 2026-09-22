@@ -44,10 +44,22 @@ tests:
     - glob: "packages/editor/src/*.ts"
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
-    # core builds proto messages exactly as the editor does.
+    # core needs `create` and the *Schema descriptors it takes. A static header
+    # cannot know which schema a symbol deals in, so the common ones are all
+    # listed; unused imports are safe, as tsconfig sets no noUnusedLocals.
     - glob: "packages/core/src/*.ts"
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
+        import {
+          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+        } from '@archeglyph/proto/gen/content_pb';
+        import {
+          StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+          Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+          ArrowheadsSchema, CanvasStyleSchema,
+        } from '@archeglyph/proto/gen/style_pb';
+        import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 
   framework_notes: >-
     FEWER CORRECT TESTS BEAT MORE TESTS. A case you decline costs nothing; a

@@ -1,0 +1,738 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/core/src/delta/diff_color.ts/diffColorFor().",
+      "codes": {
+        "added-rotate-mode": {
+          "body": "expect(diffColorFor(value, ChangeType.ADDED)).toBe(rotateHue(value, 300));",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "added-table-mode": {
+          "body": "const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };\nexpect(diffColorFor(value.color, ChangeType.ADDED, diffRoles)).toBe(value.added);",
+          "strategy": "fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() })",
+          "helpersUsed": []
+        },
+        "deleted-rotate-mode": {
+          "body": "expect(diffColorFor(value, ChangeType.DELETED)).toBe(rotateHue(value, 180));",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "deleted-table-mode": {
+          "body": "const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };\nexpect(diffColorFor(value.color, ChangeType.DELETED, diffRoles)).toBe(value.deleted);",
+          "strategy": "fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() })",
+          "helpersUsed": []
+        },
+        "desaturated-rotate-input": {
+          "body": "const added = diffColorFor(value, ChangeType.ADDED);\nconst modified = diffColorFor(value, ChangeType.MODIFIED);\nconst deleted = diffColorFor(value, ChangeType.DELETED);\nexpect(added).toBe(value);\nexpect(modified).toBe(value);\nexpect(deleted).toBe(value);\nexpect(added).toBe(modified);\nexpect(modified).toBe(deleted);",
+          "strategy": "fc.integer({ min: 0, max: 255 }).map((channel: number): string => { const hex = channel.toString(16).padStart(2, '0'); return '#' + hex.repeat(3); })",
+          "helpersUsed": []
+        },
+        "modified-rotate-mode": {
+          "body": "expect(diffColorFor(value, ChangeType.MODIFIED)).toBe(rotateHue(value, 60));",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "modified-table-mode": {
+          "body": "const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };\nexpect(diffColorFor(value.color, ChangeType.MODIFIED, diffRoles)).toBe(value.modified);",
+          "strategy": "fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() })",
+          "helpersUsed": []
+        },
+        "non-hex-color": {
+          "body": "const diffRoles = { added: 'table-added', modified: 'table-modified', deleted: 'table-deleted' };\nexpect(diffColorFor(value, ChangeType.CHANGE_TYPE_UNSPECIFIED)).toBe(value);\nexpect(diffColorFor(value, ChangeType.ADDED)).toBe(value);\nexpect(diffColorFor(value, ChangeType.MODIFIED)).toBe(value);\nexpect(diffColorFor(value, ChangeType.DELETED)).toBe(value);\nexpect(diffColorFor(value, ChangeType.ADDED, diffRoles)).toBe('table-added');\nexpect(diffColorFor(value, ChangeType.MODIFIED, diffRoles)).toBe('table-modified');\nexpect(diffColorFor(value, ChangeType.DELETED, diffRoles)).toBe('table-deleted');",
+          "strategy": "fc.string().filter((value: string): boolean => !/^#[0-9a-fA-F]{6}$/.test(value))",
+          "helpersUsed": []
+        },
+        "unchanged-color": {
+          "body": "const diffRoles = value.diffRoles === undefined ? undefined : {\n  get added(): string { throw new Error('diffRoles was read'); },\n  get modified(): string { throw new Error('diffRoles was read'); },\n  get deleted(): string { throw new Error('diffRoles was read'); },\n};\nexpect(diffColorFor(value.color, ChangeType.UNCHANGED, diffRoles)).toBe(desaturate(value.color));",
+          "strategy": "fc.record({ color: fc.string(), diffRoles: fc.oneof(fc.constant(undefined), fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() })) })",
+          "helpersUsed": []
+        },
+        "unspecified-color": {
+          "body": "const diffRoles = value.diffRoles === undefined ? undefined : {\n  get added(): string { throw new Error('diffRoles was read'); },\n  get modified(): string { throw new Error('diffRoles was read'); },\n  get deleted(): string { throw new Error('diffRoles was read'); },\n};\nexpect(diffColorFor(value.color, ChangeType.CHANGE_TYPE_UNSPECIFIED, diffRoles)).toBe(desaturate(value.color));",
+          "strategy": "fc.record({ color: fc.string(), diffRoles: fc.oneof(fc.constant(undefined), fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() })) })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/delta/diff_palette.ts/applyDiffPalette().",
+      "codes": {
+        "annotation-recoloured-as-unchanged": {
+          "body": "// Declined: constructing a valid ResolvedAnnotation and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "canvas-untouched": {
+          "body": "// Declined: the CanvasStyle shape is not included in the contract, so no nontrivial canvas value can be built safely.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "edge-with-mapped-change": {
+          "body": "// Declined: constructing a valid ResolvedEdge and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "edge-without-map-entry": {
+          "body": "// Declined: constructing a valid ResolvedEdge and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "element-nonstyle-fields-preserved": {
+          "body": "// Declined: this requires constructing valid resolved elements with the listed fields, whose complete schemas are not included in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "empty-resolved-diagram": {
+          "body": "const resolved = new ResolvedDiagram();\nconst result = applyDiffPalette(resolved, new DeltaOverlay());\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});\nexpect(result.annotations).toEqual({});\nexpect(result.canvas).toBe(resolved.canvas);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "group-with-mapped-change": {
+          "body": "// Declined: constructing a valid ResolvedGroup and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "group-without-map-entry": {
+          "body": "// Declined: constructing a valid ResolvedGroup and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "mixed-change-types": {
+          "body": "// Declined: this requires constructing valid styled elements, whose schemas are not included in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "mixed-element-types": {
+          "body": "const resolved = new ResolvedDiagram();\nconst result = applyDiffPalette(resolved, new DeltaOverlay());\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});\nexpect(result.annotations).toEqual({});",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "node-with-mapped-change": {
+          "body": "// Declined: constructing a valid ResolvedNode and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "node-without-map-entry": {
+          "body": "// Declined: constructing a valid ResolvedNode and its nested style messages requires schema details not provided in the contract.",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "optional-tokens-omitted": {
+          "body": "const resolved = new ResolvedDiagram();\nconst result = applyDiffPalette(resolved, new DeltaOverlay());\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});\nexpect(result.annotations).toEqual({});",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "resolved-input-not-mutated": {
+          "body": "const resolved = new ResolvedDiagram();\nconst before = structuredClone(resolved);\nconst result = applyDiffPalette(resolved, new DeltaOverlay());\nexpect(resolved).toEqual(before);\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});\nexpect(result.annotations).toEqual({});",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "single-diff-role-resolution": {
+          "body": "const resolved = new ResolvedDiagram();\nconst result = applyDiffPalette(resolved, new DeltaOverlay());\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});\nexpect(result.annotations).toEqual({});",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/delta/diff_roles.ts/resolveDiffRoles().",
+      "codes": {
+        "all-three-resolve": {
+          "body": "const tokens = makeTokens({\n  roles: {\n    diff_added: \"$palette.green\",\n    diff_modified: value.modified,\n    diff_deleted: value.deleted,\n  },\n  palette: { green: value.palette },\n});\nconst result = resolveDiffRoles(tokens);\nexpect(result?.added).toBe(value.palette);\nexpect(result?.modified).toBe(value.modified);\nexpect(result?.deleted).toBe(value.deleted);",
+          "strategy": "fc.record({\n  palette: fc.string().filter((text) => !text.startsWith(\"$\")),\n  modified: fc.string().filter((text) => !text.startsWith(\"$\")),\n  deleted: fc.string().filter((text) => !text.startsWith(\"$\")),\n})",
+          "helpersUsed": [
+            "makeTokens"
+          ]
+        },
+        "all-three-unresolved": {
+          "body": "const result = resolveDiffRoles(makeTokens({ roles: {} }));\nexpect(result).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": [
+            "makeTokens"
+          ]
+        },
+        "one-role-unresolved": {
+          "body": "const roleNames: string[] = [\"diff_added\", \"diff_modified\", \"diff_deleted\"];\nconst roles: { [key: string]: string } = {\n  diff_added: \"#111111\",\n  diff_modified: \"#222222\",\n  diff_deleted: \"#333333\",\n};\ndelete roles[roleNames[value]];\nconst result = resolveDiffRoles(makeTokens({ roles }));\nexpect(result).toBeUndefined();",
+          "strategy": "fc.constantFrom(0, 1, 2)",
+          "helpersUsed": [
+            "makeTokens"
+          ]
+        },
+        "tokens-undefined": {
+          "body": "const result = resolveDiffRoles(undefined);\nexpect(result).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "two-roles-unresolved": {
+          "body": "const roleNames: string[] = [\"diff_added\", \"diff_modified\", \"diff_deleted\"];\nconst roles: { [key: string]: string } = {\n  diff_added: \"#111111\",\n  diff_modified: \"#222222\",\n  diff_deleted: \"#333333\",\n};\nconst resolvedRole = roleNames[value];\nfor (const roleName of roleNames) {\n  if (roleName !== resolvedRole) {\n    delete roles[roleName];\n  }\n}\nconst result = resolveDiffRoles(makeTokens({ roles }));\nexpect(result).toBeUndefined();",
+          "strategy": "fc.constantFrom(0, 1, 2)",
+          "helpersUsed": [
+            "makeTokens"
+          ]
+        }
+      },
+      "helpers": {
+        "makeTokens": "function makeTokens(roles: { [key: string]: string }): Tokens {\n  return create(TokensSchema, { roles });\n}"
+      }
+    },
+    {
+      "nodeId": "packages/core/src/delta/hue.ts/desaturate().",
+      "codes": {
+        "accepted-colour-string": {
+          "body": "const result = desaturate(value);\nexpect(result).toMatch(/^#[0-9a-f]{6}$/);\nexpect(result.slice(1, 3)).toBe(result.slice(3, 5));\nexpect(result.slice(3, 5)).toBe(result.slice(5, 7));\nconst red = parseInt(value.slice(1, 3), 16);\nconst green = parseInt(value.slice(3, 5), 16);\nconst blue = parseInt(value.slice(5, 7), 16);\nconst expectedChannel = Math.floor((Math.max(red, green, blue) + Math.min(red, green, blue)) / 2);\nexpect(parseInt(result.slice(1, 3), 16)).toBe(expectedChannel);",
+          "strategy": "fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'), { minLength: 6, maxLength: 6 }).map((digits) => `#${digits.join('')}`)",
+          "helpersUsed": []
+        },
+        "already-grey-colour": {
+          "body": "expect(desaturate(value)).toBe(value.toLowerCase());",
+          "strategy": "fc.tuple(fc.integer({ min: 0, max: 255 }), fc.boolean()).map(([channel, uppercase]) => { const hex = channel.toString(16).padStart(2, '0'); const normalized = uppercase ? hex.toUpperCase() : hex; return `#${normalized}${normalized}${normalized}`; })",
+          "helpersUsed": []
+        },
+        "rejected-string": {
+          "body": "expect(desaturate(value)).toBe(value);",
+          "strategy": "fc.string().filter((candidate) => !/^#[0-9a-fA-F]{6}$/.test(candidate))",
+          "helpersUsed": []
+        },
+        "uppercase-hex-input": {
+          "body": "expect(desaturate(value)).toBe(value.toLowerCase());",
+          "strategy": "fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'), { minLength: 6, maxLength: 6 }).map((digits) => `#${digits.join('')}`).filter((color) => /[A-F]/.test(color))",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/delta/hue.ts/rotateHue().",
+      "codes": {
+        "accepted-full-turn-rotation": {
+          "body": "expect(rotateHue(value[0], value[1])).toBe(value[0].toLowerCase());",
+          "strategy": "fc.tuple(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`), fc.integer({ min: -10000, max: 10000 }).map((turns) => turns * 360))",
+          "helpersUsed": []
+        },
+        "accepted-saturated-color-rotation": {
+          "body": "expect(rotateHue(value, degrees)).toBe(expectedRotateHue(value, degrees));",
+          "strategy": "fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.double({ noNaN: true, noDefaultInfinity: true })).map(([r, g, b, degrees]) => ({ color: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`, degrees })).filter(({ color }) => { const r = parseInt(color.slice(1, 3), 16); const g = parseInt(color.slice(3, 5), 16); const b = parseInt(color.slice(5, 7), 16); return Math.max(r, g, b) !== Math.min(r, g, b); })",
+          "helpersUsed": [
+            "expectedRotateHue"
+          ]
+        },
+        "accepted-zero-degree-rotation": {
+          "body": "expect(rotateHue(value, 0)).toBe(value.toLowerCase());",
+          "strategy": "fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`)",
+          "helpersUsed": []
+        },
+        "achromatic-color-identity": {
+          "body": "expect(rotateHue(value[0], value[1])).toBe(value[0].toLowerCase());",
+          "strategy": "fc.tuple(fc.integer({ min: 0, max: 255 }).map((channel) => `#${channel.toString(16).padStart(2, '0')}${channel.toString(16).padStart(2, '0')}${channel.toString(16).padStart(2, '0')}`), fc.double({ noNaN: true, noDefaultInfinity: true }))",
+          "helpersUsed": []
+        },
+        "empty-color-rejected": {
+          "body": "expect(rotateHue('', 180)).toBe('');",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "named-color-rejected": {
+          "body": "expect(rotateHue(value, 180)).toBe(value);",
+          "strategy": "fc.constantFrom('none', 'red', 'transparent', 'RebeccaPurple')",
+          "helpersUsed": []
+        },
+        "negative-degree-modulo": {
+          "body": "expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));",
+          "strategy": "fc.double({ min: -1000000, max: -Number.MIN_VALUE, noNaN: true, noDefaultInfinity: true })",
+          "helpersUsed": [
+            "expectedRotateHue"
+          ]
+        },
+        "other-invalid-color-rejected": {
+          "body": "expect(rotateHue(value, 37)).toBe(value);",
+          "strategy": "fc.string().filter((color) => !/^#[0-9a-fA-F]{6}$/.test(color))",
+          "helpersUsed": []
+        },
+        "over-360-degree-modulo": {
+          "body": "expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));",
+          "strategy": "fc.double({ min: 360 + Number.MIN_VALUE, max: 1000000, noNaN: true, noDefaultInfinity: true })",
+          "helpersUsed": [
+            "expectedRotateHue"
+          ]
+        },
+        "three-digit-hex-rejected": {
+          "body": "expect(rotateHue(value, 180)).toBe(value);",
+          "strategy": "fc.constantFrom('#abc', '#ABC', '#123', '#aF0')",
+          "helpersUsed": []
+        },
+        "unresolved-color-rejected": {
+          "body": "expect(rotateHue(value, 180)).toBe(value);",
+          "strategy": "fc.constantFrom('$roles.node_fill', '$color.primary', '$theme.background')",
+          "helpersUsed": []
+        },
+        "uppercase-accepted-color": {
+          "body": "expect(rotateHue(value, 0)).toBe(value.toLowerCase());",
+          "strategy": "fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase()).filter((color) => /[A-F]/.test(color))",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {
+        "expectedRotateHue": "function expectedRotateHue(color: string, degrees: number): string {\n  const r = parseInt(color.slice(1, 3), 16) / 255;\n  const g = parseInt(color.slice(3, 5), 16) / 255;\n  const b = parseInt(color.slice(5, 7), 16) / 255;\n  const max = Math.max(r, g, b);\n  const min = Math.min(r, g, b);\n  const lightness = (max + min) / 2;\n  const difference = max - min;\n  if (difference === 0) {\n    const channel = Math.round(r * 255).toString(16).padStart(2, '0');\n    return `#${channel}${channel}${channel}`;\n  }\n  const saturation = lightness > 0.5\n    ? difference / (2 - max - min)\n    : difference / (max + min);\n  let hue: number;\n  if (max === r) {\n    hue = (g - b) / difference + (g < b ? 6 : 0);\n  } else if (max === g) {\n    hue = (b - r) / difference + 2;\n  } else {\n    hue = (r - g) / difference + 4;\n  }\n  hue = (hue * 60 + degrees) % 360;\n  if (hue < 0) hue += 360;\n  const q = lightness < 0.5\n    ? lightness * (1 + saturation)\n    : lightness + saturation - lightness * saturation;\n  const p = 2 * lightness - q;\n  const hueToRgb = (t: number): number => {\n    let adjusted = t;\n    if (adjusted < 0) adjusted += 1;\n    if (adjusted > 1) adjusted -= 1;\n    if (adjusted < 1 / 6) return p + (q - p) * 6 * adjusted;\n    if (adjusted < 1 / 2) return q;\n    if (adjusted < 2 / 3) return p + (q - p) * (2 / 3 - adjusted) * 6;\n    return p;\n  };\n  const red = Math.round(hueToRgb(hue / 360 + 1 / 3) * 255).toString(16).padStart(2, '0');\n  const green = Math.round(hueToRgb(hue / 360) * 255).toString(16).padStart(2, '0');\n  const blue = Math.round(hueToRgb(hue / 360 - 1 / 3) * 255).toString(16).padStart(2, '0');\n  return `#${red}${green}${blue}`;\n}"
+      }
+    },
+    {
+      "nodeId": "packages/core/src/delta/merge_delta.ts/mergeDelta().",
+      "codes": {
+        "absent-key-nondelete-skipped": {
+          "body": "const result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('missing', value, undefined, makeNode('missing'))]));\nexpect(result.diagram.graph!.nodes).toEqual({});\nexpect(result.nodes).toEqual({});",
+          "strategy": "fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED)",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta",
+            "makeNode"
+          ]
+        },
+        "annotations-not-merged": {
+          "body": "const result = mergeDelta(makeDiagram(), makeDelta());\nexpect(result.diagram.graph).toEqual({nodes: {}, edges: {}, groups: {}});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeDelta"
+          ]
+        },
+        "deleted-element-with-before": {
+          "body": "const node = makeNode('n');\nconst result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('n', ChangeType.DELETED, node)]));\nexpect(result.diagram.graph!.nodes.n).toEqual(node);\nexpect(result.nodes.n).toBe(ChangeType.DELETED);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta"
+          ]
+        },
+        "deleted-element-without-before": {
+          "body": "const result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('n', ChangeType.DELETED)]));\nexpect(result.diagram.graph!.nodes).toEqual({});\nexpect(result.nodes).toEqual({});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta"
+          ]
+        },
+        "deleted-group-deleted-members-restored": {
+          "body": "const member = makeNode('n', 'g');\nconst result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('n', ChangeType.DELETED, member)], [], [makeGroupDelta('g', ChangeType.DELETED, makeGroup('g'))]));\nexpect(result.diagram.graph!.nodes.n.parentGroup).toBe('g');\nexpect(result.diagram.graph!.groups.g).toEqual(makeGroup('g'));",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta",
+            "makeGroupDelta",
+            "makeGroup"
+          ]
+        },
+        "deleted-group-modified-members-stay-current": {
+          "body": "const current = makeNode('n', 'current');\nconst result = mergeDelta(makeDiagram([current]), makeDelta([makeNodeDelta('n', ChangeType.MODIFIED, makeNode('n', 'old'), current)], [], [makeGroupDelta('g', ChangeType.DELETED, makeGroup('g'))]));\nexpect(result.diagram.graph!.nodes.n.parentGroup).toBe('current');\nexpect(result.nodes.n).toBe(ChangeType.MODIFIED);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta",
+            "makeGroupDelta",
+            "makeGroup"
+          ]
+        },
+        "deleted-group-with-surviving-members": {
+          "body": "const member = makeNode('n', 'other');\nconst result = mergeDelta(makeDiagram([member]), makeDelta([], [], [makeGroupDelta('g', ChangeType.DELETED, makeGroup('g'))]));\nexpect(result.diagram.graph!.groups.g).toEqual(makeGroup('g'));\nexpect(result.diagram.graph!.nodes.n.parentGroup).toBe('other');",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeGroupDelta",
+            "makeGroup"
+          ]
+        },
+        "edge-between-restored-deleted-nodes": {
+          "body": "const a = makeNode('a');\nconst b = makeNode('b');\nconst edge = makeEdge('e', 'a', 'b');\nconst result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('a', ChangeType.DELETED, a), makeNodeDelta('b', ChangeType.DELETED, b)], [makeEdgeDelta('e', ChangeType.DELETED, edge)]));\nexpect(result.diagram.graph!.edges.e).toEqual(edge);\nexpect(result.edges.e).toBe(ChangeType.DELETED);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeEdge",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta",
+            "makeEdgeDelta"
+          ]
+        },
+        "empty-input": {
+          "body": "const result = mergeDelta(makeDiagram(), makeDelta());\nexpect(result.diagram.graph).toEqual({nodes: {}, edges: {}, groups: {}});\nexpect(result.nodes).toEqual({});\nexpect(result.edges).toEqual({});\nexpect(result.groups).toEqual({});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeDelta"
+          ]
+        },
+        "existing-key-nondelete-change": {
+          "body": "const target = makeDiagram([makeNode('n')], [], []);\nconst result = mergeDelta(target, makeDelta([makeNodeDelta('n', value, undefined, makeNode('n', 'other'))]));\nexpect(result.diagram.graph!.nodes.n).toEqual(target.graph!.nodes.n);\nexpect(result.nodes.n).toBe(value);",
+          "strategy": "fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED)",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeNode",
+            "makeDelta",
+            "makeNodeDelta"
+          ]
+        },
+        "restored-edge-missing-endpoint": {
+          "body": "const edge = makeEdge('e', 'missing', 'present');\nconst result = mergeDelta(makeDiagram([makeNode('present')]), makeDelta([], [makeEdgeDelta('e', ChangeType.DELETED, edge)]));\nexpect(result.diagram.graph!.edges).toEqual({});\nexpect(result.edges).toEqual({});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeEdge",
+            "makeDiagram",
+            "makeNode",
+            "makeDelta",
+            "makeEdgeDelta"
+          ]
+        },
+        "restored-edge-with-finished-endpoints": {
+          "body": "const edge = makeEdge('e', 'a', 'b');\nconst result = mergeDelta(makeDiagram([makeNode('a'), makeNode('b')]), makeDelta([], [makeEdgeDelta('e', ChangeType.DELETED, edge)]));\nexpect(result.diagram.graph!.edges.e).toEqual(edge);\nexpect(result.edges.e).toBe(ChangeType.DELETED);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeEdge",
+            "makeDiagram",
+            "makeNode",
+            "makeDelta",
+            "makeEdgeDelta"
+          ]
+        },
+        "restored-parent-missing-cleared": {
+          "body": "const node = makeNode('n', 'missing');\nconst result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('n', ChangeType.DELETED, node)]));\nexpect(result.diagram.graph!.nodes.n.parentGroup).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": [
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta"
+          ]
+        },
+        "restored-parent-preserved": {
+          "body": "const parent = makeGroup('p');\nconst node = makeNode('n', 'p');\nconst result = mergeDelta(makeDiagram([], [], [parent]), makeDelta([makeNodeDelta('n', ChangeType.DELETED, node)]));\nexpect(result.diagram.graph!.nodes.n.parentGroup).toBe('p');",
+          "strategy": "",
+          "helpersUsed": [
+            "makeGroup",
+            "makeNode",
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta"
+          ]
+        },
+        "target-elements-copied-unchanged": {
+          "body": "const target = makeDiagram([makeNode('n')], [makeEdge('e', 'n', 'n')], [makeGroup('g')]);\nconst result = mergeDelta(target, makeDelta());\nexpect(result.diagram.graph!.nodes.n).toEqual(target.graph!.nodes.n);\nexpect(result.diagram.graph!.edges.e).toEqual(target.graph!.edges.e);\nexpect(result.diagram.graph!.groups.g).toEqual(target.graph!.groups.g);\nexpect(result.nodes).toEqual({n: ChangeType.UNCHANGED});\nexpect(result.edges).toEqual({e: ChangeType.UNCHANGED});\nexpect(result.groups).toEqual({g: ChangeType.UNCHANGED});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeNode",
+            "makeEdge",
+            "makeGroup",
+            "makeDelta"
+          ]
+        },
+        "target-remains-unmutated": {
+          "body": "const target = makeDiagram([makeNode('n')], [], []);\nconst before = target.graph!.nodes.n;\nmergeDelta(target, makeDelta());\nexpect(target.graph!.nodes.n).toEqual(before);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeNode",
+            "makeDelta"
+          ]
+        },
+        "unspecified-change-skipped": {
+          "body": "const result = mergeDelta(makeDiagram(), makeDelta([makeNodeDelta('n', ChangeType.CHANGE_TYPE_UNSPECIFIED, makeNode('n'))]));\nexpect(result.diagram.graph!.nodes).toEqual({});\nexpect(result.nodes).toEqual({});",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram",
+            "makeDelta",
+            "makeNodeDelta",
+            "makeNode"
+          ]
+        }
+      },
+      "helpers": {
+        "makeDelta": "const makeDelta = (nodeDeltas: NodeDelta[] = [], edgeDeltas: EdgeDelta[] = [], groupDeltas: GroupDelta[] = []): Delta => create(DeltaSchema, {nodeDeltas, edgeDeltas, groupDeltas});",
+        "makeDiagram": "const makeDiagram = (nodes: Node[] = [], edges: Edge[] = [], groups: Group[] = []): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {nodes: Object.fromEntries(nodes.map((node: Node) => [node.id, node])), edges: Object.fromEntries(edges.map((edge: Edge) => [edge.id, edge])), groups: Object.fromEntries(groups.map((group: Group) => [group.id, group]))})});",
+        "makeEdge": "const makeEdge = (id: string, source: string, target: string): Edge => create(EdgeSchema, {id, source, target});",
+        "makeEdgeDelta": "const makeEdgeDelta = (key: string, changeType: ChangeType, before?: Edge, after?: Edge): EdgeDelta => create(EdgeDeltaSchema, {key, changeType, ...(before === undefined ? {} : {before}), ...(after === undefined ? {} : {after})});",
+        "makeGroup": "const makeGroup = (id: string, parentGroup?: string): Group => create(GroupSchema, {id, ...(parentGroup === undefined ? {} : {parentGroup})});",
+        "makeGroupDelta": "const makeGroupDelta = (key: string, changeType: ChangeType, before?: Group, after?: Group): GroupDelta => create(GroupDeltaSchema, {key, changeType, ...(before === undefined ? {} : {before}), ...(after === undefined ? {} : {after})});",
+        "makeNode": "const makeNode = (id: string, parentGroup?: string): Node => create(NodeSchema, {id, ...(parentGroup === undefined ? {} : {parentGroup})});",
+        "makeNodeDelta": "const makeNodeDelta = (key: string, changeType: ChangeType, before?: Node, after?: Node): NodeDelta => create(NodeDeltaSchema, {key, changeType, ...(before === undefined ? {} : {before}), ...(after === undefined ? {} : {after})});"
+      }
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_shape.ts/recolorLine().",
+      "codes": {
+        "copy-preserves-noncolor-style": {
+          "body": "const glyph = create(Glyph1DSchema, {\n  stroke: create(StrokeSchema, {\n    paint: { case: \"color\", value: \"#336699\" },\n    dashing: StrokePattern.DASHED,\n    width: 7,\n    cap: 1,\n    join: 2,\n  }),\n  glow: create(GlowSchema, {\n    color: { case: \"color\", value: \"#663399\" },\n    radius: 8,\n    intensity: 0.6,\n  }),\n  arrowheads: create(ArrowheadsSchema, {\n    start: 1,\n    end: 2,\n    size: 11,\n  }),\n});\nconst originalStroke = glyph.stroke;\nconst originalGlow = glyph.glow;\nconst originalArrowheads = glyph.arrowheads;\nconst result = recolorLine(glyph, value.change);\nexpect(result.stroke?.width).toBe(originalStroke?.width);\nexpect(result.stroke?.cap).toBe(originalStroke?.cap);\nexpect(result.stroke?.join).toBe(originalStroke?.join);\nexpect(result.glow?.radius).toBe(originalGlow?.radius);\nexpect(result.glow?.intensity).toBe(originalGlow?.intensity);\nexpect(result.arrowheads).toEqual(originalArrowheads);\nexpect(glyph.stroke).toEqual(originalStroke);\nexpect(glyph.glow).toEqual(originalGlow);\nexpect(glyph.arrowheads).toEqual(originalArrowheads);",
+          "strategy": "fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) })",
+          "helpersUsed": []
+        },
+        "deleted-stroked-glyph": {
+          "body": "const glyph = create(Glyph1DSchema, {\n  stroke: create(StrokeSchema, {\n    paint: { case: \"color\", value: value.color },\n    dashing: value.dashing,\n    width: 4,\n    cap: 1,\n    join: 2,\n  }),\n  glow: create(GlowSchema, {\n    color: { case: \"color\", value: value.color },\n    radius: 6,\n    intensity: 0.75,\n  }),\n});\nconst result = recolorLine(glyph, ChangeType.DELETED);\nexpect(result.stroke?.paint).toEqual({ case: \"color\", value: diffColorFor(value.color, ChangeType.DELETED) });\nexpect(result.glow?.color).toEqual({ case: \"color\", value: diffColorFor(value.color, ChangeType.DELETED) });\nexpect(result.stroke?.dashing).toBe(StrokePattern.DOTTED);\nexpect(result.stroke?.width).toBe(4);\nexpect(result.stroke?.cap).toBe(1);\nexpect(result.stroke?.join).toBe(2);\nexpect(result.glow?.radius).toBe(6);\nexpect(result.glow?.intensity).toBe(0.75);\nexpect(glyph.stroke?.dashing).toBe(value.dashing);",
+          "strategy": "fc.record({ color: fc.string(), dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED) })",
+          "helpersUsed": []
+        },
+        "deleted-strokeless-glyph": {
+          "body": "const glowColor = \"#123456\";\nconst glyph = create(Glyph1DSchema, {\n  glow: create(GlowSchema, {\n    color: { case: \"color\", value: glowColor },\n  }),\n});\nconst result = recolorLine(glyph, ChangeType.DELETED);\nexpect(result.stroke).toBeUndefined();\nexpect(result.glow?.color).toEqual({ case: \"color\", value: diffColorFor(glowColor, ChangeType.DELETED) });\nexpect(glyph.stroke).toBeUndefined();\nexpect(glyph.glow?.color).toEqual({ case: \"color\", value: glowColor });",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "gradient-glow-color": {
+          "body": "const gradient = create(GradientSchema, {});\nconst glyph = create(Glyph1DSchema, {\n  glow: create(GlowSchema, {\n    color: { case: \"gradient\", value: gradient },\n  }),\n});\nconst result = recolorLine(glyph, value.change);\nexpect(result.glow?.color).toEqual({ case: \"gradient\", value: gradient });\nexpect(glyph.glow?.color).toEqual({ case: \"gradient\", value: gradient });",
+          "strategy": "fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED)",
+          "helpersUsed": []
+        },
+        "gradient-stroke-paint": {
+          "body": "const gradient = create(GradientSchema, {});\nconst glyph = create(Glyph1DSchema, {\n  stroke: create(StrokeSchema, {\n    paint: { case: \"gradient\", value: gradient },\n    dashing: value.dashing,\n  }),\n});\nconst result = recolorLine(glyph, value.change);\nexpect(result.stroke?.paint).toEqual({ case: \"gradient\", value: gradient });\nexpect(result.stroke?.dashing).toBe(value.change === ChangeType.DELETED ? StrokePattern.DOTTED : value.dashing);\nexpect(glyph.stroke?.paint).toEqual({ case: \"gradient\", value: gradient });",
+          "strategy": "fc.record({ dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) })",
+          "helpersUsed": []
+        },
+        "nondeleted-color-recolor": {
+          "body": "const glyph = create(Glyph1DSchema, {\n  stroke: create(StrokeSchema, {\n    paint: { case: \"color\", value: value.color },\n    dashing: StrokePattern.DASHED,\n  }),\n  glow: create(GlowSchema, {\n    color: { case: \"color\", value: value.color },\n  }),\n});\nconst result = recolorLine(glyph, value.change);\nexpect(result.stroke?.paint).toEqual({ case: \"color\", value: diffColorFor(value.color, value.change) });\nexpect(result.glow?.color).toEqual({ case: \"color\", value: diffColorFor(value.color, value.change) });\nexpect(result.stroke?.dashing).toBe(StrokePattern.DASHED);\nexpect(glyph.stroke?.paint).toEqual({ case: \"color\", value: value.color });\nexpect(glyph.glow?.color).toEqual({ case: \"color\", value: value.color });",
+          "strategy": "fc.record({ color: fc.string(), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED) })",
+          "helpersUsed": []
+        },
+        "unset-glow-color": {
+          "body": "const glyph = create(Glyph1DSchema, {\n  glow: create(GlowSchema, {}),\n});\nconst result = recolorLine(glyph, value.change);\nexpect(result.glow?.color).toBeUndefined();\nexpect(glyph.glow?.color).toBeUndefined();",
+          "strategy": "fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED)",
+          "helpersUsed": []
+        },
+        "unset-stroke-color": {
+          "body": "const glyph = create(Glyph1DSchema, {\n  stroke: create(StrokeSchema, {\n    dashing: value.dashing,\n  }),\n});\nconst result = recolorLine(glyph, value.change);\nexpect(result.stroke?.paint).toBeUndefined();\nexpect(result.stroke?.dashing).toBe(value.change === ChangeType.DELETED ? StrokePattern.DOTTED : value.dashing);\nexpect(glyph.stroke?.dashing).toBe(value.dashing);",
+          "strategy": "fc.record({ dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_shape.ts/recolorShape().",
+      "codes": {
+        "color-fill-paint": {
+          "body": "const glyph = create(Glyph2DSchema, { fill: create(FillSchema, { paint: { case: 'color', value }) }) });\nconst result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());\nexpect(result.fill?.paint).toEqual({ case: 'color', value: '#00aa00' });",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "color-stroke-paint": {
+          "body": "const glyph = create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: 'color', value } }) });\nconst result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());\nexpect(result.stroke?.paint).toEqual({ case: 'color', value: '#00aa00' });",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "copy-preserves-geometry-and-style": {
+          "body": "const glyph = create(Glyph2DSchema, { shapeKind: { case: 'customPathRef', value }, cornerRadius: 7, stroke: create(StrokeSchema, { width: 3, cap: 1, join: 2, dashing: StrokePattern.DASHED }), glow: create(GlowSchema, { radius: 4, intensity: 0.7 }), decorations: [create(DecorationSchema, { id: 'd1', kind: 1, badgeText: 'badge', iconRef: 'icon', position: { x: 2, y: 3 } })] });\nconst before = create(Glyph2DSchema, { shapeKind: { case: 'customPathRef', value }, cornerRadius: 7, stroke: create(StrokeSchema, { width: 3, cap: 1, join: 2, dashing: StrokePattern.DASHED }), glow: create(GlowSchema, { radius: 4, intensity: 0.7 }), decorations: [create(DecorationSchema, { id: 'd1', kind: 1, badgeText: 'badge', iconRef: 'icon', position: { x: 2, y: 3 } })] });\nconst result = recolorShape(glyph, value.change, testDiffRoles());\nexpect(result.shapeKind).toEqual(glyph.shapeKind);\nexpect(result.cornerRadius).toBe(7);\nexpect(result.stroke?.width).toBe(3);\nexpect(result.stroke?.cap).toBe(1);\nexpect(result.stroke?.join).toBe(2);\nexpect(result.glow?.radius).toBe(4);\nexpect(result.glow?.intensity).toBe(0.7);\nexpect(result.decorations[0]).toEqual(glyph.decorations[0]);\nexpect(glyph).toEqual(before);",
+          "strategy": "fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), path: fc.string() })",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "decoration-colors-set": {
+          "body": "const glyph = create(Glyph2DSchema, { decorations: value.map((color: string) => create(DecorationSchema, { color })) });\nconst result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());\nexpect(result.decorations.map((decoration: Decoration) => decoration.color)).toEqual(value.map(() => '#00aa00'));",
+          "strategy": "fc.array(fc.string())",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "deleted-fill-explicit-opacity": {
+          "body": "const glyph = create(Glyph2DSchema, { fill: create(FillSchema, { opacity: value }) });\nconst result = recolorShape(glyph, ChangeType.DELETED);\nexpect(result.fill?.opacity).toBe(value * 0.4);",
+          "strategy": "fc.double({ noNaN: true, noDefaultInfinity: true })",
+          "helpersUsed": []
+        },
+        "deleted-fill-unset-opacity": {
+          "body": "const glyph = create(Glyph2DSchema, { fill: create(FillSchema, {}) });\nconst result = recolorShape(glyph, ChangeType.DELETED);\nexpect(result.fill?.opacity).toBe(0.4);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "deleted-with-stroke": {
+          "body": "const glyph = create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: value, width: 2.5, cap: 1, join: 2, paint: { case: 'color', value: '#123456' } }) });\nconst result = recolorShape(glyph, ChangeType.DELETED, testDiffRoles());\nexpect(result.stroke?.dashing).toBe(StrokePattern.DOTTED);\nexpect(result.stroke?.width).toBe(2.5);\nexpect(result.stroke?.cap).toBe(1);\nexpect(result.stroke?.join).toBe(2);",
+          "strategy": "fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED)",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "deleted-without-fill": {
+          "body": "const glyph = create(Glyph2DSchema, {});\nconst result = recolorShape(glyph, ChangeType.DELETED);\nexpect(result.fill).toBe(undefined);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "deleted-without-stroke": {
+          "body": "const glyph = create(Glyph2DSchema, {});\nconst result = recolorShape(glyph, ChangeType.DELETED);\nexpect(result.stroke).toBe(undefined);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "glow-color-set": {
+          "body": "const glow = create(GlowSchema, { color: value });\nconst glyph = create(Glyph2DSchema, { glow });\nconst result = recolorShape(glyph, ChangeType.DELETED, testDiffRoles());\nexpect(result.glow?.color).toBe('#cc0000');",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "gradient-fill-paint": {
+          "body": "const fill = create(FillSchema, { paint: { case: 'gradient', value: create(GradientSchema, {}) } });\nconst glyph = create(Glyph2DSchema, { fill });\nconst result = recolorShape(glyph, ChangeType.MODIFIED, testDiffRoles());\nexpect(result.fill).toEqual(fill);",
+          "strategy": "",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "gradient-stroke-paint": {
+          "body": "const stroke = create(StrokeSchema, { paint: { case: 'gradient', value: create(GradientSchema, {}) } });\nconst glyph = create(Glyph2DSchema, { stroke });\nconst result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());\nexpect(result.stroke).toEqual(stroke);",
+          "strategy": "",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        },
+        "nondeleted-preserves-ghosting-fields": {
+          "body": "const glyph = create(Glyph2DSchema, { stroke: value.stroke ? create(StrokeSchema, { dashing: StrokePattern.DASHED }) : undefined, fill: value.fill ? create(FillSchema, { opacity: 0.25 }) : undefined });\nconst result = recolorShape(glyph, value.change);\nexpect(result.stroke?.dashing).toBe(value.stroke ? StrokePattern.DASHED : undefined);\nexpect(result.fill?.opacity).toBe(value.fill ? 0.25 : undefined);",
+          "strategy": "fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED), stroke: fc.boolean(), fill: fc.boolean() })",
+          "helpersUsed": []
+        },
+        "optional-colors-unset": {
+          "body": "const glyph = create(Glyph2DSchema, { stroke: value.stroke ? create(StrokeSchema, {}) : undefined, fill: value.fill ? create(FillSchema, {}) : undefined, glow: value.glow ? create(GlowSchema, {}) : undefined, decorations: value.decoration ? [create(DecorationSchema, {})] : [] });\nconst result = recolorShape(glyph, ChangeType.MODIFIED, testDiffRoles());\nexpect(result.stroke?.paint.case).toBe(undefined);\nexpect(result.fill?.paint.case).toBe(undefined);\nexpect(result.glow?.color).toBe(undefined);\nexpect(result.decorations[0]?.color).toBe(undefined);",
+          "strategy": "fc.record({ stroke: fc.boolean(), fill: fc.boolean(), glow: fc.boolean(), decoration: fc.boolean() })",
+          "helpersUsed": [
+            "testDiffRoles"
+          ]
+        }
+      },
+      "helpers": {
+        "testDiffRoles": "const testDiffRoles = (): DiffRoles => Object.assign(new DiffRoles(), { added: '#00aa00', modified: '#0000aa', deleted: '#cc0000' });"
+      }
+    },
+    {
+      "nodeId": "packages/core/src/delta/recolor_text.ts/recolorTypography().",
+      "codes": {
+        "background-unset": {
+          "body": "const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible });\nconst roles = makeDiffRoles(\"#102030\", \"#405060\", \"#708090\");\nconst result = recolorTypography(typography, ChangeType.ADDED, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(roles.added);\nexpect(result.background).toBeUndefined();\nexpect(result.font).toBe(value.font);\nexpect(result.size).toBe(value.size);\nexpect(result.visible).toBe(value.visible);",
+          "strategy": "fc.record({ font: fc.string(), color: fc.string(), size: fc.integer(), visible: fc.boolean() })",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "both-colors-set": {
+          "body": "const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible, background: value.background });\nconst roles = makeDiffRoles(\"#102030\", \"#405060\", \"#708090\");\nconst result = recolorTypography(typography, ChangeType.ADDED, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(roles.added);\nexpect(result.background).toBe(roles.added);\nexpect(result.font).toBe(value.font);\nexpect(result.size).toBe(value.size);\nexpect(result.visible).toBe(value.visible);",
+          "strategy": "fc.record({ font: fc.string(), color: fc.string(), size: fc.integer(), visible: fc.boolean(), background: fc.string() })",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "both-colors-unset": {
+          "body": "const typography = create(TypographySchema, { font: value.font, size: value.size, visible: value.visible });\nconst result = recolorTypography(typography, ChangeType.UNCHANGED);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBeUndefined();\nexpect(result.background).toBeUndefined();\nexpect(result.font).toBe(value.font);\nexpect(result.size).toBe(value.size);\nexpect(result.visible).toBe(value.visible);",
+          "strategy": "fc.record({ font: fc.string(), size: fc.integer(), visible: fc.boolean() })",
+          "helpersUsed": []
+        },
+        "color-unset": {
+          "body": "const typography = create(TypographySchema, { font: value.font, size: value.size, visible: value.visible, background: value.background });\nconst roles = makeDiffRoles(\"#102030\", \"#405060\", \"#708090\");\nconst result = recolorTypography(typography, ChangeType.MODIFIED, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBeUndefined();\nexpect(result.background).toBe(roles.modified);\nexpect(result.font).toBe(value.font);\nexpect(result.size).toBe(value.size);\nexpect(result.visible).toBe(value.visible);",
+          "strategy": "fc.record({ font: fc.string(), size: fc.integer(), visible: fc.boolean(), background: fc.string() })",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "deleted-change": {
+          "body": "const typography = create(TypographySchema, { font: \"Inter\", color: \"#abcdef\", size: 14, visible: true, background: \"#123456\" });\nconst roles = makeDiffRoles(\"#102030\", \"#405060\", \"#708090\");\nconst result = recolorTypography(typography, ChangeType.DELETED, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(roles.deleted);\nexpect(result.background).toBe(roles.deleted);\nexpect(result.font).toBe(typography.font);\nexpect(result.size).toBe(typography.size);\nexpect(result.visible).toBe(typography.visible);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "diff-roles-omitted": {
+          "body": "const typography = create(TypographySchema, { font: \"Inter\", color: \"not-a-color\", size: 14, visible: true, background: \"also-not-a-color\" });\nconst result = recolorTypography(typography, ChangeType.ADDED);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(typography.color);\nexpect(result.background).toBe(typography.background);\nexpect(result.font).toBe(typography.font);\nexpect(result.size).toBe(typography.size);\nexpect(result.visible).toBe(typography.visible);",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "diff-roles-supplied": {
+          "body": "const typography = create(TypographySchema, { font: \"Inter\", color: \"#abcdef\", size: 14, visible: true, background: \"#123456\" });\nconst roles = makeDiffRoles(value.added, value.modified, value.deleted);\nconst result = recolorTypography(typography, ChangeType.DELETED, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(value.deleted);\nexpect(result.background).toBe(value.deleted);\nexpect(result.font).toBe(typography.font);\nexpect(result.size).toBe(typography.size);\nexpect(result.visible).toBe(typography.visible);",
+          "strategy": "fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() })",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "input-not-mutated": {
+          "body": "const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible, background: value.background });\nconst originalColor = typography.color;\nconst originalBackground = typography.background;\nconst originalFont = typography.font;\nconst originalSize = typography.size;\nconst originalVisible = typography.visible;\nconst result = value.roles === undefined ? recolorTypography(typography, value.change) : recolorTypography(typography, value.change, makeDiffRoles(value.roles.added, value.roles.modified, value.roles.deleted));\nexpect(result).not.toBe(typography);\nexpect(typography.color).toBe(originalColor);\nexpect(typography.background).toBe(originalBackground);\nexpect(typography.font).toBe(originalFont);\nexpect(typography.size).toBe(originalSize);\nexpect(typography.visible).toBe(originalVisible);",
+          "strategy": "fc.record({ font: fc.string(), color: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.boolean(), background: fc.option(fc.string(), { nil: undefined }), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), roles: fc.option(fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() }), { nil: undefined }) })",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        },
+        "non-deleted-change": {
+          "body": "const typography = create(TypographySchema, { font: \"Inter\", color: \"#abcdef\", size: 14, visible: true, background: \"#123456\" });\nconst roles = makeDiffRoles(\"#102030\", \"#405060\", \"#708090\");\nconst result = recolorTypography(typography, value, roles);\nexpect(result).not.toBe(typography);\nexpect(result.color).toBe(diffColorFor(typography.color!, value, roles));\nexpect(result.background).toBe(diffColorFor(typography.background!, value, roles));\nexpect(result.font).toBe(typography.font);\nexpect(result.size).toBe(typography.size);\nexpect(result.visible).toBe(typography.visible);",
+          "strategy": "fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED)",
+          "helpersUsed": [
+            "makeDiffRoles"
+          ]
+        }
+      },
+      "helpers": {
+        "makeDiffRoles": "function makeDiffRoles(added: string, modified: string, deleted: string): DiffRoles {\n  return Object.assign(new DiffRoles(), { added, modified, deleted });\n}"
+      }
+    },
+    {
+      "nodeId": "packages/core/src/pipeline/delta_render_pipeline.ts/renderDeltaPipeline().",
+      "codes": {
+        "empty-delta": {
+          "body": "",
+          "strategy": "fc.constantFrom('empty')",
+          "helpersUsed": []
+        },
+        "layout-failure": {
+          "body": "void value;\nconst target = create(DiagramSchema, { id: 'target' });\nconst delta = create(DeltaSchema, {});\nconst layoutEngine = {\n  layout: async () => ({ kind: 'err' as const, error: { message: 'layout failed' } }),\n};\nreturn renderDeltaPipeline(target, undefined, new Map(), layoutEngine, delta).then((result) => {\n  expect(result.kind).toBe('err');\n  if (result.kind === 'err') {\n    expect(result.error.stage).toBe('layout');\n  }\n});",
+          "strategy": "fc.constantFrom('layout-failure')",
+          "helpersUsed": []
+        },
+        "merged-deleted-element-with-component-kind": {
+          "body": "",
+          "strategy": "fc.constantFrom('database')",
+          "helpersUsed": []
+        },
+        "multiple-theme-bindings": {
+          "body": "",
+          "strategy": "fc.constantFrom('two-bindings')",
+          "helpersUsed": []
+        },
+        "ordinary-successful-render": {
+          "body": "",
+          "strategy": "fc.constantFrom('minimal-valid-diagram')",
+          "helpersUsed": []
+        },
+        "render-failure": {
+          "body": "",
+          "strategy": "fc.constantFrom('render-failure')",
+          "helpersUsed": []
+        },
+        "resolve-pipeline-failure": {
+          "body": "",
+          "strategy": "fc.constantFrom('resolution-failure')",
+          "helpersUsed": []
+        },
+        "stylesheet-with-default-theme-binding": {
+          "body": "",
+          "strategy": "fc.constantFrom('bound-theme')",
+          "helpersUsed": []
+        },
+        "stylesheet-without-theme-bindings": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "undefined-stylesheet": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    }
+  ],
+  "schemaVersion": 5
+}

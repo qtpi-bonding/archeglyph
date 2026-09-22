@@ -1,0 +1,67 @@
+file: "packages/core/src/delta/delta_overlay.ts"
+doc:
+  "What a Delta and a target diagram become once merged: one drawable diagram plus the change type of each element in it.\n"
+  "\n"
+  "Phase 3 of the delta/diff design\n"
+  "(docs/superpowers/specs/2026-09-07-delta-diff-design.md). Phases 1 and 2\n"
+  "shipped: diff() produces a Delta and the token layer gained a live `roles`\n"
+  "table. Nothing draws a Delta. This pillar does.\n"
+  "\n"
+  "VOCABULARY, fixed for every file in this pillar.\n"
+  "  \"target diagram\"  the Diagram being rendered; the `after` state.\n"
+  "  \"union diagram\"   the target diagram plus every element the Delta\n"
+  "                    reports DELETED, restored from its `before` snapshot.\n"
+  "  \"change type\"     a value of archeglyph.content.v1.ChangeType.\n"
+  "  \"diff role\"       one of exactly three KEYS of a theme's Tokens.roles\n"
+  "                    map: diff_added, diff_modified, diff_deleted. A diff\n"
+  "                    role is always a theme's map key, never a parameter.\n"
+  "  \"table mode\"      a render in which all three diff roles RESOLVED to a\n"
+  "                    value, so those values are painted directly.\n"
+  "  \"rotate mode\"     a render in which they did not, so each element's own\n"
+  "                    colour is rotated in hue instead.\n"
+  "The parameter carrying the three resolved values is named `diffRoles` and\n"
+  "has type DiffRoles; it is never called \"roles\", because Tokens.roles is a\n"
+  "different thing with 25 other keys in it.\n"
+  "\n"
+  "No file in this pillar uses \"delta\" to mean the overlay, or \"diff\" to mean\n"
+  "the comparison; the comparison is diff() in packages/core/src/diff and is\n"
+  "not touched here."
+
+structs: [
+  { name: "DeltaOverlay"
+    doc:
+      "The union diagram, plus a change type for every element in it.\n"
+      "\n"
+      "The three maps are keyed exactly as `diagram`'s own maps are keyed. For\n"
+      "an overlay mergeDelta built, every key present in `diagram.graph` is\n"
+      "present in the matching map here, and mergeDelta's own doc is where\n"
+      "that is guaranteed.\n"
+      "\n"
+      "Consumers must still not throw on a key they cannot find. An overlay\n"
+      "is an ordinary value that a test or a future caller may construct by\n"
+      "hand, and applyDiffPalette states what it does in that case. The\n"
+      "invariant is a promise mergeDelta keeps, not one DeltaOverlay enforces.\n"
+      "\n"
+      "There is no annotations map, and the reason is the content model\n"
+      "rather than the Delta message. An annotation is an AnnotationEntry in\n"
+      "the STYLESHEET; Diagram carries a Graph of nodes, edges and groups and\n"
+      "nothing else. So annotations are not diffable at all, and a Delta could\n"
+      "not report one even if content.proto declared an AnnotationDelta, which\n"
+      "it does not. What consumers do with annotations is stated by each\n"
+      "consumer; applyDiffPalette is the only one in this pillar.\n"
+      "\n"
+      "A plain data carrier with no methods, and deliberately a class rather\n"
+      "than a STRUCT_KIND_INTERFACE struct: every sibling carrier this pillar\n"
+      "sits beside -- ResolvedDiagram, ResolvedNode, LaidOutDiagram,\n"
+      "DiffOptions -- is a definite-assignment class built with\n"
+      "init(new X(), {...}), which is the convention archebuild.yaml applies\n"
+      "project-wide."
+    fields: [
+      { name: "diagram", type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "nodes",  type: { named: { symbol: "Record", args: [{ primitive: CHARACTER }, { named: { symbol: "archeglyph.content.v1.ChangeType" } }] } } },
+      { name: "edges",  type: { named: { symbol: "Record", args: [{ primitive: CHARACTER }, { named: { symbol: "archeglyph.content.v1.ChangeType" } }] } } },
+      { name: "groups", type: { named: { symbol: "Record", args: [{ primitive: CHARACTER }, { named: { symbol: "archeglyph.content.v1.ChangeType" } }] } } }
+    ]
+    typescript: {}
+  }
+]

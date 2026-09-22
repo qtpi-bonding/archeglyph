@@ -29,28 +29,28 @@ describe('testgen_canvas__GhostLayer', () => {
 
     // WHEN: The stylesheet has one or more pending edits and props.delta is undefined; GhostRender is rendered using the pending-edit stylesheet, and the scene pipeline behaves as it did before this change.
     // THEN: Renders GhostRender with the pending-edit stylesheet and preserves the prior scene-pipeline behavior when delta is undefined.
-    test.skip('pending_edits_without_delta', None() => {
+    test.skip('pending_edits_without_delta', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The stylesheet has one or more pending edits and props.delta is provided; GhostRender is rendered as a preview of those pending edits using the pending-edit stylesheet and the supplied delta in scenePipeline.
     // THEN: Renders GhostRender as a pending-edits preview using the pending-edit stylesheet and the supplied delta in scenePipeline.
-    test.skip('pending_edits_with_delta', None() => {
+    test.skip('pending_edits_with_delta', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: For a rendered GhostRender, scenePipeline returns a successful LaidOutDiagram result; the component draws the same ghost-layer output as the existing implementation, with the pending edits previewed.
     // THEN: Draws the same ghost-layer output as before using the successful LaidOutDiagram result while previewing the pending edits.
-    test.skip('pipeline_success', None() => {
+    test.skip('pipeline_success', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: For a rendered GhostRender, scenePipeline returns a PipelineError; the existing error handling is preserved.
     // THEN: Preserves the existing error handling when scenePipeline returns a PipelineError.
-    test.skip('pipeline_error', None() => {
+    test.skip('pipeline_error', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

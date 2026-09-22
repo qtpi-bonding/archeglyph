@@ -11,28 +11,28 @@ import { App } from '../src/shell/app';
 describe('testgen_shell__App', () => {
     // WHEN: The URL parameters select no diagram source; bootstrap does not load a base, while diff state is still created and remains available for the loaded document.
     // THEN: It does not load a base, but creates the diff state with an accessor that remains available for the loaded document.
-    test.skip('no_diagram_source', None() => {
+    test.skip('no_diagram_source', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The URL parameters select a diagram source and its load() resolves successfully; the loaded diagram is installed as the diff base using diffRefsFrom(params).base.
     // THEN: It awaits the source load once and sets the loaded diagram as the diff base using diffRefsFrom(params).base.
-    test.skip('diagram_source_loads', None() => {
+    test.skip('diagram_source_loads', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The URL parameters select a diagram source but its load() resolves with Err, such as a missing or inaccessible base; the StateIsland error signal reports the failure rather than only setting loadError.
     // THEN: It reports the base-load failure through the StateIsland error signal rather than only setting loadError.
-    test.skip('diagram_source_fails', None() => {
+    test.skip('diagram_source_fails', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The diff state accessor is evaluated before the editor document resolves; it yields undefined, while the accessor itself already exists.
     // THEN: It creates the diff state immediately, with its accessor yielding undefined until the editor document resolves.
-    test.skip('document_not_yet_loaded', None() => {
+    test.skip('document_not_yet_loaded', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

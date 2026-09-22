@@ -10,28 +10,28 @@ import { Diagram } from '../../proto/src/gen/content_pb';
 describe('testgen_diff__DiagramSource', () => {
     // WHEN: The required fetches succeed with 2xx responses and the returned JSON is parseable as a Diagram; load() resolves to Ok(Diagram).
     // THEN: It resolves to Ok(Diagram) after the required fetches return 2xx responses and parseable Diagram JSON.
-    test.skip('successful_diagram_load', None() => {
+    test.skip('successful_diagram_load', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: A network failure occurs while fetching the base or document; load() resolves to Err(AdapterError) and does not throw.
     // THEN: It resolves to Err(AdapterError) without throwing when a base or document fetch encounters a network failure.
-    test.skip('network_failure', None() => {
+    test.skip('network_failure', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The base or document fetch returns a non-2xx response; load() resolves to Err(AdapterError) and does not throw.
     // THEN: It resolves to Err(AdapterError) without throwing when the base or document fetch returns a non-2xx response.
-    test.skip('non_2xx_response', None() => {
+    test.skip('non_2xx_response', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: A fetch succeeds but its response cannot be parsed as JSON; load() resolves to Err(AdapterError) and does not throw.
     // THEN: It resolves to Err(AdapterError) without throwing when a successful fetch returns JSON that cannot be parsed.
-    test.skip('unparseable_json', None() => {
+    test.skip('unparseable_json', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

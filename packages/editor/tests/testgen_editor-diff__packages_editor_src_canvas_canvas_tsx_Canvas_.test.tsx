@@ -11,7 +11,7 @@ import { Canvas } from '../src/canvas/canvas';
 describe('testgen_canvas__Canvas', () => {
     // WHEN: Canvas receives its declared delta input and renders GhostLayer with that exact value; Canvas does not interpret, transform, validate, or use delta for layout.
     // THEN: Canvas should render GhostLayer with the exact props.delta value, passing it through unchanged without interpreting, transforming, validating, or using it for layout.
-    test.skip('delta_passed_through', None() => {
+    test.skip('delta_passed_through', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

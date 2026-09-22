@@ -10,84 +10,84 @@ import { Delta } from '../../proto/src/gen/content_pb';
 describe('testgen_scene__createScene', () => {
     // WHEN: A required state, themes accessor, layout engine, and delta accessor are provided; the initial resource source is read and scenePipeline successfully lays out the diagram, rendering and geometry construction also succeed.
     // THEN: Reads the initial source and asynchronously builds the scene through scenePipeline, rendering it and constructing its geometry when all succeed.
-    test.skip('initial_scene_build', None() => {
+    test.skip('initial_scene_build', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The required delta accessor yields undefined, so the scene is built from the current state diagram without a base delta.
     // THEN: Builds the scene from the current state diagram without applying a base delta.
-    test.skip('delta_undefined', None() => {
+    test.skip('delta_undefined', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The delta accessor yields a Delta, so scenePipeline uses the delta together with the current diagram; component bindings are seeded for the merged union, including elements that exist only in the base.
     // THEN: Passes the delta with the current diagram to scenePipeline and seeds bindings for the merged union, including base-only elements.
-    test.skip('delta_present', None() => {
+    test.skip('delta_present', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: A base is attached, changed, or detached through the delta source; the resource source changes and rebuilds the scene in the same way as an edit.
     // THEN: Rebuilds the scene whenever the delta reflects a base attachment, change, or detachment.
-    test.skip('base_attached_changed_or_detached', None() => {
+    test.skip('base_attached_changed_or_detached', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The state version or themes accessor value changes, causing the resource source to change and the scene to rebuild.
     // THEN: Rebuilds the scene when the state version or themes value changes the resource source.
-    test.skip('state_or_theme_change', None() => {
+    test.skip('state_or_theme_change', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The current diagram contains an element created or otherwise present without component bindings; the per-build seeding call supplies bindings before scenePipeline runs.
     // THEN: Seeds component bindings for the current diagram before scenePipeline runs.
-    test.skip('new_unbound_element', None() => {
+    test.skip('new_unbound_element', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: scenePipeline returns an error whose detail is undefined; createScene returns a SceneError with the pipeline stage and the message `layout failed at stage "<stage>"`.
     // THEN: Returns a SceneError containing the pipeline stage and `layout failed at stage "<stage>"`.
-    test.skip('layout_error_without_detail', None() => {
+    test.skip('layout_error_without_detail', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: scenePipeline returns an error with a detail string; createScene returns a SceneError with the pipeline stage and the message `<stage>: <detail>`.
     // THEN: Returns a SceneError containing the pipeline stage and `<stage>: <detail>`.
-    test.skip('layout_error_with_detail', None() => {
+    test.skip('layout_error_with_detail', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: scenePipeline succeeds but SvgRendererImpl.render returns an error; createScene returns a render-stage SceneError containing the renderer error message.
     // THEN: Returns a render-stage SceneError containing the renderer error message.
-    test.skip('layout_success_render_error', None() => {
+    test.skip('layout_success_render_error', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The resource has not produced a result yet; the returned scene has undefined geometry and error while loading tracks the resource loading state.
     // THEN: Leaves geometry and error undefined while exposing the resource loading state through loading().
-    test.skip('asynchronous_build_pending', None() => {
+    test.skip('asynchronous_build_pending', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The asynchronous resource result is Ok; the effect stores the built scene geometry and clears any previous scene error.
     // THEN: Stores the resulting scene geometry and clears any previous scene error.
-    test.skip('successful_result', None() => {
+    test.skip('successful_result', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: The asynchronous resource result is Err; the effect stores the scene error and does not replace geometry with a successful result.
     // THEN: Stores the scene error without replacing the existing geometry with a successful result.
-    test.skip('error_result', None() => {
+    test.skip('error_result', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

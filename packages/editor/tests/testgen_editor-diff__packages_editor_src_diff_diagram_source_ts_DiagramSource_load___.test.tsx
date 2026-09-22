@@ -10,14 +10,14 @@ import { Diagram } from '../../proto/src/gen/content_pb';
 describe('testgen_diff__load', () => {
     // WHEN: The base diagram is fetched and parsed successfully; the promise resolves with a successful Diagram result.
     // THEN: resolves with a successful Diagram result.
-    test.skip('successful_fetch_and_parse', None() => {
+    test.skip('successful_fetch_and_parse', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });
 
     // WHEN: Fetching or parsing the base diagram fails; the promise resolves with an AdapterError result rather than throwing.
     // THEN: resolves with an AdapterError result without throwing.
-    test.skip('fetch_or_parse_failure', None() => {
+    test.skip('fetch_or_parse_failure', () => {
         // Body came back empty from testgen: nothing here needs a mount
         // harness it has. Skipped rather than left as a passing empty test.
     });

@@ -60,6 +60,55 @@ function rect(item: Placed): Bounds {
   };
 }
 
+// Children sit this far inside their group, matching what the bundled
+// examples write by hand.
+const INSET = 16;
+
+function parentOf(diagram: ResolvedDiagram, id: string): string | undefined {
+  return diagram.nodes[id]?.parentGroup ?? diagram.groups[id]?.parentGroup;
+}
+
+// ELK arranges in absolute space; `layout.position` is group-relative.
+function absoluteOrigins(diagram: ResolvedDiagram, pinned: Map<string, Vec2>, seeded: Map<string, Vec2>): Map<string, Vec2> {
+  const origins = new Map<string, Vec2>();
+  const resolving = new Set<string>();
+
+  const originOf = (groupId: string | undefined): Vec2 => {
+    if (groupId === undefined || diagram.groups[groupId] === undefined) return vec2(0, 0);
+    const done = origins.get(groupId);
+    if (done !== undefined) return done;
+    // Breaks a containment cycle rather than recursing forever.
+    if (resolving.has(groupId)) return vec2(0, 0);
+    resolving.add(groupId);
+
+    const pin = pinned.get(groupId);
+    let origin: Vec2;
+    if (pin !== undefined) {
+      const parent = originOf(parentOf(diagram, groupId));
+      origin = vec2(parent.x + pin.x, parent.y + pin.y);
+    } else {
+      let minX = Number.POSITIVE_INFINITY;
+      let minY = Number.POSITIVE_INFINITY;
+      for (const childId of [...Object.keys(diagram.nodes), ...Object.keys(diagram.groups)].sort()) {
+        if (parentOf(diagram, childId) !== groupId) continue;
+        const childAt = diagram.groups[childId] !== undefined ? originOf(childId) : seeded.get(childId);
+        if (childAt === undefined) continue;
+        minX = Math.min(minX, childAt.x);
+        minY = Math.min(minY, childAt.y);
+      }
+      origin = minX === Number.POSITIVE_INFINITY
+        ? seeded.get(groupId) ?? vec2(0, 0)
+        : vec2(minX - INSET, minY - INSET);
+    }
+    resolving.delete(groupId);
+    origins.set(groupId, origin);
+    return origin;
+  };
+
+  for (const groupId of Object.keys(diagram.groups).sort()) originOf(groupId);
+  return origins;
+}
+
 function sizeOf(item: { layout?: { size?: Vec2 } }): Vec2 {
   return item.layout?.size ?? vec2(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 }
@@ -70,14 +119,22 @@ export async function seedNewcomers(
   pinned: Map<string, Vec2>,
   elk: ELK,
 ): Promise<Map<string, Vec2>> {
+  const pinnedOrigins = absoluteOrigins(diagram, pinned, new Map());
+  const absolutePin = (id: string): Vec2 | undefined => {
+    const pin = pinned.get(id);
+    if (pin === undefined) return undefined;
+    const parent = pinnedOrigins.get(parentOf(diagram, id) ?? '') ?? vec2(0, 0);
+    return vec2(parent.x + pin.x, parent.y + pin.y);
+  };
+
   const elements = new Map<string, ElementInfo>();
   for (const group of Object.values(diagram.groups)) {
     const size = sizeOf(group);
-    elements.set(group.id, { id: group.id, width: size.x, height: size.y, position: pinned.get(group.id) });
+    elements.set(group.id, { id: group.id, width: size.x, height: size.y, position: absolutePin(group.id) });
   }
   for (const node of Object.values(diagram.nodes)) {
     const size = sizeOf(node);
-    elements.set(node.id, { id: node.id, width: size.x, height: size.y, position: pinned.get(node.id) });
+    elements.set(node.id, { id: node.id, width: size.x, height: size.y, position: absolutePin(node.id) });
   }
 
   const newcomerIds = [...elements.values()]
@@ -215,5 +272,12 @@ export async function seedNewcomers(
       result.set(id, vec2(item.x + dx, item.y + dy + shiftY));
     }
   }
-  return result;
+  const origins = absoluteOrigins(diagram, pinned, result);
+  const relative = new Map<string, Vec2>();
+  for (const id of [...result.keys()].sort()) {
+    const own = diagram.groups[id] !== undefined ? origins.get(id) ?? result.get(id)! : result.get(id)!;
+    const parent = origins.get(parentOf(diagram, id) ?? '') ?? vec2(0, 0);
+    relative.set(id, vec2(own.x - parent.x, own.y - parent.y));
+  }
+  return relative;
 }

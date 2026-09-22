@@ -2,32 +2,49 @@
 
 import { ChangeType } from '../../../proto/src/gen/content_pb';
 import { DiffRoles } from './diff_roles';
-import { desaturate, rotateHue } from './hue';
+import { desaturate, hueOf, rotateHue } from './hue';
+
+// Unchanged is the base colour, so these are the three remaining quadrants.
+const SLOTS: number[] = [90, 180, 270];
+
+const ADDED_TARGET = 120;
+const DELETED_TARGET = 0;
+
+function arcTo(hue: number, target: number): number {
+  return Math.abs((((hue - target) % 360) + 540) % 360 - 180);
+}
+
+// Per colour, not fixed: one angle means different hues from different bases,
+// so only a per-base choice keeps added reading green and deleted red.
+function rotationFor(color: string, change: ChangeType): number {
+  const base = hueOf(color);
+  if (base === undefined) {
+    return SLOTS[0]!;
+  }
+  const nearest = (target: number, from: number[]): number =>
+    from.reduce((best, slot) =>
+      arcTo(base + slot, target) < arcTo(base + best, target) ? slot : best);
+
+  const added = nearest(ADDED_TARGET, SLOTS);
+  const rest = SLOTS.filter((slot) => slot !== added);
+  const deleted = nearest(DELETED_TARGET, rest);
+  const modified = rest.filter((slot) => slot !== deleted)[0]!;
+
+  if (change === ChangeType.ADDED) return added;
+  if (change === ChangeType.DELETED) return deleted;
+  return modified;
+}
 
 export function diffColorFor(color: string, change: ChangeType, diffRoles?: DiffRoles): string {
-  if (change === ChangeType.CHANGE_TYPE_UNSPECIFIED || change === ChangeType.UNCHANGED) {
+  if (change === ChangeType.UNCHANGED || change === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
     return desaturate(color);
   }
 
   if (diffRoles !== undefined) {
-    switch (change) {
-      case ChangeType.ADDED:
-        return diffRoles.added;
-      case ChangeType.MODIFIED:
-        return diffRoles.modified;
-      case ChangeType.DELETED:
-        return diffRoles.deleted;
-    }
+    if (change === ChangeType.ADDED) return diffRoles.added;
+    if (change === ChangeType.MODIFIED) return diffRoles.modified;
+    if (change === ChangeType.DELETED) return diffRoles.deleted;
   }
 
-  switch (change) {
-    case ChangeType.ADDED:
-      return rotateHue(color, 300);
-    case ChangeType.MODIFIED:
-      return rotateHue(color, 60);
-    case ChangeType.DELETED:
-      return rotateHue(color, 180);
-    default:
-      return desaturate(color);
-  }
+  return rotateHue(color, rotationFor(color, change));
 }

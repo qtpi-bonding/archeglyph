@@ -173,6 +173,8 @@ describe('recolorLine', () => {
     expect(recolorLine(create(Glyph1DSchema, {}), ChangeType.DELETED, TABLE).stroke).toBeUndefined();
   });
 
+  // MODIFIED takes whichever quadrant added and removed do not claim; from an
+  // azure base that is magenta.
   test('rotate mode is used when no table is supplied', () => {
     const glyph = create(Glyph1DSchema, {
       stroke: create(StrokeSchema, { paint: { case: 'color', value: color('#8ad1ff') } }),
@@ -180,7 +182,7 @@ describe('recolorLine', () => {
 
     const out = recolorLine(glyph, ChangeType.MODIFIED, undefined);
 
-    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#b88aff');
+    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#f38aff');
   });
 });
 

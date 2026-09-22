@@ -82,3 +82,21 @@ export function rotateHue(color: string, degrees: number): string {
   return `#${rotatedRed.toString(16).padStart(2, '0')}${rotatedGreen
     .toString(16).padStart(2, '0')}${rotatedBlue.toString(16).padStart(2, '0')}`;
 }
+
+// undefined for a non-hex or fully desaturated colour: a grey has no hue.
+export function hueOf(color: string): number | undefined {
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) return undefined;
+  const red = parseInt(color.slice(1, 3), 16) / 255;
+  const green = parseInt(color.slice(3, 5), 16) / 255;
+  const blue = parseInt(color.slice(5, 7), 16) / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const span = max - min;
+  if (span === 0) return undefined;
+  const hue = max === red
+    ? ((green - blue) / span) % 6
+    : max === green
+      ? (blue - red) / span + 2
+      : (red - green) / span + 4;
+  return ((hue * 60) % 360 + 360) % 360;
+}

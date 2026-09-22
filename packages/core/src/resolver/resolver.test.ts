@@ -550,75 +550,106 @@ function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
 }
 
 describe('token_resolver', () => {
-  test('resolves a $colors.<name> ref against theme.tokens.colors', () => {
-    const theme = create(ThemeSchema, {
-      name: 't',
-      tokens: create(TokensSchema, { colors: { primary: '#123456' } }),
-    });
+  function resolveFill(fillRef: string, theme: Theme) {
     const nodeEntry = create(NodeStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
-        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$colors.primary' }) } }),
+        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: fillRef }) } }),
       }),
     });
-    const resolved = cascadeOneNode(nodeEntry, theme);
-    const tokenResult = tokenImpl.resolveTokens(
-      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+    return tokenImpl.resolveTokens(
+      init(new ResolveTokensRequest(), { resolved: cascadeOneNode(nodeEntry, theme), tokens: theme.tokens }),
     );
-    expect(tokenResult.kind).toBe('ok');
-    if (tokenResult.kind === 'ok') {
-      const node = Object.values(tokenResult.value.nodes)[0];
-      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#123456' }));
+  }
+
+  test('a $roles ref resolves one hop through $palette to a literal', () => {
+    const theme = create(ThemeSchema, {
+      name: 't',
+      tokens: create(TokensSchema, { palette: { blue: '#8ad1ff' }, roles: { node_fill: '$palette.blue' } }),
+    });
+    const result = resolveFill('$roles.node_fill', theme);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const node = Object.values(result.value.nodes)[0];
+      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#8ad1ff' }));
     }
   });
 
-  test('unresolvable token ref ($colors.nope) is left as-is for renderer fallback (spec: "Refs that don\'t resolve are left as-is")', () => {
+  test('a $roles ref holding a literal resolves without a second hop', () => {
     const theme = create(ThemeSchema, {
       name: 't',
-      tokens: create(TokensSchema, { colors: { primary: '#123456' } }),
+      tokens: create(TokensSchema, { roles: { node_fill: '#abcdef' } }),
     });
-    const nodeEntry = create(NodeStyleEntrySchema, {
-      shape: create(Glyph2DSchema, {
-        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$colors.nope' }) } }),
-      }),
-    });
-    const resolved = cascadeOneNode(nodeEntry, theme);
-    const tokenResult = tokenImpl.resolveTokens(
-      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
-    );
-    expect(tokenResult.kind).toBe('ok');
-    if (tokenResult.kind === 'ok') {
-      const node = Object.values(tokenResult.value.nodes)[0];
-      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.nope' }));
+    const result = resolveFill('$roles.node_fill', theme);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const node = Object.values(result.value.nodes)[0];
+      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#abcdef' }));
     }
   });
 
-  test('a token whose own value looks like another token ref is substituted literally, not re-resolved (proto: Tokens.colors "Values are literal hex/rgb" — a token is not itself a ref)', () => {
-    // colors.primary's *value* happens to be the string "$colors.brand".
-    // Tokens.colors values are documented as literal hex/rgb, so this is an
-    // authoring error upstream, not a chase-through-chain feature. We assert
-    // the single-pass, non-recursive substitution the spec describes
-    // ("substitute the concrete value") and flag this as a deliberate probe
-    // of resolver behavior at a schema boundary, not a claim that chained
-    // tokens are a documented feature.
+  test('an unresolvable $roles ref is a named error, not passed through', () => {
     const theme = create(ThemeSchema, {
       name: 't',
-      tokens: create(TokensSchema, { colors: { primary: '$colors.brand', brand: '#ABCDEF' } }),
+      tokens: create(TokensSchema, { roles: { node_fill: '#abcdef' } }),
     });
+    const result = resolveFill('$roles.nope', theme);
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.message).toContain('$roles.nope');
+    }
+  });
+
+  // The error names the ROLE: that is what the author wrote.
+  test('a role pointing at a missing palette entry is an error naming the role', () => {
+    const theme = create(ThemeSchema, {
+      name: 't',
+      tokens: create(TokensSchema, { palette: {}, roles: { node_fill: '$palette.gone' } }),
+    });
+    const result = resolveFill('$roles.node_fill', theme);
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.message).toContain('$roles.node_fill');
+    }
+  });
+
+  test('a ref to an unknown token table is an error too', () => {
+    const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
+    const result = resolveFill('$nope.thing', theme);
+    expect(result.kind).toBe('err');
+  });
+
+  // Every bad reference in a document is reported, not just the first.
+  test('the error lists every unresolved reference, deduplicated and sorted', () => {
+    const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const nodeEntry = create(NodeStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
-        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$colors.primary' }) } }),
+        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.zzz' }) } }),
+        stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.aaa' }) } }),
       }),
     });
-    const resolved = cascadeOneNode(nodeEntry, theme);
-    const tokenResult = tokenImpl.resolveTokens(
-      init(new ResolveTokensRequest(), { resolved, tokens: theme.tokens }),
+    const result = tokenImpl.resolveTokens(
+      init(new ResolveTokensRequest(), { resolved: cascadeOneNode(nodeEntry, theme), tokens: theme.tokens }),
     );
-    expect(tokenResult.kind).toBe('ok');
-    if (tokenResult.kind === 'ok') {
-      const node = Object.values(tokenResult.value.nodes)[0];
-      // Single substitution pass: value becomes the literal string
-      // "$colors.brand", NOT further resolved to "#ABCDEF".
-      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.brand' }));
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.message).toContain('$roles.aaa, $roles.zzz');
+    }
+  });
+
+  // Only a lookup returning undefined is an error; a resolved value is final.
+  test('a palette value that looks like a ref is substituted literally', () => {
+    const theme = create(ThemeSchema, {
+      name: 't',
+      tokens: create(TokensSchema, {
+        palette: { blue: '$palette.other', other: '#ABCDEF' },
+        roles: { node_fill: '$palette.blue' },
+      }),
+    });
+    const result = resolveFill('$roles.node_fill', theme);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const node = Object.values(result.value.nodes)[0];
+      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$palette.other' }));
     }
   });
 
@@ -648,7 +679,7 @@ describe('token_resolver', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const nodeEntry = create(NodeStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
-        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$colors.primary' }) } }),
+        fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_fill' }) } }),
       }),
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
@@ -658,12 +689,12 @@ describe('token_resolver', () => {
     expect(tokenResult.kind).toBe('ok');
     if (tokenResult.kind === 'ok') {
       const node = Object.values(tokenResult.value.nodes)[0];
-      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$colors.primary' }));
+      expect(node.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '$roles.node_fill' }));
     }
   });
 
   test('a literal color value (not a token ref) passes through unchanged', () => {
-    const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, { colors: { primary: '#123456' } }) });
+    const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, { roles: { node_fill: '#123456' } }) });
     const nodeEntry = create(NodeStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
         fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#3B82F6' }) } }),
@@ -710,7 +741,7 @@ describe('resolvePipeline end-to-end', () => {
         visible: create(NodeStyleEntrySchema, {
           component: 'box',
           shape: create(Glyph2DSchema, {
-            fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$colors.primary' }) } }),
+            fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_fill' }) } }),
           }),
         }),
       },
@@ -720,7 +751,7 @@ describe('resolvePipeline end-to-end', () => {
     });
     const theme = create(ThemeSchema, {
       name: 't',
-      tokens: create(TokensSchema, { colors: { primary: '#00FF00' } }),
+      tokens: create(TokensSchema, { palette: { green: '#00FF00' }, roles: { node_fill: '$palette.green' } }),
       nodeComponents: [
         create(NodeComponentSchema, {
           name: 'box',
@@ -744,9 +775,8 @@ describe('resolvePipeline end-to-end', () => {
     expect(toGroup?.target).toBe('g1');
     expect(Object.values(result.value.groups)[0].isSuperNode).toBe(true);
 
-    // per-element override (fill=$colors.primary) wins over theme
-    // component's fill for the same field, and different field (stroke)
-    // from the theme still comes through.
+    // A stylesheet entry naming a role requires the token resolver to run
+    // after the cascade merges stylesheet entries. Nothing else asserts it.
     const visible = result.value.nodes['visible'];
     expect(visible?.shape.fill?.paint.value).toEqual(create(ColorSchema, { value: '#00FF00' }));
     expect(visible?.shape.stroke?.width).toBe(1);

@@ -39,12 +39,11 @@ message Theme {
   optional string default_annotation_component = 13;
 
   // No canvas field on Theme. Canvas is per-document data, lives in Stylesheet.
-  // Theme can express its canvas-related defaults via tokens — e.g.,
-  //   theme.tokens.colors["background"] = "#1a1a1a"
-  //   theme.tokens.sizes["node_spacing"] = 40
-  // — and stylesheets reference them: canvas { background { value: "$colors.background" } }.
-  // The merge "use stylesheet value if set, else theme token, else code default" is
-  // resolver logic, not encoded in the schema.
+  // A theme expresses its canvas default through the reserved `background`
+  // role — tokens.roles["background"] — which the cascade looks up directly
+  // rather than by injecting a reference and hoping the resolver substitutes
+  // it. A stylesheet's own canvas.background wins when set; absent both, the
+  // diagram renders transparent.
 }
 
 // ============================================================================
@@ -75,9 +74,43 @@ message AnnotationComponent {
 }
 
 message Tokens {
-  // Color tokens. Values are literal hex/rgb. Referenced from style as
-  // "$colors.<name>" anywhere a Color is expected.
-  map<string, string> colors = 1;
+  // Field 1 was `colors`, field 4 was `spacings`; both are reused below
+  // rather than reserved. This is a BREAKING change and deliberately not a
+  // backward-compatible one: pre-1.0, there is no released file format to
+  // stay compatible with, and a reserved number is a permanent scar carried
+  // for readers that do not exist.
+  //
+  // `colors` was one flat map serving two incompatible goals: naming by
+  // colour is DRY but documents nothing about what is stylable, naming by
+  // slot enumerates the surface but duplicates a hex two slots share.
+  // `spacings` had no consumer at all — layout reads canvas.node_spacing
+  // from the STYLESHEET.
+
+  // Raw colours. Literal hex/rgb ONLY — a palette entry may never itself be
+  // a reference, which is what makes role resolution one hop by construction
+  // rather than by cycle detection.
+  //
+  // Referenced only from `roles`, as "$palette.<name>". A component or a
+  // stylesheet reaching past roles into the palette would make the role
+  // enumeration decorative, so it is forbidden, and it is greppable.
+  map<string, string> palette = 1;
+
+  // Named styling slots — the layer between a raw colour and a component.
+  // A value is either a literal or "$palette.<name>": one hop, no chains.
+  //
+  // Components and stylesheets reference these as "$roles.<name>". Roles are
+  // meant to be EXHAUSTIVE over the slots the component messages can reach,
+  // including ones a given theme's own components do not fill: a role that
+  // nothing references still tells an author the knob exists, and costs no
+  // duplicated value, since several roles may point at one palette entry.
+  //
+  // `background` is reserved: the cascade looks it up for the canvas. It is
+  // the one role that may be absent without error, because there the ENGINE
+  // does the lookup rather than the author — a reference someone typed is a
+  // mistake when it dangles, a lookup made on their behalf is not. Omit it
+  // and the diagram renders transparent, which adapts to whatever the SVG is
+  // embedded in.
+  map<string, string> roles = 4;
 
   // Typography tokens. Referenced as "$fonts.<name>".
   map<string, FontSpec> fonts = 2;
@@ -85,9 +118,6 @@ message Tokens {
   // Numeric sizes (for stroke widths, glow radii, font sizes, etc).
   // Referenced as "$sizes.<name>".
   map<string, double> sizes = 3;
-
-  // Spacing values (for paddings, label offsets, etc).
-  map<string, double> spacings = 4;
 
   // Stroke dash patterns ("5,5", "2,2,5,5", etc).
   // Referenced as "$dashes.<name>".

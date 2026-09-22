@@ -35,11 +35,13 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 
-import { loadDiagram } from '../loaders';
+import { loadDelta, loadDiagram, loadStylesheet } from '../loaders';
 import { ValidatorImpl } from './validator';
 import { ValidateRequest } from './validate_request';
 import { ViolationKind } from './violation';
 import { diff } from '../diff/diff';
+import { DeltaSchema } from '@archeglyph/proto/gen/content_pb';
+import { toJson } from '@archeglyph/proto/util/json';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -806,5 +808,72 @@ describe('diff: groups', () => {
       .filter((d) => d.changeType === ChangeType.DELETED && d.before?.parentGroup === 'box')
       .map((d) => d.nodeId);
     expect(members).toEqual(['a', 'b']);
+  });
+});
+
+describe('loaders: schema_version on pending edits', () => {
+  const sheetWithEdit = (editVersion: number): string => JSON.stringify({
+    schemaVersion: 1,
+    nodes: {},
+    pendingEdits: [{ schemaVersion: editVersion, id: 'e1' }],
+  });
+
+  test('loadStylesheet accepts a pending edit at schema_version 1', async () => {
+    const result = await loadStylesheet(sheetWithEdit(1));
+    expect(result.kind).toBe('ok');
+  });
+
+  // The stylesheet is version 1, so only the nested check can reject this.
+  test('loadStylesheet rejects a pending edit at an unsupported version', async () => {
+    const result = await loadStylesheet(sheetWithEdit(2));
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.message).toContain('schema_version');
+      expect(result.error.message).toContain('e1');
+    }
+  });
+
+  test('a pending edit omitting schema_version gets proto3 zero and is rejected', async () => {
+    const result = await loadStylesheet(JSON.stringify({
+      schemaVersion: 1,
+      pendingEdits: [{ id: 'no-version' }],
+    }));
+    expect(result.kind).toBe('err');
+  });
+});
+
+describe('loaders: loadDelta', () => {
+  test('loadDelta accepts schema_version 1', async () => {
+    const result = await loadDelta(JSON.stringify({
+      schemaVersion: 1, baseRef: 'a.json', targetRef: 'b.json',
+    }));
+    expect(result.kind).toBe('ok');
+  });
+
+  test('loadDelta rejects an unsupported schema_version', async () => {
+    const result = await loadDelta(JSON.stringify({ schemaVersion: 2 }));
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.message).toContain('schema_version');
+    }
+  });
+
+  // Wire enum spelling is 'DELETED', not the proto constant name.
+  test('loadDelta reads back exactly what the diff op writes', async () => {
+    const base = await loadDiagram(await Bun.file('examples/checkout.diag.json').text());
+    const target = await loadDiagram(await Bun.file('examples/checkout-v2.diag.json').text());
+    if (base.kind !== 'ok' || target.kind !== 'ok') throw new Error('fixture load failed');
+
+    const delta = diff(base.value, target.value);
+    const written = toJson(DeltaSchema, delta);
+
+    const result = await loadDelta(written);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.nodeDeltas.length).toBe(delta.nodeDeltas.length);
+      expect(result.value.edgeDeltas.length).toBe(delta.edgeDeltas.length);
+      expect(result.value.groupDeltas.length).toBe(delta.groupDeltas.length);
+      expect(result.value.nodeDeltas[0]?.changeType).toBe(delta.nodeDeltas[0]?.changeType);
+    }
   });
 });

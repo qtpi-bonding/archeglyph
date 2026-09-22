@@ -5,7 +5,7 @@
 // non-throwing `Result<T, LoadError>` from here; try/catch stays
 // sequestered to this file.
 
-import { type Diagram } from '@archeglyph/proto/gen/content_pb';
+import { type Delta, type Diagram } from '@archeglyph/proto/gen/content_pb';
 import { type Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import { type Theme } from '@archeglyph/proto/gen/theme_pb';
 import { type Result, Ok, Err } from '@archeglyph/proto/util/result';
@@ -34,6 +34,16 @@ export async function loadStylesheet(text: string): Promise<Result<Stylesheet, L
     const request: LoadRequest = { text };
     const stylesheet: Stylesheet = await loader.loadStylesheet(request);
     return Ok(stylesheet);
+  } catch (e) {
+    return Err({ message: (e as Error).message });
+  }
+}
+
+export async function loadDelta(text: string): Promise<Result<Delta, LoadError>> {
+  try {
+    const request: LoadRequest = { text };
+    const delta: Delta = await loader.loadDelta(request);
+    return Ok(delta);
   } catch (e) {
     return Err({ message: (e as Error).message });
   }

@@ -158,11 +158,12 @@ export class StyleCascadeImpl implements StyleCascade {
     const stylesheet: Stylesheet | undefined = request.stylesheet;
     const theme: Theme | undefined = request.theme;
 
-    const canvas = create(CanvasStyleSchema, stylesheet?.canvas ?? {
-      background: create(ColorSchema, { value: '$colors.background' }),
-    });
-    if (canvas.background === undefined) {
-      canvas.background = create(ColorSchema, { value: '$colors.background' });
+    // Absent means transparent, not an error: this lookup is the engine's,
+    // not the author's. A '$palette.x' value is chased by the token resolver.
+    const canvas = create(CanvasStyleSchema, stylesheet?.canvas ?? {});
+    const themeBackground: string | undefined = theme?.tokens?.roles['background'];
+    if (canvas.background === undefined && themeBackground !== undefined) {
+      canvas.background = create(ColorSchema, { value: themeBackground });
     }
     const result: ResolvedDiagram = init(new ResolvedDiagram(), {
       id: filtered.id,

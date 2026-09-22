@@ -87,12 +87,12 @@ export const StylesheetSchema: GenMessage<Stylesheet> = /*@__PURE__*/
   messageDesc(file_style, 0);
 
 /**
- * Per-document canvas styling. Lives in Stylesheet only. Theme expresses
- * canvas-related defaults via tokens (theme.tokens.colors["background"],
- * theme.tokens.sizes["node_spacing"], etc.) which stylesheets can reference.
+ * Per-document canvas styling. Lives in Stylesheet only. A theme expresses
+ * its canvas default through the reserved `background` role
+ * (theme.tokens.roles["background"]), which the cascade looks up directly.
  *
- * Resolver fallback for unset fields: theme token (if a conventional name
- * exists) → hardcoded code default.
+ * Resolver fallback for background: this field if set, else the theme's
+ * `background` role, else transparent.
  *
  * @generated from message archeglyph.style.v1.CanvasStyle
  */
@@ -865,7 +865,16 @@ export const Vec2Schema: GenMessage<Vec2> = /*@__PURE__*/
  */
 export type Color = Message<"archeglyph.style.v1.Color"> & {
   /**
-   * "#3B82F6" or "$colors.primary" (token ref)
+   * "#3B82F6", or a token reference.
+   *
+   * A stylesheet may name "$roles.<name>" here, and that is a CONTRACT rather
+   * than an accident of resolution ordering: it is the one thing that makes
+   * an inline override theme-portable — "this node takes the accent colour,
+   * whatever the theme says that is" — where the alternative is a literal hex
+   * pinning the stylesheet to one theme's palette.
+   *
+   * "$palette.<name>" is NOT permitted here. Only a theme's own `roles` map
+   * may reach the palette.
    *
    * @generated from field: string value = 1;
    */

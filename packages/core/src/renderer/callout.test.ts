@@ -122,9 +122,13 @@ describe('anchored annotations render a callout line', () => {
     // would have been correct and the line invisible.
     // Read from the theme rather than repeating its hex here: the colour is a
     // design choice that moves, the "not the fallback" claim is not.
-    const themeCallout = blueprintTheme().annotationComponents[0]
-      ?.callout?.stroke?.paint;
-    const expected = themeCallout?.case === 'color' ? themeCallout.value.value : undefined;
+    // The component names a role, so follow the same hop: role -> palette.
+    const theme = blueprintTheme();
+    const themeCallout = theme.annotationComponents[0]?.callout?.stroke?.paint;
+    const ref = themeCallout?.case === 'color' ? themeCallout.value.value : undefined;
+    expect(ref).toBe('$roles.annotation_callout');
+    const role = theme.tokens?.roles[ref!.slice('$roles.'.length)];
+    const expected = theme.tokens?.palette[role!.slice('$palette.'.length)];
     expect(expected).toBeDefined();
 
     const group = annotationGroup(await renderWith(true));

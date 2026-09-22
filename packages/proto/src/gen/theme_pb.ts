@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file theme.proto.
  */
 export const file_theme: GenFile = /*@__PURE__*/
-  fileDesc("Cgt0aGVtZS5wcm90bxITYXJjaGVnbHlwaC50aGVtZS52MSK1BQoFVGhlbWUSFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEhQKB2V4dGVuZHMYBCABKAlIAYgBARIrCgZ0b2tlbnMYBSABKAsyGy5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2VucxI7Cg9ub2RlX2NvbXBvbmVudHMYBiADKAsyIi5hcmNoZWdseXBoLnRoZW1lLnYxLk5vZGVDb21wb25lbnQSOwoPZWRnZV9jb21wb25lbnRzGAcgAygLMiIuYXJjaGVnbHlwaC50aGVtZS52MS5FZGdlQ29tcG9uZW50EjwKEGdyb3VwX2NvbXBvbmVudHMYCCADKAsyIi5hcmNoZWdseXBoLnRoZW1lLnYxLk5vZGVDb21wb25lbnQSRwoVYW5ub3RhdGlvbl9jb21wb25lbnRzGAkgAygLMiguYXJjaGVnbHlwaC50aGVtZS52MS5Bbm5vdGF0aW9uQ29tcG9uZW50EiMKFmRlZmF1bHRfbm9kZV9jb21wb25lbnQYCiABKAlIAogBARIjChZkZWZhdWx0X2VkZ2VfY29tcG9uZW50GAsgASgJSAOIAQESJAoXZGVmYXVsdF9ncm91cF9jb21wb25lbnQYDCABKAlIBIgBARIpChxkZWZhdWx0X2Fubm90YXRpb25fY29tcG9uZW50GA0gASgJSAWIAQFCDgoMX2Rlc2NyaXB0aW9uQgoKCF9leHRlbmRzQhkKF19kZWZhdWx0X25vZGVfY29tcG9uZW50QhkKF19kZWZhdWx0X2VkZ2VfY29tcG9uZW50QhoKGF9kZWZhdWx0X2dyb3VwX2NvbXBvbmVudEIfCh1fZGVmYXVsdF9hbm5vdGF0aW9uX2NvbXBvbmVudCKiAQoNTm9kZUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEjAKBXNoYXBlGAIgASgLMhwuYXJjaGVnbHlwaC5zdHlsZS52MS5HbHlwaDJESACIAQESOAoKdHlwb2dyYXBoeRgDIAEoCzIfLmFyY2hlZ2x5cGguc3R5bGUudjEuVHlwb2dyYXBoeUgBiAEBQggKBl9zaGFwZUINCgtfdHlwb2dyYXBoeSKsAQoNRWRnZUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEjUKCmNvbm5lY3Rpb24YAiABKAsyHC5hcmNoZWdseXBoLnN0eWxlLnYxLkdseXBoMURIAIgBARI4Cgp0eXBvZ3JhcGh5GAMgASgLMh8uYXJjaGVnbHlwaC5zdHlsZS52MS5UeXBvZ3JhcGh5SAGIAQFCDQoLX2Nvbm5lY3Rpb25CDQoLX3R5cG9ncmFwaHki6AEKE0Fubm90YXRpb25Db21wb25lbnQSDAoEbmFtZRgBIAEoCRIwCgVzaGFwZRgCIAEoCzIcLmFyY2hlZ2x5cGguc3R5bGUudjEuR2x5cGgyREgAiAEBEjgKCnR5cG9ncmFwaHkYAyABKAsyHy5hcmNoZWdseXBoLnN0eWxlLnYxLlR5cG9ncmFwaHlIAYgBARIyCgdjYWxsb3V0GAQgASgLMhwuYXJjaGVnbHlwaC5zdHlsZS52MS5HbHlwaDFESAKIAQFCCAoGX3NoYXBlQg0KC190eXBvZ3JhcGh5QgoKCF9jYWxsb3V0IqQFCgZUb2tlbnMSNwoGY29sb3JzGAEgAygLMicuYXJjaGVnbHlwaC50aGVtZS52MS5Ub2tlbnMuQ29sb3JzRW50cnkSNQoFZm9udHMYAiADKAsyJi5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2Vucy5Gb250c0VudHJ5EjUKBXNpemVzGAMgAygLMiYuYXJjaGVnbHlwaC50aGVtZS52MS5Ub2tlbnMuU2l6ZXNFbnRyeRI7CghzcGFjaW5ncxgEIAMoCzIpLmFyY2hlZ2x5cGgudGhlbWUudjEuVG9rZW5zLlNwYWNpbmdzRW50cnkSNwoGZGFzaGVzGAUgAygLMicuYXJjaGVnbHlwaC50aGVtZS52MS5Ub2tlbnMuRGFzaGVzRW50cnkSQAoLc2hhcGVfcGF0aHMYBiADKAsyKy5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2Vucy5TaGFwZVBhdGhzRW50cnkaLQoLQ29sb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARpLCgpGb250c0VudHJ5EgsKA2tleRgBIAEoCRIsCgV2YWx1ZRgCIAEoCzIdLmFyY2hlZ2x5cGgudGhlbWUudjEuRm9udFNwZWM6AjgBGiwKClNpemVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ARovCg1TcGFjaW5nc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoAToCOAEaLQoLRGFzaGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARoxCg9TaGFwZVBhdGhzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJ3CghGb250U3BlYxIOCgZmYW1pbHkYASABKAkSEQoEc2l6ZRgCIAEoAUgAiAEBEjQKBndlaWdodBgDIAEoDjIfLmFyY2hlZ2x5cGguc3R5bGUudjEuRm9udFdlaWdodEgBiAEBQgcKBV9zaXplQgkKB193ZWlnaHRiBnByb3RvMw", [file_style]);
+  fileDesc("Cgt0aGVtZS5wcm90bxITYXJjaGVnbHlwaC50aGVtZS52MSK1BQoFVGhlbWUSFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEhQKB2V4dGVuZHMYBCABKAlIAYgBARIrCgZ0b2tlbnMYBSABKAsyGy5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2VucxI7Cg9ub2RlX2NvbXBvbmVudHMYBiADKAsyIi5hcmNoZWdseXBoLnRoZW1lLnYxLk5vZGVDb21wb25lbnQSOwoPZWRnZV9jb21wb25lbnRzGAcgAygLMiIuYXJjaGVnbHlwaC50aGVtZS52MS5FZGdlQ29tcG9uZW50EjwKEGdyb3VwX2NvbXBvbmVudHMYCCADKAsyIi5hcmNoZWdseXBoLnRoZW1lLnYxLk5vZGVDb21wb25lbnQSRwoVYW5ub3RhdGlvbl9jb21wb25lbnRzGAkgAygLMiguYXJjaGVnbHlwaC50aGVtZS52MS5Bbm5vdGF0aW9uQ29tcG9uZW50EiMKFmRlZmF1bHRfbm9kZV9jb21wb25lbnQYCiABKAlIAogBARIjChZkZWZhdWx0X2VkZ2VfY29tcG9uZW50GAsgASgJSAOIAQESJAoXZGVmYXVsdF9ncm91cF9jb21wb25lbnQYDCABKAlIBIgBARIpChxkZWZhdWx0X2Fubm90YXRpb25fY29tcG9uZW50GA0gASgJSAWIAQFCDgoMX2Rlc2NyaXB0aW9uQgoKCF9leHRlbmRzQhkKF19kZWZhdWx0X25vZGVfY29tcG9uZW50QhkKF19kZWZhdWx0X2VkZ2VfY29tcG9uZW50QhoKGF9kZWZhdWx0X2dyb3VwX2NvbXBvbmVudEIfCh1fZGVmYXVsdF9hbm5vdGF0aW9uX2NvbXBvbmVudCKiAQoNTm9kZUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEjAKBXNoYXBlGAIgASgLMhwuYXJjaGVnbHlwaC5zdHlsZS52MS5HbHlwaDJESACIAQESOAoKdHlwb2dyYXBoeRgDIAEoCzIfLmFyY2hlZ2x5cGguc3R5bGUudjEuVHlwb2dyYXBoeUgBiAEBQggKBl9zaGFwZUINCgtfdHlwb2dyYXBoeSKsAQoNRWRnZUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEjUKCmNvbm5lY3Rpb24YAiABKAsyHC5hcmNoZWdseXBoLnN0eWxlLnYxLkdseXBoMURIAIgBARI4Cgp0eXBvZ3JhcGh5GAMgASgLMh8uYXJjaGVnbHlwaC5zdHlsZS52MS5UeXBvZ3JhcGh5SAGIAQFCDQoLX2Nvbm5lY3Rpb25CDQoLX3R5cG9ncmFwaHki6AEKE0Fubm90YXRpb25Db21wb25lbnQSDAoEbmFtZRgBIAEoCRIwCgVzaGFwZRgCIAEoCzIcLmFyY2hlZ2x5cGguc3R5bGUudjEuR2x5cGgyREgAiAEBEjgKCnR5cG9ncmFwaHkYAyABKAsyHy5hcmNoZWdseXBoLnN0eWxlLnYxLlR5cG9ncmFwaHlIAYgBARIyCgdjYWxsb3V0GAQgASgLMhwuYXJjaGVnbHlwaC5zdHlsZS52MS5HbHlwaDFESAKIAQFCCAoGX3NoYXBlQg0KC190eXBvZ3JhcGh5QgoKCF9jYWxsb3V0Ip4FCgZUb2tlbnMSOQoHcGFsZXR0ZRgBIAMoCzIoLmFyY2hlZ2x5cGgudGhlbWUudjEuVG9rZW5zLlBhbGV0dGVFbnRyeRI1CgVyb2xlcxgEIAMoCzImLmFyY2hlZ2x5cGgudGhlbWUudjEuVG9rZW5zLlJvbGVzRW50cnkSNQoFZm9udHMYAiADKAsyJi5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2Vucy5Gb250c0VudHJ5EjUKBXNpemVzGAMgAygLMiYuYXJjaGVnbHlwaC50aGVtZS52MS5Ub2tlbnMuU2l6ZXNFbnRyeRI3CgZkYXNoZXMYBSADKAsyJy5hcmNoZWdseXBoLnRoZW1lLnYxLlRva2Vucy5EYXNoZXNFbnRyeRJACgtzaGFwZV9wYXRocxgGIAMoCzIrLmFyY2hlZ2x5cGgudGhlbWUudjEuVG9rZW5zLlNoYXBlUGF0aHNFbnRyeRouCgxQYWxldHRlRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARosCgpSb2xlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEaSwoKRm9udHNFbnRyeRILCgNrZXkYASABKAkSLAoFdmFsdWUYAiABKAsyHS5hcmNoZWdseXBoLnRoZW1lLnYxLkZvbnRTcGVjOgI4ARosCgpTaXplc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoAToCOAEaLQoLRGFzaGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARoxCg9TaGFwZVBhdGhzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJ3CghGb250U3BlYxIOCgZmYW1pbHkYASABKAkSEQoEc2l6ZRgCIAEoAUgAiAEBEjQKBndlaWdodBgDIAEoDjIfLmFyY2hlZ2x5cGguc3R5bGUudjEuRm9udFdlaWdodEgBiAEBQgcKBV9zaXplQgkKB193ZWlnaHRiBnByb3RvMw", [file_style]);
 
 /**
  * @generated from message archeglyph.theme.v1.Theme
@@ -205,16 +205,54 @@ export const AnnotationComponentSchema: GenMessage<AnnotationComponent> = /*@__P
   messageDesc(file_theme, 3);
 
 /**
+ * Field 1 was `colors`, field 4 was `spacings`; both are reused below
+ * rather than reserved. This is a BREAKING change and deliberately not a
+ * backward-compatible one: pre-1.0, there is no released file format to
+ * stay compatible with, and a reserved number is a permanent scar carried
+ * for readers that do not exist.
+ *
+ * `colors` was one flat map serving two incompatible goals: naming by
+ * colour is DRY but documents nothing about what is stylable, naming by
+ * slot enumerates the surface but duplicates a hex two slots share.
+ * `spacings` had no consumer at all — layout reads canvas.node_spacing
+ * from the STYLESHEET.
+ *
  * @generated from message archeglyph.theme.v1.Tokens
  */
 export type Tokens = Message<"archeglyph.theme.v1.Tokens"> & {
   /**
-   * Color tokens. Values are literal hex/rgb. Referenced from style as
-   * "$colors.<name>" anywhere a Color is expected.
+   * Raw colours. Literal hex/rgb ONLY — a palette entry may never itself be
+   * a reference, which is what makes role resolution one hop by construction
+   * rather than by cycle detection.
    *
-   * @generated from field: map<string, string> colors = 1;
+   * Referenced only from `roles`, as "$palette.<name>". A component or a
+   * stylesheet reaching past roles into the palette would make the role
+   * enumeration decorative, so it is forbidden, and it is greppable.
+   *
+   * @generated from field: map<string, string> palette = 1;
    */
-  colors: { [key: string]: string };
+  palette: { [key: string]: string };
+
+  /**
+   * Named styling slots — the layer between a raw colour and a component.
+   * A value is either a literal or "$palette.<name>": one hop, no chains.
+   *
+   * Components and stylesheets reference these as "$roles.<name>". Roles are
+   * meant to be EXHAUSTIVE over the slots the component messages can reach,
+   * including ones a given theme's own components do not fill: a role that
+   * nothing references still tells an author the knob exists, and costs no
+   * duplicated value, since several roles may point at one palette entry.
+   *
+   * `background` is reserved: the cascade looks it up for the canvas. It is
+   * the one role that may be absent without error, because there the ENGINE
+   * does the lookup rather than the author — a reference someone typed is a
+   * mistake when it dangles, a lookup made on their behalf is not. Omit it
+   * and the diagram renders transparent, which adapts to whatever the SVG is
+   * embedded in.
+   *
+   * @generated from field: map<string, string> roles = 4;
+   */
+  roles: { [key: string]: string };
 
   /**
    * Typography tokens. Referenced as "$fonts.<name>".
@@ -230,13 +268,6 @@ export type Tokens = Message<"archeglyph.theme.v1.Tokens"> & {
    * @generated from field: map<string, double> sizes = 3;
    */
   sizes: { [key: string]: number };
-
-  /**
-   * Spacing values (for paddings, label offsets, etc).
-   *
-   * @generated from field: map<string, double> spacings = 4;
-   */
-  spacings: { [key: string]: number };
 
   /**
    * Stroke dash patterns ("5,5", "2,2,5,5", etc).

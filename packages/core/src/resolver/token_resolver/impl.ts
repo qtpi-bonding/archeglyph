@@ -8,6 +8,7 @@ import { Tokens } from '@archeglyph/proto/gen/theme_pb';
 import { TokenResolver } from './schema_gen';
 
 const TOKEN_REF_RE = /^\$[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
+const PALETTE_REF_RE = /^\$palette\.([a-zA-Z_][a-zA-Z0-9_]*)$/;
 
 export class TokenResolverImpl implements TokenResolver {
   resolveTokens(request: ResolveTokensRequest): Result<ResolvedDiagram, ResolveError> {
@@ -19,22 +20,28 @@ export class TokenResolverImpl implements TokenResolver {
     if (tokens === undefined) {
       return Ok(resolved);
     }
-    walk(resolved, tokens);
-    walk(resolved.canvas, tokens);
+    // Collected, not thrown: one pass reports every bad reference.
+    const unresolved: string[] = [];
+    walk(resolved, tokens, unresolved);
+    walk(resolved.canvas, tokens, unresolved);
+    if (unresolved.length > 0) {
+      const listed = [...new Set(unresolved)].sort().join(', ');
+      return Err({ message: `unresolved token reference(s): ${listed}` });
+    }
     return Ok(resolved);
   }
 }
 
-function walk(obj: unknown, tokens: Tokens): void {
+function walk(obj: unknown, tokens: Tokens, unresolved: string[]): void {
   if (obj === null || obj === undefined) return;
   if (typeof obj !== 'object') return;
   if (Array.isArray(obj)) {
     for (let i = 0; i < obj.length; i++) {
       const v = obj[i];
       if (typeof v === 'string') {
-        obj[i] = resolveRef(v, tokens);
+        obj[i] = resolveRef(v, tokens, unresolved);
       } else {
-        walk(v, tokens);
+        walk(v, tokens, unresolved);
       }
     }
     return;
@@ -44,38 +51,42 @@ function walk(obj: unknown, tokens: Tokens): void {
     if (key === '$typeName' || key === '$unknown') continue;
     const v = record[key];
     if (typeof v === 'string') {
-      record[key] = resolveRef(v, tokens);
+      record[key] = resolveRef(v, tokens, unresolved);
     } else {
-      walk(v, tokens);
+      walk(v, tokens, unresolved);
     }
   }
 }
 
-function resolveRef(value: string, tokens: Tokens): string {
+function resolveRef(value: string, tokens: Tokens, unresolved: string[]): string {
   if (!TOKEN_REF_RE.test(value)) return value;
   const dot = value.indexOf('.');
   if (dot < 0) return value;
-  const table = value.substring(1, dot);
-  const key = value.substring(dot + 1);
-  const looked = lookup(tokens, table, key);
-  if (looked === undefined) return value;
-  if (typeof looked === 'string') return looked;
+  const looked = lookup(tokens, value.substring(1, dot), value.substring(dot + 1));
+  // Nothing downstream guards stroke, fill or text colour against a '$'.
+  if (looked === undefined) {
+    unresolved.push(value);
+    return value;
+  }
   if (typeof looked === 'number') return String(looked);
-  return value;
+  return looked;
 }
 
 function lookup(tokens: Tokens, table: string, key: string): string | number | undefined {
   switch (table) {
-    case 'colors': return tokens.colors[key];
+    // Depth is 1: a palette value is literal, so the result is never chased.
+    case 'roles': {
+      const role = tokens.roles[key];
+      if (role === undefined) return undefined;
+      const hop = PALETTE_REF_RE.exec(role);
+      return hop === null ? role : tokens.palette[hop[1]];
+    }
+    case 'palette': return tokens.palette[key];
     // Tokens.fonts holds a structured FontSpec, but every consumer of a font
     // token is a string field (Typography.font). The family is the only part
     // that can be substituted into one, so that is what $fonts.<name> means.
-    // design.md §4 lists fonts as a token namespace and gives $fonts.heading
-    // as its canonical example; without this case the reference was left
-    // verbatim in the output.
     case 'fonts': return tokens.fonts[key]?.family;
     case 'sizes': return tokens.sizes[key];
-    case 'spacings': return tokens.spacings[key];
     case 'dashes': return tokens.dashes[key];
     case 'shape_paths': return tokens.shapePaths[key];
     default: return undefined;

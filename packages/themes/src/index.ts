@@ -14,80 +14,216 @@ import { Option } from '@archeglyph/proto/util/result';
  */
 export const BUNDLED_THEME_NAMES: string[] = ['light', 'dark', 'blueprint'];
 
+// Every hex in this package lives in a palette. Entries are ALWAYS literal,
+// which is what bounds role resolution to one hop. Named by colour, not by
+// slot, so a hex two slots share is written once.
+const BLUEPRINT_PALETTE: Record<string, string> = {
+  sky:    '#8ad1ff',
+  navy:   '#122238',
+  ice:    '#bfe3ff',
+  teal:   '#73daca',
+  violet: '#bb9af7',
+  slate:  '#8b98a9',
+  mist:   '#b3c0cf',
+  ground: '#0f1a2b',
+};
+
+const LIGHT_PALETTE: Record<string, string> = {
+  ink:    '#000000',
+  paper:  '#FFFFFF',
+  near:   '#1a1a1a',
+  grey:   '#8A8A8A',
+  dim:    '#5a5a5a',
+  ground: '#F5F5F5',
+};
+
+const DARK_PALETTE: Record<string, string> = {
+  white:    '#FFFFFF',
+  black:    '#000000',
+  lavender: '#c0caf5',
+  steel:    '#9aa5ce',
+  slate:    '#7f8694',
+  mist:     '#a7aec0',
+  ground:   '#1a1b26',
+};
+
+// Exhaustive, including the fifteen slots no bundled component fills: a
+// declared role is how a theme author learns the knob exists. Unreferenced
+// roles take their element type's primary entry so enabling one stays
+// on-palette. Spelled out per theme because themes are copied as templates.
+const BLUEPRINT_ROLES: Record<string, string> = {
+  node_outline:                '$palette.sky',
+  node_fill:                   '$palette.navy',
+  node_glow:                   '$palette.sky',
+  node_label:                  '$palette.ice',
+  node_label_background:       '$palette.navy',
+  node_decoration:             '$palette.sky',
+
+  edge_stroke:                 '$palette.teal',
+  edge_glow:                   '$palette.teal',
+  edge_label:                  '$palette.ice',
+  edge_label_background:       '$palette.navy',
+
+  group_outline:               '$palette.violet',
+  group_fill:                  '$palette.violet',
+  group_glow:                  '$palette.violet',
+  group_label:                 '$palette.violet',
+  group_label_background:      '$palette.navy',
+  group_decoration:            '$palette.violet',
+
+  annotation_outline:          '$palette.slate',
+  annotation_fill:             '$palette.slate',
+  annotation_glow:             '$palette.slate',
+  annotation_label:            '$palette.mist',
+  annotation_label_background: '$palette.navy',
+  annotation_decoration:       '$palette.slate',
+  annotation_callout:          '$palette.slate',
+  annotation_callout_glow:     '$palette.slate',
+
+  background:                  '$palette.ground',
+};
+
+const LIGHT_ROLES: Record<string, string> = {
+  node_outline:                '$palette.ink',
+  node_fill:                   '$palette.paper',
+  node_glow:                   '$palette.ink',
+  node_label:                  '$palette.near',
+  node_label_background:       '$palette.paper',
+  node_decoration:             '$palette.ink',
+
+  edge_stroke:                 '$palette.ink',
+  edge_glow:                   '$palette.ink',
+  edge_label:                  '$palette.near',
+  edge_label_background:       '$palette.paper',
+
+  group_outline:               '$palette.grey',
+  group_fill:                  '$palette.grey',
+  group_glow:                  '$palette.grey',
+  group_label:                 '$palette.grey',
+  group_label_background:      '$palette.paper',
+  group_decoration:            '$palette.grey',
+
+  annotation_outline:          '$palette.grey',
+  annotation_fill:             '$palette.grey',
+  annotation_glow:             '$palette.grey',
+  annotation_label:            '$palette.dim',
+  annotation_label_background: '$palette.paper',
+  annotation_decoration:       '$palette.grey',
+  annotation_callout:          '$palette.grey',
+  annotation_callout_glow:     '$palette.grey',
+
+  background:                  '$palette.ground',
+};
+
+const DARK_ROLES: Record<string, string> = {
+  node_outline:                '$palette.white',
+  node_fill:                   '$palette.black',
+  node_glow:                   '$palette.white',
+  node_label:                  '$palette.lavender',
+  node_label_background:       '$palette.black',
+  node_decoration:             '$palette.white',
+
+  edge_stroke:                 '$palette.white',
+  edge_glow:                   '$palette.white',
+  edge_label:                  '$palette.lavender',
+  edge_label_background:       '$palette.black',
+
+  group_outline:               '$palette.steel',
+  group_fill:                  '$palette.steel',
+  group_glow:                  '$palette.steel',
+  group_label:                 '$palette.steel',
+  group_label_background:      '$palette.black',
+  group_decoration:            '$palette.steel',
+
+  annotation_outline:          '$palette.slate',
+  annotation_fill:             '$palette.slate',
+  annotation_glow:             '$palette.slate',
+  annotation_label:            '$palette.mist',
+  annotation_label_background: '$palette.black',
+  annotation_decoration:       '$palette.slate',
+  annotation_callout:          '$palette.slate',
+  annotation_callout_glow:     '$palette.slate',
+
+  background:                  '$palette.ground',
+};
+
+// --- components: no literal colours below ---
+// themes.test.ts greps between these markers for hexes.
+
 // Default starter vocabulary: one node look, one edge look, both named "glyph"
 // per bind's implicit default. Deliberately the most geometric/boring shape
 // (plain square outline + fill) — theme.proto has no default_* or
 // kind_to_*_component mapping (design.md L1138), so this is just a starting
 // palette, not a schema-mandated shape. dark flips the two colors so the
 // shape still reads against the theme's own (dark) canvas.
-function glyphNodeComponent(strokeColor: string, fillColor: string, textColor: string) {
+function glyphNodeComponent() {
   return create(NodeComponentSchema, {
     name: 'glyph',
     // Label colour is explicit for the same reason as blueprint's: an absent
     // Typography leaves <text> with no fill, so it renders black whatever the
     // theme's own foreground is.
-    typography: create(TypographySchema, { color: create(ColorSchema, { value: textColor }) }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.node_label' }) }),
     shape: create(Glyph2DSchema, {
       shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
       cornerRadius: 0,
-      stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) } }),
-      fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: fillColor }) } }),
+      stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_outline' }) } }),
+      fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_fill' }) } }),
     }),
   });
 }
 
-function glyphEdgeComponent(strokeColor: string) {
+function glyphEdgeComponent() {
   return create(EdgeComponentSchema, {
     name: 'glyph',
     connection: create(Glyph1DSchema, {
-      stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) } }),
+      stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.edge_stroke' }) } }),
     }),
   });
 }
 
 // A group is a dashed tint, never a filled body: it sits BEHIND its members
 // and an opaque one would hide them.
-function glyphGroupComponent(color: string) {
+function glyphGroupComponent() {
   return create(NodeComponentSchema, {
     name: 'glyph',
     shape: create(Glyph2DSchema, {
       shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
       cornerRadius: 3,
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: color }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_outline' }) },
         width: 1,
         dashing: { case: 'customDasharray', value: '5,4' },
       }),
       fill: create(FillSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: color }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_fill' }) },
         opacity: 0.06,
       }),
     }),
-    typography: create(TypographySchema, { color: create(ColorSchema, { value: color }) }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.group_label' }) }),
   });
 }
 
 // No fill at all. A note is editorial, so it stays out of the way of whatever
 // it is placed over; the grey outline is what separates it from a node, which
 // is always filled.
-function glyphAnnotationComponent(strokeColor: string, textColor: string) {
+function glyphAnnotationComponent() {
   return create(AnnotationComponentSchema, {
     name: 'glyph',
     shape: create(Glyph2DSchema, {
       shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
       cornerRadius: 2,
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.annotation_outline' }) },
         width: 1,
       }),
     }),
     typography: create(TypographySchema, {
-      color: create(ColorSchema, { value: textColor }),
+      color: create(ColorSchema, { value: '$roles.annotation_label' }),
       size: 11,
     }),
     callout: create(Glyph1DSchema, {
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: strokeColor }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.annotation_callout' }) },
         width: 1,
         dashing: { case: 'customDasharray', value: '2,3' },
       }),
@@ -113,11 +249,11 @@ function blueprintNodeShape(strokeColor: string, fillColor: string) {
 function blueprintNodeComponent() {
   return create(NodeComponentSchema, {
     name: 'glyph',
-    shape: blueprintNodeShape('#8ad1ff', '#122238'),
+    shape: blueprintNodeShape('$roles.node_outline', '$roles.node_fill'),
     // Without this the renderer emits <text> with no fill and the label falls
     // back to SVG's default black, which is unreadable on this theme's navy
     // ground. Groups and annotations already carry their own typography.
-    typography: create(TypographySchema, { color: create(ColorSchema, { value: '#bfe3ff' }) }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.node_label' }) }),
   });
 }
 
@@ -126,7 +262,7 @@ function blueprintEdgeComponent() {
     name: 'glyph',
     connection: create(Glyph1DSchema, {
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#73daca' }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.edge_stroke' }) },
         width: 1.2,
       }),
       arrowheads: create(ArrowheadsSchema, {
@@ -144,38 +280,28 @@ function blueprintGroupComponent() {
       shapeKind: { case: 'standard', value: ShapeType.SHAPE_RECT },
       cornerRadius: 3,
       stroke: create(StrokeSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#bb9af7' }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_outline' }) },
         width: 1,
         dashing: { case: 'customDasharray', value: '5,4' },
       }),
       fill: create(FillSchema, {
-        paint: { case: 'color', value: create(ColorSchema, { value: '#bb9af7' }) },
+        paint: { case: 'color', value: create(ColorSchema, { value: '$roles.group_fill' }) },
         opacity: 0.04,
       }),
     }),
-    typography: create(TypographySchema, { color: create(ColorSchema, { value: '#bb9af7' }) }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.group_label' }) }),
   });
 }
 
-function blueprintAnnotationComponent() {
-  return glyphAnnotationComponent('#8b98a9', '#b3c0cf');
-}
+// --- end components ---
 
 export function darkTheme(): Theme {
   return create(ThemeSchema, {
     schemaVersion: 1,
     name: 'dark',
     tokens: create(TokensSchema, {
-      colors: {
-        background: '#1a1b26',
-        foreground: '#c0caf5',
-        muted: '#565f89',
-        primary: '#7aa2f7',
-        accent: '#bb9af7',
-        success: '#9ece6a',
-        warning: '#e0af68',
-        danger: '#f7768e',
-      },
+      palette: DARK_PALETTE,
+      roles: DARK_ROLES,
       fonts: {
         body: create(FontSpecSchema, {
           family: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif',
@@ -186,18 +312,12 @@ export function darkTheme(): Theme {
       },
       sizes: {
         stroke_thin: 1.0,
-        stroke_normal: 1.5,
         font_small: 11.0,
         font_normal: 13.0,
         font_large: 16.0,
       },
-      spacings: {
-        node_padding: 12.0,
-        label_offset: 6.0,
-        node_spacing: 24.0,
-      },
       dashes: {
-        dashed: '6,4',
+        dashed: '5,4',
         dotted: '2,3',
       },
       shapePaths: {},
@@ -206,42 +326,28 @@ export function darkTheme(): Theme {
     defaultEdgeComponent: 'glyph',
     defaultGroupComponent: 'glyph',
     defaultAnnotationComponent: 'glyph',
-    nodeComponents: [glyphNodeComponent('#FFFFFF', '#000000', '#c0caf5')],
-    edgeComponents: [glyphEdgeComponent('#FFFFFF')],
-    groupComponents: [glyphGroupComponent('#9aa5ce')],
-    annotationComponents: [glyphAnnotationComponent('#7f8694', '#a7aec0')],
+    nodeComponents: [glyphNodeComponent()],
+    edgeComponents: [glyphEdgeComponent()],
+    groupComponents: [glyphGroupComponent()],
+    annotationComponents: [glyphAnnotationComponent()],
   });
 }
 export function lightTheme(): Theme {
   const tokens = create(TokensSchema, {
-    colors: {
-      background: '#F5F5F5',
-      foreground: '#1E1E1E',
-      muted: '#8A8A8A',
-      primary: '#0066CC',
-      accent: '#7C3AED',
-      success: '#16A34A',
-      warning: '#D97706',
-      danger: '#DC2626',
-    },
+    palette: LIGHT_PALETTE,
+    roles: LIGHT_ROLES,
     fonts: {
       body: create(FontSpecSchema, { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }),
       mono: create(FontSpecSchema, { family: "'Noto Sans Mono', ui-monospace, Menlo, 'Cascadia Code', Consolas, monospace" }),
     },
     sizes: {
       stroke_thin: 1,
-      stroke_normal: 2,
       font_small: 11,
       font_normal: 13,
       font_large: 16,
     },
-    spacings: {
-      node_padding: 12,
-      label_offset: 6,
-      node_spacing: 24,
-    },
     dashes: {
-      dashed: '6,4',
+      dashed: '5,4',
       dotted: '2,3',
     },
     shapePaths: {},
@@ -254,10 +360,10 @@ export function lightTheme(): Theme {
     defaultEdgeComponent: 'glyph',
     defaultGroupComponent: 'glyph',
     defaultAnnotationComponent: 'glyph',
-    nodeComponents: [glyphNodeComponent('#000000', '#FFFFFF', '#1a1a1a')],
-    edgeComponents: [glyphEdgeComponent('#000000')],
-    groupComponents: [glyphGroupComponent('#8A8A8A')],
-    annotationComponents: [glyphAnnotationComponent('#8A8A8A', '#5a5a5a')],
+    nodeComponents: [glyphNodeComponent()],
+    edgeComponents: [glyphEdgeComponent()],
+    groupComponents: [glyphGroupComponent()],
+    annotationComponents: [glyphAnnotationComponent()],
   });
 }
 
@@ -266,16 +372,8 @@ export function blueprintTheme(): Theme {
     schemaVersion: 1,
     name: 'blueprint',
     tokens: create(TokensSchema, {
-      colors: {
-        background: '#0f1a2b',
-        foreground: '#bfe3ff',
-        muted: '#3f6a8f',
-        primary: '#7ab8ff',
-        accent: '#bb9af7',
-        success: '#73daca',
-        warning: '#e0af68',
-        danger: '#f7768e',
-      },
+      palette: BLUEPRINT_PALETTE,
+      roles: BLUEPRINT_ROLES,
       fonts: {
         body: create(FontSpecSchema, {
           family: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif',
@@ -286,18 +384,12 @@ export function blueprintTheme(): Theme {
       },
       sizes: {
         stroke_thin: 1.0,
-        stroke_normal: 1.5,
         font_small: 11.0,
         font_normal: 13.0,
         font_large: 16.0,
       },
-      spacings: {
-        node_padding: 12.0,
-        label_offset: 6.0,
-        node_spacing: 24.0,
-      },
       dashes: {
-        dashed: '6,4',
+        dashed: '5,4',
         dotted: '2,3',
       },
       shapePaths: {},
@@ -309,7 +401,7 @@ export function blueprintTheme(): Theme {
     nodeComponents: [blueprintNodeComponent()],
     edgeComponents: [blueprintEdgeComponent()],
     groupComponents: [blueprintGroupComponent()],
-    annotationComponents: [blueprintAnnotationComponent()],
+    annotationComponents: [glyphAnnotationComponent()],
   });
 }
 

@@ -137,7 +137,8 @@ export function viewBox(diagram: LaidOutDiagram): string {
 
 export function backgroundRect(diagram: LaidOutDiagram): string {
   const background = diagram.canvas?.background;
-  if (background === undefined || background.value === '' || background.value.startsWith('$')) {
+  // No '$' guard needed: the cascade resolves the background role directly.
+  if (background === undefined || background.value === '') {
     return '';
   }
   const extents: ViewBoxExtents = viewBoxExtents(diagram);

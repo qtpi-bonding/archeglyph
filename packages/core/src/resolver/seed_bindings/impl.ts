@@ -11,7 +11,7 @@ import {
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
-import { deriveComponent, isThemeDefault } from './derive';
+import { deriveComponent } from './derive';
 
 /**
  * Write the theme's starting components into the stylesheet as real bindings.
@@ -29,12 +29,20 @@ import { deriveComponent, isThemeDefault } from './derive';
  * the theme nominates its own starting look via default_*_component, and a
  * theme that nominates none seeds nothing.
  *
- * A binding that means nobody chose it -- unset, or equal to the theme's own
- * default -- is rewritten from the element's `kind` tag. Anything else is left
- * alone. Calling this twice is the same as calling it once, which the editor
- * depends on: it seeds at load and stores that, then re-seeds a throwaway copy
- * on every scene rebuild.
+ * Only an element whose `component` is unset gets one written, and only when
+ * its `kind` tag derives something OTHER than the theme's default -- an unset
+ * value already resolves to the default via the cascade, so writing it in
+ * would only make a seeded value indistinguishable from a chosen one.
+ *
+ * Anything already in `component` is a choice, whoever made it, and is left
+ * alone. Calling this twice is the same as calling it once.
  */
+// An empty box is the only thing that means nobody chose. The cascade turns
+// it into the theme's default at render time.
+function isUnset(component: string | undefined): boolean {
+  return component === undefined || component === '';
+}
+
 export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, theme: Theme | undefined): Stylesheet {
   if (theme === undefined) {
     return stylesheet;
@@ -53,7 +61,7 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
       for (const id of Object.keys(graph.nodes)) {
         const existing = nodes[id];
         const derived = deriveComponent(graph.nodes[id].tags['kind'], nodeNames, nodeDefault);
-        if (derived !== undefined && isThemeDefault(existing?.component, nodeDefault)) {
+        if (derived !== undefined && derived !== nodeDefault && isUnset(existing?.component)) {
           nodes[id] = create(NodeStyleEntrySchema, { ...existing, component: derived });
         }
       }
@@ -65,7 +73,7 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
       for (const id of Object.keys(graph.edges)) {
         const existing = edges[id];
         const derived = deriveComponent(graph.edges[id].tags['kind'], edgeNames, edgeDefault);
-        if (derived !== undefined && isThemeDefault(existing?.component, edgeDefault)) {
+        if (derived !== undefined && derived !== edgeDefault && isUnset(existing?.component)) {
           edges[id] = create(EdgeStyleEntrySchema, { ...existing, component: derived });
         }
       }
@@ -77,7 +85,7 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
       for (const id of Object.keys(graph.groups)) {
         const existing = groups[id];
         const derived = deriveComponent(graph.groups[id].tags['kind'], groupNames, groupDefault);
-        if (derived !== undefined && isThemeDefault(existing?.component, groupDefault)) {
+        if (derived !== undefined && derived !== groupDefault && isUnset(existing?.component)) {
           groups[id] = create(GroupStyleEntrySchema, { ...existing, component: derived });
         }
       }
@@ -90,7 +98,7 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
     for (const id of Object.keys(annotations)) {
       const existing = annotations[id];
       const derived = deriveComponent(existing.tags['kind'], annotationNames, annotationDefault);
-      if (derived !== undefined && isThemeDefault(existing.component, annotationDefault)) {
+      if (derived !== undefined && derived !== annotationDefault && isUnset(existing.component)) {
         annotations[id] = create(AnnotationEntrySchema, { ...existing, component: derived });
       }
     }

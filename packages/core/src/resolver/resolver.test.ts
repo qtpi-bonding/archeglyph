@@ -827,14 +827,24 @@ describe('seedComponentBindings', () => {
     },
   });
 
-  test('writes the theme default as an ordinary stylesheet entry', () => {
+  // Unset already resolves to the default via the cascade; writing it in
+  // would make a seeded value indistinguishable from a chosen one.
+  test('leaves the component unset when the theme default is what applies', () => {
     const seeded = seedComponentBindings(
       graphOf(),
       create(StylesheetSchema, { schemaVersion: 1 }),
       blueprintTheme(),
     );
-    expect(seeded.nodes.n1?.component).toBe('glyph');
-    expect(seeded.groups.g1?.component).toBe('glyph');
+    expect(seeded.nodes.n1?.component ?? '').toBe('');
+    expect(seeded.groups.g1?.component ?? '').toBe('');
+  });
+
+  test('a diagram with no stylesheet still resolves to the theme default', () => {
+    const result = resolvePipeline(graphOf(), undefined, only(blueprintTheme()));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.nodes['n1']?.shape.stroke?.paint.case).toBe('color');
+    }
   });
 
   test('never overwrites a binding the user already chose', () => {
@@ -939,5 +949,60 @@ describe('qualified component names', () => {
       expect(result.error.detail).toContain('missing');
       expect(result.error.detail).toContain('acme');
     }
+  });
+});
+
+describe('unset component falls back to the theme default', () => {
+  const theme = create(ThemeSchema, {
+    name: 't',
+    defaultNodeComponent: 'glyph',
+    nodeComponents: [
+      create(NodeComponentSchema, {
+        name: 'glyph',
+        shape: create(Glyph2DSchema, {
+          stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#111111' }) } }),
+        }),
+      }),
+      create(NodeComponentSchema, {
+        name: 'other',
+        shape: create(Glyph2DSchema, {
+          stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#222222' }) } }),
+        }),
+      }),
+    ],
+  });
+  const diagram = create(DiagramSchema, {
+    id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+  });
+  const strokeOf = (r: Result<ResolvedDiagram, PipelineError>): string | undefined => {
+    if (r.kind !== 'ok') return undefined;
+    const paint = r.value.nodes['a']?.shape.stroke?.paint;
+    return paint?.case === 'color' ? paint.value.value : undefined;
+  };
+
+  test('no stylesheet entry at all resolves to the theme default component', () => {
+    const result = resolvePipeline(diagram, undefined, only(theme));
+    expect(strokeOf(result)).toBe('#111111');
+  });
+
+  test('an entry with no component resolves to the theme default component', () => {
+    const sheet = create(StylesheetSchema, {
+      schemaVersion: 1,
+      nodes: { a: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { rotation: 10 }) }) },
+    });
+    expect(strokeOf(resolvePipeline(diagram, sheet, only(theme)))).toBe('#111111');
+  });
+
+  test('a named component still wins over the default', () => {
+    const sheet = create(StylesheetSchema, {
+      schemaVersion: 1,
+      nodes: { a: create(NodeStyleEntrySchema, { component: 'other' }) },
+    });
+    expect(strokeOf(resolvePipeline(diagram, sheet, only(theme)))).toBe('#222222');
+  });
+
+  test('a theme with no default component leaves the element unstyled', () => {
+    const bare = create(ThemeSchema, { name: 't', nodeComponents: [] });
+    expect(strokeOf(resolvePipeline(diagram, undefined, only(bare)))).toBeUndefined();
   });
 });

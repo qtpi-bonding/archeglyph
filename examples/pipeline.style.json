@@ -7,8 +7,7 @@
           "x": 12,
           "y": 12
         }
-      },
-      "component": "glyph"
+      }
     },
     "resolve": {
       "layout": {
@@ -16,8 +15,7 @@
           "x": 152,
           "y": 108.75677303201915
         }
-      },
-      "component": "glyph"
+      }
     },
     "layout": {
       "layout": {
@@ -25,8 +23,7 @@
           "x": 292,
           "y": -216.5087010537202
         }
-      },
-      "component": "glyph"
+      }
     },
     "render": {
       "layout": {
@@ -34,8 +31,7 @@
           "x": 432,
           "y": 58.50238532871923
         }
-      },
-      "component": "glyph"
+      }
     },
     "diagram": {
       "layout": {
@@ -43,8 +39,7 @@
           "x": 12,
           "y": 281.86392745750254
         }
-      },
-      "component": "glyph"
+      }
     },
     "stylesheet": {
       "layout": {
@@ -52,8 +47,7 @@
           "x": 12,
           "y": -96.44937165191192
         }
-      },
-      "component": "glyph"
+      }
     },
     "svg": {
       "layout": {
@@ -61,29 +55,10 @@
           "x": 572,
           "y": -25.483622784431414
         }
-      },
-      "component": "glyph"
+      }
     }
   },
   "edges": {
-    "diagram__load": {
-      "component": "glyph"
-    },
-    "stylesheet__load": {
-      "component": "glyph"
-    },
-    "load__resolve": {
-      "component": "glyph"
-    },
-    "resolve__layout": {
-      "component": "glyph"
-    },
-    "layout__render": {
-      "component": "glyph"
-    },
-    "render__svg": {
-      "component": "glyph"
-    }
   },
   "groups": {
     "core": {
@@ -92,8 +67,7 @@
           "x": 157,
           "y": 53.33333333333333
         }
-      },
-      "component": "glyph"
+      }
     }
   }
 }

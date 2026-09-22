@@ -137,21 +137,21 @@ const pickGroup: Finder<NodeComponent> = (t, n) => t.groupComponents.find((c: No
 const pickAnnotation: Finder<AnnotationComponent> = (t, n) => t.annotationComponents.find((c: AnnotationComponent): boolean => c.name === n);
 
 /**
- * The component name to look up, or undefined to skip the theme layer.
+ * The component name to look up: the entry's own, else the theme's stated
+ * default for this element type.
  *
- * The resolver applies ONLY what the stylesheet says, per design.md §5:
- * "If `component` is unset, no theme component applies — the element starts
- * unstyled." It was previously hardcoding `?? 'glyph'`, which meant no theme
- * could define a component called "glyph" for a specific purpose without it
- * silently capturing every unbound element in the diagram.
+ * The fallback is what lets a style entry leave `component` empty, and an
+ * empty value is the only thing that means nobody chose. Seeding used to
+ * write the default in instead, which made a seeded value indistinguishable
+ * from one a user typed -- so `bind --component <the default>` was silently
+ * rewritten on the next load.
  *
- * A diagram with no stylesheet still renders, but by being SEEDED with real
- * bindings (see seed_bindings) rather than by anything being assumed here.
- * Those bindings are ordinary stylesheet rows: visible in the inspector,
- * editable, removable, and saved to the file like anything the user wrote.
+ * The theme names the component; the resolver never invents one. A theme
+ * stating no default leaves unbound elements unstyled, per design.md §5.
  */
-function componentNameFor(explicit: string | undefined): string | undefined {
-  return explicit !== undefined && explicit !== '' ? explicit : undefined;
+function componentNameFor(explicit: string | undefined, themeDefault: string | undefined): string | undefined {
+  if (explicit !== undefined && explicit !== '') return explicit;
+  return themeDefault !== undefined && themeDefault !== '' ? themeDefault : undefined;
 }
 
 export class StyleCascadeImpl implements StyleCascade {
@@ -176,7 +176,7 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));
     for (const node of sortedNodes) {
       const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
-      const componentName: string | undefined = componentNameFor(entry?.component);
+      const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultNodeComponent);
       let themeComponent: NodeComponent | undefined;
       if (componentName !== undefined) {
         const looked = findComponent(themes, componentName, pickNode);
@@ -206,7 +206,7 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedEdges.sort((a: FilteredEdge, b: FilteredEdge): number => compareIds(a.id, b.id));
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
-      const componentName: string | undefined = componentNameFor(entry?.component);
+      const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultEdgeComponent);
       let themeComponent: EdgeComponent | undefined;
       if (componentName !== undefined) {
         const looked = findComponent(themes, componentName, pickEdge);
@@ -237,7 +237,7 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedGroups.sort((a: FilteredGroup, b: FilteredGroup): number => compareIds(a.id, b.id));
     for (const group of sortedGroups) {
       const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
-      const componentName: string | undefined = componentNameFor(entry?.component);
+      const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultGroupComponent);
       let themeComponent: NodeComponent | undefined;
       if (componentName !== undefined) {
         const looked = findComponent(themes, componentName, pickGroup);
@@ -269,7 +269,7 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedAnnotations.sort((a: FilteredAnnotation, b: FilteredAnnotation): number => compareIds(a.id, b.id));
     for (const annotation of sortedAnnotations) {
       const entry: AnnotationEntry = annotation.entry;
-      const componentName: string | undefined = componentNameFor(entry.component);
+      const componentName: string | undefined = componentNameFor(entry.component, themes?.get('default')?.defaultAnnotationComponent);
       let themeComponent: AnnotationComponent | undefined;
       if (componentName !== undefined) {
         const looked = findComponent(themes, componentName, pickAnnotation);

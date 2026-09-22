@@ -2,51 +2,35 @@
   "schemaVersion": 1,
   "nodes": {
     "cdn": {
-      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } }
     },
     "gateway": {
-      "layout": { "position": { "x": 16, "y": 96 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 16, "y": 96 }, "size": { "x": 130, "y": 44 } }
     },
     "checkout": {
-      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 16, "y": 16 }, "size": { "x": 130, "y": 44 } }
     },
     "payments": {
-      "layout": { "position": { "x": 16, "y": 96 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 16, "y": 96 }, "size": { "x": 130, "y": 44 } }
     },
     "inventory": {
-      "layout": { "position": { "x": 16, "y": 176 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 16, "y": 176 }, "size": { "x": 130, "y": 44 } }
     },
     "orders": {
-      "layout": { "position": { "x": 600, "y": 200 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 600, "y": 200 }, "size": { "x": 130, "y": 44 } }
     },
     "stripe": {
-      "layout": { "position": { "x": 600, "y": 96 }, "size": { "x": 130, "y": 44 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 600, "y": 96 }, "size": { "x": 130, "y": 44 } }
     }
   },
   "edges": {
-    "cdn__gateway": { "component": "glyph" },
-    "gateway__checkout": { "component": "glyph" },
-    "checkout__payments": { "component": "glyph" },
-    "checkout__inventory": { "component": "glyph" },
-    "payments__stripe": { "component": "glyph" },
-    "checkout__orders": { "component": "glyph" },
-    "inventory__orders": { "component": "glyph" }
   },
   "groups": {
     "edge": {
-      "layout": { "position": { "x": 40, "y": 60 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 40, "y": 60 } }
     },
     "services": {
-      "layout": { "position": { "x": 320, "y": 20 } },
-      "component": "glyph"
+      "layout": { "position": { "x": 320, "y": 20 } }
     }
   },
   "pendingEdits": [

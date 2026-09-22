@@ -27,7 +27,7 @@ describe('testgen_seed_bindings__seedComponentBindings', () => {
         const diagram = create(DiagramSchema, {});
         const theme = create(ThemeSchema, { defaultAnnotationComponent: 'glyph' });
         const result = seedComponentBindings(diagram, stylesheet, theme);
-        expect(result.annotations.note.component).toBe('glyph');
+        expect(result.annotations.note.component ?? '').toBe('');
     });
 
     // WHEN: An element's kind does not derive a component name for its element type under the supplied theme; its component is not written, whether its stylesheet entry is absent, unset, empty, or already names a component.

@@ -52,8 +52,8 @@ describe('the kind tag picks a component', () => {
     expect(seeded.nodes['postgres']?.component).toBe('store');
   });
 
-  // A binding equal to the theme default means nobody chose it.
-  test('a binding equal to the theme default is rewritten when a kind tag appears', () => {
+  // A present component is a choice, even when it equals the theme default.
+  test('an explicit binding equal to the theme default is left alone', () => {
     const seeded = seedComponentBindings(
       diagramWith({ kind: 'store' }),
       create(StylesheetSchema, {
@@ -62,20 +62,7 @@ describe('the kind tag picks a component', () => {
       }),
       themeWithStore(),
     );
-    expect(seeded.nodes['postgres']?.component).toBe('store');
-  });
-
-  // Comparing raw strings instead of split halves would fail this.
-  test('a qualified default.glyph counts as the theme default', () => {
-    const seeded = seedComponentBindings(
-      diagramWith({ kind: 'store' }),
-      create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: { postgres: create(NodeStyleEntrySchema, { component: 'default.glyph' }) },
-      }),
-      themeWithStore(),
-    );
-    expect(seeded.nodes['postgres']?.component).toBe('store');
+    expect(seeded.nodes['postgres']?.component).toBe('glyph');
   });
 
   test('a binding the user chose is never overwritten', () => {
@@ -90,13 +77,25 @@ describe('the kind tag picks a component', () => {
     expect(seeded.nodes['postgres']?.component).toBe('queue');
   });
 
-  test('a kind the theme has no component for falls back to the default', () => {
+  // Nothing is written when the derivation lands on the theme default: an
+  // empty box already means that, and writing it in would make the box
+  // indistinguishable from a choice.
+  test('a kind the theme has no component for writes nothing', () => {
     const seeded = seedComponentBindings(
       diagramWith({ kind: 'wormhole' }),
       create(StylesheetSchema, { schemaVersion: 1 }),
       themeWithStore(),
     );
-    expect(seeded.nodes['postgres']?.component).toBe('glyph');
+    expect(seeded.nodes['postgres']?.component ?? '').toBe('');
+  });
+
+  test('an untagged node writes nothing', () => {
+    const seeded = seedComponentBindings(
+      diagramWith({}),
+      create(StylesheetSchema, { schemaVersion: 1 }),
+      themeWithStore(),
+    );
+    expect(seeded.nodes['postgres']?.component ?? '').toBe('');
   });
 
   test('seeding twice gives the same result as seeding once', () => {
@@ -133,7 +132,7 @@ describe('the kind tag picks a component', () => {
   });
 
   // Annotation tags live in the stylesheet, not the diagram.
-  test('an annotation tagged kind=store binds to the store component', () => {
+  test('an annotation whose kind lands on the default writes nothing', () => {
     const theme = create(ThemeSchema, {
       schemaVersion: 1,
       name: 'fixture',
@@ -150,6 +149,6 @@ describe('the kind tag picks a component', () => {
       }),
       theme,
     );
-    expect(seeded.annotations['note']?.component).toBe('glyph');
+    expect(seeded.annotations['note']?.component ?? '').toBe('');
   });
 });

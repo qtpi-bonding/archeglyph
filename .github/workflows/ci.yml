@@ -20,15 +20,8 @@ jobs:
       - name: licence headers
         run: bun run spdx
 
-      # Generated testgen files carry 31 known type errors and still run.
       - name: typecheck
-        run: |
-          set -o pipefail
-          bun run typecheck 2>&1 | tee /tmp/tsc.log || true
-          if grep 'error TS' /tmp/tsc.log | grep -v 'tests/testgen_'; then
-            echo "::error::typecheck failed outside generated tests"
-            exit 1
-          fi
+        run: bun run typecheck
 
       - name: tests
         run: bun run test

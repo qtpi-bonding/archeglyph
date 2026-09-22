@@ -15,6 +15,10 @@ jobs:
         with:
           bun-version: 1.3.10
 
+      - uses: bufbuild/buf-setup-action@v1
+
+      # buf.gen.yaml runs `bunx protoc-gen-es`, which resolves the pinned
+      # version from node_modules; without it bunx fetches its own.
       - run: bun install --frozen-lockfile
 
       - name: licence headers
@@ -29,12 +33,8 @@ jobs:
       - name: editor build
         run: bun run build:editor
 
-  proto:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: bufbuild/buf-setup-action@v1
       - run: buf lint
+
       # Committed generated TypeScript can drift from the .proto files.
       - name: generated code is current
         run: |

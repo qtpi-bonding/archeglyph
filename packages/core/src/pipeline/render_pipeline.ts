@@ -1,24 +1,50 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { type Diagram } from '@archeglyph/proto/gen/content_pb';
-import { type Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
+import { type Delta, type Diagram } from '@archeglyph/proto/gen/content_pb';
+import { type Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { type Theme } from '@archeglyph/proto/gen/theme_pb';
 import { Err, Ok, type Result } from '@archeglyph/proto/util/result';
 import { type LayoutEngine } from '../layout/layout_engine';
 import { LayoutRequest } from '../layout/layout_request';
 import { type LaidOutDiagram } from '../layout/laid_out_diagram';
 import { SvgRendererImpl } from '../renderer/svg_renderer';
+import { type DeltaOverlay } from '../delta/delta_overlay';
+import { applyDiffPalette } from '../delta/diff_palette';
+import { mergeDelta } from '../delta/merge_delta';
+import { seedComponentBindings } from '../resolver/seed_bindings';
 import { PipelineError } from './pipeline_error';
 import { resolvePipeline } from './resolve_pipeline';
 import { init } from '@archeglyph/proto/util/init';
 
-export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, themes: ReadonlyMap<string, Theme>, layoutEngine: LayoutEngine): Promise<Result<string, PipelineError>> {
-  const layoutResult = await layoutPipeline(diagram, stylesheet, themes, layoutEngine);
+export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, themes: ReadonlyMap<string, Theme>, layoutEngine: LayoutEngine, delta?: Delta): Promise<Result<string, PipelineError>> {
+  // Seeding must run on the union: a restored element is absent from the
+  // caller's diagram, so seeding there would leave it with no component.
+  let target: Diagram = diagram;
+  let sheet: Stylesheet | undefined = stylesheet;
+  let overlay: DeltaOverlay | undefined;
+  if (delta !== undefined) {
+    overlay = mergeDelta(diagram, delta);
+    target = overlay.diagram;
+    sheet = seedComponentBindings(
+      overlay.diagram,
+      stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }),
+      themes.get('default'),
+    );
+  }
+
+  const layoutResult = await layoutPipeline(target, sheet, themes, layoutEngine);
   if (layoutResult.kind === 'err') {
     return Err(layoutResult.error);
   }
 
-  const renderResult = new SvgRendererImpl().render(layoutResult.value);
+  // After layout: colours are token references until resolvePipeline's last
+  // stage, and the treatment changes no geometry.
+  const laidOut = overlay === undefined
+    ? layoutResult.value
+    : applyDiffPalette(layoutResult.value, overlay, themes.get('default')?.tokens);
+
+  const renderResult = new SvgRendererImpl().render(laidOut);
   if (renderResult.kind === 'err') {
     return Err(init(new PipelineError(), { stage: 'render', detail: renderResult.error.message }));
   }

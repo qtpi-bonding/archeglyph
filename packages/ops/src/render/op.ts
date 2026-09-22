@@ -3,9 +3,10 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { extname, basename, dirname, join, resolve } from 'node:path';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
+import type { Delta } from '@archeglyph/proto/gen/content_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
-import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
+import { loadDelta, loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { renderPipeline } from '@archeglyph/core/pipeline';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { create } from '@bufbuild/protobuf';
@@ -69,12 +70,27 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     }
     const themes = themesResult.value;
 
+    let delta: Delta | undefined;
+    if (params.delta !== undefined) {
+      const deltaText = await readFile(resolve(ctx.projectRoot, params.delta), 'utf8');
+      const deltaResult = await loadDelta(deltaText);
+      if (deltaResult.kind === 'err') {
+        throw init(new RenderOpError(), { stage: 'load', cause: deltaResult.error });
+      }
+      delta = deltaResult.value;
+    }
+
     // Fill any missing component bindings from the theme's declared defaults,
     // so a diagram with no style file renders the same here as it does in the
     // editor. The resolver itself assumes nothing.
-    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'));
+    //
+    // Skipped on the delta path: the union does not exist yet, so
+    // renderPipeline seeds it after merging.
+    const seeded = delta === undefined
+      ? seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'))
+      : stylesheet;
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
-    const pipelineResult = await renderPipeline(diagramResult.value, seeded, themes, layoutEngine);
+    const pipelineResult = await renderPipeline(diagramResult.value, seeded, themes, layoutEngine, delta);
     if (pipelineResult.kind === 'err') {
       throw init(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }

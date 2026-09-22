@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { type Glyph2D, type Fill, type Stroke, type Typography, ArrowheadVariant, ShapeType, FontWeight, TextAlign } from '@archeglyph/proto/gen/style_pb';
+import { type Glyph2D, type Fill, type Stroke, type Typography, ArrowheadVariant, ShapeType, FontWeight, TextAlign, StrokePattern } from '@archeglyph/proto/gen/style_pb';
 import type { Vec2 } from '../../geometry/vec2';
 import { type Localization } from '@archeglyph/proto/gen/content_pb';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
@@ -10,13 +10,30 @@ function r(n: number): string {
   return n.toFixed(2);
 }
 
+// Pattern values are fixed rather than scaled to stroke width: the width is
+// not known here, and these match what the bundled themes write by hand.
+function dashAttr(stroke: Stroke): string {
+  if (stroke.dashing.case === 'customDasharray') {
+    return ` stroke-dasharray="${stroke.dashing.value}"`;
+  }
+  if (stroke.dashing.case === 'pattern') {
+    if (stroke.dashing.value === StrokePattern.DASHED) {
+      return ' stroke-dasharray="5,4"';
+    }
+    if (stroke.dashing.value === StrokePattern.DOTTED) {
+      return ' stroke-dasharray="1,3"';
+    }
+  }
+  return '';
+}
+
 function strokeAttrs(stroke: Stroke | undefined): string {
   if (stroke === undefined) {
     return '';
   } else {
     const colorStr: string = stroke.paint.case === 'color' ? ` stroke="${stroke.paint.value.value}"` : '';
     const widthStr: string = stroke.width !== undefined ? ` stroke-width="${r(stroke.width)}"` : '';
-    return colorStr + widthStr;
+    return colorStr + widthStr + dashAttr(stroke);
   }
 }
 

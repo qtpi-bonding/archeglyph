@@ -31,15 +31,21 @@ describe('testgen_delta__mergeDelta', () => {
     }
 
     function makeEdgeDelta(key: string, changeType: ChangeType, before?: Edge): EdgeDelta {
-      return create(EdgeDeltaSchema, { key, changeType, before });
+      return create(EdgeDeltaSchema, { edgeId: key, changeType, before });
     }
 
     function makeGroupDelta(key: string, changeType: ChangeType, before?: Group): GroupDelta {
-      return create(GroupDeltaSchema, { key, changeType, before });
+      return create(GroupDeltaSchema, { groupId: key, changeType, before });
     }
 
+    // Repaired by hand, twice. The helpers built the delta messages with a
+    // field named `key`, which none of them has -- content.proto declares
+    // node_id, edge_id and group_id, and create() drops an unknown field
+    // silently, so every id was '' and restores landed under ''. The cases
+    // also built Node/Edge/Group with an `id`; those carry none, the map
+    // key being the identity.
     function makeNodeDelta(key: string, changeType: ChangeType, before?: Node): NodeDelta {
-      return create(NodeDeltaSchema, { key, changeType, before });
+      return create(NodeDeltaSchema, { nodeId: key, changeType, before });
     }
 
     // WHEN: An empty target graph and a delta with no node, edge, or group entries produce an empty overlay with matching empty change-type maps.
@@ -61,7 +67,7 @@ describe('testgen_delta__mergeDelta', () => {
     test('existing_key_non_deleted_delta', () => {
         fc.assert(
             fc.property(fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED), (value) => {
-        const node = create(NodeSchema, { id: 'n' });
+        const node = create(NodeSchema, {});
         const target = makeDiagram({ nodes: { n: node } });
         const result = mergeDelta(target, makeDelta({ nodeDeltas: [makeNodeDelta('n', value, node)] }));
         expect(result.nodes.n).toBe(value);
@@ -73,7 +79,7 @@ describe('testgen_delta__mergeDelta', () => {
     test('missing_key_non_deleted_delta', () => {
         fc.assert(
             fc.property(fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED), (value) => {
-        const node = create(NodeSchema, { id: 'n' });
+        const node = create(NodeSchema, {});
         const result = mergeDelta(makeDiagram(), makeDelta({ nodeDeltas: [makeNodeDelta('n', value, node)] }));
         expect(result.diagram.graph?.nodes?.n).toBeUndefined();
         expect(result.nodes.n).toBeUndefined();
@@ -104,7 +110,7 @@ describe('testgen_delta__mergeDelta', () => {
     // WHEN: A restored DELETED edge is omitted from the returned edges map and has no change-type entry when both of its endpoint keys are absent from the finished union nodes map.
     // THEN: It omits a restored edge and its change type when both endpoints are absent from the finished union nodes.
     test('drop_restored_edge_missing_both_endpoints', () => {
-        const edge = create(EdgeSchema, { id: 'e', source: 's', target: 't' });
+        const edge = create(EdgeSchema, { source: 's', target: 't' });
         const result = mergeDelta(makeDiagram(), makeDelta({ edgeDeltas: [makeEdgeDelta('e', ChangeType.DELETED, edge)] }));
         expect(result.diagram.graph?.edges?.e).toBeUndefined();
         expect(result.edges.e).toBeUndefined();
@@ -133,9 +139,9 @@ describe('testgen_delta__mergeDelta', () => {
     // WHEN: A deleted edge between two deleted nodes survives when the edge and both endpoint nodes have set before values, because all three are present in the finished union.
     // THEN: It retains and marks DELETED an edge between two deleted nodes when the edge and both nodes have set before values.
     test('restore_edge_between_restored_nodes', () => {
-        const s = create(NodeSchema, { id: 's' });
-        const t = create(NodeSchema, { id: 't' });
-        const edge = create(EdgeSchema, { id: 'e', source: 's', target: 't' });
+        const s = create(NodeSchema, {});
+        const t = create(NodeSchema, {});
+        const edge = create(EdgeSchema, { source: 's', target: 't' });
         const result = mergeDelta(makeDiagram(), makeDelta({ nodeDeltas: [makeNodeDelta('s', ChangeType.DELETED, s), makeNodeDelta('t', ChangeType.DELETED, t)], edgeDeltas: [makeEdgeDelta('e', ChangeType.DELETED, edge)] }));
         expect(result.diagram.graph?.edges?.e).toBe(edge);
         expect(result.edges.e).toBe(ChangeType.DELETED);
@@ -148,8 +154,8 @@ describe('testgen_delta__mergeDelta', () => {
     // WHEN: A DELETED group is restored as an empty group when all nodes that used to belong to it survive in target rather than being reported DELETED.
     // THEN: It restores a deleted group as an empty group when all former members survive in target.
     test('deleted_group_with_surviving_members_is_empty', () => {
-        const group = create(GroupSchema, { id: 'g' });
-        const member = create(NodeSchema, { id: 'n', parentGroup: 'g' });
+        const group = create(GroupSchema, {});
+        const member = create(NodeSchema, { parentGroup: 'g' });
         const result = mergeDelta(makeDiagram({ nodes: { n: member } }), makeDelta({ groupDeltas: [makeGroupDelta('g', ChangeType.DELETED, group)] }));
         expect(result.diagram.graph?.groups?.g).toBe(group);
         expect(result.diagram.graph?.nodes?.n).toBe(member);

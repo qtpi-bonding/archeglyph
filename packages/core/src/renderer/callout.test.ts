@@ -33,6 +33,18 @@ import { layoutPipeline } from '../pipeline';
 import { SvgRendererImpl } from './svg_renderer';
 import { LayoutEngineImpl } from '../layout/layout_engine/impl';
 import { ElkAdapterImpl } from '../layout/layout_adapter/impl';
+import { init } from '@archeglyph/proto/util/init';
+import { LaidOutDiagram } from '../layout/laid_out_diagram';
+import { LaidOutNode } from '../layout/laid_out_node';
+import {
+  CanvasStyleSchema,
+  ColorSchema,
+  Glyph2DSchema,
+  type Stroke,
+  StrokePattern,
+  StrokeSchema,
+  TypographySchema,
+} from '@archeglyph/proto/gen/style_pb';
 
 const require_ = createRequire(import.meta.url);
 
@@ -148,5 +160,48 @@ describe('anchored annotations render a callout line', () => {
     // point ON the outline has x at 400 or 460, or y at 400 or 420.
     const onOutline = x === 400 || x === 460 || y === 400 || y === 420;
     expect(onOutline).toBe(true);
+  });
+});
+
+describe('stroke dashing reaches the SVG', () => {
+  const paintStrokeOnly = (stroke: Stroke): string => {
+    const diagram = init(new LaidOutDiagram(), {
+      id: 'd',
+      canvas: create(CanvasStyleSchema, {}),
+      nodes: {
+        n: init(new LaidOutNode(), {
+          id: 'n',
+          position: { x: 0, y: 0 },
+          size: { x: 10, y: 10 },
+          shape: create(Glyph2DSchema, { stroke }),
+          typography: create(TypographySchema, {}),
+        }),
+      },
+    });
+    const result = new SvgRendererImpl().render(diagram);
+    if (result.kind === 'err') throw new Error(result.error.message);
+    return result.value;
+  };
+
+  test('a custom dasharray is emitted verbatim', () => {
+    expect(paintStrokeOnly(create(StrokeSchema, {
+      paint: { case: 'color', value: create(ColorSchema, { value: '#000000' }) },
+      dashing: { case: 'customDasharray', value: '5,4' },
+    }))).toContain('stroke-dasharray="5,4"');
+  });
+
+  test('the DOTTED and DASHED patterns each emit a dasharray', () => {
+    expect(paintStrokeOnly(create(StrokeSchema, {
+      dashing: { case: 'pattern', value: StrokePattern.DOTTED },
+    }))).toContain('stroke-dasharray="1,3"');
+    expect(paintStrokeOnly(create(StrokeSchema, {
+      dashing: { case: 'pattern', value: StrokePattern.DASHED },
+    }))).toContain('stroke-dasharray="5,4"');
+  });
+
+  test('a solid stroke emits no dasharray at all', () => {
+    expect(paintStrokeOnly(create(StrokeSchema, {
+      paint: { case: 'color', value: create(ColorSchema, { value: '#000000' }) },
+    }))).not.toContain('stroke-dasharray');
   });
 });

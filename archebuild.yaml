@@ -9,7 +9,8 @@ orchestrator:
   enabled: true
 
 execution:
-  max_parallelism: 5
+  # Concurrent nodes can share a worktree and clobber each other. Keep at 1.
+  max_parallelism: 1
   default_timeout_seconds: 1800
   executor: shell
 

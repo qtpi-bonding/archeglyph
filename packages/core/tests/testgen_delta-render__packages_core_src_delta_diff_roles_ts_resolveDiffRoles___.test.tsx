@@ -3,91 +3,96 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-// Repaired by hand: the generated body used these schema descriptors
-// without importing them. archetest.yaml now carries them in the core header.
-import { TokensSchema } from '@archeglyph/proto/gen/theme_pb';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { resolveDiffRoles } from '../src/delta/diff_roles';
 import { Tokens } from '../../proto/src/gen/theme_pb';
 
 describe('testgen_delta__resolveDiffRoles', () => {
-    function makeTokens(roles: { [key: string]: string }): Tokens {
+    function makeAllResolvableTokens(value: { added: string; modified: string; deleted: string }): Tokens {
+      return create(TokensSchema, {
+        palette: { green: '#00ff00' },
+        roles: {
+          diff_added: value.added,
+          diff_modified: value.modified,
+          diff_deleted: value.deleted,
+        },
+      });
+    }
+
+    function makeTokensWithUnresolved(unresolved: readonly string[]): Tokens {
+      const roles: { [key: string]: string } = {
+        diff_added: '#11aa11',
+        diff_modified: '#aa11aa',
+        diff_deleted: '#1111aa',
+      };
+      for (const role of unresolved) {
+        delete roles[role];
+      }
       return create(TokensSchema, { roles });
     }
 
-    // WHEN: The optional tokens argument is undefined; the function immediately returns undefined without attempting resolution.
-    // THEN: It immediately returns undefined without attempting resolution.
-    test('tokens_undefined', () => {
-        const result = resolveDiffRoles(undefined);
-        expect(result).toBeUndefined();
+    function resolvedRoleValue(value: string): string {
+      return value === '$palette.green' ? '#00ff00' : value;
+    }
+
+    // WHEN: The tokens argument is undefined; the function immediately returns undefined without attempting resolution.
+    // THEN: Returns undefined immediately without attempting resolution.
+    test('undefined_tokens', () => {
+        expect(resolveDiffRoles()).toBeUndefined();
     });
 
     test('all_three_resolve', () => {
         fc.assert(
             fc.property(fc.record({
-      palette: fc.string().filter((text) => !text.startsWith("$")),
-      modified: fc.string().filter((text) => !text.startsWith("$")),
-      deleted: fc.string().filter((text) => !text.startsWith("$")),
+      added: fc.oneof(fc.string().filter((s: string) => !s.startsWith('$')), fc.constant('$palette.green')),
+      modified: fc.oneof(fc.string().filter((s: string) => !s.startsWith('$')), fc.constant('$palette.green')),
+      deleted: fc.oneof(fc.string().filter((s: string) => !s.startsWith('$')), fc.constant('$palette.green')),
     }), (value) => {
-        const tokens = makeTokens({
-          roles: {
-            diff_added: "$palette.green",
-            diff_modified: value.modified,
-            diff_deleted: value.deleted,
-          },
-          palette: { green: value.palette },
-        });
+        const tokens = makeAllResolvableTokens(value);
         const result = resolveDiffRoles(tokens);
-        expect(result?.added).toBe(value.palette);
-        expect(result?.modified).toBe(value.modified);
-        expect(result?.deleted).toBe(value.deleted);
+        expect(result).toMatchObject({
+          added: resolvedRoleValue(value.added),
+          modified: resolvedRoleValue(value.modified),
+          deleted: resolvedRoleValue(value.deleted),
+        });
             })
         );
     });
 
     test('one_role_unresolved', () => {
         fc.assert(
-            fc.property(fc.constantFrom(0, 1, 2), (value) => {
-        const roleNames: string[] = ["diff_added", "diff_modified", "diff_deleted"];
-        const roles: { [key: string]: string } = {
-          diff_added: "#111111",
-          diff_modified: "#222222",
-          diff_deleted: "#333333",
-        };
-        delete roles[roleNames[value]];
-        const result = resolveDiffRoles(makeTokens({ roles }));
-        expect(result).toBeUndefined();
+            fc.property(fc.constantFrom('diff_added', 'diff_modified', 'diff_deleted'), (value) => {
+        const tokens = makeTokensWithUnresolved([value]);
+        expect(resolveDiffRoles(tokens)).toBeUndefined();
             })
         );
     });
 
     test('two_roles_unresolved', () => {
         fc.assert(
-            fc.property(fc.constantFrom(0, 1, 2), (value) => {
-        const roleNames: string[] = ["diff_added", "diff_modified", "diff_deleted"];
-        const roles: { [key: string]: string } = {
-          diff_added: "#111111",
-          diff_modified: "#222222",
-          diff_deleted: "#333333",
-        };
-        const resolvedRole = roleNames[value];
-        for (const roleName of roleNames) {
-          if (roleName !== resolvedRole) {
-            delete roles[roleName];
-          }
-        }
-        const result = resolveDiffRoles(makeTokens({ roles }));
-        expect(result).toBeUndefined();
+            fc.property(fc.constantFrom(['diff_added', 'diff_modified'], ['diff_added', 'diff_deleted'], ['diff_modified', 'diff_deleted']), (value) => {
+        const tokens = makeTokensWithUnresolved(value);
+        expect(resolveDiffRoles(tokens)).toBeUndefined();
             })
         );
     });
 
-    // WHEN: tokens is defined and none of the three diff-role references can be resolved. resolveTokensIn returns a list of length 3, so the function returns undefined.
-    // THEN: It returns undefined because all three unresolved references produce a list of length three.
+    // WHEN: tokens is defined and all three role references cannot be resolved; the function returns undefined.
+    // THEN: Returns undefined because none of the three role references resolves.
     test('all_three_unresolved', () => {
-        const result = resolveDiffRoles(makeTokens({ roles: {} }));
-        expect(result).toBeUndefined();
+        const tokens = makeTokensWithUnresolved(['diff_added', 'diff_modified', 'diff_deleted']);
+        expect(resolveDiffRoles(tokens)).toBeUndefined();
     });
 
 });

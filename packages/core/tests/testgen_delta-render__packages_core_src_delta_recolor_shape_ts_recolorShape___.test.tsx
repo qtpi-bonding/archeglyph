@@ -3,164 +3,159 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-// Repaired by hand: the generated body used these schema descriptors
-// without importing them. archetest.yaml now carries them in the core header.
-import { Decoration, DecorationSchema, FillSchema, GlowSchema, Glyph2DSchema, GradientSchema, StrokeSchema } from '@archeglyph/proto/gen/style_pb';
+// Repaired by hand: message type names the body used without importing.
+// archetest.yaml now carries them in the core header for future runs.
+import { ShapeType, StrokeCap, StrokeJoin } from '@archeglyph/proto/gen/style_pb';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
-import { DiffRoles } from '../src/delta/diff_roles';
+import { diffColorFor } from '../src/delta/diff_color';
 import { recolorShape } from '../src/delta/recolor_shape';
 import { ChangeType } from '../../proto/src/gen/content_pb';
-import { StrokePattern } from '../../proto/src/gen/style_pb';
+import { Glyph2D, StrokePattern } from '../../proto/src/gen/style_pb';
 
 describe('testgen_delta__recolorShape', () => {
-    const testDiffRoles = (): DiffRoles => Object.assign(new DiffRoles(), { added: '#00aa00', modified: '#0000aa', deleted: '#cc0000' });
-
-    test('color_stroke_paint', () => {
+    test('color_fields_recolored', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
-        const glyph = create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: 'color', value } }) });
-        const result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());
-        expect(result.stroke?.paint).toEqual({ case: 'color', value: '#00aa00' });
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: "color", value: "#336699" } }), fill: create(FillSchema, { paint: { case: "color", value: "#cc8844" } }), glow: create(GlowSchema, { color: "#778899" }), decorations: [create(DecorationSchema, { color: "#112233" })] }), create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: "color", value: "#336699" } }), decorations: [create(DecorationSchema, { color: "#112233" }), create(DecorationSchema, { color: "#445566" })] })), (value) => {
+        const result = recolorShape(value, ChangeType.MODIFIED);
+        expect(result).not.toBe(value);
+        if (value.stroke?.paint.case === "color") {
+          expect(result.stroke?.paint.case).toBe("color");
+          if (result.stroke?.paint.case === "color") expect(result.stroke.paint.value).toBe(diffColorFor(value.stroke.paint.value, ChangeType.MODIFIED));
+        }
+        if (value.fill?.paint.case === "color") {
+          expect(result.fill?.paint.case).toBe("color");
+          if (result.fill?.paint.case === "color") expect(result.fill.paint.value).toBe(diffColorFor(value.fill.paint.value, ChangeType.MODIFIED));
+        }
+        if (value.glow?.color !== undefined) expect(result.glow?.color).toBe(diffColorFor(value.glow.color, ChangeType.MODIFIED));
+        value.decorations.forEach((decoration, index) => {
+          if (decoration.color !== undefined) expect(result.decorations[index]?.color).toBe(diffColorFor(decoration.color, ChangeType.MODIFIED));
+        });
+        if (value.stroke?.paint.case === "color") expect(value.stroke.paint.value).toBe("#336699");
+        if (value.fill?.paint.case === "color") expect(value.fill.paint.value).toBe("#cc8844");
+        expect(value.glow?.color).toBe("#778899");
+        expect(value.decorations[0]?.color).toBe("#112233");
             })
         );
     });
 
-    // WHEN: The glyph has a stroke whose paint is the GRADIENT case; the stroke, including its gradient data, is left unchanged and no color is derived.
-    // THEN: Returns a copy leaving the gradient stroke and all its gradient data unchanged without deriving a color.
-    test('gradient_stroke_paint', () => {
-        const stroke = create(StrokeSchema, { paint: { case: 'gradient', value: create(GradientSchema, {}) } });
-        const glyph = create(Glyph2DSchema, { stroke });
-        const result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());
-        expect(result.stroke).toEqual(stroke);
-    });
-
-    test('color_fill_paint', () => {
+    test('unset_colors_remain_unset', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
-        const glyph = create(Glyph2DSchema, { fill: create(FillSchema, { paint: { case: 'color', value }) }) });
-        const result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());
-        expect(result.fill?.paint).toEqual({ case: 'color', value: '#00aa00' });
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: "color", value: undefined } }), fill: create(FillSchema, { paint: { case: "color", value: undefined } }), glow: create(GlowSchema, {}), decorations: [create(DecorationSchema, {})] }), create(Glyph2DSchema, { stroke: create(StrokeSchema, {}), fill: create(FillSchema, {}), decorations: [create(DecorationSchema, {})] })), (value) => {
+        const result = recolorShape(value, ChangeType.ADDED);
+        expect(result.stroke?.paint.case).toBe("color");
+        if (result.stroke?.paint.case === "color") expect(result.stroke.paint.value).toBeUndefined();
+        expect(result.fill?.paint.case).toBe("color");
+        if (result.fill?.paint.case === "color") expect(result.fill.paint.value).toBeUndefined();
+        expect(result.glow?.color).toBeUndefined();
+        expect(result.decorations[0]?.color).toBeUndefined();
             })
         );
     });
 
-    // WHEN: The glyph has a fill whose paint is the GRADIENT case; the fill, including its gradient data, is left unchanged and no color is derived.
-    // THEN: Returns a copy leaving the gradient fill and all its gradient data unchanged without deriving a color.
-    test('gradient_fill_paint', () => {
-        const fill = create(FillSchema, { paint: { case: 'gradient', value: create(GradientSchema, {}) } });
-        const glyph = create(Glyph2DSchema, { fill });
-        const result = recolorShape(glyph, ChangeType.MODIFIED, testDiffRoles());
-        expect(result.fill).toEqual(fill);
-    });
-
-    test('glow_color_set', () => {
+    test('gradient_paints_preserved', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
-        const glow = create(GlowSchema, { color: value });
-        const glyph = create(Glyph2DSchema, { glow });
-        const result = recolorShape(glyph, ChangeType.DELETED, testDiffRoles());
-        expect(result.glow?.color).toBe('#cc0000');
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: "gradient", value: create(GradientSchema, {}) } }) }), create(Glyph2DSchema, { fill: create(FillSchema, { paint: { case: "gradient", value: create(GradientSchema, {}) } }) })), (value) => {
+        const result = recolorShape(value, ChangeType.DELETED);
+        if (value.stroke?.paint.case === "gradient") {
+          expect(result.stroke?.paint).toEqual(value.stroke.paint);
+        }
+        if (value.fill?.paint.case === "gradient") {
+          expect(result.fill?.paint).toEqual(value.fill.paint);
+        }
             })
         );
     });
 
-    test('decoration_colors_set', () => {
+    test('decoration_colors_selective', () => {
         fc.assert(
-            fc.property(fc.array(fc.string()), (value) => {
-        const glyph = create(Glyph2DSchema, { decorations: value.map((color: string) => create(DecorationSchema, { color })) });
-        const result = recolorShape(glyph, ChangeType.ADDED, testDiffRoles());
-        expect(result.decorations.map((decoration: Decoration) => decoration.color)).toEqual(value.map(() => '#00aa00'));
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { decorations: [create(DecorationSchema, { color: "#123456", id: "a", badgeText: "A", iconRef: "icon-a" }), create(DecorationSchema, { id: "b" })] }), create(Glyph2DSchema, { decorations: [create(DecorationSchema, {}), create(DecorationSchema, { color: "#abcdef" }), create(DecorationSchema, {})] })), (value) => {
+        const result = recolorShape(value, ChangeType.MODIFIED);
+        expect(result.decorations).toHaveLength(value.decorations.length);
+        value.decorations.forEach((decoration, index) => {
+          if (decoration.color === undefined) expect(result.decorations[index]?.color).toBeUndefined();
+          else expect(result.decorations[index]?.color).toBe(diffColorFor(decoration.color, ChangeType.MODIFIED));
+          expect(result.decorations[index]?.id).toBe(decoration.id);
+          expect(result.decorations[index]?.kind).toBe(decoration.kind);
+          expect(result.decorations[index]?.badgeText).toBe(decoration.badgeText);
+          expect(result.decorations[index]?.iconRef).toBe(decoration.iconRef);
+          expect(result.decorations[index]?.position).toEqual(decoration.position);
+        });
             })
         );
     });
 
-    test('optional_colors_unset', () => {
+    test('deleted_stroke_ghosting', () => {
         fc.assert(
-            fc.property(fc.record({ stroke: fc.boolean(), fill: fc.boolean(), glow: fc.boolean(), decoration: fc.boolean() }), (value) => {
-        const glyph = create(Glyph2DSchema, { stroke: value.stroke ? create(StrokeSchema, {}) : undefined, fill: value.fill ? create(FillSchema, {}) : undefined, glow: value.glow ? create(GlowSchema, {}) : undefined, decorations: value.decoration ? [create(DecorationSchema, {})] : [] });
-        const result = recolorShape(glyph, ChangeType.MODIFIED, testDiffRoles());
-        expect(result.stroke?.paint.case).toBe(undefined);
-        expect(result.fill?.paint.case).toBe(undefined);
-        expect(result.glow?.color).toBe(undefined);
-        expect(result.decorations[0]?.color).toBe(undefined);
-            })
-        );
-    });
-
-    test('deleted_with_stroke', () => {
-        fc.assert(
-            fc.property(fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), (value) => {
-        const glyph = create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: value, width: 2.5, cap: 1, join: 2, paint: { case: 'color', value: '#123456' } }) });
-        const result = recolorShape(glyph, ChangeType.DELETED, testDiffRoles());
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: StrokePattern.SOLID, width: 2.5, paint: { case: "color", value: "#123456" } }) }), create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: StrokePattern.DASHED, width: 0, paint: { case: "color", value: "#654321" } }) }), create(Glyph2DSchema, { stroke: create(StrokeSchema, { paint: { case: "color", value: "#abcdef" } }) })), (value) => {
+        const result = recolorShape(value, ChangeType.DELETED);
+        expect(result.stroke).toBeDefined();
         expect(result.stroke?.dashing).toBe(StrokePattern.DOTTED);
-        expect(result.stroke?.width).toBe(2.5);
-        expect(result.stroke?.cap).toBe(1);
-        expect(result.stroke?.join).toBe(2);
+        expect(result.stroke?.width).toBe(value.stroke?.width);
+        expect(result.stroke?.cap).toBe(value.stroke?.cap);
+        expect(result.stroke?.join).toBe(value.stroke?.join);
+        expect(result.stroke?.paint).toEqual(value.stroke?.paint);
             })
         );
     });
 
-    // WHEN: change is DELETED and the glyph has no stroke; no stroke is created and therefore no dashing is added.
-    // THEN: For DELETED, returns a copy without creating a stroke or adding dashing.
+    // WHEN: change is DELETED and the glyph has no stroke; no stroke is created and no dashing is added.
+    // THEN: For a DELETED glyph without a stroke, creates no stroke and adds no dashing.
     test('deleted_without_stroke', () => {
-        const glyph = create(Glyph2DSchema, {});
-        const result = recolorShape(glyph, ChangeType.DELETED);
-        expect(result.stroke).toBe(undefined);
+        const result = recolorShape(create(Glyph2DSchema, {}), ChangeType.DELETED);
+        expect(result.stroke).toBeUndefined();
     });
 
-    test('deleted_fill_explicit_opacity', () => {
+    test('deleted_fill_opacity_scaled', () => {
         fc.assert(
-            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }), (value) => {
-        const glyph = create(Glyph2DSchema, { fill: create(FillSchema, { opacity: value }) });
-        const result = recolorShape(glyph, ChangeType.DELETED);
-        expect(result.fill?.opacity).toBe(value * 0.4);
+            fc.property(fc.option(fc.double({ min: 0, max: 1, noNaN: true }), { nil: undefined }).map((opacity: number | undefined) => create(Glyph2DSchema, { fill: create(FillSchema, { opacity, paint: { case: "color", value: "#123456" } }) })), (value) => {
+        const priorOpacity = value.fill?.opacity;
+        const result = recolorShape(value, ChangeType.DELETED);
+        expect(result.fill).toBeDefined();
+        expect(result.fill?.opacity).toBeCloseTo((priorOpacity ?? 1) * 0.4, 12);
             })
         );
     });
 
-    // WHEN: change is DELETED and the glyph has a fill whose opacity is unset; it is treated as 1.0 and the returned copy sets fill.opacity to 0.4.
-    // THEN: For DELETED, treats the present fill's unset opacity as 1.0 and sets it to 0.4 in the copy.
-    test('deleted_fill_unset_opacity', () => {
-        const glyph = create(Glyph2DSchema, { fill: create(FillSchema, {}) });
-        const result = recolorShape(glyph, ChangeType.DELETED);
-        expect(result.fill?.opacity).toBe(0.4);
-    });
-
-    // WHEN: change is DELETED and the glyph has no fill; no fill is created and no opacity is set.
-    // THEN: For DELETED, returns a copy without creating a fill or setting opacity.
+    // WHEN: change is DELETED and the glyph has no fill; no fill is created and no opacity is added.
+    // THEN: For a DELETED glyph without a fill, creates no fill and adds no opacity.
     test('deleted_without_fill', () => {
-        const glyph = create(Glyph2DSchema, {});
-        const result = recolorShape(glyph, ChangeType.DELETED);
-        expect(result.fill).toBe(undefined);
+        const result = recolorShape(create(Glyph2DSchema, {}), ChangeType.DELETED);
+        expect(result.fill).toBeUndefined();
     });
 
-    test('nondeleted_preserves_ghosting_fields', () => {
+    test('nondeleted_preserves_dashing_opacity', () => {
         fc.assert(
-            fc.property(fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED), stroke: fc.boolean(), fill: fc.boolean() }), (value) => {
-        const glyph = create(Glyph2DSchema, { stroke: value.stroke ? create(StrokeSchema, { dashing: StrokePattern.DASHED }) : undefined, fill: value.fill ? create(FillSchema, { opacity: 0.25 }) : undefined });
-        const result = recolorShape(glyph, value.change);
-        expect(result.stroke?.dashing).toBe(value.stroke ? StrokePattern.DASHED : undefined);
-        expect(result.fill?.opacity).toBe(value.fill ? 0.25 : undefined);
+            fc.property(fc.constantFrom({ glyph: create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: StrokePattern.DASHED }), fill: create(FillSchema, { opacity: 0.25, paint: { case: "color", value: "#123456" } }) }), change: ChangeType.CHANGE_TYPE_UNSPECIFIED }, { glyph: create(Glyph2DSchema, { stroke: create(StrokeSchema, {}), fill: create(FillSchema, { paint: { case: "color", value: "#654321" } }) }), change: ChangeType.UNCHANGED }, { glyph: create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: StrokePattern.SOLID }), fill: create(FillSchema, { opacity: 0.8, paint: { case: "color", value: "#abcdef" } }) }), change: ChangeType.ADDED }, { glyph: create(Glyph2DSchema, { stroke: create(StrokeSchema, { dashing: StrokePattern.DOTTED }), fill: create(FillSchema, { opacity: 0, paint: { case: "color", value: "#abcdef" } }) }), change: ChangeType.MODIFIED }).map((entry: { glyph: Glyph2D; change: ChangeType }) => ({ ...entry.glyph, change: entry.change })), (value) => {
+        const result = recolorShape(value, value.change);
+        expect(result.stroke?.dashing).toBe(value.stroke?.dashing);
+        expect(result.fill?.opacity).toBe(value.fill?.opacity);
             })
         );
     });
 
-    test('copy_preserves_geometry_and_style', () => {
+    test('shape_and_metadata_preserved', () => {
         fc.assert(
-            fc.property(fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), path: fc.string() }), (value) => {
-        const glyph = create(Glyph2DSchema, { shapeKind: { case: 'customPathRef', value }, cornerRadius: 7, stroke: create(StrokeSchema, { width: 3, cap: 1, join: 2, dashing: StrokePattern.DASHED }), glow: create(GlowSchema, { radius: 4, intensity: 0.7 }), decorations: [create(DecorationSchema, { id: 'd1', kind: 1, badgeText: 'badge', iconRef: 'icon', position: { x: 2, y: 3 } })] });
-        const before = create(Glyph2DSchema, { shapeKind: { case: 'customPathRef', value }, cornerRadius: 7, stroke: create(StrokeSchema, { width: 3, cap: 1, join: 2, dashing: StrokePattern.DASHED }), glow: create(GlowSchema, { radius: 4, intensity: 0.7 }), decorations: [create(DecorationSchema, { id: 'd1', kind: 1, badgeText: 'badge', iconRef: 'icon', position: { x: 2, y: 3 } })] });
-        const result = recolorShape(glyph, value.change, testDiffRoles());
-        expect(result.shapeKind).toEqual(glyph.shapeKind);
-        expect(result.cornerRadius).toBe(7);
-        expect(result.stroke?.width).toBe(3);
-        expect(result.stroke?.cap).toBe(1);
-        expect(result.stroke?.join).toBe(2);
-        expect(result.glow?.radius).toBe(4);
-        expect(result.glow?.intensity).toBe(0.7);
-        expect(result.decorations[0]).toEqual(glyph.decorations[0]);
-        expect(glyph).toEqual(before);
+            fc.property(fc.constantFrom(create(Glyph2DSchema, { shapeKind: { case: "standard", value: ShapeType.RECTANGLE }, cornerRadius: 7, stroke: create(StrokeSchema, { width: 3, cap: StrokeCap.ROUND, join: StrokeJoin.BEVEL, paint: { case: "color", value: "#123456" } }), glow: create(GlowSchema, { radius: 9, intensity: 0.6 }), decorations: [create(DecorationSchema, { id: "badge", badgeText: "!", iconRef: "icon" })] }), create(Glyph2DSchema, { shapeKind: { case: "customPathRef", value: "$shape_paths.custom" }, cornerRadius: 0, stroke: create(StrokeSchema, { width: 1, cap: StrokeCap.BUTT, join: StrokeJoin.MITER, paint: { case: "color", value: "#654321" } }), glow: create(GlowSchema, { radius: 0, intensity: 0 }), decorations: [create(DecorationSchema, { id: "custom", iconRef: "custom-icon" })] })), (value) => {
+        const result = recolorShape(value, ChangeType.ADDED);
+        expect(result.shapeKind).toEqual(value.shapeKind);
+        expect(result.cornerRadius).toBe(value.cornerRadius);
+        expect(result.stroke?.width).toBe(value.stroke?.width);
+        expect(result.stroke?.cap).toBe(value.stroke?.cap);
+        expect(result.stroke?.join).toBe(value.stroke?.join);
+        expect(result.glow?.radius).toBe(value.glow?.radius);
+        expect(result.glow?.intensity).toBe(value.glow?.intensity);
+        expect(result.decorations).toEqual(value.decorations);
             })
         );
     });

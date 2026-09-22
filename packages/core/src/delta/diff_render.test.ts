@@ -11,7 +11,6 @@ import { fromJson } from '@archeglyph/proto/util/json';
 import { lightTheme } from '@archeglyph/themes';
 import { diff } from '../diff';
 import { renderPipeline } from '../pipeline';
-import { renderDeltaPipeline } from '../pipeline/delta_render_pipeline';
 import { seedComponentBindings } from '../resolver/seed_bindings';
 import { LayoutEngineImpl } from '../layout/layout_engine/impl';
 import { ElkAdapterImpl } from '../layout/layout_adapter/impl';
@@ -55,7 +54,7 @@ async function renderDiff(baseJson: unknown, targetJson: unknown): Promise<strin
   const base = fromJson(DiagramSchema, JSON.stringify(baseJson));
   const target = fromJson(DiagramSchema, JSON.stringify(targetJson));
   const theme = lightTheme();
-  const result = await renderDeltaPipeline(
+  const result = await renderPipeline(
     target, undefined, new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
     diff(base, target),
@@ -64,7 +63,7 @@ async function renderDiff(baseJson: unknown, targetJson: unknown): Promise<strin
   return result.value;
 }
 
-const shapeCount = (svg: string): number => (svg.match(/data-shape-ref=/g) ?? []).length;
+const shapeCount = (svg: string): number => (svg.match(/data-element-id=/g) ?? []).length;
 
 describe('a diff render draws what the target no longer contains', () => {
   test('a deleted node is drawn, and a plain render of the same target cannot draw it', async () => {

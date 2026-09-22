@@ -3,184 +3,155 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-// Repaired by hand: the generated body used these schema descriptors
-// without importing them. archetest.yaml now carries them in the core header.
-import { ArrowheadsSchema, GlowSchema, Glyph1DSchema, GradientSchema, StrokeSchema } from '@archeglyph/proto/gen/style_pb';
+// Repaired by hand: message type names the body used without importing.
+// archetest.yaml now carries them in the core header for future runs.
+import { Stroke, Glow, Gradient, Arrowheads } from '@archeglyph/proto/gen/style_pb';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { diffColorFor } from '../src/delta/diff_color';
+import { DiffRoles } from '../src/delta/diff_roles';
 import { recolorLine } from '../src/delta/recolor_shape';
 import { ChangeType } from '../../proto/src/gen/content_pb';
-import { StrokePattern } from '../../proto/src/gen/style_pb';
+import { Glyph1D, StrokePattern } from '../../proto/src/gen/style_pb';
 
 describe('testgen_delta__recolorLine', () => {
-    test('nondeleted_color_recolor', () => {
+    const makeLine = (color: string, dashing: StrokePattern, glowColor?: string): Glyph1D => create(Glyph1DSchema, { stroke: create(StrokeSchema, { paint: { case: 'color', value: color }, dashing, width: 2 }), glow: glowColor === undefined ? undefined : create(GlowSchema, { color: glowColor }) });
+
+    const makeRoles = (): DiffRoles => ({ added: '#00aa00', modified: '#aaaa00', deleted: '#aa0000' });
+
+    const makeStyledLine = (): Glyph1D => create(Glyph1DSchema, { stroke: create(StrokeSchema, { paint: { case: 'color', value: '#345678' }, dashing: StrokePattern.DASHED, width: 7 }), glow: create(GlowSchema, { color: '#abcdef', radius: 4, intensity: 0.75 }), arrowheads: create(ArrowheadsSchema, {}) });
+
+    test('non_deleted_change', () => {
         fc.assert(
-            fc.property(fc.record({ color: fc.string(), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED) }), (value) => {
-        const glyph = create(Glyph1DSchema, {
-          stroke: create(StrokeSchema, {
-            paint: { case: "color", value: value.color },
-            dashing: StrokePattern.DASHED,
-          }),
-          glow: create(GlowSchema, {
-            color: { case: "color", value: value.color },
-          }),
-        });
-        const result = recolorLine(glyph, value.change);
-        expect(result.stroke?.paint).toEqual({ case: "color", value: diffColorFor(value.color, value.change) });
-        expect(result.glow?.color).toEqual({ case: "color", value: diffColorFor(value.color, value.change) });
+            fc.property(fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED), (value) => {
+        const glyph: Glyph1D = makeLine(value, '#112233');
+        const roles: DiffRoles = makeRoles();
+        const result: Glyph1D = recolorLine(glyph, value, roles);
+        expect(result.stroke?.paint?.case).toBe('color');
+        expect(result.stroke?.paint?.value).toBe(diffColorFor('#112233', value, roles));
         expect(result.stroke?.dashing).toBe(StrokePattern.DASHED);
-        expect(glyph.stroke?.paint).toEqual({ case: "color", value: value.color });
-        expect(glyph.glow?.color).toEqual({ case: "color", value: value.color });
             })
         );
     });
 
-    test('deleted_stroked_glyph', () => {
+    test('deleted_with_stroke', () => {
         fc.assert(
-            fc.property(fc.record({ color: fc.string(), dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED) }), (value) => {
-        const glyph = create(Glyph1DSchema, {
-          stroke: create(StrokeSchema, {
-            paint: { case: "color", value: value.color },
-            dashing: value.dashing,
-            width: 4,
-            cap: 1,
-            join: 2,
-          }),
-          glow: create(GlowSchema, {
-            color: { case: "color", value: value.color },
-            radius: 6,
-            intensity: 0.75,
-          }),
-        });
-        const result = recolorLine(glyph, ChangeType.DELETED);
-        expect(result.stroke?.paint).toEqual({ case: "color", value: diffColorFor(value.color, ChangeType.DELETED) });
-        expect(result.glow?.color).toEqual({ case: "color", value: diffColorFor(value.color, ChangeType.DELETED) });
+            fc.property(fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), (value) => {
+        const glyph: Glyph1D = makeLine('#123456', value);
+        const result: Glyph1D = recolorLine(glyph, ChangeType.DELETED, makeRoles());
         expect(result.stroke?.dashing).toBe(StrokePattern.DOTTED);
-        expect(result.stroke?.width).toBe(4);
-        expect(result.stroke?.cap).toBe(1);
-        expect(result.stroke?.join).toBe(2);
-        expect(result.glow?.radius).toBe(6);
-        expect(result.glow?.intensity).toBe(0.75);
-        expect(glyph.stroke?.dashing).toBe(value.dashing);
+        expect(result.stroke?.width).toBe(glyph.stroke?.width);
+        expect(result.stroke?.paint?.value).toBe(diffColorFor('#123456', ChangeType.DELETED, makeRoles()));
             })
         );
     });
 
-    // WHEN: A Glyph1D has no stroke and change is DELETED. No stroke is created; any existing glow color is still recolored.
-    // THEN: Returns an unmutated copy without creating a stroke, while recoloring any set glow color.
-    test('deleted_strokeless_glyph', () => {
-        const glowColor = "#123456";
-        const glyph = create(Glyph1DSchema, {
-          glow: create(GlowSchema, {
-            color: { case: "color", value: glowColor },
-          }),
-        });
-        const result = recolorLine(glyph, ChangeType.DELETED);
+    // WHEN: The change is DELETED and the glyph has no stroke. No stroke is created, so no dashing value is added.
+    // THEN: Returns a copy without creating a stroke or adding a dashing value.
+    test('deleted_without_stroke', () => {
+        const glyph: Glyph1D = create(Glyph1DSchema, {});
+        const result: Glyph1D = recolorLine(glyph, ChangeType.DELETED);
         expect(result.stroke).toBeUndefined();
-        expect(result.glow?.color).toEqual({ case: "color", value: diffColorFor(glowColor, ChangeType.DELETED) });
-        expect(glyph.stroke).toBeUndefined();
-        expect(glyph.glow?.color).toEqual({ case: "color", value: glowColor });
     });
 
-    test('unset_stroke_color', () => {
+    test('stroke_color_case', () => {
         fc.assert(
-            fc.property(fc.record({ dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) }), (value) => {
-        const glyph = create(Glyph1DSchema, {
-          stroke: create(StrokeSchema, {
-            dashing: value.dashing,
-          }),
-        });
-        const result = recolorLine(glyph, value.change);
+            fc.property(fc.string(), (value) => {
+        const glyph: Glyph1D = makeLine(value, StrokePattern.SOLID);
+        const result: Glyph1D = recolorLine(glyph, ChangeType.ADDED, makeRoles());
+        expect(result.stroke?.paint?.case).toBe('color');
+        expect(result.stroke?.paint?.value).toBe(diffColorFor(value, ChangeType.ADDED, makeRoles()));
+            })
+        );
+    });
+
+    // WHEN: The glyph's stroke color is unset. It remains unset rather than being created or recolored.
+    // THEN: Leaves the unset stroke color unset.
+    test('stroke_color_unset', () => {
+        const glyph: Glyph1D = create(Glyph1DSchema, { stroke: create(StrokeSchema, {}) });
+        const result: Glyph1D = recolorLine(glyph, ChangeType.MODIFIED);
         expect(result.stroke?.paint).toBeUndefined();
-        expect(result.stroke?.dashing).toBe(value.change === ChangeType.DELETED ? StrokePattern.DOTTED : value.dashing);
-        expect(glyph.stroke?.dashing).toBe(value.dashing);
+    });
+
+    test('stroke_gradient_paint', () => {
+        fc.assert(
+            fc.property(fc.constantFrom('gradient'), (value) => {
+        const gradient: Gradient = create(GradientSchema, {});
+        const glyph: Glyph1D = create(Glyph1DSchema, { stroke: create(StrokeSchema, { paint: { case: 'gradient', value: gradient } }) });
+        const result: Glyph1D = recolorLine(glyph, ChangeType.ADDED);
+        expect(result.stroke?.paint?.case).toBe('gradient');
+        expect(result.stroke?.paint?.value).toEqual(gradient);
             })
         );
     });
 
-    test('gradient_stroke_paint', () => {
+    test('glow_color_set', () => {
         fc.assert(
-            fc.property(fc.record({ dashing: fc.constantFrom(StrokePattern.UNSPECIFIED, StrokePattern.SOLID, StrokePattern.DASHED, StrokePattern.DOTTED), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) }), (value) => {
-        const gradient = create(GradientSchema, {});
-        const glyph = create(Glyph1DSchema, {
-          stroke: create(StrokeSchema, {
-            paint: { case: "gradient", value: gradient },
-            dashing: value.dashing,
-          }),
-        });
-        const result = recolorLine(glyph, value.change);
-        expect(result.stroke?.paint).toEqual({ case: "gradient", value: gradient });
-        expect(result.stroke?.dashing).toBe(value.change === ChangeType.DELETED ? StrokePattern.DOTTED : value.dashing);
-        expect(glyph.stroke?.paint).toEqual({ case: "gradient", value: gradient });
+            fc.property(fc.string(), (value) => {
+        const glyph: Glyph1D = makeLine('#010203', StrokePattern.SOLID, value);
+        const roles: DiffRoles = makeRoles();
+        const result: Glyph1D = recolorLine(glyph, ChangeType.MODIFIED, roles);
+        expect(result.glow?.color).toBe(diffColorFor(value, ChangeType.MODIFIED, roles));
             })
         );
     });
 
-    test('unset_glow_color', () => {
-        fc.assert(
-            fc.property(fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), (value) => {
-        const glyph = create(Glyph1DSchema, {
-          glow: create(GlowSchema, {}),
-        });
-        const result = recolorLine(glyph, value.change);
+    // WHEN: The glyph's glow color is unset. It remains unset rather than being created or recolored.
+    // THEN: Leaves the unset glow color unset.
+    test('glow_color_unset', () => {
+        const glyph: Glyph1D = create(Glyph1DSchema, { glow: create(GlowSchema, {}) });
+        const result: Glyph1D = recolorLine(glyph, ChangeType.ADDED);
         expect(result.glow?.color).toBeUndefined();
-        expect(glyph.glow?.color).toBeUndefined();
-            })
-        );
     });
 
-    test('gradient_glow_color', () => {
+    test.skip('glow_gradient', () => {
+        // test generation failed: generated body does not reference the bound value `value`
+    });
+
+    // WHEN: The glyph has no glow. No glow is created and there is no glow color to recolor.
+    // THEN: Leaves the glyph without a glow and creates no glow color.
+    test('no_glow', () => {
+        const glyph: Glyph1D = create(Glyph1DSchema, {});
+        const result: Glyph1D = recolorLine(glyph, ChangeType.ADDED);
+        expect(result.glow).toBeUndefined();
+    });
+
+    test('preserve_style_properties', () => {
         fc.assert(
             fc.property(fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), (value) => {
-        const gradient = create(GradientSchema, {});
-        const glyph = create(Glyph1DSchema, {
-          glow: create(GlowSchema, {
-            color: { case: "gradient", value: gradient },
-          }),
-        });
-        const result = recolorLine(glyph, value.change);
-        expect(result.glow?.color).toEqual({ case: "gradient", value: gradient });
-        expect(glyph.glow?.color).toEqual({ case: "gradient", value: gradient });
+        const glyph: Glyph1D = makeStyledLine();
+        const result: Glyph1D = recolorLine(glyph, value, makeRoles());
+        expect(result.stroke?.width).toBe(glyph.stroke?.width);
+        expect(result.stroke?.cap).toBe(glyph.stroke?.cap);
+        expect(result.stroke?.join).toBe(glyph.stroke?.join);
+        expect(result.glow?.radius).toBe(glyph.glow?.radius);
+        expect(result.glow?.intensity).toBe(glyph.glow?.intensity);
+        expect(result.arrowheads).toEqual(glyph.arrowheads);
             })
         );
     });
 
-    test('copy_preserves_noncolor_style', () => {
+    test('input_not_mutated', () => {
         fc.assert(
-            fc.property(fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED) }), (value) => {
-        const glyph = create(Glyph1DSchema, {
-          stroke: create(StrokeSchema, {
-            paint: { case: "color", value: "#336699" },
-            dashing: StrokePattern.DASHED,
-            width: 7,
-            cap: 1,
-            join: 2,
-          }),
-          glow: create(GlowSchema, {
-            color: { case: "color", value: "#663399" },
-            radius: 8,
-            intensity: 0.6,
-          }),
-          arrowheads: create(ArrowheadsSchema, {
-            start: 1,
-            end: 2,
-            size: 11,
-          }),
-        });
-        const originalStroke = glyph.stroke;
-        const originalGlow = glyph.glow;
-        const originalArrowheads = glyph.arrowheads;
-        const result = recolorLine(glyph, value.change);
-        expect(result.stroke?.width).toBe(originalStroke?.width);
-        expect(result.stroke?.cap).toBe(originalStroke?.cap);
-        expect(result.stroke?.join).toBe(originalStroke?.join);
-        expect(result.glow?.radius).toBe(originalGlow?.radius);
-        expect(result.glow?.intensity).toBe(originalGlow?.intensity);
-        expect(result.arrowheads).toEqual(originalArrowheads);
-        expect(glyph.stroke).toEqual(originalStroke);
-        expect(glyph.glow).toEqual(originalGlow);
-        expect(glyph.arrowheads).toEqual(originalArrowheads);
+            fc.property(fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), (value) => {
+        const glyph: Glyph1D = makeStyledLine();
+        const beforeStroke: Stroke | undefined = glyph.stroke;
+        const beforeGlow: Glow | undefined = glyph.glow;
+        const beforeArrowheads: Arrowheads | undefined = glyph.arrowheads;
+        recolorLine(glyph, value, makeRoles());
+        expect(glyph.stroke).toEqual(beforeStroke);
+        expect(glyph.glow).toEqual(beforeGlow);
+        expect(glyph.arrowheads).toEqual(beforeArrowheads);
             })
         );
     });

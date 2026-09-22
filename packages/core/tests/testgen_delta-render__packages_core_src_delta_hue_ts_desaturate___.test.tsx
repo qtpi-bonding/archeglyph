@@ -3,49 +3,97 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { desaturate } from '../src/delta/hue';
 
 describe('testgen_delta__desaturate', () => {
-    test('accepted_colour_string', () => {
+    function expectedDesaturated(color: string): string {
+        const red: number = parseInt(color.slice(1, 3), 16);
+        const green: number = parseInt(color.slice(3, 5), 16);
+        const blue: number = parseInt(color.slice(5, 7), 16);
+        const lightness: number = Math.floor((Math.max(red, green, blue) + Math.min(red, green, blue)) / 2);
+        const channel: string = lightness.toString(16).padStart(2, '0');
+        return `#${channel}${channel}${channel}`;
+    }
+
+    function greyHex(channel: number): string {
+        const hex: string = channel.toString(16).padStart(2, '0');
+        return `#${hex}${hex}${hex}`;
+    }
+
+    function rgbHex(channels: [number, number, number]): string {
+        const red: string = channels[0].toString(16).padStart(2, '0');
+        const green: string = channels[1].toString(16).padStart(2, '0');
+        const blue: string = channels[2].toString(16).padStart(2, '0');
+        return `#${red}${green}${blue}`;
+    }
+
+    test('accepted_colored_input', () => {
         fc.assert(
-            fc.property(fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'), { minLength: 6, maxLength: 6 }).map((digits) => `#${digits.join('')}`), (value) => {
-        const result = desaturate(value);
-        expect(result).toMatch(/^#[0-9a-f]{6}$/);
-        expect(result.slice(1, 3)).toBe(result.slice(3, 5));
-        expect(result.slice(3, 5)).toBe(result.slice(5, 7));
-        const red = parseInt(value.slice(1, 3), 16);
-        const green = parseInt(value.slice(3, 5), 16);
-        const blue = parseInt(value.slice(5, 7), 16);
-        const expectedChannel = Math.floor((Math.max(red, green, blue) + Math.min(red, green, blue)) / 2);
-        expect(parseInt(result.slice(1, 3), 16)).toBe(expectedChannel);
+            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).filter(([red, green, blue]) => red !== green || green !== blue).map((channels) => rgbHex(channels)), (value) => {
+        expect(desaturate(value)).toBe(expectedDesaturated(value));
             })
         );
     });
 
-    test('already_grey_colour', () => {
+    test('accepted_already_grey_input', () => {
         fc.assert(
-            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.boolean()).map(([channel, uppercase]) => { const hex = channel.toString(16).padStart(2, '0'); const normalized = uppercase ? hex.toUpperCase() : hex; return `#${normalized}${normalized}${normalized}`; }), (value) => {
+            fc.property(fc.integer({ min: 0, max: 255 }).map((channel) => greyHex(channel)), (value) => {
         expect(desaturate(value)).toBe(value.toLowerCase());
             })
         );
     });
 
-    test('uppercase_hex_input', () => {
+    test('accepted_uppercase_input', () => {
         fc.assert(
-            fc.property(fc.array(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'), { minLength: 6, maxLength: 6 }).map((digits) => `#${digits.join('')}`).filter((color) => /[A-F]/.test(color)), (value) => {
-        expect(desaturate(value)).toBe(value.toLowerCase());
+            fc.property(fc.integer({ min: 0, max: 16777215 }).map((number) => number.toString(16).padStart(6, '0')).filter((hex) => /[a-f]/.test(hex)).map((hex) => `#${hex.toUpperCase()}`), (value) => {
+        expect(desaturate(value)).toBe(expectedDesaturated(value));
+        expect(desaturate(value)).toBe(desaturate(value).toLowerCase());
             })
         );
     });
 
-    test('rejected_string', () => {
+    test('rejected_input', () => {
         fc.assert(
             fc.property(fc.string().filter((candidate) => !/^#[0-9a-fA-F]{6}$/.test(candidate)), (value) => {
         expect(desaturate(value)).toBe(value);
             })
         );
+    });
+
+    // WHEN: The specific input #8ad1ff produces #c4c4c4.
+    // THEN: Returns #c4c4c4 for the input #8ad1ff.
+    test('worked_blue_input', () => {
+        expect(desaturate('#8ad1ff')).toBe('#c4c4c4');
+    });
+
+    // WHEN: The specific input #bb9af7 produces #c8c8c8.
+    // THEN: Returns #c8c8c8 for the input #bb9af7.
+    test('worked_purple_input', () => {
+        expect(desaturate('#bb9af7')).toBe('#c8c8c8');
+    });
+
+    // WHEN: The specific input #122238 produces #252525.
+    // THEN: Returns #252525 for the input #122238.
+    test('worked_dark_blue_input', () => {
+        expect(desaturate('#122238')).toBe('#252525');
+    });
+
+    // WHEN: The already-grey input #FFFFFF keeps its channel values and produces the lowercase result #ffffff.
+    // THEN: Preserves the channel values of #FFFFFF and returns the lowercase result #ffffff.
+    test('worked_uppercase_white_input', () => {
+        expect(desaturate('#FFFFFF')).toBe('#ffffff');
     });
 
 });

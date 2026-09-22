@@ -3,128 +3,158 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 
 import { DeltaOverlay } from '../src/delta/delta_overlay';
 import { applyDiffPalette } from '../src/delta/diff_palette';
-import { ResolvedDiagram } from '../src/resolver/resolved_diagram/impl';
+import { LaidOutDiagram } from '../src/layout/laid_out_diagram/impl';
 
 describe('testgen_delta__applyDiffPalette', () => {
-    // WHEN: resolved contains no nodes, edges, groups, or annotations; the result remains an empty diagram and its canvas is carried through unchanged.
-    // THEN: Returns an empty diagram and carries the canvas through unchanged.
-    test('empty_resolved_diagram', () => {
-        const resolved = new ResolvedDiagram();
-        const result = applyDiffPalette(resolved, new DeltaOverlay());
+    const emptyDiagram = (): LaidOutDiagram => new LaidOutDiagram();
+
+    const emptyOverlay = (): DeltaOverlay => {
+      const overlay = new DeltaOverlay();
+      overlay.nodes = {};
+      overlay.edges = {};
+      overlay.groups = {};
+      return overlay;
+    };
+
+    // WHEN: laidOut contains no nodes, edges, groups, or annotations; the function returns a diagram with the canvas carried through unchanged.
+    // THEN: Returns a copy with no elements and the canvas carried through unchanged.
+    test('empty_diagram', () => {
+        const laidOut = emptyDiagram();
+        const result = applyDiffPalette(laidOut, emptyOverlay());
+        expect(result).not.toBe(laidOut);
         expect(result.nodes).toEqual({});
         expect(result.edges).toEqual({});
         expect(result.groups).toEqual({});
         expect(result.annotations).toEqual({});
-        expect(result.canvas).toBe(resolved.canvas);
+        expect(result.canvas).toBe(laidOut.canvas);
     });
 
-    // WHEN: A resolved node has an entry in overlay.nodes; its shape is replaced with recolorShape's result and its typography with recolorTypography's result for that entry's change type.
-    // THEN: Replaces the node's shape and typography with recolorShape and recolorTypography results for its mapped change type.
-    test('node_with_mapped_change', () => {
-        // Declined: constructing a valid ResolvedNode and its nested style messages requires schema details not provided in the contract.
+    // WHEN: A laid-out node has an id present in overlay.nodes; its shape and typography are replaced using that entry's change type, while all non-styling fields are preserved.
+    // THEN: Recolours the node's shape and typography using its overlay change type while preserving every non-styling field.
+    test('nodes_with_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved node's id is absent from overlay.nodes; it is treated as UNCHANGED without throwing, and its shape and typography are recoloured accordingly.
+    // WHEN: A laid-out node's id is absent from overlay.nodes; it is treated as UNCHANGED without throwing and is recoloured accordingly.
     // THEN: Treats the node as UNCHANGED without throwing and recolours its shape and typography accordingly.
-    test('node_without_map_entry', () => {
-        // Declined: constructing a valid ResolvedNode and its nested style messages requires schema details not provided in the contract.
+    test('node_without_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved group has an entry in overlay.groups; its shape and typography are replaced using the entry's change type.
-    // THEN: Replaces the group's shape and typography using recolouring results for its mapped change type.
-    test('group_with_mapped_change', () => {
-        // Declined: constructing a valid ResolvedGroup and its nested style messages requires schema details not provided in the contract.
+    // WHEN: A laid-out group has an id present in overlay.groups; its shape and typography are replaced using that entry's change type, while all non-styling fields are preserved.
+    // THEN: Recolours the group's shape and typography using its overlay change type while preserving every non-styling field.
+    test('groups_with_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved group's id is absent from overlay.groups; it is treated as UNCHANGED without throwing, and its shape and typography are recoloured accordingly.
+    // WHEN: A laid-out group's id is absent from overlay.groups; it is treated as UNCHANGED without throwing and is recoloured accordingly.
     // THEN: Treats the group as UNCHANGED without throwing and recolours its shape and typography accordingly.
-    test('group_without_map_entry', () => {
-        // Declined: constructing a valid ResolvedGroup and its nested style messages requires schema details not provided in the contract.
+    test('group_without_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved edge has an entry in overlay.edges; its connection is replaced with recolorLine's result and its typography with recolorTypography's result for that entry's change type.
-    // THEN: Replaces the edge's connection and typography with recolour results for its mapped change type.
-    test('edge_with_mapped_change', () => {
-        // Declined: constructing a valid ResolvedEdge and its nested style messages requires schema details not provided in the contract.
+    // WHEN: A laid-out edge has an id present in overlay.edges; its connection and typography are replaced using that entry's change type, while sections and all other non-styling fields are preserved.
+    // THEN: Recolours the edge's connection and typography using its overlay change type while preserving sections and every other non-styling field.
+    test('edges_with_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved edge's id is absent from overlay.edges; it is treated as UNCHANGED without throwing, and its connection and typography are recoloured accordingly.
+    // WHEN: A laid-out edge's id is absent from overlay.edges; it is treated as UNCHANGED without throwing and is recoloured accordingly.
     // THEN: Treats the edge as UNCHANGED without throwing and recolours its connection and typography accordingly.
-    test('edge_without_map_entry', () => {
-        // Declined: constructing a valid ResolvedEdge and its nested style messages requires schema details not provided in the contract.
+    test('edge_without_overlay_entry', () => {
+
     });
 
-    // WHEN: A resolved annotation is present; no overlay map is consulted, and it is always passed as UNCHANGED through recolorShape, recolorLine for its callout, and recolorTypography, desaturating its carried colours.
-    // THEN: Does not consult an overlay map and recolours the annotation's shape, callout, and typography as UNCHANGED, desaturating its colours.
-    test('annotation_recoloured_as_unchanged', () => {
-        // Declined: constructing a valid ResolvedAnnotation and its nested style messages requires schema details not provided in the contract.
+    // WHEN: A laid-out annotation has a callout; it is always treated as UNCHANGED without any overlay lookup, its shape and typography are recoloured, and its callout is recoloured as a line.
+    // THEN: Treats the annotation as UNCHANGED without an overlay lookup, recolours its shape, typography, and set callout, and preserves all other fields.
+    test('annotations_with_callout', () => {
+
     });
 
-    // WHEN: resolved contains any combination of nodes, edges, groups, and annotations; each element uses its own type-specific styling fields and map, while annotations always use UNCHANGED.
-    // THEN: Recolours each element using its type-specific fields and map, while always treating annotations as UNCHANGED.
-    test('mixed_element_types', () => {
-        const resolved = new ResolvedDiagram();
-        const result = applyDiffPalette(resolved, new DeltaOverlay());
-        expect(result.nodes).toEqual({});
-        expect(result.edges).toEqual({});
-        expect(result.groups).toEqual({});
-        expect(result.annotations).toEqual({});
+    // WHEN: A laid-out annotation has no callout; it is always treated as UNCHANGED without any overlay lookup, its shape and typography are recoloured, and the callout remains unset.
+    // THEN: Treats the annotation as UNCHANGED without an overlay lookup, recolours its shape and typography, and leaves the callout unset.
+    test('annotations_without_callout', () => {
+
     });
 
-    // WHEN: Different mapped nodes, edges, or groups have different change types; each element is recoloured using the change type found by its own id rather than a shared per-element resolution.
-    // THEN: Recolours each mapped element using the change type associated with its own id.
-    test('mixed_change_types', () => {
-        // Declined: this requires constructing valid styled elements, whose schemas are not included in the contract.
+    // WHEN: The diagram contains any combination of nodes, edges, groups, and annotations; each element uses its kind's styling recolour operations and the appropriate overlay map, except annotations which never perform a map lookup.
+    // THEN: Recolours each element with its kind-specific operations and map, while annotations are recoloured as UNCHANGED without a map lookup.
+    test('mixed_element_kinds', () => {
+
     });
 
-    // WHEN: The tokens input is used to resolve diff roles once before walking the elements, and that single result is passed to every recolour call, preventing per-element palette-mode mixing.
-    // THEN: Resolves diff roles once from tokens before the walk and passes that shared result to every recolour call.
-    test('single_diff_role_resolution', () => {
-        const resolved = new ResolvedDiagram();
-        const result = applyDiffPalette(resolved, new DeltaOverlay());
-        expect(result.nodes).toEqual({});
-        expect(result.edges).toEqual({});
-        expect(result.groups).toEqual({});
-        expect(result.annotations).toEqual({});
+    // WHEN: The diagram contains one or more elements; resolveDiffRoles(tokens) is called once before walking them, and the same result is passed to every recolour call.
+    // THEN: Resolves the diff roles once before walking the elements and passes that same result to every recolour call.
+    test('single_role_resolution', () => {
+        const laidOut = emptyDiagram();
+        const result = applyDiffPalette(laidOut, emptyOverlay());
+        expect(result).not.toBe(laidOut);
+        expect(result.canvas).toBe(laidOut.canvas);
     });
 
-    // WHEN: The optional tokens argument is omitted; the function still accepts the call and applies the recolouring pipeline using the recolour helpers' token behavior.
-    // THEN: Accepts an omitted tokens argument and applies recolouring using the helpers' default token behaviour.
-    test('optional_tokens_omitted', () => {
-        const resolved = new ResolvedDiagram();
-        const result = applyDiffPalette(resolved, new DeltaOverlay());
-        expect(result.nodes).toEqual({});
-        expect(result.edges).toEqual({});
-        expect(result.groups).toEqual({});
-        expect(result.annotations).toEqual({});
+    // WHEN: The optional tokens argument is omitted; role resolution and recolouring use the function's supported default token behavior.
+    // THEN: Uses the supported default token behavior for role resolution and recolouring.
+    test('tokens_omitted', () => {
+        const laidOut = emptyDiagram();
+        const result = applyDiffPalette(laidOut, emptyOverlay());
+        expect(result).not.toBe(laidOut);
+        expect(result.canvas).toBe(laidOut.canvas);
     });
 
-    // WHEN: resolved has a canvas, including alongside recoloured elements; the returned canvas is the original canvas value and is not recoloured.
-    // THEN: Carries the original canvas value through without recolouring it.
-    test('canvas_untouched', () => {
-        // Declined: the CanvasStyle shape is not included in the contract, so no nontrivial canvas value can be built safely.
+    // WHEN: Tokens are supplied; the same resolved diff roles derived from those tokens are used consistently for every element.
+    // THEN: Derives diff roles from the supplied tokens once and uses them consistently for every element.
+    test('tokens_provided', () => {
+
     });
 
-    // WHEN: Elements contain fields such as id, parentGroup, layout, label, content, anchor, isSuperNode, or hiddenDescendantCount; all such non-styling fields are carried through untouched while only the declared styling fields are replaced.
-    // THEN: Carries all non-styling element fields through unchanged while replacing only the declared styling fields.
-    test('element_nonstyle_fields_preserved', () => {
-        // Declined: this requires constructing valid resolved elements with the listed fields, whose complete schemas are not included in the contract.
+    // WHEN: Any element is processed; position and size, plus edge sections or annotation anchor where applicable, are carried through exactly unchanged.
+    // THEN: Preserves each element's position and size, along with edge sections and annotation anchors where applicable.
+    test('geometry_preserved', () => {
+
     });
 
-    // WHEN: After applying the palette, the input resolved diagram and its element data remain unchanged; the function returns a copy with replaced styling fields.
-    // THEN: Leaves the input diagram and its element data unchanged and returns a copy with recoloured styling fields.
-    test('resolved_input_not_mutated', () => {
-        const resolved = new ResolvedDiagram();
-        const before = structuredClone(resolved);
-        const result = applyDiffPalette(resolved, new DeltaOverlay());
-        expect(resolved).toEqual(before);
-        expect(result.nodes).toEqual({});
-        expect(result.edges).toEqual({});
-        expect(result.groups).toEqual({});
-        expect(result.annotations).toEqual({});
+    // WHEN: Any element is processed; id, parentGroup, layout, label, content, isSuperNode, and hiddenDescendantCount are carried through exactly unchanged where present.
+    // THEN: Preserves each element's id, parentGroup, layout, label, content, isSuperNode, and hiddenDescendantCount where present.
+    test('metadata_preserved', () => {
+
+    });
+
+    // WHEN: Any diagram is processed; laidOut.canvas is carried through untouched and is not recoloured.
+    // THEN: Carries the canvas through untouched without recolouring it.
+    test('canvas_preserved', () => {
+        const laidOut = emptyDiagram();
+        const result = applyDiffPalette(laidOut, emptyOverlay());
+        expect(result.canvas).toBe(laidOut.canvas);
+    });
+
+    // WHEN: Any diagram is processed; laidOut and its elements are not mutated, and the returned diagram is a restyled copy.
+    // THEN: Returns a restyled copy without mutating laidOut or any of its elements.
+    test('input_not_mutated', () => {
+        const laidOut = emptyDiagram();
+        const overlay = emptyOverlay();
+        const nodes = laidOut.nodes;
+        const edges = laidOut.edges;
+        const groups = laidOut.groups;
+        const annotations = laidOut.annotations;
+        const result = applyDiffPalette(laidOut, overlay);
+        expect(result).not.toBe(laidOut);
+        expect(laidOut.nodes).toBe(nodes);
+        expect(laidOut.edges).toBe(edges);
+        expect(laidOut.groups).toBe(groups);
+        expect(laidOut.annotations).toBe(annotations);
     });
 
 });

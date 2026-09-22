@@ -3,6 +3,16 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { diffColorFor } from '../src/delta/diff_color';
@@ -10,28 +20,32 @@ import { desaturate, rotateHue } from '../src/delta/hue';
 import { ChangeType } from '../../proto/src/gen/content_pb';
 
 describe('testgen_delta__diffColorFor', () => {
-    test('unchanged_color', () => {
+    const unreadableDiffRoles = (): { readonly added: string; readonly modified: string; readonly deleted: string } => ({
+      get added(): string {
+        throw new Error('diffRoles.added was read');
+      },
+      get modified(): string {
+        throw new Error('diffRoles.modified was read');
+      },
+      get deleted(): string {
+        throw new Error('diffRoles.deleted was read');
+      },
+    });
+
+    test('unchanged_with_any_palette_mode', () => {
         fc.assert(
-            fc.property(fc.record({ color: fc.string(), diffRoles: fc.oneof(fc.constant(undefined), fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() })) }), (value) => {
-        const diffRoles = value.diffRoles === undefined ? undefined : {
-          get added(): string { throw new Error('diffRoles was read'); },
-          get modified(): string { throw new Error('diffRoles was read'); },
-          get deleted(): string { throw new Error('diffRoles was read'); },
-        };
-        expect(diffColorFor(value.color, ChangeType.UNCHANGED, diffRoles)).toBe(desaturate(value.color));
+            fc.property(fc.record({ color: fc.string(), hasRoles: fc.boolean() }), (value) => {
+        const roles = value.hasRoles ? unreadableDiffRoles() : undefined;
+        expect(diffColorFor(value.color, ChangeType.UNCHANGED, roles)).toBe(desaturate(value.color));
             })
         );
     });
 
-    test('unspecified_color', () => {
+    test('unspecified_with_any_palette_mode', () => {
         fc.assert(
-            fc.property(fc.record({ color: fc.string(), diffRoles: fc.oneof(fc.constant(undefined), fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() })) }), (value) => {
-        const diffRoles = value.diffRoles === undefined ? undefined : {
-          get added(): string { throw new Error('diffRoles was read'); },
-          get modified(): string { throw new Error('diffRoles was read'); },
-          get deleted(): string { throw new Error('diffRoles was read'); },
-        };
-        expect(diffColorFor(value.color, ChangeType.CHANGE_TYPE_UNSPECIFIED, diffRoles)).toBe(desaturate(value.color));
+            fc.property(fc.record({ color: fc.string(), hasRoles: fc.boolean() }), (value) => {
+        const roles = value.hasRoles ? unreadableDiffRoles() : undefined;
+        expect(diffColorFor(value.color, ChangeType.CHANGE_TYPE_UNSPECIFIED, roles)).toBe(desaturate(value.color));
             })
         );
     });
@@ -39,8 +53,8 @@ describe('testgen_delta__diffColorFor', () => {
     test('added_table_mode', () => {
         fc.assert(
             fc.property(fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() }), (value) => {
-        const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };
-        expect(diffColorFor(value.color, ChangeType.ADDED, diffRoles)).toBe(value.added);
+        const roles = { added: value.added, modified: value.modified, deleted: value.deleted };
+        expect(diffColorFor(value.color, ChangeType.ADDED, roles)).toBe(value.added);
             })
         );
     });
@@ -48,8 +62,8 @@ describe('testgen_delta__diffColorFor', () => {
     test('modified_table_mode', () => {
         fc.assert(
             fc.property(fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() }), (value) => {
-        const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };
-        expect(diffColorFor(value.color, ChangeType.MODIFIED, diffRoles)).toBe(value.modified);
+        const roles = { added: value.added, modified: value.modified, deleted: value.deleted };
+        expect(diffColorFor(value.color, ChangeType.MODIFIED, roles)).toBe(value.modified);
             })
         );
     });
@@ -57,8 +71,8 @@ describe('testgen_delta__diffColorFor', () => {
     test('deleted_table_mode', () => {
         fc.assert(
             fc.property(fc.record({ color: fc.string(), added: fc.string(), modified: fc.string(), deleted: fc.string() }), (value) => {
-        const diffRoles = { added: value.added, modified: value.modified, deleted: value.deleted };
-        expect(diffColorFor(value.color, ChangeType.DELETED, diffRoles)).toBe(value.deleted);
+        const roles = { added: value.added, modified: value.modified, deleted: value.deleted };
+        expect(diffColorFor(value.color, ChangeType.DELETED, roles)).toBe(value.deleted);
             })
         );
     });
@@ -87,32 +101,35 @@ describe('testgen_delta__diffColorFor', () => {
         );
     });
 
-    test('desaturated_rotate_input', () => {
+    test('saturated_rotate_separation', () => {
         fc.assert(
-            fc.property(fc.integer({ min: 0, max: 255 }).map((channel: number): string => { const hex = channel.toString(16).padStart(2, '0'); return '#' + hex.repeat(3); }), (value) => {
+            fc.property(fc.constantFrom('#ff0000', '#00ff00', '#0000ff', '#8ad1ff', '#bb9af7', '#73daca'), (value) => {
         const added = diffColorFor(value, ChangeType.ADDED);
         const modified = diffColorFor(value, ChangeType.MODIFIED);
         const deleted = diffColorFor(value, ChangeType.DELETED);
-        expect(added).toBe(value);
-        expect(modified).toBe(value);
-        expect(deleted).toBe(value);
-        expect(added).toBe(modified);
-        expect(modified).toBe(deleted);
+        expect(new Set([added, modified, deleted]).size).toBe(3);
             })
         );
     });
 
-    test('non_hex_color', () => {
+    test('desaturated_rotate_identity', () => {
         fc.assert(
-            fc.property(fc.string().filter((value: string): boolean => !/^#[0-9a-fA-F]{6}$/.test(value)), (value) => {
-        const diffRoles = { added: 'table-added', modified: 'table-modified', deleted: 'table-deleted' };
+            fc.property(fc.integer({ min: 0, max: 255 }).map((channel) => `#${channel.toString(16).padStart(2, '0').repeat(3)}`), (value) => {
+        const added = diffColorFor(value, ChangeType.ADDED);
+        const modified = diffColorFor(value, ChangeType.MODIFIED);
+        const deleted = diffColorFor(value, ChangeType.DELETED);
+        expect(added).toBe(value);
+        expect(modified).toBe(added);
+        expect(deleted).toBe(added);
+            })
+        );
+    });
+
+    test('non_hex_color_transform_path', () => {
+        fc.assert(
+            fc.property(fc.string().filter((color) => !/^#[0-9a-fA-F]{6}$/.test(color)), (value) => {
         expect(diffColorFor(value, ChangeType.CHANGE_TYPE_UNSPECIFIED)).toBe(value);
         expect(diffColorFor(value, ChangeType.ADDED)).toBe(value);
-        expect(diffColorFor(value, ChangeType.MODIFIED)).toBe(value);
-        expect(diffColorFor(value, ChangeType.DELETED)).toBe(value);
-        expect(diffColorFor(value, ChangeType.ADDED, diffRoles)).toBe('table-added');
-        expect(diffColorFor(value, ChangeType.MODIFIED, diffRoles)).toBe('table-modified');
-        expect(diffColorFor(value, ChangeType.DELETED, diffRoles)).toBe('table-deleted');
             })
         );
     });

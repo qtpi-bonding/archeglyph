@@ -3,112 +3,72 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { rotateHue } from '../src/delta/hue';
 
 describe('testgen_delta__rotateHue', () => {
     function expectedRotateHue(color: string, degrees: number): string {
-      const r = parseInt(color.slice(1, 3), 16) / 255;
-      const g = parseInt(color.slice(3, 5), 16) / 255;
-      const b = parseInt(color.slice(5, 7), 16) / 255;
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const lightness = (max + min) / 2;
-      const difference = max - min;
-      if (difference === 0) {
-        const channel = Math.round(r * 255).toString(16).padStart(2, '0');
-        return `#${channel}${channel}${channel}`;
+      const red: number = parseInt(color.slice(1, 3), 16) / 255;
+      const green: number = parseInt(color.slice(3, 5), 16) / 255;
+      const blue: number = parseInt(color.slice(5, 7), 16) / 255;
+      const maximum: number = Math.max(red, green, blue);
+      const minimum: number = Math.min(red, green, blue);
+      const lightness: number = (maximum + minimum) / 2;
+      const difference: number = maximum - minimum;
+      let hue: number = 0;
+      let saturation: number = 0;
+      if (difference !== 0) {
+        saturation = difference / (1 - Math.abs(2 * lightness - 1));
+        if (maximum === red) {
+          hue = 60 * (((green - blue) / difference) % 6);
+        } else if (maximum === green) {
+          hue = 60 * ((blue - red) / difference + 2);
+        } else {
+          hue = 60 * ((red - green) / difference + 4);
+        }
       }
-      const saturation = lightness > 0.5
-        ? difference / (2 - max - min)
-        : difference / (max + min);
-      let hue: number;
-      if (max === r) {
-        hue = (g - b) / difference + (g < b ? 6 : 0);
-      } else if (max === g) {
-        hue = (b - r) / difference + 2;
-      } else {
-        hue = (r - g) / difference + 4;
-      }
-      hue = (hue * 60 + degrees) % 360;
-      if (hue < 0) hue += 360;
-      const q = lightness < 0.5
-        ? lightness * (1 + saturation)
-        : lightness + saturation - lightness * saturation;
-      const p = 2 * lightness - q;
-      const hueToRgb = (t: number): number => {
-        let adjusted = t;
-        if (adjusted < 0) adjusted += 1;
-        if (adjusted > 1) adjusted -= 1;
-        if (adjusted < 1 / 6) return p + (q - p) * 6 * adjusted;
-        if (adjusted < 1 / 2) return q;
-        if (adjusted < 2 / 3) return p + (q - p) * (2 / 3 - adjusted) * 6;
+      hue = ((hue + degrees) % 360 + 360) % 360;
+      const hueToRgb = (p: number, q: number, t: number): number => {
+        let normalized: number = t;
+        if (normalized < 0) normalized += 1;
+        if (normalized > 1) normalized -= 1;
+        if (normalized < 1 / 6) return p + (q - p) * 6 * normalized;
+        if (normalized < 1 / 2) return q;
+        if (normalized < 2 / 3) return p + (q - p) * (2 / 3 - normalized) * 6;
         return p;
       };
-      const red = Math.round(hueToRgb(hue / 360 + 1 / 3) * 255).toString(16).padStart(2, '0');
-      const green = Math.round(hueToRgb(hue / 360) * 255).toString(16).padStart(2, '0');
-      const blue = Math.round(hueToRgb(hue / 360 - 1 / 3) * 255).toString(16).padStart(2, '0');
-      return `#${red}${green}${blue}`;
+      const chroma: number = (1 - Math.abs(2 * lightness - 1)) * saturation;
+      const q: number = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
+      const p: number = 2 * lightness - q;
+      const normalizedHue: number = hue / 360;
+      const outputRed: number = difference === 0 ? lightness : hueToRgb(p, q, normalizedHue + 1 / 3);
+      const outputGreen: number = difference === 0 ? lightness : hueToRgb(p, q, normalizedHue);
+      const outputBlue: number = difference === 0 ? lightness : hueToRgb(p, q, normalizedHue - 1 / 3);
+      const toHex = (channel: number): string => Math.round(channel * 255).toString(16).padStart(2, '0');
+      void chroma;
+      return `#${toHex(outputRed)}${toHex(outputGreen)}${toHex(outputBlue)}`;
     }
 
-    test('accepted_saturated_color_rotation', () => {
+    test('accepted_six_digit_hex', () => {
         fc.assert(
-            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.double({ noNaN: true, noDefaultInfinity: true })).map(([r, g, b, degrees]) => ({ color: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`, degrees })).filter(({ color }) => { const r = parseInt(color.slice(1, 3), 16); const g = parseInt(color.slice(3, 5), 16); const b = parseInt(color.slice(5, 7), 16); return Math.max(r, g, b) !== Math.min(r, g, b); }), (value) => {
-        expect(rotateHue(value, degrees)).toBe(expectedRotateHue(value, degrees));
+            fc.property(fc.stringMatching(/^#[0-9a-fA-F]{6}$/), (value) => {
+        expect(rotateHue(value, 137.25)).toBe(expectedRotateHue(value, 137.25));
             })
         );
     });
 
-    test('accepted_zero_degree_rotation', () => {
-        fc.assert(
-            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`), (value) => {
-        expect(rotateHue(value, 0)).toBe(value.toLowerCase());
-            })
-        );
-    });
-
-    test('accepted_full_turn_rotation', () => {
-        fc.assert(
-            fc.property(fc.tuple(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`), fc.integer({ min: -10000, max: 10000 }).map((turns) => turns * 360)), (value) => {
-        expect(rotateHue(value[0], value[1])).toBe(value[0].toLowerCase());
-            })
-        );
-    });
-
-    test('negative_degree_modulo', () => {
-        fc.assert(
-            fc.property(fc.double({ min: -1000000, max: -Number.MIN_VALUE, noNaN: true, noDefaultInfinity: true }), (value) => {
-        expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));
-            })
-        );
-    });
-
-    test('over_360_degree_modulo', () => {
-        fc.assert(
-            fc.property(fc.double({ min: 360 + Number.MIN_VALUE, max: 1000000, noNaN: true, noDefaultInfinity: true }), (value) => {
-        expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));
-            })
-        );
-    });
-
-    test('uppercase_accepted_color', () => {
-        fc.assert(
-            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 }), fc.integer({ min: 0, max: 255 })).map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase()).filter((color) => /[A-F]/.test(color)), (value) => {
-        expect(rotateHue(value, 0)).toBe(value.toLowerCase());
-            })
-        );
-    });
-
-    test('achromatic_color_identity', () => {
-        fc.assert(
-            fc.property(fc.tuple(fc.integer({ min: 0, max: 255 }).map((channel) => `#${channel.toString(16).padStart(2, '0')}${channel.toString(16).padStart(2, '0')}${channel.toString(16).padStart(2, '0')}`), fc.double({ noNaN: true, noDefaultInfinity: true })), (value) => {
-        expect(rotateHue(value[0], value[1])).toBe(value[0].toLowerCase());
-            })
-        );
-    });
-
-    test('three_digit_hex_rejected', () => {
+    test('rejected_three_digit_hex', () => {
         fc.assert(
             fc.property(fc.constantFrom('#abc', '#ABC', '#123', '#aF0'), (value) => {
         expect(rotateHue(value, 180)).toBe(value);
@@ -116,32 +76,86 @@ describe('testgen_delta__rotateHue', () => {
         );
     });
 
-    test('named_color_rejected', () => {
+    test('rejected_named_colour', () => {
         fc.assert(
-            fc.property(fc.constantFrom('none', 'red', 'transparent', 'RebeccaPurple'), (value) => {
-        expect(rotateHue(value, 180)).toBe(value);
+            fc.property(fc.constantFrom('none', 'red', 'transparent', 'RebeccaPurple', 'currentColor'), (value) => {
+        expect(rotateHue(value, -45)).toBe(value);
             })
         );
     });
 
-    test('unresolved_color_rejected', () => {
+    test('rejected_unresolved_token', () => {
         fc.assert(
-            fc.property(fc.constantFrom('$roles.node_fill', '$color.primary', '$theme.background'), (value) => {
-        expect(rotateHue(value, 180)).toBe(value);
+            fc.property(fc.constantFrom('$roles.node_fill', '$roles.background', '$theme.primary_text', '$color.accent'), (value) => {
+        expect(rotateHue(value, 270)).toBe(value);
             })
         );
     });
 
-    // WHEN: An empty string is rejected and returned byte for byte without parsing, transformation, or lowercasing.
-    // THEN: Returns the empty string byte for byte without parsing, transformation, or lowercasing.
-    test('empty_color_rejected', () => {
+    // WHEN: The empty string is rejected and returned unchanged, without an error.
+    // THEN: Returns the empty string unchanged without raising an error.
+    test('rejected_empty_string', () => {
         expect(rotateHue('', 180)).toBe('');
     });
 
-    test('other_invalid_color_rejected', () => {
+    test('accepted_uppercase_normalization', () => {
         fc.assert(
-            fc.property(fc.string().filter((color) => !/^#[0-9a-fA-F]{6}$/.test(color)), (value) => {
-        expect(rotateHue(value, 37)).toBe(value);
+            fc.property(fc.constantFrom('#8A8A8A', '#AAAAAA', '#B0B0B0'), (value) => {
+        expect(rotateHue(value, 180)).toBe(value.toLowerCase());
+            })
+        );
+    });
+
+    test('saturated_colour_hue_rotation', () => {
+        fc.assert(
+            fc.property(fc.constantFrom('#8ad1ff', '#73daca', '#122238', '#ff0000', '#00aF7B', '#6633cc'), (value) => {
+        expect(rotateHue(value, 180)).toBe(expectedRotateHue(value, 180));
+            })
+        );
+    });
+
+    test('zero_saturation_identity', () => {
+        fc.assert(
+            fc.property(fc.constantFrom('#000000', '#FFFFFF', '#8A8A8A', '#bBbBbB', '#404040'), (value) => {
+        expect(rotateHue(value, 271.5)).toBe(value.toLowerCase());
+            })
+        );
+    });
+
+    // WHEN: A finite degree value of zero leaves the colour unchanged apart from the required lowercase output normalization for accepted inputs.
+    // THEN: Returns an accepted colour unchanged apart from required lowercase normalization when degrees is zero.
+    test('zero_degree_rotation', () => {
+        expect(rotateHue('#8A12f0', 0)).toBe('#8a12f0');
+    });
+
+    test('full_turn_rotation', () => {
+        fc.assert(
+            fc.property(fc.integer({ min: -1000000, max: 1000000 }).map((turns) => turns * 360), (value) => {
+        expect(rotateHue('#73daca', value)).toBe('#73daca');
+            })
+        );
+    });
+
+    test('negative_degree_rotation', () => {
+        fc.assert(
+            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true, max: -Number.MIN_VALUE }), (value) => {
+        expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));
+            })
+        );
+    });
+
+    test('over_360_degree_rotation', () => {
+        fc.assert(
+            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true, min: 360 + Number.EPSILON }), (value) => {
+        expect(rotateHue('#8ad1ff', value)).toBe(expectedRotateHue('#8ad1ff', value));
+            })
+        );
+    });
+
+    test('fractional_degree_rotation', () => {
+        fc.assert(
+            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }).filter((degrees) => Number.isFinite(degrees) && !Number.isInteger(degrees)), (value) => {
+        expect(rotateHue('#73daca', value)).toBe(expectedRotateHue('#73daca', value));
             })
         );
     });

@@ -3,159 +3,135 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-// Repaired by hand: the generated body used these schema descriptors
-// without importing them. archetest.yaml now carries them in the core header.
-import { TypographySchema } from '@archeglyph/proto/gen/style_pb';
+import {
+  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+} from '@archeglyph/proto/gen/content_pb';
+import {
+  StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
+  Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
+  ArrowheadsSchema, CanvasStyleSchema,
+} from '@archeglyph/proto/gen/style_pb';
+import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
 
 import { diffColorFor } from '../src/delta/diff_color';
 import { DiffRoles } from '../src/delta/diff_roles';
 import { recolorTypography } from '../src/delta/recolor_text';
 import { ChangeType } from '../../proto/src/gen/content_pb';
+import { Typography } from '../../proto/src/gen/style_pb';
 
 describe('testgen_delta__recolorTypography', () => {
-    function makeDiffRoles(added: string, modified: string, deleted: string): DiffRoles {
-      return Object.assign(new DiffRoles(), { added, modified, deleted });
+    function assertTypographyNonColorFields(actual: Typography, expected: Typography): void {
+      expect(actual.font).toBe(expected.font);
+      expect(actual.size).toBe(expected.size);
+      expect(actual.weight).toBe(expected.weight);
+      expect(actual.align).toBe(expected.align);
+      expect(actual.visible).toBe(expected.visible);
     }
 
     test('both_colors_set', () => {
         fc.assert(
-            fc.property(fc.record({ font: fc.string(), color: fc.string(), size: fc.integer(), visible: fc.boolean(), background: fc.string() }), (value) => {
-        const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible, background: value.background });
-        const roles = makeDiffRoles("#102030", "#405060", "#708090");
-        const result = recolorTypography(typography, ChangeType.ADDED, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(roles.added);
-        expect(result.background).toBe(roles.added);
-        expect(result.font).toBe(value.font);
-        expect(result.size).toBe(value.size);
-        expect(result.visible).toBe(value.visible);
+            fc.property(fc.record({ color: fc.string(), background: fc.string(), font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ color, background, font, size, visible }) => create(TypographySchema, { color, background, font, size, visible })), (value) => {
+        const originalColor = value.color;
+        const originalBackground = value.background;
+        const result = recolorTypography(value, ChangeType.MODIFIED);
+        expect(result.color).toBe(diffColorFor(originalColor!, ChangeType.MODIFIED));
+        expect(result.background).toBe(diffColorFor(originalBackground!, ChangeType.MODIFIED));
+        assertTypographyNonColorFields(result, value);
+        expect(value.color).toBe(originalColor);
+        expect(value.background).toBe(originalBackground);
             })
         );
     });
 
-    test('color_unset', () => {
+    test('color_only', () => {
         fc.assert(
-            fc.property(fc.record({ font: fc.string(), size: fc.integer(), visible: fc.boolean(), background: fc.string() }), (value) => {
-        const typography = create(TypographySchema, { font: value.font, size: value.size, visible: value.visible, background: value.background });
-        const roles = makeDiffRoles("#102030", "#405060", "#708090");
-        const result = recolorTypography(typography, ChangeType.MODIFIED, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBeUndefined();
-        expect(result.background).toBe(roles.modified);
-        expect(result.font).toBe(value.font);
-        expect(result.size).toBe(value.size);
-        expect(result.visible).toBe(value.visible);
-            })
-        );
-    });
-
-    test('background_unset', () => {
-        fc.assert(
-            fc.property(fc.record({ font: fc.string(), color: fc.string(), size: fc.integer(), visible: fc.boolean() }), (value) => {
-        const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible });
-        const roles = makeDiffRoles("#102030", "#405060", "#708090");
-        const result = recolorTypography(typography, ChangeType.ADDED, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(roles.added);
+            fc.property(fc.record({ color: fc.string(), font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ color, font, size, visible }) => create(TypographySchema, { color, font, size, visible })), (value) => {
+        const originalColor = value.color;
+        const result = recolorTypography(value, ChangeType.ADDED);
+        expect(result.color).toBe(diffColorFor(originalColor!, ChangeType.ADDED));
         expect(result.background).toBeUndefined();
-        expect(result.font).toBe(value.font);
-        expect(result.size).toBe(value.size);
-        expect(result.visible).toBe(value.visible);
+        assertTypographyNonColorFields(result, value);
+        expect(value.color).toBe(originalColor);
+        expect(value.background).toBeUndefined();
             })
         );
     });
 
-    test('both_colors_unset', () => {
+    test('background_only', () => {
         fc.assert(
-            fc.property(fc.record({ font: fc.string(), size: fc.integer(), visible: fc.boolean() }), (value) => {
-        const typography = create(TypographySchema, { font: value.font, size: value.size, visible: value.visible });
-        const result = recolorTypography(typography, ChangeType.UNCHANGED);
-        expect(result).not.toBe(typography);
+            fc.property(fc.record({ background: fc.string(), font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ background, font, size, visible }) => create(TypographySchema, { background, font, size, visible })), (value) => {
+        const originalBackground = value.background;
+        const result = recolorTypography(value, ChangeType.MODIFIED);
+        expect(result.color).toBeUndefined();
+        expect(result.background).toBe(diffColorFor(originalBackground!, ChangeType.MODIFIED));
+        assertTypographyNonColorFields(result, value);
+        expect(value.color).toBeUndefined();
+        expect(value.background).toBe(originalBackground);
+            })
+        );
+    });
+
+    test('no_colors_set', () => {
+        fc.assert(
+            fc.property(fc.record({ font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ font, size, visible }) => create(TypographySchema, { font, size, visible })), (value) => {
+        const result = recolorTypography(value, ChangeType.UNCHANGED);
         expect(result.color).toBeUndefined();
         expect(result.background).toBeUndefined();
-        expect(result.font).toBe(value.font);
-        expect(result.size).toBe(value.size);
-        expect(result.visible).toBe(value.visible);
+        assertTypographyNonColorFields(result, value);
             })
         );
+    });
+
+    // WHEN: The change type is DELETED. Any present text colors are recolored in the same way as for other change types; the Typography receives no ghosting, including no special treatment of a deleted label.
+    // THEN: For DELETED, recolors each present text color normally without applying any ghosting or special deleted-label treatment.
+    test('deleted_change', () => {
+        const typography = create(TypographySchema, { color: '#123456', background: '#abcdef', font: 'body', size: 14, visible: true });
+        const result = recolorTypography(typography, ChangeType.DELETED);
+        expect(result.color).toBe(diffColorFor('#123456', ChangeType.DELETED));
+        expect(result.background).toBe(diffColorFor('#abcdef', ChangeType.DELETED));
+        assertTypographyNonColorFields(result, typography);
+        expect(typography.color).toBe('#123456');
+        expect(typography.background).toBe('#abcdef');
     });
 
     test('non_deleted_change', () => {
         fc.assert(
-            fc.property(fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED), (value) => {
-        const typography = create(TypographySchema, { font: "Inter", color: "#abcdef", size: 14, visible: true, background: "#123456" });
-        const roles = makeDiffRoles("#102030", "#405060", "#708090");
-        const result = recolorTypography(typography, value, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(diffColorFor(typography.color!, value, roles));
-        expect(result.background).toBe(diffColorFor(typography.background!, value, roles));
-        expect(result.font).toBe(typography.font);
-        expect(result.size).toBe(typography.size);
-        expect(result.visible).toBe(typography.visible);
+            fc.property(fc.record({ change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.MODIFIED), typography: fc.record({ color: fc.option(fc.string(), { nil: undefined }), background: fc.option(fc.string(), { nil: undefined }), font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ color, background, font, size, visible }) => create(TypographySchema, { color, background, font, size, visible })) }), (value) => {
+        const result = recolorTypography(value.typography, value.change);
+        if (value.typography.color !== undefined) {
+          expect(result.color).toBe(diffColorFor(value.typography.color, value.change));
+        } else {
+          expect(result.color).toBeUndefined();
+        }
+        if (value.typography.background !== undefined) {
+          expect(result.background).toBe(diffColorFor(value.typography.background, value.change));
+        } else {
+          expect(result.background).toBeUndefined();
+        }
+        assertTypographyNonColorFields(result, value.typography);
             })
         );
     });
 
-    // WHEN: The change type is DELETED; the typography colours are recolored like any other change, with no ghosting or additional treatment of the label.
-    // THEN: Recolors the typography colors as usual without ghosting or any additional label treatment.
-    test('deleted_change', () => {
-        const typography = create(TypographySchema, { font: "Inter", color: "#abcdef", size: 14, visible: true, background: "#123456" });
-        const roles = makeDiffRoles("#102030", "#405060", "#708090");
-        const result = recolorTypography(typography, ChangeType.DELETED, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(roles.deleted);
-        expect(result.background).toBe(roles.deleted);
-        expect(result.font).toBe(typography.font);
-        expect(result.size).toBe(typography.size);
-        expect(result.visible).toBe(typography.visible);
-    });
-
-    // WHEN: No diffRoles argument is supplied; the function still applies diffColorFor to each set colour and preserves unset optionals and all non-colour typography fields.
-    // THEN: Applies diffColorFor to each set color, preserves unset optionals and non-color fields, and returns a copy when diffRoles is omitted.
+    // WHEN: The optional diffRoles argument is omitted. The function invokes diffColorFor without caller-supplied diff roles while preserving the Typography fields and optional-color presence rules.
+    // THEN: When diffRoles is omitted, calls diffColorFor without caller-supplied roles and preserves field values and optional-color presence.
     test('diff_roles_omitted', () => {
-        const typography = create(TypographySchema, { font: "Inter", color: "not-a-color", size: 14, visible: true, background: "also-not-a-color" });
+        const typography = create(TypographySchema, { color: '#123456', background: '#abcdef', font: 'body', size: 14, visible: true });
         const result = recolorTypography(typography, ChangeType.ADDED);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(typography.color);
-        expect(result.background).toBe(typography.background);
-        expect(result.font).toBe(typography.font);
-        expect(result.size).toBe(typography.size);
-        expect(result.visible).toBe(typography.visible);
+        expect(result.color).toBe(diffColorFor('#123456', ChangeType.ADDED));
+        expect(result.background).toBe(diffColorFor('#abcdef', ChangeType.ADDED));
+        assertTypographyNonColorFields(result, typography);
     });
 
     test('diff_roles_supplied', () => {
         fc.assert(
-            fc.property(fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() }), (value) => {
-        const typography = create(TypographySchema, { font: "Inter", color: "#abcdef", size: 14, visible: true, background: "#123456" });
-        const roles = makeDiffRoles(value.added, value.modified, value.deleted);
-        const result = recolorTypography(typography, ChangeType.DELETED, roles);
-        expect(result).not.toBe(typography);
-        expect(result.color).toBe(value.deleted);
-        expect(result.background).toBe(value.deleted);
-        expect(result.font).toBe(typography.font);
-        expect(result.size).toBe(typography.size);
-        expect(result.visible).toBe(typography.visible);
-            })
-        );
-    });
-
-    test('input_not_mutated', () => {
-        fc.assert(
-            fc.property(fc.record({ font: fc.string(), color: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.boolean(), background: fc.option(fc.string(), { nil: undefined }), change: fc.constantFrom(ChangeType.CHANGE_TYPE_UNSPECIFIED, ChangeType.UNCHANGED, ChangeType.ADDED, ChangeType.DELETED, ChangeType.MODIFIED), roles: fc.option(fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() }), { nil: undefined }) }), (value) => {
-        const typography = create(TypographySchema, { font: value.font, color: value.color, size: value.size, visible: value.visible, background: value.background });
-        const originalColor = typography.color;
-        const originalBackground = typography.background;
-        const originalFont = typography.font;
-        const originalSize = typography.size;
-        const originalVisible = typography.visible;
-        const result = value.roles === undefined ? recolorTypography(typography, value.change) : recolorTypography(typography, value.change, makeDiffRoles(value.roles.added, value.roles.modified, value.roles.deleted));
-        expect(result).not.toBe(typography);
-        expect(typography.color).toBe(originalColor);
-        expect(typography.background).toBe(originalBackground);
-        expect(typography.font).toBe(originalFont);
-        expect(typography.size).toBe(originalSize);
-        expect(typography.visible).toBe(originalVisible);
+            fc.property(fc.record({ roles: fc.record({ added: fc.string(), modified: fc.string(), deleted: fc.string() }).map(({ added, modified, deleted }) => { const roles = new DiffRoles(); roles.added = added; roles.modified = modified; roles.deleted = deleted; return roles; }), typography: fc.record({ color: fc.option(fc.string(), { nil: undefined }), background: fc.option(fc.string(), { nil: undefined }), font: fc.option(fc.string(), { nil: undefined }), size: fc.integer(), visible: fc.option(fc.boolean(), { nil: undefined }) }).map(({ color, background, font, size, visible }) => create(TypographySchema, { color, background, font, size, visible })) }), (value) => {
+        const result = recolorTypography(value.typography, ChangeType.ADDED, value.roles);
+        expect(result.color).toBe(value.roles.added);
+        expect(result.background).toBe(value.roles.added);
+        assertTypographyNonColorFields(result, value.typography);
             })
         );
     });

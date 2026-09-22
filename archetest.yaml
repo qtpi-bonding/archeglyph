@@ -53,11 +53,14 @@ tests:
         import {
           DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
           DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+          Node, Edge, Group, NodeDelta, EdgeDelta, GroupDelta, Localization,
         } from '@archeglyph/proto/gen/content_pb';
         import {
           StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
           Glyph1DSchema, Glyph2DSchema, DecorationSchema, TypographySchema,
           ArrowheadsSchema, CanvasStyleSchema,
+          Stroke, Fill, Glow, Gradient, Arrowheads, Decoration, Typography,
+          Glyph1D, Glyph2D, ShapeType, StrokeCap, StrokeJoin, StrokePattern,
         } from '@archeglyph/proto/gen/style_pb';
         import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 

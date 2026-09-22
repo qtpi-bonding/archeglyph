@@ -1,0 +1,82 @@
+file: "packages/core/src/pipeline/render_pipeline.ts"
+doc:
+  "Shared render pipeline. renderPipeline gains an optional Delta: given one, it draws the union of a diagram and what the Delta says was deleted.\n"
+  "\n"
+  "Vocabulary for this file is fixed in delta_overlay.spec.textproto.\n"
+  "\n"
+  "ONLY renderPipeline changes. layoutPipeline, which shares this file, is not\n"
+  "touched at all: the diff treatment runs on layoutPipeline's OUTPUT rather\n"
+  "than inside it, so nothing has to be threaded through it."
+
+methods: [
+  { name: "renderPipeline"
+    change_type: MODIFIED
+    doc:
+      "MODIFIED: gains a fifth parameter, `delta`. Omitted, every existing\n"
+      "caller behaves exactly as before and none needs editing.\n"
+      "\n"
+      "When `delta` is undefined the body is unchanged: layoutPipeline, then\n"
+      "SvgRendererImpl().render.\n"
+      "\n"
+      "When `delta` is defined, three things are inserted around that same\n"
+      "pair, and layoutPipeline is still called exactly once:\n"
+      "  BEFORE layoutPipeline:\n"
+      "    overlay = mergeDelta(diagram, delta)\n"
+      "    seeded  = seedComponentBindings(overlay.diagram, stylesheet,\n"
+      "              themes.get('default'))\n"
+      "    layoutPipeline is then called with overlay.diagram and `seeded`,\n"
+      "    NOT with the `diagram` and `stylesheet` parameters. Passing the\n"
+      "    originals would lay out a graph containing none of the deleted\n"
+      "    elements, and the render would show none of them.\n"
+      "    When `stylesheet` is undefined, seedComponentBindings is given a\n"
+      "    newly created empty Stylesheet with schemaVersion 1, as renderOp\n"
+      "    does.\n"
+      "  AFTER layoutPipeline, before the render:\n"
+      "    applyDiffPalette(laidOut, overlay, themes.get('default')?.tokens)\n"
+      "\n"
+      "WHY THE TREATMENT RUNS AFTER LAYOUT. It has to run after\n"
+      "resolvePipeline, because until that returns the values it would read\n"
+      "are still token reference strings rather than colours -- and\n"
+      "resolvePipeline is called inside layoutPipeline. Running it on\n"
+      "layoutPipeline's result rather than partway through means this file's\n"
+      "other function is untouched. It costs nothing: every LaidOut type\n"
+      "carries the same styling fields as the Resolved type it wraps, and the\n"
+      "treatment changes colours, one dash pattern and one fill opacity,\n"
+      "never a size or a shape -- so it could not have changed what layout\n"
+      "computed had it run earlier.\n"
+      "\n"
+      "`themes` is keyed by BINDING NAME, not by theme name. 'default' is the\n"
+      "reserved binding every stylesheet has -- per style.proto's comment on\n"
+      "Stylesheet.themes, an unqualified `component` resolves against it --\n"
+      "and resolveThemes guarantees an entry for it, falling back to\n"
+      "[['default', 'dark']] when a stylesheet binds nothing. So\n"
+      "themes.get('default') is a lookup for whichever theme is bound as the\n"
+      "default, NOT for a theme literally named \"default\".\n"
+      "\n"
+      "Seeding must see the union, which is why it is repeated here rather\n"
+      "than left to the caller. renderOp seeds against the diagram it loaded,\n"
+      "which contains none of the deleted elements, so a restored node tagged\n"
+      "`kind: database` would otherwise arrive with no component and fall\n"
+      "back to the theme default -- drawn as a plain rectangle beside\n"
+      "surviving cylinders.\n"
+      "\n"
+      "ERRORS are unchanged: layoutPipeline's Err propagates with whatever\n"
+      "stage name it carried, and a render failure returns Err with stage\n"
+      "'render'. mergeDelta, seedComponentBindings and applyDiffPalette each\n"
+      "return their value directly rather than a Result, so there is nothing\n"
+      "to check after them."
+    is_async: true
+    inputs: [
+      { name: "diagram",      type: { named: { symbol: "archeglyph.content.v1.Diagram" } } },
+      { name: "stylesheet",   type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Stylesheet | undefined" } } },
+      { name: "themes",       type: { named: { symbol: "ReadonlyMap", args: [{ primitive: CHARACTER }, { named: { symbol: "archeglyph.theme.v1.Theme" } }] } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } },
+      { name: "delta",        type: { named: { symbol: "archeglyph.content.v1.Delta" } }, is_optional: true }
+    ]
+    output: { named: { symbol: "archeglyph.util.Result", args: [
+      { primitive: CHARACTER },
+      { named: { symbol: "PipelineError" } }
+    ]}}
+    uses: ["layoutPipeline", "SvgRendererImpl", "mergeDelta", "seedComponentBindings", "applyDiffPalette"]
+  }
+]

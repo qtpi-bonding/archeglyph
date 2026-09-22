@@ -11,6 +11,7 @@ import {
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { deriveComponent, isThemeDefault } from './derive';
 
 /**
  * Write the theme's starting components into the stylesheet as real bindings.
@@ -28,58 +29,69 @@ import { Theme } from '@archeglyph/proto/gen/theme_pb';
  * the theme nominates its own starting look via default_*_component, and a
  * theme that nominates none seeds nothing.
  *
- * Existing bindings are never overwritten; this only fills gaps. Calling it
- * twice is the same as calling it once.
+ * A binding that means nobody chose it -- unset, or equal to the theme's own
+ * default -- is rewritten from the element's `kind` tag. Anything else is left
+ * alone. Calling this twice is the same as calling it once, which the editor
+ * depends on: it seeds at load and stores that, then re-seeds a throwaway copy
+ * on every scene rebuild.
  */
 export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, theme: Theme | undefined): Stylesheet {
-  const graph = diagram.graph;
-  if (graph === undefined || theme === undefined) {
+  if (theme === undefined) {
     return stylesheet;
   }
 
+  const graph = diagram.graph;
   const nodes = { ...stylesheet.nodes };
   const edges = { ...stylesheet.edges };
   const groups = { ...stylesheet.groups };
   const annotations = { ...stylesheet.annotations };
 
-  const nodeName = theme.defaultNodeComponent;
-  if (nodeName !== undefined && nodeName !== '') {
-    for (const id of Object.keys(graph.nodes)) {
-      const existing = nodes[id];
-      if (existing?.component === undefined || existing.component === '') {
-        nodes[id] = create(NodeStyleEntrySchema, { ...existing, component: nodeName });
+  if (graph !== undefined) {
+    const nodeNames = theme.nodeComponents.map((component) => component.name);
+    const nodeDefault = theme.defaultNodeComponent;
+    if (nodeDefault !== undefined && nodeDefault !== '') {
+      for (const id of Object.keys(graph.nodes)) {
+        const existing = nodes[id];
+        const derived = deriveComponent(graph.nodes[id].tags['kind'], nodeNames, nodeDefault);
+        if (derived !== undefined && isThemeDefault(existing?.component, nodeDefault)) {
+          nodes[id] = create(NodeStyleEntrySchema, { ...existing, component: derived });
+        }
+      }
+    }
+
+    const edgeNames = theme.edgeComponents.map((component) => component.name);
+    const edgeDefault = theme.defaultEdgeComponent;
+    if (edgeDefault !== undefined && edgeDefault !== '') {
+      for (const id of Object.keys(graph.edges)) {
+        const existing = edges[id];
+        const derived = deriveComponent(graph.edges[id].tags['kind'], edgeNames, edgeDefault);
+        if (derived !== undefined && isThemeDefault(existing?.component, edgeDefault)) {
+          edges[id] = create(EdgeStyleEntrySchema, { ...existing, component: derived });
+        }
+      }
+    }
+
+    const groupNames = theme.groupComponents.map((component) => component.name);
+    const groupDefault = theme.defaultGroupComponent;
+    if (groupDefault !== undefined && groupDefault !== '') {
+      for (const id of Object.keys(graph.groups)) {
+        const existing = groups[id];
+        const derived = deriveComponent(graph.groups[id].tags['kind'], groupNames, groupDefault);
+        if (derived !== undefined && isThemeDefault(existing?.component, groupDefault)) {
+          groups[id] = create(GroupStyleEntrySchema, { ...existing, component: derived });
+        }
       }
     }
   }
 
-  const edgeName = theme.defaultEdgeComponent;
-  if (edgeName !== undefined && edgeName !== '') {
-    for (const id of Object.keys(graph.edges)) {
-      const existing = edges[id];
-      if (existing?.component === undefined || existing.component === '') {
-        edges[id] = create(EdgeStyleEntrySchema, { ...existing, component: edgeName });
-      }
-    }
-  }
-
-  const groupName = theme.defaultGroupComponent;
-  if (groupName !== undefined && groupName !== '') {
-    for (const id of Object.keys(graph.groups)) {
-      const existing = groups[id];
-      if (existing?.component === undefined || existing.component === '') {
-        groups[id] = create(GroupStyleEntrySchema, { ...existing, component: groupName });
-      }
-    }
-  }
-
-  // Annotations live only in the stylesheet, so they are seeded from what is
-  // already there rather than from the diagram.
-  const annotationName = theme.defaultAnnotationComponent;
-  if (annotationName !== undefined && annotationName !== '') {
+  const annotationNames = theme.annotationComponents.map((component) => component.name);
+  const annotationDefault = theme.defaultAnnotationComponent;
+  if (annotationDefault !== undefined && annotationDefault !== '') {
     for (const id of Object.keys(annotations)) {
       const existing = annotations[id];
-      if (existing.component === undefined || existing.component === '') {
-        annotations[id] = create(AnnotationEntrySchema, { ...existing, component: annotationName });
+      const derived = deriveComponent(existing.tags['kind'], annotationNames, annotationDefault);
+      if (derived !== undefined && isThemeDefault(existing.component, annotationDefault)) {
+        annotations[id] = create(AnnotationEntrySchema, { ...existing, component: derived });
       }
     }
   }

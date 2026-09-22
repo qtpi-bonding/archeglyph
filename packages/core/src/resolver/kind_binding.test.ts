@@ -13,6 +13,7 @@ import {
   ShapeType,
 } from '@archeglyph/proto/gen/style_pb';
 import {
+  AnnotationComponentSchema,
   NodeComponentSchema,
   ThemeSchema,
 } from '@archeglyph/proto/gen/theme_pb';
@@ -138,7 +139,7 @@ describe('the kind tag picks a component', () => {
       name: 'fixture',
       defaultAnnotationComponent: 'glyph',
       annotationComponents: [
-        create(NodeComponentSchema, { name: 'glyph' }),
+        create(AnnotationComponentSchema, { name: 'glyph' }),
       ],
     });
     const seeded = seedComponentBindings(

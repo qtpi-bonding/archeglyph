@@ -44,6 +44,10 @@ tests:
     - glob: "packages/editor/src/*.ts"
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
+    # core builds proto messages exactly as the editor does.
+    - glob: "packages/core/src/*.ts"
+      import_header_extend: |
+        import { create } from '@bufbuild/protobuf';
 
   framework_notes: >-
     FEWER CORRECT TESTS BEAT MORE TESTS. A case you decline costs nothing; a
@@ -55,7 +59,7 @@ tests:
     You return only a body, never an import statement -- the header is fixed
     before you are called. Everything in the import list shown above IS in
     scope and you should use it rather than hand-rolling a substitute. For
-    editor sources that includes `create` from '@bufbuild/protobuf', and for
+    editor and core sources that includes `create` from '@bufbuild/protobuf', and for
     `.tsx` sources also `render`, `fireEvent` and `cleanup` from
     '@solidjs/testing-library' and `createSignal` from 'solid-js'. Nothing
     outside that list is in scope.

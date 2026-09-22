@@ -2,9 +2,12 @@
 // Re-run `archegraph testgen --spec <name>` to regenerate.
 
 import { describe, expect, test } from 'bun:test';
+import { create } from '@bufbuild/protobuf';
 
 import { seedComponentBindings } from '../src/resolver/seed_bindings/impl';
 import { AnnotationEntrySchema, StylesheetSchema } from '../../proto/src/gen/style_pb';
+import { DiagramSchema } from '../../proto/src/gen/content_pb';
+import { ThemeSchema, NodeComponentSchema } from '../../proto/src/gen/theme_pb';
 
 describe('testgen_seed_bindings__seedComponentBindings', () => {
     // WHEN: The theme argument is undefined; the function returns the stylesheet argument unchanged and does not seed any element.

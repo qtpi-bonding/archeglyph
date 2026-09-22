@@ -10,18 +10,17 @@ function r(n: number): string {
   return n.toFixed(2);
 }
 
-// The tile a glyph pattern repeats on, and the stroke width a glyph-patterned
-// stroke is forced to. A mark only shows where the stroke is wide enough to
-// expose the whole tile, so the author's width cannot be honoured here.
-const GLYPH_TILE: number = 9;
-const GLYPH_WIDTH: number = 8;
+// Markers, not a pattern fill: a pattern tiles in user space and the stroke
+// band crosses its boundaries at an arbitrary offset.
+const MARK_SPACING: number = 11;
+const MARK_BOX: number = 9;
 
-// Marks are drawn on the tile, not along the path, so they never rotate. Each
-// is inset from the tile edge so neighbouring tiles do not run together.
+// Centred on the origin and pointing along +x, which is what orient="auto"
+// rotates to the path's local direction.
 const GLYPH_MARKS: ReadonlyMap<StrokePattern, string> = new Map([
-  [StrokePattern.PLUS, '<path d="M 4.5,1.4 L 4.5,7.6 M 1.4,4.5 L 7.6,4.5" fill="none" stroke-width="1.4"/>'],
-  [StrokePattern.MINUS, '<path d="M 1.2,4.5 L 7.8,4.5" fill="none" stroke-width="1.4"/>'],
-  [StrokePattern.DELTA, '<path d="M 4.5,1.5 L 7.7,7.3 L 1.3,7.3 Z" stroke-width="1.1"/>'],
+  [StrokePattern.PLUS, '<path d="M -3,0 L 3,0 M 0,-3 L 0,3" fill="none" stroke-width="1.5"/>'],
+  [StrokePattern.MINUS, '<path d="M -3.4,0 L 3.4,0" fill="none" stroke-width="1.5"/>'],
+  [StrokePattern.DELTA, '<path d="M 3.1,0 L -2.3,2.7 L -2.3,-2.7 Z" stroke="none"/>'],
 ]);
 
 export function glyphPatternOf(stroke: Stroke | undefined): StrokePattern | undefined {
@@ -31,16 +30,16 @@ export function glyphPatternOf(stroke: Stroke | undefined): StrokePattern | unde
   return GLYPH_MARKS.has(stroke.dashing.value) ? stroke.dashing.value : undefined;
 }
 
-// Keyed by colour as well as glyph: a pattern carries its own paint, so two
-// elements marked the same way in different colours need separate tiles.
+// Keyed by colour as well as glyph: a marker carries its own paint, so two
+// elements marked the same way in different colours need separate markers.
 export function glyphPatternId(pattern: StrokePattern, color: string): string {
   return `ag-glyph-${pattern}-${color.replace('#', '')}`;
 }
 
-function glyphPattern(pattern: StrokePattern, color: string): string {
+function glyphMarker(pattern: StrokePattern, color: string): string {
   const mark: string = GLYPH_MARKS.get(pattern) ?? '';
-  const id: string = glyphPatternId(pattern, color);
-  return `<pattern id="${id}" width="${GLYPH_TILE}" height="${GLYPH_TILE}" patternUnits="userSpaceOnUse" fill="${color}" stroke="${color}">${mark}</pattern>`;
+  const half: string = r(MARK_BOX / 2);
+  return `<marker id="${glyphPatternId(pattern, color)}" viewBox="-${half} -${half} ${r(MARK_BOX)} ${r(MARK_BOX)}" markerWidth="${r(MARK_BOX)}" markerHeight="${r(MARK_BOX)}" markerUnits="userSpaceOnUse" refX="0" refY="0" orient="auto" fill="${color}" stroke="${color}">${mark}</marker>`;
 }
 
 // `keys` are `${pattern}\u0000${color}`, sorted by the caller so the defs
@@ -49,9 +48,65 @@ export function glyphPatterns(keys: ReadonlyArray<string>): string {
   if (keys.length === 0) { return ''; }
   const defs: string = keys.map((key: string): string => {
     const parts: string[] = key.split('\u0000');
-    return glyphPattern(Number(parts[0]) as StrokePattern, parts[1]!);
+    return glyphMarker(Number(parts[0]) as StrokePattern, parts[1]!);
   }).join('');
   return `<defs>${defs}</defs>`;
+}
+
+// Every segment gets at least its own endpoints, so a short one is still
+// marked rather than skipped.
+function subdivide(points: ReadonlyArray<Vec2>): Vec2[] {
+  const out: Vec2[] = [];
+  for (let i: number = 0; i + 1 < points.length; i++) {
+    const a: Vec2 = points[i]!;
+    const b: Vec2 = points[i + 1]!;
+    const span: number = Math.hypot(b.x - a.x, b.y - a.y);
+    const steps: number = Math.max(1, Math.round(span / MARK_SPACING));
+    for (let k: number = 0; k < steps; k++) {
+      const t: number = k / steps;
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  const last: Vec2 | undefined = points[points.length - 1];
+  if (last !== undefined) { out.push(last); }
+  return out;
+}
+
+// An invisible carrier: the path exists only to hang markers on its vertices,
+// because the outline it accompanies is already drawn.
+export function glyphMarks(points: ReadonlyArray<Vec2>, pattern: StrokePattern, color: string): string {
+  const dense: Vec2[] = subdivide(points);
+  if (dense.length === 0) { return ''; }
+  const d: string = dense.map((pt: Vec2, i: number): string =>
+    `${i === 0 ? 'M' : 'L'} ${r(pt.x)},${r(pt.y)}`).join(' ');
+  const id: string = glyphPatternId(pattern, color);
+  return `<path d="${d}" fill="none" stroke="none" marker-start="url(#${id})" marker-mid="url(#${id})" marker-end="url(#${id})"/>`;
+}
+
+// The outline a shape's marks ride, as a polyline. Curved shapes are sampled;
+// a rounded rect ignores its corner radius, which is small next to the marks.
+export function outlinePoints(shape: Glyph2D, position: Vec2, size: Vec2): Vec2[] {
+  const { x, y } = position;
+  const w: number = size.x;
+  const h: number = size.y;
+  const kind: ShapeType = shape.shapeKind.case === 'standard' ? shape.shapeKind.value : ShapeType.SHAPE_UNSPECIFIED;
+  const sides: ReadonlyMap<ShapeType, number> = new Map([
+    [ShapeType.SHAPE_TRIANGLE, 3], [ShapeType.SHAPE_PENTAGON, 5], [ShapeType.SHAPE_HEXAGON, 6],
+    [ShapeType.SHAPE_HEPTAGON, 7], [ShapeType.SHAPE_OCTAGON, 8], [ShapeType.SHAPE_NONAGON, 9],
+    [ShapeType.SHAPE_DECAGON, 10], [ShapeType.SHAPE_ELLIPSE, 48],
+  ]);
+  const n: number | undefined = sides.get(kind);
+  if (n !== undefined) {
+    const cx: number = x + w / 2;
+    const cy: number = y + h / 2;
+    const pts: Vec2[] = [];
+    for (let k: number = 0; k <= n; k++) {
+      const angle: number = 2 * Math.PI * (k % n) / n - Math.PI / 2;
+      pts.push({ x: cx + (w / 2) * Math.cos(angle), y: cy + (h / 2) * Math.sin(angle) });
+    }
+    return pts;
+  }
+  return [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }, { x, y }];
 }
 
 // Pattern values are fixed rather than scaled to stroke width: the width is
@@ -75,27 +130,19 @@ function strokeAttrs(stroke: Stroke | undefined): string {
   if (stroke === undefined) {
     return '';
   } else {
-    const glyph: StrokePattern | undefined = glyphPatternOf(stroke);
-    if (glyph !== undefined && stroke.paint.case === 'color') {
-      const id: string = glyphPatternId(glyph, stroke.paint.value.value);
-      return ` stroke="url(#${id})" stroke-width="${r(GLYPH_WIDTH)}"`;
-    }
     const colorStr: string = stroke.paint.case === 'color' ? ` stroke="${stroke.paint.value.value}"` : '';
     const widthStr: string = stroke.width !== undefined ? ` stroke-width="${r(stroke.width)}"` : '';
-    return colorStr + widthStr + dashAttr(stroke);
+    const dash: string = glyphPatternOf(stroke) === undefined ? dashAttr(stroke) : '';
+    return colorStr + widthStr + dash;
   }
 }
 
 // An unstyled line is a 1px black line, where an unstyled shape is no stroke
 // at all. That default is the only difference from the shape path.
 export function lineStrokeAttrs(stroke: Stroke | undefined): string {
-  const glyph: StrokePattern | undefined = glyphPatternOf(stroke);
-  if (glyph !== undefined && stroke?.paint.case === 'color') {
-    return ` stroke="url(#${glyphPatternId(glyph, stroke.paint.value.value)})" stroke-width="${r(GLYPH_WIDTH)}"`;
-  }
   const color: string = stroke?.paint.case === 'color' ? stroke.paint.value.value : '#000000';
   const width: number = stroke?.width ?? 1;
-  const dash: string = stroke === undefined ? '' : dashAttr(stroke);
+  const dash: string = stroke === undefined || glyphPatternOf(stroke) !== undefined ? '' : dashAttr(stroke);
   return ` stroke="${color}" stroke-width="${r(width)}"${dash}`;
 }
 
@@ -284,6 +331,14 @@ export function textElement(label: Localization[], typography: Typography, ancho
 }
 
 export function shapePath(shape: Glyph2D, position: Vec2, size: Vec2): string {
+  const glyph: StrokePattern | undefined = glyphPatternOf(shape.stroke);
+  const marks: string = glyph !== undefined && shape.stroke?.paint.case === 'color'
+    ? glyphMarks(outlinePoints(shape, position, size), glyph, shape.stroke.paint.value.value)
+    : '';
+  return shapeBody(shape, position, size) + marks;
+}
+
+function shapeBody(shape: Glyph2D, position: Vec2, size: Vec2): string {
   const x: number = position.x;
   const y: number = position.y;
   const w: number = size.x;

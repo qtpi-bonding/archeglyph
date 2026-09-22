@@ -14,13 +14,15 @@ import {
 import { Ok, Err, type Result } from '@archeglyph/proto/util/result';
 import { type LaidOutAnnotation } from '../../layout/laid_out_annotation';
 import { type EdgeSection } from '../../layout/edge_section';
+// Aliased: style_pb exports a Vec2 too, and geometry's is what sections carry.
+import { type Vec2 as Point } from '../../geometry/vec2';
 import { type LaidOutDiagram } from '../../layout/laid_out_diagram';
 import { type LaidOutEdge } from '../../layout/laid_out_edge';
 import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
 import { calloutSections } from '../../layout/callout_line/impl';
 import { RenderError } from '../render_error';
-import { arrowMarkers, backgroundRect, edgePath, glyphPatternOf, glyphPatterns, lineStrokeAttrs, shapePath, textElement, viewBox } from '../svg_painter';
+import { arrowMarkers, backgroundRect, edgePath, glyphMarks, glyphPatternOf, glyphPatterns, lineStrokeAttrs, shapePath, textElement, viewBox } from '../svg_painter';
 import { init } from '@archeglyph/proto/util/init';
 
 /**
@@ -79,6 +81,16 @@ function markerId(variant: ArrowheadVariant): string {
 
 export interface SvgRenderer {
   render(diagram: LaidOutDiagram): Result<string, RenderError>;
+}
+
+function sectionPoints(sections: ReadonlyArray<EdgeSection>): Point[] {
+  if (sections.length === 0) { return []; }
+  const pts: Point[] = [sections[0]!.startPoint];
+  for (const sec of sections) {
+    for (const bp of sec.bendPoints) { pts.push(bp); }
+    pts.push(sec.endPoint);
+  }
+  return pts;
 }
 
 export class SvgRendererImpl implements SvgRenderer {
@@ -172,7 +184,11 @@ export class SvgRendererImpl implements SvgRenderer {
         ? ` marker-end="url(#${markerId(endVariant)})"`
         : '';
       const hitStroke: string = `<path d="${d}" fill="none" stroke="transparent" stroke-width="12" style="pointer-events: stroke"/>`;
-      const visiblePath: string = `<path d="${d}" fill="none"${lineStrokeAttrs(edge.connection.stroke)}${startMarkerAttr}${endMarkerAttr}/>`;
+      const edgeGlyph = glyphPatternOf(edge.connection.stroke);
+      const edgeMarks: string = edgeGlyph !== undefined && edge.connection.stroke?.paint.case === 'color'
+        ? glyphMarks(sectionPoints(edge.sections), edgeGlyph, edge.connection.stroke.paint.value.value)
+        : '';
+      const visiblePath: string = `<path d="${d}" fill="none"${lineStrokeAttrs(edge.connection.stroke)}${startMarkerAttr}${endMarkerAttr}/>${edgeMarks}`;
       const hasLabel: boolean = edge.label.length > 0 && edge.sections.length > 0;
       const labelSvg: string = hasLabel
         ? textElement(
@@ -204,8 +220,12 @@ export class SvgRendererImpl implements SvgRenderer {
       const calloutEndMarker: string = calloutEndVariant !== undefined && calloutEndVariant !== ArrowheadVariant.ARROWHEAD_NONE
         ? ` marker-end="url(#${markerId(calloutEndVariant)})"`
         : '';
+      const calloutGlyph = glyphPatternOf(ann.callout?.stroke);
+      const calloutMarks: string = calloutGlyph !== undefined && ann.callout?.stroke?.paint.case === 'color'
+        ? glyphMarks(sectionPoints(calloutSections(diagram, ann)), calloutGlyph, ann.callout.stroke.paint.value.value)
+        : '';
       const calloutSvg: string = calloutPath !== ''
-        ? `<path d="${calloutPath}" fill="none"${lineStrokeAttrs(ann.callout?.stroke)}${calloutStartMarker}${calloutEndMarker}/>`
+        ? `<path d="${calloutPath}" fill="none"${lineStrokeAttrs(ann.callout?.stroke)}${calloutStartMarker}${calloutEndMarker}/>${calloutMarks}`
         : '';
       const shape: string = shapePath(ann.shape, ann.position, ann.size);
       const labelSvg: string = textElement(ann.content, ann.typography, annCenter, true);

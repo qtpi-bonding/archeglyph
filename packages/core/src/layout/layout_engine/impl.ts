@@ -17,6 +17,7 @@ import { ResolvedDiagram } from '../../resolver/resolved_diagram';
 import { ResolvedGroup } from '../../resolver/resolved_group';
 import { ResolvedNode } from '../../resolver/resolved_node';
 import { measureLabel } from '../../text/font_metrics';
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from '../default_size';
 import { boundsFromRect, type Bounds } from '../../geometry/bounds';
 import { Ok, Result } from '@archeglyph/proto/util/result';
 import { init } from '@archeglyph/proto/util/init';
@@ -25,8 +26,6 @@ export interface LayoutEngine {
   layout(request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>>;
 }
 
-const DEFAULT_WIDTH = 120;
-const DEFAULT_HEIGHT = 40;
 
 /** Coordinates layout adapters and applies resolved geometry overrides. */
 
@@ -152,8 +151,13 @@ export class LayoutEngineImpl implements LayoutEngine {
       }
       return { x: width, y: height };
     };
-    const nodeSize = (node: ResolvedNode): { x: number; y: number } =>
-      node.layout?.size ?? sizeForLabel(node.label, node.typography);
+    // The label only widens the default box, never shrinks it: a bare text
+    // bounding box is not a node, and the ELK branch never produces one.
+    const nodeSize = (node: ResolvedNode): { x: number; y: number } => {
+      if (node.layout?.size !== undefined) { return node.layout.size; }
+      const label = sizeForLabel(node.label, node.typography);
+      return { x: Math.max(DEFAULT_WIDTH, label.x), y: Math.max(DEFAULT_HEIGHT, label.y) };
+    };
 
     const nodes: Record<string, LaidOutNode> = Object.fromEntries(Object.values(diagram.nodes).map(node => {
       const local = node.layout?.position!;
@@ -171,17 +175,21 @@ export class LayoutEngineImpl implements LayoutEngine {
       const existing = computedGroupSize.get(group.id);
       if (existing !== undefined) return existing;
       const origin = absoluteGroupPosition(group.id);
+      // Measured to the far edge in both directions, so a child above or
+      // left of the group's origin still counts toward its extent.
       let width = 0;
       let height = 0;
+      const extend = (x: number, y: number, w: number, h: number): void => {
+        width = Math.max(width, x - origin.x + w, origin.x - x + w);
+        height = Math.max(height, y - origin.y + h, origin.y - y + h);
+      };
       for (const child of Object.values(nodes).filter(node => node.parentGroup === group.id)) {
-        width = Math.max(width, child.position.x - origin.x + child.size.x);
-        height = Math.max(height, child.position.y - origin.y + child.size.y);
+        extend(child.position.x, child.position.y, child.size.x, child.size.y);
       }
       for (const child of Object.values(diagram.groups).filter(candidate => candidate.parentGroup === group.id)) {
         const childOrigin = absoluteGroupPosition(child.id);
         const childExtent = groupSize(child);
-        width = Math.max(width, childOrigin.x - origin.x + childExtent.x);
-        height = Math.max(height, childOrigin.y - origin.y + childExtent.y);
+        extend(childOrigin.x, childOrigin.y, childExtent.x, childExtent.y);
       }
       // Same rule the ELK path gets via nodeSize.minimum: an override is a
       // MINIMUM, so a group grows on request and still contains its children.

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from './default_size';
+
 import type { ELK } from 'elkjs';
 import { create } from '@bufbuild/protobuf';
 import { type Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
@@ -43,8 +45,6 @@ interface Placed {
   height: number;
 }
 
-const DEFAULT_WIDTH = 120;
-const DEFAULT_HEIGHT = 40;
 const GAP = 20;
 
 function vec2(x: number, y: number): Vec2 {

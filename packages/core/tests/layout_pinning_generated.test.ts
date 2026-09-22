@@ -23,6 +23,7 @@ import {
   TypographySchema, Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import * as edgeRouter from '../src/layout/edge_router';
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from '../src/layout/default_size';
 import * as fontMetrics from '../src/text/font_metrics';
 import { ResolvedAnnotation } from '../src/resolver/resolved_annotation';
 import { ResolvedDiagram } from '../src/resolver/resolved_diagram';
@@ -687,37 +688,51 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         measureSpy.mockRestore();
     });
 
-    // WHEN: A node's style entry has a position but no size (NodeLayout.size unset)
-    // THEN: Returns the node laid out at its written position with size computed by calling measureLabel for that node's style entry.
-    test('node_size_missing_falls_back_to_measure_label', () => {
-        const node = init(new ResolvedNode(), {
-          id: 'n1',
-          shape: create(Glyph2DSchema, {}),
-          typography: create(TypographySchema, { font: 'Noto Sans Mono', size: 12 }),
-          layout: create(NodeLayoutSchema, {
-            position: create(Vec2Schema, { x: 5, y: 5 }),
-          }),
-          label: [{ locale: 'en', source: 'hello' } as any],
-        });
-        const diagram = init(new ResolvedDiagram(), {
-          id: 'd1',
-          canvas: create(CanvasStyleSchema, {}),
-          nodes: byId([node]),
-          edges: byId([]),
-          groups: byId([]),
-          annotations: byId([]),
-        });
-        const measured = { x: 42, y: 14 };
-        const measureSpy = spyOn(fontMetrics, 'measureLabel').mockReturnValue(measured as any);
+    // A bare text bounding box is not a node. The label can only widen the
+    // default box, and the ELK branch never produces a smaller one.
+    const pinnedLaidOut = (measured: { x: number; y: number }, check: (laid: LaidOutDiagram) => void): void => {
+      const node = init(new ResolvedNode(), {
+        id: 'n1',
+        shape: create(Glyph2DSchema, {}),
+        typography: create(TypographySchema, { font: 'Noto Sans Mono', size: 12 }),
+        layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
+        label: [{ locale: 'en', source: 'hello' } as any],
+      });
+      const diagram = init(new ResolvedDiagram(), {
+        id: 'd1', canvas: create(CanvasStyleSchema, {}),
+        nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]),
+      });
+      const measureSpy = spyOn(fontMetrics, 'measureLabel').mockReturnValue(measured as any);
+      // finally, so one failing expectation cannot leave the spy installed
+      // for every later file in the run.
+      try {
         const adapter = { runLayout: async () => Ok(new LaidOutDiagram()) } as any;
-        const engine = new LayoutEngineImpl(adapter);
-        const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
+        check((new LayoutEngineImpl(adapter) as any).layoutFromPins(diagram));
         expect(measureSpy).toHaveBeenCalled();
-        expect(Object.values(laid.nodes)[0].position.x).toBe(5);
-        expect(Object.values(laid.nodes)[0].position.y).toBe(5);
-        expect(Object.values(laid.nodes)[0].size.x).toBe(42);
-        expect(Object.values(laid.nodes)[0].size.y).toBe(14);
+      } finally {
         measureSpy.mockRestore();
+      }
+    };
+
+    test('node_size_missing_keeps_its_written_position', () => {
+        pinnedLaidOut({ x: 42, y: 14 }, (laid) => {
+          expect(Object.values(laid.nodes)[0].position.x).toBe(5);
+          expect(Object.values(laid.nodes)[0].position.y).toBe(5);
+        });
+    });
+
+    test('node_size_missing_falls_back_to_the_default_box', () => {
+        pinnedLaidOut({ x: 42, y: 14 }, (laid) => {
+          expect(Object.values(laid.nodes)[0].size.x).toBe(DEFAULT_WIDTH);
+          expect(Object.values(laid.nodes)[0].size.y).toBe(DEFAULT_HEIGHT);
+        });
+    });
+
+    test('node_size_missing_grows_past_the_default_for_a_long_label', () => {
+        pinnedLaidOut({ x: DEFAULT_WIDTH + 80, y: DEFAULT_HEIGHT + 20 }, (laid) => {
+          expect(Object.values(laid.nodes)[0].size.x).toBe(DEFAULT_WIDTH + 80);
+          expect(Object.values(laid.nodes)[0].size.y).toBe(DEFAULT_HEIGHT + 20);
+        });
     });
 
     // WHEN: A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size

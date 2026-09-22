@@ -23,7 +23,7 @@ function diagramOf(...ids: string[]) {
     schemaVersion: 1,
     id: 'd',
     graph: create(GraphSchema, {
-      nodes: Object.fromEntries(ids.map((id) => [id, create(NodeSchema, { id, label: id })])),
+      nodes: Object.fromEntries(ids.map((id) => [id, create(NodeSchema, {})])),
     }),
   });
 }

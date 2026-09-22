@@ -12,9 +12,17 @@ import { DiagramSchema, Edge, EdgeSchema, GraphSchema, Group, GroupSchema, Node,
 import { AnnotationStyleChange, AnnotationStyleChangeSchema, EdgeStyleChange, EdgeStyleChangeSchema, GroupStyleChange, GroupStyleChangeSchema, NodeStyleChange, NodeStyleChangeSchema, StyleEditSchema } from '../../proto/src/gen/style_pb';
 
 describe('testgen_state__editableChanges', () => {
+    // HAND-REPAIRED: element ids are generated through elementId, not
+    // fc.string(). `create()` silently DROPS a "__proto__" map key, so a
+    // diagram can never hold an element with that id -- a fixture claiming
+    // otherwise asserts something the data model cannot express. Every other
+    // string, "valueOf" included, round-trips and is still generated.
+    const elementId = (): fc.Arbitrary<string> =>
+      fc.string().filter((id: string): boolean => id !== '__proto__');
+
     const makeAnnotationChange = (id: string): AnnotationStyleChange => create(AnnotationStyleChangeSchema, {annotationId: id});
 
-    const makeDiagram = (nodeIds: string[], edgeIds: string[], groupIds: string[]): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {nodes: Object.fromEntries(nodeIds.map((id: string): [string, Node] => [id, create(NodeSchema, {id})])), edges: Object.fromEntries(edgeIds.map((id: string): [string, Edge] => [id, create(EdgeSchema, {id})])), groups: Object.fromEntries(groupIds.map((id: string): [string, Group] => [id, create(GroupSchema, {id})]))})});
+    const makeDiagram = (nodeIds: string[], edgeIds: string[], groupIds: string[]): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {nodes: Object.fromEntries(nodeIds.map((id: string): [string, Node] => [id, create(NodeSchema, {})])), edges: Object.fromEntries(edgeIds.map((id: string): [string, Edge] => [id, create(EdgeSchema, {})])), groups: Object.fromEntries(groupIds.map((id: string): [string, Group] => [id, create(GroupSchema, {})]))})});
 
     const makeEdgeChange = (id: string): EdgeStyleChange => create(EdgeStyleChangeSchema, {edgeId: id});
 
@@ -26,7 +34,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('matching_node_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: NodeStyleChange = makeNodeChange(value);
         const diagram: Diagram = makeDiagram([value], [], []);
         const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);
@@ -37,7 +45,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('stale_node_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: NodeStyleChange = makeNodeChange(value);
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);
@@ -48,7 +56,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('matching_edge_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: EdgeStyleChange = makeEdgeChange(value);
         const diagram: Diagram = makeDiagram([], [value], []);
         const result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);
@@ -59,7 +67,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('stale_edge_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: EdgeStyleChange = makeEdgeChange(value);
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);
@@ -70,7 +78,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('matching_group_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: GroupStyleChange = makeGroupChange(value);
         const diagram: Diagram = makeDiagram([], [], [value]);
         const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);
@@ -81,7 +89,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('stale_group_change', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const change: GroupStyleChange = makeGroupChange(value);
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);
@@ -92,7 +100,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('mixed_edit_entries', () => {
         fc.assert(
-            fc.property(fc.record({node: fc.string(), edge: fc.string(), group: fc.string()}), (value) => {
+            fc.property(fc.record({node: elementId(), edge: elementId(), group: elementId()}), (value) => {
         const nodePresent: string = `${value.node}-present`;
         const nodeAbsent: string = `${value.node}-absent`;
         const edgePresent: string = `${value.edge}-present`;
@@ -116,7 +124,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('annotation_changes_unfiltered', () => {
         fc.assert(
-            fc.property(fc.array(fc.string()), (value) => {
+            fc.property(fc.array(elementId()), (value) => {
         const changes: AnnotationStyleChange[] = value.map((id: string): AnnotationStyleChange => makeAnnotationChange(id));
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([], [], [], changes), diagram);
@@ -144,7 +152,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('all_lists_empty', () => {
         fc.assert(
-            fc.property(fc.array(fc.string()), (value) => {
+            fc.property(fc.array(elementId()), (value) => {
         const nodeChanges: NodeStyleChange[] = value.map((id: string): NodeStyleChange => makeNodeChange(`stale-${id}`));
         const result: StyleEdit = editableChanges(makeEdit(nodeChanges, [], [], []), makeDiagram([], [], []));
         expect(result.nodeChanges).toEqual([]);
@@ -157,7 +165,7 @@ describe('testgen_state__editableChanges', () => {
 
     test('annotation_only_edit', () => {
         fc.assert(
-            fc.property(fc.array(fc.string(), {minLength: 1}), (value) => {
+            fc.property(fc.array(elementId(), {minLength: 1}), (value) => {
         const changes: AnnotationStyleChange[] = value.map((id: string): AnnotationStyleChange => makeAnnotationChange(id));
         const result: StyleEdit = editableChanges(makeEdit([], [], [], changes), makeDiagram([], [], []));
         expect(result.nodeChanges).toEqual([]);

@@ -8,6 +8,9 @@ import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
 import { readUrlParams } from './url_params';
+import { selectDiagramSource } from './select_diagram_source';
+import { createDiffState, type DiffState } from '../diff/diff_state';
+import { diffRefsFrom, type DiffRefs } from '../diff/diff_refs';
 import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
 import { EditorState } from '../state/editor_state';
@@ -57,6 +60,8 @@ type MaybeCommandContextAccessor = CommandContextAccessor | undefined;
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = readUrlParams(window.location);
   const pair: AdapterPair = selectAdapters(params);
+  const refs: DiffRefs = diffRefsFrom(params);
+  const diff: DiffState = createDiffState(() => state()?.diagram(), refs.target);
   // The editor binds one theme as `default`, which is what an unqualified
   // `component` in the stylesheet resolves against.
   const themes: ReadonlyMap<string, Theme> = new Map([['default', getBundledTheme('blueprint')]]);
@@ -132,7 +137,7 @@ export const App: Component<{}> = (): JSX.Element => {
     // scene() still null, which the `scene={scene()!}` assertion hides from
     // tsc and which no test sees, because nothing mounts App.
     batch((): void => {
-      setScene(createScene(nextState, () => themes, layoutEngine));
+      setScene(createScene(nextState, () => themes, layoutEngine, diff.delta));
       setState(nextState);
     });
   }
@@ -196,10 +201,24 @@ export const App: Component<{}> = (): JSX.Element => {
     void pair.adapter.load().then(loadFrom);
   }
 
+  async function attachBase(): Promise<void> {
+    const source = selectDiagramSource(params);
+    if (source === undefined) {
+      return;
+    }
+    const result = await source.load();
+    if (result.kind === 'err') {
+      setSyncError(`archeglyph: failed to load diff base: ${result.error.message}`);
+      return;
+    }
+    diff.setBase(result.value, refs.base);
+  }
+
   onMount((): void => {
     if (autoLoad) {
       setLoading(true);
       void pair.adapter.load().then(loadFrom);
+      void attachBase();
     }
     onCleanup((): void => {
       saveController()?.dispose();
@@ -243,6 +262,7 @@ export const App: Component<{}> = (): JSX.Element => {
         canvas={
           <Canvas
             diagram={state()!.diagram()}
+            delta={diff.delta()}
             layoutEngine={layoutEngine}
             scene={scene()!}
             stylesheet={state()!.stylesheet()}

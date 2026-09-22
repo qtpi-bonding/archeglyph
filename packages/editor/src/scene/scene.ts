@@ -5,10 +5,11 @@
 import { boundsFromRect, boundsUnion, Bounds } from '@archeglyph/core/geometry/bounds';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
-import { layoutPipeline } from '@archeglyph/core/pipeline';
+import { scenePipeline } from '@archeglyph/core/pipeline';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { Delta } from '@archeglyph/proto/gen/content_pb';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 import { Accessor, createEffect, createResource, createSignal } from 'solid-js';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -73,21 +74,22 @@ export interface ElementBounds {
   bounds: Bounds;
   parentGroup?: string;
 }
-export function createScene(state: EditorState, themes: Accessor<ReadonlyMap<string, Theme>>, layoutEngine: LayoutEngine): Scene {
-  type SceneSource = { version: number; themes: ReadonlyMap<string, Theme> };
+export function createScene(state: EditorState, themes: Accessor<ReadonlyMap<string, Theme>>, layoutEngine: LayoutEngine, delta: Accessor<Delta | undefined>): Scene {
+  type SceneSource = { version: number; themes: ReadonlyMap<string, Theme>; delta: Delta | undefined };
   type SceneResult = Result<SceneGeometry, SceneError>;
 
   const [snapshot] = createResource<SceneResult, SceneSource>(
-    () => ({ version: state.version(), themes: themes() }),
+    () => ({ version: state.version(), themes: themes(), delta: delta() }),
     async (source: SceneSource): Promise<SceneResult> => {
       // Every rebuild, not just at load: an element created mid-session has no
       // component and resolves with no shape or typography. Idempotent.
       const seeded = seedComponentBindings(state.diagram(), state.stylesheet(), source.themes.get('default'));
-      const layoutResult = await layoutPipeline(
+      const layoutResult = await scenePipeline(
         state.diagram(),
         seeded,
         source.themes,
         layoutEngine,
+        source.delta,
       );
       if (layoutResult.kind === 'err') {
         const detail = layoutResult.error.detail;

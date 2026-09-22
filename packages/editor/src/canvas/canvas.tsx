@@ -2,7 +2,7 @@
 
 import { Component, createEffect, createMemo, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
-import { Diagram } from '@archeglyph/proto/gen/content_pb';
+import { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
@@ -46,6 +46,7 @@ type GestureSession =
 
 export interface CanvasProps {
   diagram: Diagram;
+  delta: Delta | undefined;
   layoutEngine: LayoutEngine;
   scene: Scene;
   stylesheet: Stylesheet;
@@ -463,7 +464,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
-          <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
+          <GhostLayer diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
           <Show when={geometry() !== undefined}>
             <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />

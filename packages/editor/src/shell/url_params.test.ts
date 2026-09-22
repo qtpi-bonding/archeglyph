@@ -57,8 +57,9 @@ describe('buildInlineUrl', () => {
     const [beforeHash, afterHash] = url.split('#');
     for (const name of CONTENT_PARAMS) {
       expect(beforeHash).not.toContain(`${name}=`);
-      expect(afterHash).toContain(`${name}=`);
     }
+    expect(afterHash).toContain('d=');
+    expect(afterHash).toContain('s=');
   });
 
   test('round-trips through readUrlParams', () => {

@@ -80,7 +80,10 @@ export function applyMapChanges<C, V>(current: { [key: string]: V }, changes: C[
     if (getChangeType(change) !== StyleChangeType.DELETED) {
       const after: V | undefined = getAfter(change);
       if (after !== undefined) {
-        result[getId(change)] = after;
+        // Assignment to '__proto__' sets the prototype instead of an entry.
+        Object.defineProperty(result, getId(change), {
+          value: after, enumerable: true, writable: true, configurable: true,
+        });
       }
     }
   }

@@ -27,7 +27,7 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   }
   for (const id of snapshot.nodes.keys()) {
     const val: Option<NodeStyleEntry> = snapshot.nodes.get(id) ?? null;
-    const inCurrent: boolean = current.nodes[id] !== undefined;
+    const inCurrent: boolean = Object.hasOwn(current.nodes, id);
     if (val !== null && !inCurrent) {
       restoredNodes[id] = val;
     }
@@ -46,7 +46,7 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   }
   for (const id of snapshot.edges.keys()) {
     const val: Option<EdgeStyleEntry> = snapshot.edges.get(id) ?? null;
-    const inCurrent: boolean = current.edges[id] !== undefined;
+    const inCurrent: boolean = Object.hasOwn(current.edges, id);
     if (val !== null && !inCurrent) {
       restoredEdges[id] = val;
     }
@@ -65,7 +65,7 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   }
   for (const id of snapshot.groups.keys()) {
     const val: Option<GroupStyleEntry> = snapshot.groups.get(id) ?? null;
-    const inCurrent: boolean = current.groups[id] !== undefined;
+    const inCurrent: boolean = Object.hasOwn(current.groups, id);
     if (val !== null && !inCurrent) {
       restoredGroups[id] = val;
     }
@@ -84,7 +84,7 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   }
   for (const id of snapshot.annotations.keys()) {
     const val: Option<AnnotationEntry> = snapshot.annotations.get(id) ?? null;
-    const inCurrent: boolean = current.annotations[id] !== undefined;
+    const inCurrent: boolean = Object.hasOwn(current.annotations, id);
     if (val !== null && !inCurrent) {
       restoredAnnotations[id] = val;
     }
@@ -118,25 +118,33 @@ export interface UndoEntry {
 export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
   const nodes: Map<string, Option<NodeStyleEntry>> = new Map();
   for (const change of edit.nodeChanges) {
-    const value: NodeStyleEntry | undefined = current.nodes[change.nodeId];
+    const value: NodeStyleEntry | undefined = Object.hasOwn(current.nodes, change.nodeId)
+      ? current.nodes[change.nodeId]
+      : undefined;
     nodes.set(change.nodeId, value !== undefined ? value : null);
   }
 
   const edges: Map<string, Option<EdgeStyleEntry>> = new Map();
   for (const change of edit.edgeChanges) {
-    const value: EdgeStyleEntry | undefined = current.edges[change.edgeId];
+    const value: EdgeStyleEntry | undefined = Object.hasOwn(current.edges, change.edgeId)
+      ? current.edges[change.edgeId]
+      : undefined;
     edges.set(change.edgeId, value !== undefined ? value : null);
   }
 
   const groups: Map<string, Option<GroupStyleEntry>> = new Map();
   for (const change of edit.groupChanges) {
-    const value: GroupStyleEntry | undefined = current.groups[change.groupId];
+    const value: GroupStyleEntry | undefined = Object.hasOwn(current.groups, change.groupId)
+      ? current.groups[change.groupId]
+      : undefined;
     groups.set(change.groupId, value !== undefined ? value : null);
   }
 
   const annotations: Map<string, Option<AnnotationEntry>> = new Map();
   for (const change of edit.annotationChanges) {
-    const value: AnnotationEntry | undefined = current.annotations[change.annotationId];
+    const value: AnnotationEntry | undefined = Object.hasOwn(current.annotations, change.annotationId)
+      ? current.annotations[change.annotationId]
+      : undefined;
     annotations.set(change.annotationId, value !== undefined ? value : null);
   }
 

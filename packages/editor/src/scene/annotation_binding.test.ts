@@ -43,7 +43,7 @@ describe('an annotation added mid-session reaches layout with a resolved style',
 
     await createRoot(async (dispose) => {
       const state = createEditorState(diagram, create(StylesheetSchema, { schemaVersion: 1 }));
-      createScene(state, () => new Map([['default', theme]]), engine);
+      createScene(state, () => new Map([['default', theme]]), engine, () => undefined);
       await settle();
 
       state.applyStyleEdit(

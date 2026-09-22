@@ -3,6 +3,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
+import { AnnotationEntrySchema, StyleChangeType } from '@archeglyph/proto/gen/style_pb';
 import * as fc from 'fast-check';
 
 import { createEditorState } from '../src/state/create_editor_state';
@@ -13,11 +14,25 @@ import { DiagramSchema } from '../../proto/src/gen/content_pb';
 import { AnnotationStyleChangeSchema, NodeStyleChangeSchema } from '../../proto/src/gen/style_pb';
 
 describe('testgen_state__createEditorState', () => {
+    // HAND-REPAIRED: ids come from elementId, not fc.string(). `create()`
+    // silently drops a "__proto__" map key, so no stylesheet or diagram can
+    // hold an element with that id and a fixture claiming one asserts
+    // something the data model cannot express.
+    const elementId = (): fc.Arbitrary<string> =>
+      fc.string().filter((id: string): boolean => id !== '__proto__');
+
     const makeAnnotationEdit = (annotationId: string): StyleEdit => create(StyleEditSchema, {
       nodeChanges: [],
       edgeChanges: [],
       groupChanges: [],
-      annotationChanges: [create(AnnotationStyleChangeSchema, { annotationId })],
+      // HAND-REPAIRED: the change carried no changeType and no `after`, so
+      // applyMapChanges wrote nothing and the assertions could not hold for
+      // any id. A change with no payload is a no-op by design.
+      annotationChanges: [create(AnnotationStyleChangeSchema, {
+        annotationId,
+        changeType: StyleChangeType.MODIFIED,
+        after: create(AnnotationEntrySchema, {}),
+      })],
     });
 
     const makeEmptyDiagram = (): Diagram => create(DiagramSchema, {
@@ -40,7 +55,13 @@ describe('testgen_state__createEditorState', () => {
       nodeChanges: [create(NodeStyleChangeSchema, { nodeId })],
       edgeChanges: [],
       groupChanges: [],
-      annotationChanges: [create(AnnotationStyleChangeSchema, { annotationId: nodeId })],
+      // HAND-REPAIRED: no changeType and no `after` made this a no-op, so
+      // the edit filtered down to empty and took the early return.
+      annotationChanges: [create(AnnotationStyleChangeSchema, {
+        annotationId: nodeId,
+        changeType: StyleChangeType.MODIFIED,
+        after: create(AnnotationEntrySchema, {}),
+      })],
     })
 
     const makeNodeEdit = (nodeId: string): StyleEdit => create(StyleEditSchema, {
@@ -73,7 +94,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('apply_fully_filtered_edit', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = makeNodeEdit(value);
@@ -91,7 +112,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('apply_partially_filtered_edit', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = makeMixedEdit(value);
@@ -116,7 +137,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('apply_unfiltered_edit', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = makeAnnotationEdit(value);
@@ -140,7 +161,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('append_pending_unfiltered_by_diagram', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(elementId(), (value) => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = makeNodeEdit(value);

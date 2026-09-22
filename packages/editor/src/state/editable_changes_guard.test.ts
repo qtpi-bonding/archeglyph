@@ -14,7 +14,7 @@ import { createEditorState } from './create_editor_state';
 
 const diagram = create(DiagramSchema, {
   schemaVersion: 1,
-  graph: create(GraphSchema, { nodes: { present: create(NodeSchema, { id: 'present' }) } }),
+  graph: create(GraphSchema, { nodes: { present: create(NodeSchema, {}) } }),
 });
 
 function editFor(nodeId: string, id: string = nodeId): StyleEdit {

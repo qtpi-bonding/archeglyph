@@ -42,7 +42,7 @@ function sheet(pendingEdits: StyleEdit[]): Stylesheet {
 // applyStyleEdit and acceptPending both drop changes against absent ids.
 const diagram = create(DiagramSchema, {
   schemaVersion: 1,
-  graph: create(GraphSchema, { nodes: { n1: create(NodeSchema, { id: 'n1' }) } }),
+  graph: create(GraphSchema, { nodes: { n1: create(NodeSchema, {}) } }),
 });
 
 const pendingIds = (s: Stylesheet): Array<string> => s.pendingEdits.map((e) => e.id);

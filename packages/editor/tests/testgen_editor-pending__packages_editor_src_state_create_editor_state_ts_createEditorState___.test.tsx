@@ -24,7 +24,7 @@ describe('testgen_state__createEditorState', () => {
     const makeDiagram = (nodeId?: string): Diagram => create(DiagramSchema, {
         schemaVersion: 1, id: "diagram",
         graph: create(GraphSchema, nodeId === undefined ? {} : {
-            nodes: { [nodeId]: create(NodeSchema, { id: nodeId }) },
+            nodes: { [nodeId]: create(NodeSchema, {}) },
         }),
     });
 

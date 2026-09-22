@@ -22,15 +22,18 @@ describe('testgen_diff__diffRefsFrom', () => {
         );
     });
 
+    // HAND-REPAIRED: bound a tuple and used it where a string goes, so
+    // URLSearchParams stringified it and the assertion compared an array.
+    // Two distinct values, so crossing base and target would fail.
     test('ref_and_base_fetch', () => {
         fc.assert(
-            fc.property(fc.tuple(fc.string(), fc.string()), (value) => {
+            fc.property(fc.string(), fc.string(), (target, base) => {
         const params = new URLSearchParams([
-          ['ref', value],
+          ['ref', target],
           ['fetch', 'fallback-target'],
-          ['base_fetch', value],
+          ['base_fetch', base],
         ]);
-        expect(diffRefsFrom(params)).toEqual({ target: value, base: value });
+        expect(diffRefsFrom(params)).toEqual({ target, base });
             })
         );
     });
@@ -60,14 +63,15 @@ describe('testgen_diff__diffRefsFrom', () => {
         );
     });
 
+    // HAND-REPAIRED: see ref_and_base_fetch above.
     test('fetch_and_base_fetch', () => {
         fc.assert(
-            fc.property(fc.tuple(fc.string(), fc.string()), (value) => {
+            fc.property(fc.string(), fc.string(), (target, base) => {
         const params = new URLSearchParams([
-          ['fetch', value],
-          ['base_fetch', value],
+          ['fetch', target],
+          ['base_fetch', base],
         ]);
-        expect(diffRefsFrom(params)).toEqual({ target: value, base: value });
+        expect(diffRefsFrom(params)).toEqual({ target, base });
             })
         );
     });

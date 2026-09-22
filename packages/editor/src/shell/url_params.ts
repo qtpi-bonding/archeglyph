@@ -34,7 +34,7 @@ export function readUrlParams(location: { search: string; hash: string }): URLSe
 }
 
 /** Parameter names that carry document content and must never sit in the query. */
-export const CONTENT_PARAMS: ReadonlyArray<string> = ['d', 's'];
+export const CONTENT_PARAMS: ReadonlyArray<string> = ['d', 's', 'base_d'];
 
 /**
  * A shareable link for a diagram and stylesheet, with the content in the

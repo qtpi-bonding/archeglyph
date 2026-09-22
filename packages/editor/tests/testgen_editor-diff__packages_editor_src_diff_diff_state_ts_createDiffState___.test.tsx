@@ -4,6 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import * as fc from 'fast-check';
+import { createRoot, createSignal } from 'solid-js';
 
 import { createDiffState } from '../src/diff/diff_state';
 import { Diagram } from '../../proto/src/gen/content_pb';
@@ -50,21 +51,20 @@ describe('testgen_diff__createDiffState', () => {
     test('target_updates_with_base', () => {
         fc.assert(
             fc.property(fc.array(fc.string(), {minLength: 2, maxLength: 8}), (value) => {
-        let current = makeDiagram(value[0]);
-        let reads = 0;
-        const target = (): Diagram | undefined => {
-          reads += 1;
-          return current;
-        };
-        const state = createDiffState(target, "target-ref");
-        state.setBase(makeDiagram("base"), "base-ref");
-        state.delta();
-        const readsAfterFirstDelta = reads;
-        current = makeDiagram(value[1]);
-        const result = state.delta();
-        expect(reads).toBeGreaterThan(readsAfterFirstDelta);
-        expect(result?.baseRef).toBe("base-ref");
-        expect(result?.targetRef).toBe("target-ref");
+        // HAND-REPAIRED: drove a plain `let` and expected the memo to notice.
+        // createMemo recomputes on SIGNAL change, so the target has to be one.
+        createRoot((dispose) => {
+          const [current, setCurrent] = createSignal<Diagram | undefined>(makeDiagram(value[0]));
+          const state = createDiffState(current, "target-ref");
+          state.setBase(makeDiagram("base"), "base-ref");
+          const first = state.delta();
+          setCurrent(makeDiagram(value[1]));
+          const result = state.delta();
+          expect(result).not.toBe(first);
+          expect(result?.baseRef).toBe("base-ref");
+          expect(result?.targetRef).toBe("target-ref");
+          dispose();
+        });
             })
         );
     });
@@ -72,16 +72,19 @@ describe('testgen_diff__createDiffState', () => {
     // WHEN: The base becomes attached while target() is undefined, then target() first returns a Diagram; delta() transitions from undefined to the computed Delta without another setBase call.
     // THEN: It changes delta() from undefined to the computed diff when target() first returns a Diagram.
     test('target_becomes_available_after_base', () => {
-        let current: Diagram | undefined;
-        const target = (): Diagram | undefined => current;
-        const state = createDiffState(target, "target-ref");
-        state.setBase(makeDiagram("base"), "base-ref");
-        expect(state.delta()).toBeUndefined();
-        current = makeDiagram("target");
-        const result = state.delta();
-        expect(result?.schemaVersion).toBe(1);
-        expect(result?.baseRef).toBe("base-ref");
-        expect(result?.targetRef).toBe("target-ref");
+        // HAND-REPAIRED: see target_updates_with_base.
+        createRoot((dispose) => {
+          const [current, setCurrent] = createSignal<Diagram | undefined>(undefined);
+          const state = createDiffState(current, "target-ref");
+          state.setBase(makeDiagram("base"), "base-ref");
+          expect(state.delta()).toBeUndefined();
+          setCurrent(makeDiagram("target"));
+          const result = state.delta();
+          expect(result?.schemaVersion).toBe(1);
+          expect(result?.baseRef).toBe("base-ref");
+          expect(result?.targetRef).toBe("target-ref");
+          dispose();
+        });
     });
 
     // WHEN: Calling setBase(undefined) detaches an otherwise attached base; delta() returns to undefined, including when target() currently returns a Diagram.

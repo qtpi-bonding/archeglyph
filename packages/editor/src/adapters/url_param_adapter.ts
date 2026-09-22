@@ -12,22 +12,22 @@ function toAdapterError(e: unknown): AdapterError {
   return init(new AdapterError(), { message: e instanceof Error ? e.message : String(e) });
 }
 
-function buildRemoteUrl(params: URLSearchParams): string | null {
-  const fetchParam: string | null = params.get('fetch');
+function buildRemoteUrl(params: URLSearchParams, prefix: string = ''): string | null {
+  const fetchParam: string | null = params.get(`${prefix}fetch`);
   if (fetchParam !== null) {
     return fetchParam;
   } else {
-    const gh: string | null = params.get('gh');
+    const gh: string | null = params.get(`${prefix}gh`);
     if (gh !== null) {
-      const path: string = params.get('path') ?? '';
+      const path: string = params.get(`${prefix}path`) ?? '';
       // `main` is a FLOATING ref: the link shows whatever that branch holds
       // when it is opened, which is rarely what the person who shared it saw.
       // Kept only so existing links resolve; anything generating a link should
       // use buildGitHubUrl, which requires a ref.
-      const ref: string = params.get('ref') ?? 'main';
+      const ref: string = params.get(`${prefix}ref`) ?? 'main';
       return `https://raw.githubusercontent.com/${gh}/${ref}/${path}`;
     } else {
-      return params.get('gist');
+      return params.get(`${prefix}gist`);
     }
   }
 }

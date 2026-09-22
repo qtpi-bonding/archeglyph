@@ -12,6 +12,7 @@ import {
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { applyStyleEditToStylesheet } from './apply_style_edit';
+import { editableChanges } from './editable_changes';
 import { EditorState } from './editor_state';
 import { findPendingEdit, removePendingEdit } from './edits/pending';
 import {
@@ -38,7 +39,8 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     setVersion(getVersion() + 1);
   };
 
-  const applyStyleEdit = (edit: StyleEdit, coalesceKey?: string): void => {
+  const applyStyleEdit = (incoming: StyleEdit, coalesceKey?: string): void => {
+    const edit: StyleEdit = editableChanges(incoming, getDiagram());
     if (
       edit.nodeChanges.length === 0 && edit.groupChanges.length === 0 &&
       edit.edgeChanges.length === 0 && edit.annotationChanges.length === 0
@@ -117,7 +119,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
     const current: Stylesheet = getStylesheet();
     const pending: StyleEdit | undefined = findPendingEdit(current, editId);
     if (pending === undefined) return;
-    const applied: Stylesheet = applyStyleEditToStylesheet(current, pending);
+    const applied: Stylesheet = applyStyleEditToStylesheet(current, editableChanges(pending, getDiagram()));
     const updated: Stylesheet = create(StylesheetSchema, {
       ...applied,
       pendingEdits: current.pendingEdits.filter((edit: StyleEdit) => edit.id !== editId),

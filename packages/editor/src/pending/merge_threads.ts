@@ -46,7 +46,7 @@ export function mergeThreads(stylesheet: Stylesheet, entries: ReadonlyArray<Thre
       groupChanges: edit.groupChanges,
       annotationChanges: edit.annotationChanges,
       canvasAfter: edit.canvasAfter,
-      themeRefAfter: edit.themeRefAfter,
+      themesAfter: edit.themesAfter,
       author: edit.author,
       description: edit.description,
       timestampMs: edit.timestampMs,
@@ -59,7 +59,7 @@ export function mergeThreads(stylesheet: Stylesheet, entries: ReadonlyArray<Thre
 
   return create(StylesheetSchema, {
     schemaVersion: stylesheet.schemaVersion,
-    themeRef: stylesheet.themeRef,
+    themes: stylesheet.themes,
     canvas: stylesheet.canvas,
     nodes: stylesheet.nodes,
     edges: stylesheet.edges,

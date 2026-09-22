@@ -7,5 +7,7 @@ import { Theme } from '@archeglyph/proto/gen/theme_pb';
 export class CascadeRequest {
   filtered!: FilteredDiagram;
   stylesheet?: Stylesheet;
-  theme?: Theme;
+  // Keyed by the name the STYLESHEET binds, not the theme's own name.
+  // `default` is what an unqualified component reference resolves against.
+  themes?: ReadonlyMap<string, Theme>;
 }

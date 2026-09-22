@@ -67,7 +67,7 @@ async function layout(json: unknown, stylesheet?: Stylesheet): Promise<LaidOutDi
   const result = await layoutPipeline(
     diagram,
     seeded,
-    theme,
+    new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
   );
   if (result.kind === 'err') {

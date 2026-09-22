@@ -12,8 +12,8 @@ import { PipelineError } from './pipeline_error';
 import { resolvePipeline } from './resolve_pipeline';
 import { init } from '@archeglyph/proto/util/init';
 
-export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme, layoutEngine: LayoutEngine): Promise<Result<string, PipelineError>> {
-  const layoutResult = await layoutPipeline(diagram, stylesheet, theme, layoutEngine);
+export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, themes: ReadonlyMap<string, Theme>, layoutEngine: LayoutEngine): Promise<Result<string, PipelineError>> {
+  const layoutResult = await layoutPipeline(diagram, stylesheet, themes, layoutEngine);
   if (layoutResult.kind === 'err') {
     return Err(layoutResult.error);
   }
@@ -26,8 +26,8 @@ export async function renderPipeline(diagram: Diagram, stylesheet: Stylesheet | 
   return Ok(renderResult.value);
 }
 
-export async function layoutPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme, layoutEngine: LayoutEngine): Promise<Result<LaidOutDiagram, PipelineError>> {
-  const resolveResult = resolvePipeline(diagram, stylesheet, theme);
+export async function layoutPipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, themes: ReadonlyMap<string, Theme>, layoutEngine: LayoutEngine): Promise<Result<LaidOutDiagram, PipelineError>> {
+  const resolveResult = resolvePipeline(diagram, stylesheet, themes);
   if (resolveResult.kind === 'err') {
     return Err(resolveResult.error);
   }

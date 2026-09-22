@@ -45,11 +45,14 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
   );
 
   const newCanvas: CanvasStyle | undefined = edit.canvasAfter !== undefined ? edit.canvasAfter : current.canvas;
-  const newThemeRef: string | undefined = edit.themeRefAfter !== undefined ? edit.themeRefAfter : current.themeRef;
+  // A proto3 map carries no presence, so a non-empty themesAfter replaces and
+  // an empty one leaves the bindings alone.
+  const newThemes: Record<string, string> =
+    Object.keys(edit.themesAfter ?? {}).length > 0 ? edit.themesAfter : current.themes;
 
   return create(StylesheetSchema, {
     schemaVersion: current.schemaVersion,
-    themeRef: newThemeRef,
+    themes: newThemes,
     canvas: newCanvas,
     nodes: newNodes,
     edges: newEdges,

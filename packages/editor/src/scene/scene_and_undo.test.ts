@@ -486,7 +486,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snapA = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themeRefTouched: false, themeRefBefore: null, pendingEditsBefore: [] };
+    const snapA = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
     const snapB = { ...snapA };
 
     const entryA: UndoEntry = { beforeSnapshot: snapA, edit: editA, tsMs: 1000, coalesceKey: 'inspector:n1:x' };
@@ -507,7 +507,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n2', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themeRefTouched: false, themeRefBefore: null, pendingEditsBefore: [] };
+    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000, coalesceKey: 'inspector:n1:x' };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1200, coalesceKey: 'inspector:n2:y' };
@@ -521,7 +521,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themeRefTouched: false, themeRefBefore: null, pendingEditsBefore: [] };
+    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000 };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1010 };
@@ -535,7 +535,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themeRefTouched: false, themeRefBefore: null, pendingEditsBefore: [] };
+    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000, coalesceKey: 'k' };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1600, coalesceKey: 'k' };

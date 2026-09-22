@@ -9,12 +9,28 @@ import { FilterRequest } from '../resolver/filter_request';
 import { ResolveTokensRequest } from '../resolver/resolve_tokens_request';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
 import { StyleCascadeImpl } from '../resolver/style_cascade';
-import { TokenResolverImpl } from '../resolver/token_resolver';
+import { TokenResolverImpl, resolveTokensIn } from '../resolver/token_resolver';
 import { VisibilityFilterImpl } from '../resolver/visibility_filter';
 import { PipelineError } from './pipeline_error';
 import { init } from '@archeglyph/proto/util/init';
 
-export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, theme: Theme): Result<ResolvedDiagram, PipelineError> {
+export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undefined, themes: ReadonlyMap<string, Theme>): Result<ResolvedDiagram, PipelineError> {
+  // Each theme's components resolve against its own tokens, before the
+  // cascade merges them. Two themes may name the same role with different
+  // palettes behind it, and the merged element does not record which theme a
+  // value came from.
+  const perTheme: string[] = [];
+  for (const [name, theme] of themes) {
+    if (theme.tokens === undefined) continue;
+    for (const ref of resolveTokensIn(theme.nodeComponents, theme.tokens)) perTheme.push(`${name}: ${ref}`);
+    for (const ref of resolveTokensIn(theme.edgeComponents, theme.tokens)) perTheme.push(`${name}: ${ref}`);
+    for (const ref of resolveTokensIn(theme.groupComponents, theme.tokens)) perTheme.push(`${name}: ${ref}`);
+    for (const ref of resolveTokensIn(theme.annotationComponents, theme.tokens)) perTheme.push(`${name}: ${ref}`);
+  }
+  if (perTheme.length > 0) {
+    return Err(init(new PipelineError(), { stage: 'tokens', detail: `unresolved token reference(s): ${[...new Set(perTheme)].sort().join(', ')}` }));
+  }
+
   const filterResult = new VisibilityFilterImpl().filter(
     init(new FilterRequest(), { diagram, stylesheet })
   );
@@ -23,14 +39,16 @@ export function resolvePipeline(diagram: Diagram, stylesheet: Stylesheet | undef
   }
 
   const cascadeResult = new StyleCascadeImpl().cascade(
-    init(new CascadeRequest(), { filtered: filterResult.value, stylesheet, theme })
+    init(new CascadeRequest(), { filtered: filterResult.value, stylesheet, themes })
   );
   if (cascadeResult.kind === 'err') {
     return Err(init(new PipelineError(), { stage: 'cascade', detail: cascadeResult.error.message }));
   }
 
+  // Components are already resolved above; this pass is for refs a STYLESHEET
+  // entry wrote, which are unqualified and so resolve against `default`.
   const tokenResult = new TokenResolverImpl().resolveTokens(
-    init(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: theme.tokens })
+    init(new ResolveTokensRequest(), { resolved: cascadeResult.value, tokens: themes.get('default')?.tokens })
   );
   if (tokenResult.kind === 'err') {
     return Err(init(new PipelineError(), { stage: 'tokens', detail: tokenResult.error.message }));

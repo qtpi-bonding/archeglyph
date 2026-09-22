@@ -71,20 +71,20 @@ export interface ElementBounds {
   bounds: Bounds;
   parentGroup?: string;
 }
-export function createScene(state: EditorState, theme: Accessor<Theme>, layoutEngine: LayoutEngine): Scene {
-  type SceneSource = { version: number; theme: Theme };
+export function createScene(state: EditorState, themes: Accessor<ReadonlyMap<string, Theme>>, layoutEngine: LayoutEngine): Scene {
+  type SceneSource = { version: number; themes: ReadonlyMap<string, Theme> };
   type SceneResult = Result<SceneGeometry, SceneError>;
 
   const [snapshot] = createResource<SceneResult, SceneSource>(
-    () => ({ version: state.version(), theme: theme() }),
+    () => ({ version: state.version(), themes: themes() }),
     async (source: SceneSource): Promise<SceneResult> => {
       // Every rebuild, not just at load: an element created mid-session has no
       // component and resolves with no shape or typography. Idempotent.
-      const seeded = seedComponentBindings(state.diagram(), state.stylesheet(), source.theme);
+      const seeded = seedComponentBindings(state.diagram(), state.stylesheet(), source.themes.get('default'));
       const layoutResult = await layoutPipeline(
         state.diagram(),
         seeded,
-        source.theme,
+        source.themes,
         layoutEngine,
       );
       if (layoutResult.kind === 'err') {

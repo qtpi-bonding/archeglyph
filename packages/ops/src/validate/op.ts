@@ -4,7 +4,6 @@ import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
-import { findBundledTheme, getBundledTheme } from '@archeglyph/themes';
 import type { Operation, OpContext } from '../op';
 import { loadDiagram, loadStylesheet, loadTheme } from '@archeglyph/core/loaders';
 import { ValidatorImpl } from '@archeglyph/core/validator/validator';
@@ -18,6 +17,7 @@ import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
 import { deriveDefaultStylePath } from '../style_path';
 import { init } from '@archeglyph/proto/util/init';
+import { resolveThemes } from '../themes/resolve_themes';
 
 export const validateOp: Operation<ValidateParams, ValidateOutput> = {
   name: 'validate',
@@ -63,28 +63,21 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     }
     stagesRun.push('validate');
 
-    let theme: Theme;
-    if (params.theme === undefined) {
-      theme = getBundledTheme('dark');
-    } else {
-      const bundledTheme = findBundledTheme(params.theme);
-      if (bundledTheme !== null) {
-        theme = bundledTheme;
-      } else {
-        const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
-        const themeResult = await loadTheme(themeText);
-        if (themeResult.kind === 'err') {
-          throw init(new ValidateOpError(), { stage: 'load', cause: themeResult.error });
-        }
-        theme = themeResult.value;
-      }
+    const themesResult = await resolveThemes(
+      stylesheet?.themes ?? {},
+      params.theme,
+      ctx.projectRoot,
+    );
+    if (themesResult.kind === 'err') {
+      throw init(new ValidateOpError(), { stage: 'load', cause: themesResult.error });
     }
+    const themes = themesResult.value;
 
     // Fill any missing component bindings from the theme's declared defaults,
     // so a diagram with no style file renders the same here as it does in the
     // editor. The resolver itself assumes nothing.
-    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), theme);
-    const resolveResult = await resolvePipeline(diagramResult.value, seeded, theme);
+    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'));
+    const resolveResult = await resolvePipeline(diagramResult.value, seeded, themes);
     if (resolveResult.kind === 'err') {
       throw init(new ValidateOpError(), { stage: resolveResult.error.stage, cause: resolveResult.error });
     }

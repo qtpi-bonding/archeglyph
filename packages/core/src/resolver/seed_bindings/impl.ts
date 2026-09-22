@@ -31,9 +31,9 @@ import { Theme } from '@archeglyph/proto/gen/theme_pb';
  * Existing bindings are never overwritten; this only fills gaps. Calling it
  * twice is the same as calling it once.
  */
-export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, theme: Theme): Stylesheet {
+export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, theme: Theme | undefined): Stylesheet {
   const graph = diagram.graph;
-  if (graph === undefined) {
+  if (graph === undefined || theme === undefined) {
     return stylesheet;
   }
 

@@ -25,7 +25,7 @@ export function proposePendingEdit(stylesheet: Stylesheet, proposal: StyleEdit, 
 export function removePendingEdit(stylesheet: Stylesheet, editId: string): Stylesheet {
   return create(StylesheetSchema, {
     schemaVersion: stylesheet.schemaVersion,
-    themeRef: stylesheet.themeRef,
+    themes: stylesheet.themes,
     canvas: stylesheet.canvas,
     nodes: stylesheet.nodes,
     edges: stylesheet.edges,

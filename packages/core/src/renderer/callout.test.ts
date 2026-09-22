@@ -76,7 +76,7 @@ async function renderWith(anchored: boolean): Promise<string> {
   const laid = await layoutPipeline(
     diagram,
     seeded,
-    theme,
+    new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
   );
   if (laid.kind === 'err') {

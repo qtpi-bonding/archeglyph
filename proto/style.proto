@@ -11,8 +11,17 @@ import "content.proto";   // for Localization (used by AnnotationEntry.content)
 message Stylesheet {
   uint32 schema_version = 1;
 
-  // Path or name of theme to apply (resolved by the loader).
-  optional string theme_ref = 2;
+  // Theme bindings. The key is a name THIS FILE chooses; the value is a
+  // bundled theme name or a path, resolved by the caller.
+  //
+  // `default` is reserved: an unqualified `component` resolves against it, so
+  // a single-theme file never writes a prefix and needs no migration.
+  //
+  // The qualifier is never the theme's own identity. `blueprint.glyph` would
+  // pin the theme, and swappability is the entire reason a theme is a
+  // separate file. Two themes may both define `store`; a qualified reference
+  // names exactly one, so there is no precedence order to define.
+  map<string, string> themes = 2;
 
   // Document-level canvas style.
   optional CanvasStyle canvas = 3;
@@ -496,7 +505,8 @@ message StyleEdit {
 
   // Document-level changes (optional; affect Stylesheet.canvas / theme_ref).
   optional CanvasStyle canvas_after = 8;
-  optional string theme_ref_after = 9;
+  // Replaces the whole `themes` map when set, like the other *_after fields.
+  map<string, string> themes_after = 9;
 
   // Metadata
   optional string author = 10;            // "ai:claude", "user:alice", "importer:archegraph"

@@ -32,6 +32,15 @@ export class TokenResolverImpl implements TokenResolver {
   }
 }
 
+// A theme's components must resolve against THAT theme's tokens, so this
+// runs per theme before the cascade merges components into elements. After
+// merging, which theme a value came from is no longer recoverable.
+export function resolveTokensIn(obj: unknown, tokens: Tokens): string[] {
+  const unresolved: string[] = [];
+  walk(obj, tokens, unresolved);
+  return unresolved;
+}
+
 function walk(obj: unknown, tokens: Tokens, unresolved: string[]): void {
   if (obj === null || obj === undefined) return;
   if (typeof obj !== 'object') return;

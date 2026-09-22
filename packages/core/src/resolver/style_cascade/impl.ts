@@ -102,37 +102,39 @@ function mergeTypography(base: Typography, layer: Typography): void {
   if (layer.background !== undefined) { base.background = layer.background; }
 }
 
-function findNodeComponent(theme: Theme | undefined, name: string): NodeComponent | undefined {
-  if (theme === undefined) {
-    return undefined;
-  } else {
-    return theme.nodeComponents.find((c: NodeComponent): boolean => c.name === name);
-  }
+// An unqualified name binds to `default`, which is why every existing
+// stylesheet keeps working without a prefix.
+export function splitQualified(name: string): { theme: string; component: string } {
+  const dot = name.indexOf('.');
+  return dot < 0
+    ? { theme: 'default', component: name }
+    : { theme: name.slice(0, dot), component: name.slice(dot + 1) };
 }
 
-function findEdgeComponent(theme: Theme | undefined, name: string): EdgeComponent | undefined {
+type Finder<T> = (theme: Theme, component: string) => T | undefined;
+
+// Returns the component, or the reason it could not be found, so the caller
+// can say which theme it looked in rather than only which name was missing.
+function findComponent<T>(
+  themes: ReadonlyMap<string, Theme> | undefined,
+  qualified: string,
+  pick: Finder<T>,
+): { found: T } | { error: string } {
+  const { theme: themeName, component } = splitQualified(qualified);
+  const theme = themes?.get(themeName);
   if (theme === undefined) {
-    return undefined;
-  } else {
-    return theme.edgeComponents.find((c: EdgeComponent): boolean => c.name === name);
+    return { error: `no theme bound to '${themeName}'` };
   }
+  const found = pick(theme, component);
+  return found === undefined
+    ? { error: `component '${component}' not found in theme '${themeName}'` }
+    : { found };
 }
 
-function findGroupComponent(theme: Theme | undefined, name: string): NodeComponent | undefined {
-  if (theme === undefined) {
-    return undefined;
-  } else {
-    return theme.groupComponents.find((c: NodeComponent): boolean => c.name === name);
-  }
-}
-
-function findAnnotationComponent(theme: Theme | undefined, name: string): AnnotationComponent | undefined {
-  if (theme === undefined) {
-    return undefined;
-  } else {
-    return theme.annotationComponents.find((c: AnnotationComponent): boolean => c.name === name);
-  }
-}
+const pickNode: Finder<NodeComponent> = (t, n) => t.nodeComponents.find((c: NodeComponent): boolean => c.name === n);
+const pickEdge: Finder<EdgeComponent> = (t, n) => t.edgeComponents.find((c: EdgeComponent): boolean => c.name === n);
+const pickGroup: Finder<NodeComponent> = (t, n) => t.groupComponents.find((c: NodeComponent): boolean => c.name === n);
+const pickAnnotation: Finder<AnnotationComponent> = (t, n) => t.annotationComponents.find((c: AnnotationComponent): boolean => c.name === n);
 
 /**
  * The component name to look up, or undefined to skip the theme layer.
@@ -156,12 +158,12 @@ export class StyleCascadeImpl implements StyleCascade {
   cascade(request: CascadeRequest): Result<ResolvedDiagram, ResolveError> {
     const filtered: FilteredDiagram = request.filtered;
     const stylesheet: Stylesheet | undefined = request.stylesheet;
-    const theme: Theme | undefined = request.theme;
+    const themes: ReadonlyMap<string, Theme> | undefined = request.themes;
 
     // Absent means transparent, not an error: this lookup is the engine's,
     // not the author's. A '$palette.x' value is chased by the token resolver.
     const canvas = create(CanvasStyleSchema, stylesheet?.canvas ?? {});
-    const themeBackground: string | undefined = theme?.tokens?.roles['background'];
+    const themeBackground: string | undefined = themes?.get('default')?.tokens?.roles['background'];
     if (canvas.background === undefined && themeBackground !== undefined) {
       canvas.background = create(ColorSchema, { value: themeBackground });
     }
@@ -175,9 +177,13 @@ export class StyleCascadeImpl implements StyleCascade {
     for (const node of sortedNodes) {
       const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
       const componentName: string | undefined = componentNameFor(entry?.component);
-      const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findNodeComponent(theme, componentName);
-      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(init(new ResolveError(), { message: `node ${node.id}: theme component '${componentName}' not found` }));
+      let themeComponent: NodeComponent | undefined;
+      if (componentName !== undefined) {
+        const looked = findComponent(themes, componentName, pickNode);
+        if ('error' in looked) {
+          return Err(init(new ResolveError(), { message: `node ${node.id}: ${looked.error}` }));
+        }
+        themeComponent = looked.found;
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
@@ -201,9 +207,13 @@ export class StyleCascadeImpl implements StyleCascade {
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
       const componentName: string | undefined = componentNameFor(entry?.component);
-      const themeComponent: EdgeComponent | undefined = componentName === undefined ? undefined : findEdgeComponent(theme, componentName);
-      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(init(new ResolveError(), { message: `edge ${edge.id}: theme component '${componentName}' not found` }));
+      let themeComponent: EdgeComponent | undefined;
+      if (componentName !== undefined) {
+        const looked = findComponent(themes, componentName, pickEdge);
+        if ('error' in looked) {
+          return Err(init(new ResolveError(), { message: `edge ${edge.id}: ${looked.error}` }));
+        }
+        themeComponent = looked.found;
       }
       const connection: Glyph1D = create(Glyph1DSchema);
       if (themeComponent?.connection !== undefined) { mergeGlyph1D(connection, themeComponent.connection); }
@@ -228,9 +238,13 @@ export class StyleCascadeImpl implements StyleCascade {
     for (const group of sortedGroups) {
       const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
       const componentName: string | undefined = componentNameFor(entry?.component);
-      const themeComponent: NodeComponent | undefined = componentName === undefined ? undefined : findGroupComponent(theme, componentName);
-      if (entry?.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(init(new ResolveError(), { message: `group ${group.id}: theme component '${componentName}' not found` }));
+      let themeComponent: NodeComponent | undefined;
+      if (componentName !== undefined) {
+        const looked = findComponent(themes, componentName, pickGroup);
+        if ('error' in looked) {
+          return Err(init(new ResolveError(), { message: `group ${group.id}: ${looked.error}` }));
+        }
+        themeComponent = looked.found;
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
@@ -256,9 +270,13 @@ export class StyleCascadeImpl implements StyleCascade {
     for (const annotation of sortedAnnotations) {
       const entry: AnnotationEntry = annotation.entry;
       const componentName: string | undefined = componentNameFor(entry.component);
-      const themeComponent: AnnotationComponent | undefined = componentName === undefined ? undefined : findAnnotationComponent(theme, componentName);
-      if (entry.component !== undefined && entry.component !== '' && themeComponent === undefined) {
-        return Err(init(new ResolveError(), { message: `annotation ${annotation.id}: theme component '${componentName}' not found` }));
+      let themeComponent: AnnotationComponent | undefined;
+      if (componentName !== undefined) {
+        const looked = findComponent(themes, componentName, pickAnnotation);
+        if ('error' in looked) {
+          return Err(init(new ResolveError(), { message: `annotation ${annotation.id}: ${looked.error}` }));
+        }
+        themeComponent = looked.found;
       }
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }

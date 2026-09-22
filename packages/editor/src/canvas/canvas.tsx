@@ -49,7 +49,7 @@ export interface CanvasProps {
   layoutEngine: LayoutEngine;
   scene: Scene;
   stylesheet: Stylesheet;
-  theme: Theme;
+  themes: ReadonlyMap<string, Theme>;
   ui: UiState;
   state: EditorState;
   /** Called by the shell after a canvas interaction changes the selection. */
@@ -463,7 +463,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
-          <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} theme={props.theme} layoutEngine={props.layoutEngine} />
+          <GhostLayer diagram={props.diagram} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
           <Show when={geometry() !== undefined}>
             <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />

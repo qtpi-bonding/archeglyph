@@ -78,7 +78,7 @@ function vec2(x: number, y: number): Vec2 {
   return create(Vec2Schema, { x, y });
 }
 
-function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
+function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
   return create(StylesheetSchema, {
     schemaVersion: 1,
     nodes: {},

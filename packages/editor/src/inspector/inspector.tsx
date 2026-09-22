@@ -19,7 +19,7 @@ export interface InspectorProps {
   state: EditorState;
   ui: UiState;
   geometry: SceneGeometry;
-  theme: Theme;
+  themes: ReadonlyMap<string, Theme>;
   registerFocus: (focus: () => void) => void;
 }
 
@@ -83,7 +83,7 @@ export const Inspector: Component<InspectorProps> = (
       return <AnnotationSection state={props.state} model={current} geometry={props.geometry} />;
     }
     if (id === 'typography') {
-      return <TypographySection state={props.state} model={current} geometry={props.geometry} theme={props.theme} />;
+      return <TypographySection state={props.state} model={current} geometry={props.geometry} theme={props.themes.get('default')} />;
     }
     return <></>;
   };

@@ -69,7 +69,7 @@ async function layout(json: unknown): Promise<LaidOutDiagram> {
   const result = await layoutPipeline(
     parsed,
     seedComponentBindings(parsed, create(StylesheetSchema, { schemaVersion: 1 }), blueprintTheme()),
-    blueprintTheme(),
+    new Map([['default', blueprintTheme()]]),
     new LayoutEngineImpl(new ElkAdapterImpl(elk)),
   );
   if (result.kind === 'err') {

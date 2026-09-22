@@ -40,7 +40,7 @@ describe('testgen_gestures__COMMANDS', () => {
           function laidOutDiagram(parts: { nodes?: LaidOutNode[] } = {}): LaidOutDiagram {
             return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: Object.fromEntries((parts.nodes ?? []).map((n) => [n.id, n])), edges: {}, groups: {}, annotations: {} } as LaidOutDiagram;
           }
-          function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
+          function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
             return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 
@@ -71,7 +71,7 @@ describe('testgen_gestures__COMMANDS', () => {
     // WHEN: pin-all fires before the Scene has ever produced a LaidOutDiagram (geometry is absent/undefined) - a timing accident, not a user mistake - and the command must be a no-op rather than an error.
     // THEN: Returns a no-op StyleEdit (no position writes) since there is no geometry to pin.
     test('pin_all_before_first_layout_resolves_is_noop', () => {
-        function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
+        function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
             return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 
@@ -96,7 +96,7 @@ describe('testgen_gestures__COMMANDS', () => {
         function laidOutDiagram(overrides: Partial<LaidOutDiagram> = {}): LaidOutDiagram {
             return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: {}, edges: {}, groups: {}, annotations: {}, ...overrides } as LaidOutDiagram;
           }
-          function emptyStylesheet(overrides: Partial<Stylesheet> = {}): Stylesheet {
+          function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
             return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 

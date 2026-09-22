@@ -49,7 +49,7 @@ async function sceneFor(sheet: Stylesheet): Promise<{ geometry: SceneGeometry; s
   const result = await layoutPipeline(
     diagram,
     seeded,
-    theme,
+    new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk())),
   );
   if (result.kind === 'err') {

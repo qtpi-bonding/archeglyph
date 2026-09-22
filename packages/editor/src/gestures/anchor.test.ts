@@ -68,7 +68,7 @@ async function calloutPathCount(stylesheet: Stylesheet): Promise<number> {
   const laid = await layoutPipeline(
     diagram,
     seedComponentBindings(diagram, stylesheet, theme),
-    theme,
+    new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
   );
   if (laid.kind === 'err') { throw new Error(`layout failed at ${laid.error.stage}`); }

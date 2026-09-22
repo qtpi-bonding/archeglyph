@@ -2,7 +2,6 @@
 
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { extname, basename, dirname, join, resolve } from 'node:path';
-import { findBundledTheme, getBundledTheme } from '@archeglyph/themes';
 import type { Theme } from '@archeglyph/proto/gen/theme_pb';
 import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { Operation, OpContext } from '../op';
@@ -19,6 +18,7 @@ import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
 import { deriveDefaultStylePath } from '../style_path';
 import { init } from '@archeglyph/proto/util/init';
+import { resolveThemes } from '../themes/resolve_themes';
 
 export function deriveOutPath(diagramPath: string): string {
   const ext = extname(diagramPath);
@@ -59,30 +59,22 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
       stylesheet = styleResult.value;
     }
 
-    let theme: Theme;
-    if (params.theme === undefined) {
-      ctx.logger.info('no --theme provided; using bundled dark theme');
-      theme = getBundledTheme('dark');
-    } else {
-      const bundledTheme = findBundledTheme(params.theme);
-      if (bundledTheme !== null) {
-        theme = bundledTheme;
-      } else {
-        const themeText = await readFile(resolve(ctx.projectRoot, params.theme), 'utf8');
-        const themeResult = await loadTheme(themeText);
-        if (themeResult.kind === 'err') {
-          throw init(new RenderOpError(), { stage: 'load', cause: themeResult.error });
-        }
-        theme = themeResult.value;
-      }
+    const themesResult = await resolveThemes(
+      stylesheet?.themes ?? {},
+      params.theme,
+      ctx.projectRoot,
+    );
+    if (themesResult.kind === 'err') {
+      throw init(new RenderOpError(), { stage: 'load', cause: themesResult.error });
     }
+    const themes = themesResult.value;
 
     // Fill any missing component bindings from the theme's declared defaults,
     // so a diagram with no style file renders the same here as it does in the
     // editor. The resolver itself assumes nothing.
-    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), theme);
+    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'));
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
-    const pipelineResult = await renderPipeline(diagramResult.value, seeded, theme, layoutEngine);
+    const pipelineResult = await renderPipeline(diagramResult.value, seeded, themes, layoutEngine);
     if (pipelineResult.kind === 'err') {
       throw init(new RenderOpError(), { stage: pipelineResult.error.stage, cause: pipelineResult.error });
     }

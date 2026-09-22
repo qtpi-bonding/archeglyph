@@ -53,6 +53,9 @@ import {
 import { resolvePipeline } from '../pipeline';
 import { CascadeRequest } from './cascade_request';
 import { FilterRequest } from './filter_request';
+import { ResolvedDiagram } from './resolved_diagram';
+import { Result } from '@archeglyph/proto/util/result';
+import { PipelineError } from '../pipeline/pipeline_error';
 import { ResolveTokensRequest } from './resolve_tokens_request';
 import { StyleCascadeImpl } from './style_cascade';
 import { TokenResolverImpl } from './token_resolver';
@@ -62,6 +65,12 @@ import { init } from '@archeglyph/proto/util/init';
 const filterImpl = new VisibilityFilterImpl();
 const cascadeImpl = new StyleCascadeImpl();
 const tokenImpl = new TokenResolverImpl();
+
+// A single theme bound as `default`, which is what an unqualified component
+// reference resolves against.
+function only(theme: Theme): ReadonlyMap<string, Theme> {
+  return new Map([['default', theme]]);
+}
 
 function filterReq(diagram: Diagram, stylesheet?: Stylesheet): FilterRequest {
   return init(new FilterRequest(), { diagram, stylesheet });
@@ -337,7 +346,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: only(theme) }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -380,7 +389,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: undefined, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: undefined, themes: only(theme) }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -405,7 +414,7 @@ describe('style_cascade', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
 
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: only(theme) }),
     );
     expect(result.kind).toBe('err');
   });
@@ -429,7 +438,7 @@ describe('style_cascade', () => {
     });
 
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme: undefined }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: new Map() }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -453,7 +462,7 @@ describe('style_cascade', () => {
     const emptyTheme = create(ThemeSchema, { name: 'empty', tokens: create(TokensSchema, {}) });
 
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: emptyStylesheet, theme: emptyTheme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet: emptyStylesheet, themes: only(emptyTheme) }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -481,7 +490,7 @@ describe('style_cascade', () => {
 
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: only(theme) }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -510,7 +519,7 @@ describe('style_cascade', () => {
 
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
     const result = cascadeImpl.cascade(
-      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+      init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: only(theme) }),
     );
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -543,7 +552,7 @@ function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
   const filtered = filterImpl.filter(filterReq(diagram, stylesheet));
   if (filtered.kind !== 'ok') throw new Error('filter failed in test helper');
   const cascaded = cascadeImpl.cascade(
-    init(new CascadeRequest(), { filtered: filtered.value, stylesheet, theme }),
+    init(new CascadeRequest(), { filtered: filtered.value, stylesheet, themes: only(theme) }),
   );
   if (cascaded.kind !== 'ok') throw new Error('cascade failed in test helper');
   return cascaded.value;
@@ -763,7 +772,7 @@ describe('resolvePipeline end-to-end', () => {
       ],
     });
 
-    const result = resolvePipeline(diagram, stylesheet, theme);
+    const result = resolvePipeline(diagram, stylesheet, only(theme));
     expect(result.kind).toBe('ok');
     if (result.kind !== 'ok') return;
 
@@ -792,7 +801,7 @@ describe('resolvePipeline end-to-end', () => {
     });
     const theme = create(ThemeSchema, { name: 'empty', tokens: create(TokensSchema, {}) });
 
-    const result = resolvePipeline(diagram, stylesheet, theme);
+    const result = resolvePipeline(diagram, stylesheet, only(theme));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(Object.values(result.value.nodes)[0].layout?.rotation).toBe(45);
@@ -855,5 +864,80 @@ describe('seedComponentBindings', () => {
     });
     const seeded = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 1 }), noDefault);
     expect(seeded.nodes.n1?.component).toBeUndefined();
+  });
+});
+
+describe('qualified component names', () => {
+  const themed = (name: string, stroke: string) => create(ThemeSchema, {
+    name,
+    tokens: create(TokensSchema, { palette: { c: stroke }, roles: { node_outline: '$palette.c' } }),
+    nodeComponents: [create(NodeComponentSchema, {
+      name: 'glyph',
+      shape: create(Glyph2DSchema, {
+        stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_outline' }) } }),
+      }),
+    })],
+  });
+
+  const diagram = create(DiagramSchema, {
+    id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+  });
+  const sheetWith = (component: string) => create(StylesheetSchema, {
+    schemaVersion: 1,
+    nodes: { a: create(NodeStyleEntrySchema, { component }) },
+  });
+  const strokeOf = (r: Result<ResolvedDiagram, PipelineError>): string | undefined => {
+    if (r.kind !== 'ok') return undefined;
+    const paint = r.value.nodes['a']?.shape.stroke?.paint;
+    return paint?.case === 'color' ? paint.value.value : undefined;
+  };
+
+  // Every existing stylesheet says component: "glyph" with no prefix, so this
+  // is the no-migration case.
+  test('an unqualified component resolves against the default theme', () => {
+    const themes = new Map([['default', themed('d', '#111111')]]);
+    const result = resolvePipeline(diagram, sheetWith('glyph'), themes);
+    expect(result.kind).toBe('ok');
+    expect(strokeOf(result)).toBe('#111111');
+  });
+
+  test('a qualified component resolves against the named theme', () => {
+    const themes = new Map([['default', themed('d', '#111111')], ['acme', themed('a', '#222222')]]);
+    const result = resolvePipeline(diagram, sheetWith('acme.glyph'), themes);
+    expect(result.kind).toBe('ok');
+    expect(strokeOf(result)).toBe('#222222');
+  });
+
+  // A component's $roles must resolve against ITS OWN theme's tokens. Both
+  // themes here name the same role; only the palette behind it differs.
+  test("a non-default theme's component resolves roles against its own tokens", () => {
+    const themes = new Map([['default', themed('d', '#111111')], ['acme', themed('a', '#222222')]]);
+    expect(strokeOf(resolvePipeline(diagram, sheetWith('acme.glyph'), themes))).toBe('#222222');
+    expect(strokeOf(resolvePipeline(diagram, sheetWith('glyph'), themes))).toBe('#111111');
+  });
+
+  // Two themes may define the same name; a qualified reference names exactly
+  // one, so there is no precedence order to define.
+  test('two themes may define the same component name', () => {
+    const themes = new Map([['default', themed('d', '#111111')], ['acme', themed('a', '#222222')]]);
+    expect(strokeOf(resolvePipeline(diagram, sheetWith('glyph'), themes))).toBe('#111111');
+    expect(strokeOf(resolvePipeline(diagram, sheetWith('acme.glyph'), themes))).toBe('#222222');
+  });
+
+  test('a component naming an unbound theme is an error naming that theme', () => {
+    const themes = new Map([['default', themed('d', '#111111')]]);
+    const result = resolvePipeline(diagram, sheetWith('nope.glyph'), themes);
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') expect(result.error.detail).toContain('nope');
+  });
+
+  test('a missing component names the theme it was looked for in', () => {
+    const themes = new Map([['default', themed('d', '#111111')], ['acme', themed('a', '#222222')]]);
+    const result = resolvePipeline(diagram, sheetWith('acme.missing'), themes);
+    expect(result.kind).toBe('err');
+    if (result.kind === 'err') {
+      expect(result.error.detail).toContain('missing');
+      expect(result.error.detail).toContain('acme');
+    }
   });
 });

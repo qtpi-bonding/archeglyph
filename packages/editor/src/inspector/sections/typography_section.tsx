@@ -15,7 +15,7 @@ export interface TypographySectionProps {
   state: EditorState;
   model: InspectorModel;
   geometry: SceneGeometry;
-  theme: Theme;
+  theme: Theme | undefined;
 }
 
 /** The typography controls shared by nodes, edges, groups, and annotations. */
@@ -38,7 +38,7 @@ export const TypographySection: Component<TypographySectionProps> = (
     }
   };
 
-  const fontTokens = (): string[] => Object.keys(props.theme.tokens?.fonts ?? {}).map(
+  const fontTokens = (): string[] => Object.keys(props.theme?.tokens?.fonts ?? {}).map(
     (name: string): string => `$fonts.${name}`,
   );
 

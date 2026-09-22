@@ -15,14 +15,14 @@ import { Result } from '@archeglyph/proto/util/result';
 export interface GhostLayerProps {
   diagram: Diagram;
   stylesheet: Stylesheet;
-  theme: Theme;
+  themes: ReadonlyMap<string, Theme>;
   layoutEngine: LayoutEngine;
 }
 
 type GhostSource = {
   diagram: Diagram;
   stylesheet: Stylesheet;
-  theme: Theme;
+  themes: ReadonlyMap<string, Theme>;
 };
 
 interface GhostRenderProps {
@@ -60,7 +60,7 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
   const source = createMemo((): GhostSource => ({
     diagram: props.diagram,
     stylesheet: applyAllPendingEdits(props.stylesheet),
-    theme: props.theme,
+    themes: props.themes,
   }));
 
   const [svg] = createResource<string, GhostSource>(
@@ -69,7 +69,7 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
       const layoutResult: Result<LaidOutDiagram, PipelineError> = await layoutPipeline(
         input.diagram,
         input.stylesheet,
-        input.theme,
+        input.themes,
         props.layoutEngine,
       );
       if (layoutResult.kind === 'err') {

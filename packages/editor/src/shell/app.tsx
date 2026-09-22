@@ -57,7 +57,9 @@ type MaybeCommandContextAccessor = CommandContextAccessor | undefined;
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = readUrlParams(window.location);
   const pair: AdapterPair = selectAdapters(params);
-  const theme: Theme = getBundledTheme('blueprint');
+  // The editor binds one theme as `default`, which is what an unqualified
+  // `component` in the stylesheet resolves against.
+  const themes: ReadonlyMap<string, Theme> = new Map([['default', getBundledTheme('blueprint')]]);
   const storedChrome: string | null = (() => {
     try { return localStorage.getItem('archeglyph.editorTheme'); } catch { return null; }
   })();
@@ -130,7 +132,7 @@ export const App: Component<{}> = (): JSX.Element => {
     // scene() still null, which the `scene={scene()!}` assertion hides from
     // tsc and which no test sees, because nothing mounts App.
     batch((): void => {
-      setScene(createScene(nextState, () => theme, layoutEngine));
+      setScene(createScene(nextState, () => themes, layoutEngine));
       setState(nextState);
     });
   }
@@ -152,7 +154,7 @@ export const App: Component<{}> = (): JSX.Element => {
     }
     setLoadError(undefined);
     const loaded: Stylesheet = result.value.stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 });
-    let stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, theme);
+    let stylesheet: Stylesheet = seedComponentBindings(result.value.diagram, loaded, themes.get('default'));
     const backend: CommentBackend | undefined = pair.backend;
     if (backend !== undefined) {
       setSyncError(undefined);
@@ -244,7 +246,7 @@ export const App: Component<{}> = (): JSX.Element => {
             layoutEngine={layoutEngine}
             scene={scene()!}
             stylesheet={state()!.stylesheet()}
-            theme={theme}
+            themes={themes}
             ui={ui}
             state={state()!}
             onFocusInspector={onFocusInspector}
@@ -264,7 +266,7 @@ export const App: Component<{}> = (): JSX.Element => {
                 state={state()!}
                 ui={ui}
                 geometry={geometry()}
-                theme={theme}
+                themes={themes}
                 registerFocus={(focus: () => void): void => { focusInspector = focus; }}
               />
             )}

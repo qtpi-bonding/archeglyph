@@ -93,13 +93,13 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
   const restoredCanvas: CanvasStyle | undefined = snapshot.canvasTouched
     ? (snapshot.canvasBefore !== null ? snapshot.canvasBefore : undefined)
     : current.canvas;
-  const restoredThemeRef: string | undefined = snapshot.themeRefTouched
-    ? (snapshot.themeRefBefore !== null ? snapshot.themeRefBefore : undefined)
-    : current.themeRef;
+  const restoredThemes: Record<string, string> = snapshot.themesTouched
+    ? (snapshot.themesBefore !== null ? snapshot.themesBefore : {})
+    : current.themes;
 
   return create(StylesheetSchema, {
     schemaVersion: current.schemaVersion,
-    themeRef: restoredThemeRef,
+    themes: restoredThemes,
     canvas: restoredCanvas,
     nodes: restoredNodes,
     edges: restoredEdges,
@@ -144,10 +144,8 @@ export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSna
   const canvasBefore: Option<CanvasStyle> = canvasTouched
     ? (current.canvas !== undefined ? current.canvas : null)
     : null;
-  const themeRefTouched: boolean = edit.themeRefAfter !== undefined;
-  const themeRefBefore: Option<string> = themeRefTouched
-    ? (current.themeRef !== undefined ? current.themeRef : null)
-    : null;
+  const themesTouched: boolean = Object.keys(edit.themesAfter ?? {}).length > 0;
+  const themesBefore: Option<Record<string, string>> = themesTouched ? current.themes : null;
 
   return {
     nodes,
@@ -156,8 +154,8 @@ export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSna
     annotations,
     canvasTouched,
     canvasBefore,
-    themeRefTouched,
-    themeRefBefore,
+    themesTouched,
+    themesBefore,
     pendingEditsBefore: current.pendingEdits,
   };
 }
@@ -186,7 +184,7 @@ export interface BeforeSnapshot {
   annotations: Map<string, Option<AnnotationEntry>>;
   canvasTouched: boolean;
   canvasBefore: Option<CanvasStyle>;
-  themeRefTouched: boolean;
-  themeRefBefore: Option<string>;
+  themesTouched: boolean;
+  themesBefore: Option<Record<string, string>>;
   pendingEditsBefore: StyleEdit[];
 }

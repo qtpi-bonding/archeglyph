@@ -32,7 +32,7 @@ async function svgFor(diagram: Diagram, stylesheet: Stylesheet, themeName = 'blu
   const theme = getBundledTheme(themeName);
   const engine = new LayoutEngineImpl(new ElkAdapterImpl(new ElkConstructor()));
   const seeded = seedComponentBindings(diagram, stylesheet, theme);
-  const laid = await layoutPipeline(diagram, seeded, theme, engine);
+  const laid = await layoutPipeline(diagram, seeded, new Map([['default', theme]]), engine);
   if (laid.kind === 'err') {
     throw new Error(`${themeName} layout: ${laid.error.stage}: ${laid.error.detail ?? ''}`);
   }

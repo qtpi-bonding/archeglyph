@@ -60,7 +60,7 @@ async function groupSize(
   const result = await layoutPipeline(
     diagram,
     seedComponentBindings(diagram, sheet, theme),
-    theme,
+    new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),
   );
   if (result.kind === 'err') {

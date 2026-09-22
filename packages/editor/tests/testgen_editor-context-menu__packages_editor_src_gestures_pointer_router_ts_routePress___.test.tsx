@@ -84,9 +84,13 @@ describe('testgen_gestures__routePress', () => {
         expect(decision).toEqual({ kind: 'marquee', selection: [] });
     });
 
+    // Repaired by hand: the generator emitted fc.array, which can produce a
+    // selection holding the same ref twice. toggleSelection removes the first
+    // match; the assertion below removes every match. They differ only on
+    // duplicates, which a selection never holds (addAllSelection dedupes).
     test('additive_hit', () => {
         fc.assert(
-            fc.property(fc.record({ current: fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') })), hit: fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }) }), (value) => {
+            fc.property(fc.record({ current: fc.uniqueArray(fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }), { selector: (ref) => `${ref.kind}\u0000${ref.id}` }), hit: fc.record({ id: fc.string(), kind: fc.constantFrom('node', 'edge', 'group', 'annotation') }) }), (value) => {
         const decision = routePress({ point: { x: 0, y: 0 }, button: 0, tool: 'select', additive: true, hit: value.hit }, value.current);
         expect(decision.kind).toBe('none');
         expect(decision.selection).toEqual(value.current.some((ref) => ref.id === value.hit.id && ref.kind === value.hit.kind) ? value.current.filter((ref) => !(ref.id === value.hit.id && ref.kind === value.hit.kind)) : [...value.current, value.hit]);

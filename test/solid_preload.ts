@@ -27,7 +27,6 @@ import { plugin } from 'bun';
 import { transformAsync } from '@babel/core';
 // @ts-expect-error -- babel presets ship no types
 import solid from 'babel-preset-solid';
-// @ts-expect-error -- babel presets ship no types
 import typescript from '@babel/preset-typescript';
 import { readFileSync } from 'node:fs';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';

@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "baseRef": "examples/checkout.diag.json",
+  "targetRef": "examples/checkout-v2.diag.json",
+  "nodeDeltas": [
+    {
+      "nodeId": "cdn",
+      "changeType": "DELETED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "CDN"
+          }
+        ],
+        "parentGroup": "edge",
+        "tags": {
+          "kind": "infra"
+        }
+      }
+    },
+    {
+      "nodeId": "fraud",
+      "changeType": "ADDED",
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "fraud check"
+          }
+        ],
+        "parentGroup": "services",
+        "tags": {
+          "kind": "service"
+        }
+      }
+    },
+    {
+      "nodeId": "gateway",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "API gateway"
+          }
+        ],
+        "parentGroup": "edge",
+        "tags": {
+          "kind": "infra"
+        }
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "API gateway"
+          }
+        ],
+        "tags": {
+          "kind": "infra"
+        }
+      }
+    },
+    {
+      "nodeId": "orders",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "orders db"
+          }
+        ],
+        "tags": {
+          "kind": "store"
+        }
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "orders (postgres)"
+          }
+        ],
+        "tags": {
+          "kind": "store"
+        }
+      }
+    },
+    {
+      "nodeId": "stripe",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Stripe"
+          }
+        ],
+        "tags": {
+          "kind": "external"
+        }
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Stripe"
+          }
+        ],
+        "parentGroup": "external",
+        "tags": {
+          "kind": "external"
+        }
+      }
+    }
+  ],
+  "edgeDeltas": [
+    {
+      "edgeId": "cdn__gateway",
+      "changeType": "DELETED",
+      "before": {
+        "source": "cdn",
+        "target": "gateway"
+      }
+    },
+    {
+      "edgeId": "checkout__fraud",
+      "changeType": "ADDED",
+      "after": {
+        "source": "checkout",
+        "target": "fraud"
+      }
+    },
+    {
+      "edgeId": "fraud__payments",
+      "changeType": "ADDED",
+      "after": {
+        "source": "fraud",
+        "target": "payments"
+      }
+    },
+    {
+      "edgeId": "payments__stripe",
+      "changeType": "MODIFIED",
+      "before": {
+        "source": "payments",
+        "target": "stripe"
+      },
+      "after": {
+        "source": "payments",
+        "target": "stripe",
+        "tags": {
+          "kind": "egress"
+        }
+      }
+    }
+  ],
+  "groupDeltas": [
+    {
+      "groupId": "edge",
+      "changeType": "DELETED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Edge"
+          }
+        ]
+      }
+    },
+    {
+      "groupId": "external",
+      "changeType": "ADDED",
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Third party"
+          }
+        ]
+      }
+    },
+    {
+      "groupId": "services",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Services"
+          }
+        ]
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Core services"
+          }
+        ]
+      }
+    }
+  ]
+}

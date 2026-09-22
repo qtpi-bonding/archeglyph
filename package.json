@@ -11,9 +11,12 @@
     "proto:lint": "buf lint",
     "proto:format": "buf format -w",
     "typecheck": "tsc --noEmit",
+    "spdx": "bun scripts/spdx.ts",
+    "spdx:fix": "bun scripts/spdx.ts --fix",
     "build:editor": "bun run --filter @archeglyph/editor build",
     "dev:editor": "bun run --filter @archeglyph/editor dev",
-    "test": "bun test --conditions browser --preload ./test/solid_preload.ts"
+    "test": "bun test --conditions browser --preload ./test/solid_preload.ts",
+    "test:golden:update": "UPDATE_GOLDENS=1 bun test --conditions browser --preload ./test/solid_preload.ts test/golden_render.test.ts"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",

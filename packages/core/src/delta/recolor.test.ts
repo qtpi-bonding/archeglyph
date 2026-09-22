@@ -124,14 +124,15 @@ describe('recolorShape', () => {
     expect(out.glow?.intensity).toBe(0.5);
   });
 
-  test('UNCHANGED desaturates rather than reading the table', () => {
+  // A saturated base colour, so a transform that muted it would be visible.
+  test('UNCHANGED keeps its own colour rather than reading the table', () => {
     const glyph = create(Glyph2DSchema, {
       stroke: create(StrokeSchema, { paint: { case: 'color', value: color('#8ad1ff') } }),
     });
 
     const out = recolorShape(glyph, ChangeType.UNCHANGED, TABLE);
 
-    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#c4c4c4');
+    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#8ad1ff');
   });
 
   test('the input is not mutated', () => {

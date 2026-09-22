@@ -4,7 +4,7 @@
 
 import { ChangeType } from '../../../proto/src/gen/content_pb';
 import { DiffRoles } from './diff_roles';
-import { desaturate, hueOf, rotateHue } from './hue';
+import { hueOf, rotateHue } from './hue';
 
 // Unchanged is the base colour, so these are the three remaining quadrants.
 const SLOTS: number[] = [90, 180, 270];
@@ -38,8 +38,10 @@ function rotationFor(color: string, change: ChangeType): number {
 }
 
 export function diffColorFor(color: string, change: ChangeType, diffRoles?: DiffRoles): string {
+  // Unchanged keeps the author's colour: a diff render stays recognisable as
+  // the diagram it renders, and recolouring is reserved for what changed.
   if (change === ChangeType.UNCHANGED || change === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
-    return desaturate(color);
+    return color;
   }
 
   if (diffRoles !== undefined) {

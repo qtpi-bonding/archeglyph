@@ -57,8 +57,8 @@ export function applyDiffPalette(laidOut: LaidOutDiagram, overlay: DeltaOverlay,
   }
 
   // Annotations are stylesheet entries, not graph content, so a Delta cannot
-  // report one. They are recoloured as UNCHANGED, which desaturates them --
-  // commentary reads as context, like the rest of the unchanged picture.
+  // report one. UNCHANGED leaves their colours alone, so commentary survives a
+  // diff render looking exactly as it was authored.
   const annotations: Record<string, LaidOutAnnotation> = {};
   for (const [id, annotation] of Object.entries(laidOut.annotations)) {
     annotations[id] = init(new LaidOutAnnotation(), {

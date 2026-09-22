@@ -1,0 +1,37 @@
+# New. The provenance labels, as a pure function.
+#
+# These were inline in App's body. That put a precedence rule with six
+# distinct outcomes inside a component nothing can call without mounting
+# the whole shell, so nothing could test it.
+
+file: "packages/editor/src/diff/diff_refs.ts"
+doc: "The base and target provenance labels a Delta carries, read from URL params."
+
+structs: [
+  { name: "DiffRefs"
+    doc: "The two opaque labels that become Delta.base_ref and Delta.target_ref."
+    fields: [
+      { name: "base",   type: { primitive: CHARACTER } },
+      { name: "target", type: { primitive: CHARACTER } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "diffRefsFrom"
+    doc:
+      "target is `ref` when present, else `fetch` when present, else the\n"
+      "empty string. base is `base_ref`, else `base_fetch`, else the empty\n"
+      "string. The two are read independently: a params carrying `ref` and\n"
+      "`base_fetch` yields the `ref` value as target and the `base_fetch`\n"
+      "value as base.\n"
+      "\n"
+      "An empty string is a valid label, not a failure. content.proto calls\n"
+      "both fields opaque provenance and enforces no semantics, so a\n"
+      "diagram opened from inline base64 -- which has no ref and no URL --\n"
+      "correctly labels both ends blank."
+    inputs: [ { name: "params", type: { named: { symbol: "URLSearchParams" } } } ]
+    output: { named: { symbol: "DiffRefs" } }
+  }
+]

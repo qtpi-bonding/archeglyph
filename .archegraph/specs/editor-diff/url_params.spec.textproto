@@ -1,0 +1,26 @@
+# MODIFIED. base_d carries a base64'd diagram, which is content, and the
+# content-vs-locator rule this file enforces has to cover it.
+
+file: "packages/editor/src/shell/url_params.ts"
+doc: "Which URL params carry content, and how a shareable link is built."
+
+constants: [
+  { name: "CONTENT_PARAMS"
+    change_type: MODIFIED
+    doc:
+      "Gains 'base_d', becoming ['d', 's', 'base_d'].\n"
+      "\n"
+      "This file's rule is that CONTENT goes in the fragment and LOCATORS\n"
+      "stay in the query, and this list is the only place that rule is\n"
+      "mechanically enforced -- buildInlineUrl reads it, and its test\n"
+      "asserts every name in it lands after the '#'. A base64'd base diagram\n"
+      "left off the list would be the one content param the rule does not\n"
+      "reach, and buildInlineUrl could not express a diff link at all.\n"
+      "\n"
+      "The base LOCATOR params -- base_fetch, base_gh, base_path, base_ref,\n"
+      "base_gist -- stay out of the list, exactly as their unprefixed\n"
+      "counterparts do."
+    type: { named: { symbol: "ReadonlyArray", args: [{ primitive: CHARACTER }] } }
+    value: "['d', 's', 'base_d']"
+  }
+]

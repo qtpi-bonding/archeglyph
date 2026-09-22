@@ -6,7 +6,7 @@ import * as fc from 'fast-check';
 
 import { create } from '@bufbuild/protobuf';
 import { createEditorState } from '../src/state/create_editor_state';
-import { Diagram, DiagramSchema } from '../../proto/src/gen/content_pb';
+import { Diagram, DiagramSchema, GraphSchema, NodeSchema } from '../../proto/src/gen/content_pb';
 import { StyleEdit, StyleEditSchema, Stylesheet, StylesheetSchema } from '../../proto/src/gen/style_pb';
 
 describe('testgen_state__createEditorState', () => {
@@ -18,7 +18,15 @@ describe('testgen_state__createEditorState', () => {
 
     const makeChangedEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: 1, id, nodeChanges: [{ nodeId: id, changeType: 1 }], timestampMs: 0n, state: 0 });
 
-    const makeDiagram = (): Diagram => create(DiagramSchema, { schemaVersion: 1, id: "diagram" });
+    // HAND-REPAIRED: the diagram now carries the node each edit targets.
+    // applyStyleEdit drops changes against ids the graph does not contain,
+    // so a graph-less diagram made every case below a silent no-op.
+    const makeDiagram = (nodeId?: string): Diagram => create(DiagramSchema, {
+        schemaVersion: 1, id: "diagram",
+        graph: create(GraphSchema, nodeId === undefined ? {} : {
+            nodes: { [nodeId]: create(NodeSchema, { id: nodeId }) },
+        }),
+    });
 
     const makeEmptyEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: 1, id, timestampMs: 0n, state: 0 });
 
@@ -41,7 +49,7 @@ describe('testgen_state__createEditorState', () => {
     test('apply_style_edit_with_changes', () => {
         fc.assert(
             fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([]));
+        const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value));
         expect(state.canUndo()).toBe(true);
         expect(state.canRedo()).toBe(false);
@@ -67,7 +75,7 @@ describe('testgen_state__createEditorState', () => {
     test('apply_style_edit_coalescing_key', () => {
         fc.assert(
             fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([]));
+        const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value), value);
         expect(state.canUndo()).toBe(true);
         expect(state.version()).toBe(1);
@@ -91,7 +99,7 @@ describe('testgen_state__createEditorState', () => {
     test('undo_with_history', () => {
         fc.assert(
             fc.property(fc.string(), (value) => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([]));
+        const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value));
         const afterApply: Stylesheet = state.stylesheet();
         state.undo();
@@ -119,7 +127,7 @@ describe('testgen_state__createEditorState', () => {
     // WHEN: redo replays an entry produced by applyStyleEdit, whose pendingEditsAfter field is unset, leaving the pending-edits behavior otherwise unchanged.
     // THEN: It reapplies the ordinary edit without changing pendingEdits beyond the edit's normal behavior.
     test('redo_ordinary_entry', () => {
-        const state = createEditorState(makeDiagram(), makeStylesheet([]));
+        const state = createEditorState(makeDiagram("ordinary"), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit("ordinary"));
         state.undo();
         const beforeRedo: Stylesheet = state.stylesheet();

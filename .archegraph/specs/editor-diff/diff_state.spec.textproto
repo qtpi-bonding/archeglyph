@@ -1,0 +1,58 @@
+# New. Holds the base diagram and derives the Delta from it.
+#
+# The Delta is DERIVED, never stored. Its target is the editor's own
+# diagram accessor, so the day content editing lands the diff updates with
+# no change here. Storing a Delta computed once would have to be
+# invalidated by hand instead.
+
+file: "packages/editor/src/diff/diff_state.ts"
+doc: "The diff base, and the Delta derived from it."
+
+structs: [
+  { name: "DiffState"
+    doc:
+      "`setBase` attaches a base diagram, together with the provenance\n"
+      "label that goes into Delta.base_ref. `delta` is the derived change\n"
+      "set, undefined whenever no base is attached.\n"
+      "\n"
+      "The base signal itself is deliberately NOT exposed: nothing outside\n"
+      "this module reads it, and the delta is what every consumer wants."
+    fields: [
+      { name: "delta", type: { named: { symbol: "Accessor", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Delta | undefined" } }] } } },
+      { name: "setBase", type: { unsupported: { reason: RAW_EXPRESSION, source_excerpt: "(diagram: Diagram | undefined, baseRef: string) => void" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+methods: [
+  { name: "createDiffState"
+    doc:
+      "Creates the base signal and the derived delta memo.\n"
+      "\n"
+      "With no base attached, `delta()` is undefined -- not an empty Delta.\n"
+      "The scene treats undefined as \"render the diagram plainly\", and an\n"
+      "empty Delta would instead send it down the merge-and-recolour path\n"
+      "for no change.\n"
+      "\n"
+      "With a base attached, `delta()` is diff(base, target()) with\n"
+      "base_ref set to the label passed to setBase and target_ref to the\n"
+      "`targetRef` argument. Both labels are opaque, and blank is allowed:\n"
+      "content.proto enforces no semantics on either.\n"
+      "\n"
+      "The memo reads target() so that a new target diagram produces a new\n"
+      "Delta. Calling setBase with undefined detaches the base and returns\n"
+      "delta() to undefined.\n"
+      "\n"
+      "target() is undefined until the document finishes loading, and the\n"
+      "base fetch can finish first. With a base attached and target()\n"
+      "still undefined, delta() is undefined; it becomes a Delta on the\n"
+      "first target() that is not, with no further call to setBase."
+    inputs: [
+      { name: "target",    type: { named: { symbol: "Accessor", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Diagram | undefined" } }] } } },
+      { name: "targetRef", type: { primitive: CHARACTER } }
+    ]
+    output: { named: { symbol: "DiffState" } }
+    uses: ["diff", "archeglyph.content.v1.Delta", "archeglyph.content.v1.Diagram"]
+  }
+]

@@ -1,0 +1,49 @@
+# MODIFIED. createScene gains the delta and switches from layoutPipeline to
+# scenePipeline.
+#
+# scenePipeline already exists at packages/core/src/pipeline/scene_pipeline.ts
+# and is exported from @archeglyph/core/pipeline. It is what renderPipeline
+# calls, so routing the scene through it is what makes the editor's diff and
+# the CLI's diff the same render rather than two implementations.
+
+file: "packages/editor/src/scene/scene.ts"
+doc: "Scene resource: lays out the current diagram and builds the geometry index."
+
+methods: [
+  { name: "createScene"
+    change_type: MODIFIED
+    doc:
+      "Gains a fourth parameter, `delta`, an Accessor that yields a Delta or\n"
+      "undefined.\n"
+      "\n"
+      "The resource source gains `delta: delta()` beside the existing\n"
+      "`version` and `themes`, so attaching, changing or detaching a base\n"
+      "rebuilds the scene the same way an edit does.\n"
+      "\n"
+      "The existing layoutPipeline call becomes a scenePipeline call with\n"
+      "source.delta added. Both are exported from @archeglyph/core/pipeline\n"
+      "and scenePipeline returns the same\n"
+      "Result<LaidOutDiagram, PipelineError>, so the error handling, the\n"
+      "SvgRendererImpl call and the buildSceneGeometry call are unchanged.\n"
+      "\n"
+      "seedComponentBindings is still called here on state.diagram(). It is\n"
+      "also called inside scenePipeline on the merged union when a delta is\n"
+      "present, because a base-only element is absent from state.diagram()\n"
+      "and would otherwise resolve with no component. Both calls are\n"
+      "idempotent and both are needed.\n"
+      "\n"
+      "The parameter is REQUIRED, and one existing call site passes three\n"
+      "arguments: packages/editor/src/scene/annotation_binding.test.ts\n"
+      "line 46. It passes `() => undefined` as the fourth. CI gates on\n"
+      "`bun run typecheck`, so that edit lands in this change or the build\n"
+      "does not compile."
+    inputs: [
+      { name: "state",       type: { named: { symbol: "EditorState" } } },
+      { name: "themes",      type: { named: { symbol: "Accessor", args: [{ named: { symbol: "Map", args: [{ primitive: CHARACTER }, { named: { symbol: "archeglyph.theme.v1.Theme" } }] } }] } } },
+      { name: "layoutEngine", type: { named: { symbol: "LayoutEngine" } } },
+      { name: "delta",       type: { named: { symbol: "Accessor", args: [{ unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Delta | undefined" } }] } } }
+    ]
+    output: { named: { symbol: "Scene" } }
+    uses: ["scenePipeline", "archeglyph.content.v1.Delta"]
+  }
+]

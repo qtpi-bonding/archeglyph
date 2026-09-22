@@ -36,14 +36,39 @@ tests:
   # globally before any test module evaluates, so a component import does not
   # need the dynamic-import dance the hand-written widget tests use.
   import_header_rules:
+    # create() needs the *Schema descriptor it takes. Unused imports are safe.
     - glob: "packages/editor/src/*.tsx"
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
         import { render, fireEvent, cleanup } from '@solidjs/testing-library';
         import { createSignal } from 'solid-js';
+        import {
+          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+          Diagram, Delta, Node, Edge, Group, ChangeType,
+        } from '@archeglyph/proto/gen/content_pb';
+        import {
+          StylesheetSchema, StyleEditSchema, NodeStyleChangeSchema,
+          EdgeStyleChangeSchema, GroupStyleChangeSchema,
+          AnnotationStyleChangeSchema, Vec2Schema,
+          Stylesheet, StyleEdit,
+        } from '@archeglyph/proto/gen/style_pb';
+        import { ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
     - glob: "packages/editor/src/*.ts"
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
+        import {
+          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
+          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+          Diagram, Delta, Node, Edge, Group, ChangeType,
+        } from '@archeglyph/proto/gen/content_pb';
+        import {
+          StylesheetSchema, StyleEditSchema, NodeStyleChangeSchema,
+          EdgeStyleChangeSchema, GroupStyleChangeSchema,
+          AnnotationStyleChangeSchema, Vec2Schema,
+          Stylesheet, StyleEdit,
+        } from '@archeglyph/proto/gen/style_pb';
+        import { ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
     # core needs `create` and the *Schema descriptors it takes. A static header
     # cannot know which schema a symbol deals in, so the common ones are all
     # listed; unused imports are safe, as tsconfig sets no noUnusedLocals.

@@ -1,0 +1,32 @@
+# MODIFIED. Canvas is the only thing that constructs a GhostLayer, so it is
+# the only route the delta has to reach it.
+
+file: "packages/editor/src/canvas/canvas.tsx"
+doc: "The diagram canvas: pan/zoom, layers, pointer routing."
+
+structs: [
+  { name: "CanvasProps"
+    change_type: MODIFIED
+    doc: "Gains a required `delta` field carrying the current Delta or undefined."
+    fields: [
+      { name: "delta", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Delta | undefined" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "Canvas"
+    change_type: MODIFIED
+    doc:
+      "One change: the GhostLayer it renders gains `delta={props.delta}`.\n"
+      "Nothing else -- the pan/zoom group, the layers, the pointer router,\n"
+      "the wheel and keydown handlers, the text editor, fit-on-load -- is\n"
+      "touched.\n"
+      "\n"
+      "Canvas does not lay anything out itself; it draws the scene geometry\n"
+      "it is handed. The delta passes straight through."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "CanvasProps" } }] } }
+    uses: ["GhostLayer"]
+  }
+]

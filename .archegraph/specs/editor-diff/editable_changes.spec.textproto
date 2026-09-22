@@ -1,0 +1,40 @@
+# New. The guard that stops a diff's base-only elements being styled.
+#
+# With a base attached the scene indexes the merged union, so an element
+# that exists only in the base is selectable, hoverable and draggable.
+# Every write path -- the inspector fields, hide, delete, the move and
+# resize commands, the canvas drag machines -- ends at
+# EditorState.applyStyleEdit, so that is the one place a guard covers all
+# of them.
+
+file: "packages/editor/src/state/editable_changes.ts"
+doc: "Drop the changes in a StyleEdit that target elements the diagram does not contain."
+
+methods: [
+  { name: "editableChanges"
+    doc:
+      "Returns a StyleEdit with the same id and base_hash, and with\n"
+      "node_changes, edge_changes and group_changes filtered to entries\n"
+      "whose target id is a key of diagram.graph.nodes, .edges or .groups\n"
+      "respectively.\n"
+      "\n"
+      "annotation_changes are returned UNFILTERED. An annotation is\n"
+      "declared in the stylesheet and never appears in the graph, so\n"
+      "filtering it against the graph would drop every annotation edit.\n"
+      "\n"
+      "Returns an edit with all four lists empty when nothing survives,\n"
+      "rather than undefined: applyStyleEdit already treats a\n"
+      "four-empty-lists edit as a no-op, so there is one no-op path and\n"
+      "not two.\n"
+      "\n"
+      "This is a property of the edit and the diagram alone. It needs no\n"
+      "Delta: a base-only element is precisely one the diagram does not\n"
+      "contain, and an edit against an id that is absent is meaningless\n"
+      "whether or not a diff is attached."
+    inputs: [
+      { name: "edit",    type: { named: { symbol: "archeglyph.style.v1.StyleEdit" } } },
+      { name: "diagram", type: { named: { symbol: "archeglyph.content.v1.Diagram" } } }
+    ]
+    output: { named: { symbol: "archeglyph.style.v1.StyleEdit" } }
+  }
+]

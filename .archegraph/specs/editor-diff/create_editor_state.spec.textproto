@@ -1,0 +1,36 @@
+# MODIFIED. applyStyleEdit runs every edit through the guard first.
+
+file: "packages/editor/src/state/create_editor_state.ts"
+doc: "The reactive state for one editor session."
+
+methods: [
+  { name: "createEditorState"
+    change_type: MODIFIED
+    doc:
+      "One change, inside the applyStyleEdit closure: the incoming edit is\n"
+      "replaced by editableChanges(edit, getDiagram()) before anything else\n"
+      "happens to it.\n"
+      "\n"
+      "It goes BEFORE the existing four-empty-lists early return, so an\n"
+      "edit whose every change is dropped takes the same no-op path as an\n"
+      "edit that arrived empty: no stylesheet write, no undo entry, no\n"
+      "version bump, dirty unchanged.\n"
+      "\n"
+      "The snapshot, the coalescing key, the undo log and the redo reset\n"
+      "all then operate on the filtered edit, so an undo restores exactly\n"
+      "what was written.\n"
+      "\n"
+      "acceptPending is guarded too, at its applyStyleEditToStylesheet\n"
+      "call: accepting a proposal about an element this diagram does not\n"
+      "contain writes the same dead entry as editing one directly. A\n"
+      "proposal whose every change is dropped is still REMOVED from\n"
+      "pendingEdits -- it has been reviewed, and leaving it listed would\n"
+      "make it unacceptable and unrejectable.\n"
+      "\n"
+      "appendPendingEdit is NOT guarded. A pending edit is a proposal\n"
+      "stored in the stylesheet for someone else to accept later, and it\n"
+      "is authored against a diagram this session may not be holding."
+    output: { named: { symbol: "EditorState" } }
+    uses: ["editableChanges"]
+  }
+]

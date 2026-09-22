@@ -1,0 +1,623 @@
+{
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/adapters/url_param_adapter.ts/buildRemoteUrl().",
+      "codes": {
+        "custom-prefix": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('fetch', 'unprefixed-fetch');\nparams.set('gh', 'unprefixed-owner/repo');\nparams.set('gist', 'unprefixed-gist');\nparams.set(`${value}fetch`, 'prefixed-fetch');\nparams.set(`${value}gh`, 'prefixed-owner/repo');\nparams.set(`${value}path`, 'prefixed/path');\nparams.set(`${value}ref`, 'prefixed-ref');\nparams.set(`${value}gist`, 'prefixed-gist');\nexpect(buildRemoteUrl(params, value)).toBe('prefixed-fetch');",
+          "strategy": "fc.string().filter((prefix: string): boolean => prefix.length > 0)",
+          "helpersUsed": []
+        },
+        "default-empty-prefix": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gh', 'owner/repo');\nparams.set('path', 'src/file.ts');\nparams.set('ref', 'feature');\nconst result: string | null = value ? buildRemoteUrl(params, '') : buildRemoteUrl(params);\nexpect(result).toBe('https://raw.githubusercontent.com/owner/repo/feature/src/file.ts');",
+          "strategy": "fc.boolean()",
+          "helpersUsed": []
+        },
+        "fetch-precedence": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('fetch', value);\nparams.set('gh', 'ignored-owner/repo');\nparams.set('path', 'ignored/path');\nparams.set('ref', 'ignored-ref');\nparams.set('gist', 'ignored-gist');\nexpect(buildRemoteUrl(params)).toBe(value);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "gist-fallback": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gist', value);\nexpect(buildRemoteUrl(params)).toBe(value);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "github-explicit-fields": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gh', value.gh);\nparams.set('path', value.path);\nparams.set('ref', value.ref);\nexpect(buildRemoteUrl(params)).toBe(`https://raw.githubusercontent.com/${value.gh}/${value.ref}/${value.path}`);",
+          "strategy": "fc.record({ gh: fc.string(), path: fc.string(), ref: fc.string() })",
+          "helpersUsed": []
+        },
+        "github-missing-path": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gh', value.gh);\nparams.set('ref', value.ref);\nexpect(buildRemoteUrl(params)).toBe(`https://raw.githubusercontent.com/${value.gh}/${value.ref}/`);",
+          "strategy": "fc.record({ gh: fc.string(), ref: fc.string() })",
+          "helpersUsed": []
+        },
+        "github-missing-ref": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gh', value.gh);\nparams.set('path', value.path);\nexpect(buildRemoteUrl(params)).toBe(`https://raw.githubusercontent.com/${value.gh}/main/${value.path}`);",
+          "strategy": "fc.record({ gh: fc.string(), path: fc.string() })",
+          "helpersUsed": []
+        },
+        "github-precedence-over-gist": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('gh', value.gh);\nparams.set('path', value.path);\nparams.set('ref', value.ref);\nparams.set('gist', value.gist);\nexpect(buildRemoteUrl(params)).toBe(`https://raw.githubusercontent.com/${value.gh}/${value.ref}/${value.path}`);",
+          "strategy": "fc.record({ gh: fc.string(), path: fc.string(), ref: fc.string(), gist: fc.string() })",
+          "helpersUsed": []
+        },
+        "no-matching-form": {
+          "body": "const params: URLSearchParams = new URLSearchParams();\nparams.set('path', 'ignored/path');\nparams.set('ref', 'ignored-ref');\nexpect(buildRemoteUrl(params)).toBeNull();",
+          "strategy": "fc.record({ path: fc.string(), ref: fc.string() })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "codes": {
+        "delta-passed-through": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/canvas/ghost_layer.tsx/GhostLayer.",
+      "codes": {
+        "no-pending-edits": {
+          "body": "const stylesheet = create(StylesheetSchema, { pendingEdits: [] });\nconst { container } = render(() => (\n  <GhostLayer\n    diagram={undefined as never}\n    stylesheet={stylesheet}\n    themes={new Map()}\n    layoutEngine={undefined as never}\n    delta={undefined}\n  />\n));\nexpect(container.querySelector('g')).toBeNull();\ncleanup();",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pending-edits-with-delta": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pending-edits-without-delta": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pipeline-error": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "pipeline-success": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diagram_source.ts/DiagramSource#",
+      "codes": {
+        "network-failure": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "non-2xx-response": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "successful-diagram-load": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "unparseable-json": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diagram_source.ts/DiagramSource#load().",
+      "codes": {
+        "fetch-or-parse-failure": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "successful-fetch-and-parse": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diff_refs.ts/diffRefsFrom().",
+      "codes": {
+        "fetch-and-base-fetch": {
+          "body": "const params = new URLSearchParams([\n  ['fetch', value],\n  ['base_fetch', value],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: value });",
+          "strategy": "fc.tuple(fc.string(), fc.string())",
+          "helpersUsed": []
+        },
+        "fetch-and-base-ref": {
+          "body": "const params = new URLSearchParams([\n  ['fetch', value],\n  ['base_ref', value],\n  ['base_fetch', 'fallback-base'],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: value });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "fetch-and-no-base": {
+          "body": "const params = new URLSearchParams([\n  ['fetch', value],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: '' });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "no-target-and-base-fetch": {
+          "body": "const params = new URLSearchParams([\n  ['base_fetch', value],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: '', base: value });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "no-target-and-base-ref": {
+          "body": "const params = new URLSearchParams([\n  ['base_ref', value],\n  ['base_fetch', 'fallback-base'],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: '', base: value });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "no-target-and-no-base": {
+          "body": "const params = new URLSearchParams([['unrelated', value]]);\nexpect(diffRefsFrom(params)).toEqual({ target: '', base: '' });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "ref-and-base-fetch": {
+          "body": "const params = new URLSearchParams([\n  ['ref', value],\n  ['fetch', 'fallback-target'],\n  ['base_fetch', value],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: value });",
+          "strategy": "fc.tuple(fc.string(), fc.string())",
+          "helpersUsed": []
+        },
+        "ref-and-base-ref": {
+          "body": "const params = new URLSearchParams([\n  ['ref', value],\n  ['fetch', 'fallback-target'],\n  ['base_ref', value],\n  ['base_fetch', 'fallback-base'],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: value });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "ref-and-no-base": {
+          "body": "const params = new URLSearchParams([\n  ['ref', value],\n  ['fetch', 'fallback-target'],\n]);\nexpect(diffRefsFrom(params)).toEqual({ target: value, base: '' });",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diff_state.ts/createDiffState().",
+      "codes": {
+        "base-and-target-available": {
+          "body": "const base = makeDiagram(value.baseId);\nconst target = makeDiagram(value.targetId);\nconst state = createDiffState(() => target, value.targetRef);\nstate.setBase(base, value.baseRef);\nconst result = state.delta();\nexpect(result?.schemaVersion).toBe(1);\nexpect(result?.baseRef).toBe(value.baseRef);\nexpect(result?.targetRef).toBe(value.targetRef);\nexpect(result?.nodeDeltas).toEqual([]);\nexpect(result?.edgeDeltas).toEqual([]);\nexpect(result?.groupDeltas).toEqual([]);",
+          "strategy": "fc.record({baseId: fc.string(), targetId: fc.string(), baseRef: fc.string(), targetRef: fc.string()})",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "base-attached-target-loading": {
+          "body": "const state = createDiffState(() => undefined, \"target\");\nstate.setBase(makeDiagram(\"base\"), \"base-ref\");\nexpect(state.delta()).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "base-detached": {
+          "body": "let current = makeDiagram(\"target\");\nconst state = createDiffState(() => current, \"target-ref\");\nstate.setBase(makeDiagram(\"base\"), \"base-ref\");\nexpect(state.delta()?.baseRef).toBe(\"base-ref\");\nstate.setBase(undefined, \"ignored\");\nexpect(state.delta()).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "no-base-attached": {
+          "body": "const state = createDiffState(() => value, \"target\");\nexpect(state.delta()).toBeUndefined();",
+          "strategy": "fc.oneof(fc.constant(undefined), fc.string().map((id: string): Diagram => makeDiagram(id)))",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "opaque-or-blank-labels": {
+          "body": "const state = createDiffState(() => makeDiagram(\"target\"), value.targetRef);\nstate.setBase(makeDiagram(\"base\"), value.baseRef);\nconst result = state.delta();\nexpect(result?.baseRef).toBe(value.baseRef);\nexpect(result?.targetRef).toBe(value.targetRef);\nexpect(result?.nodeDeltas).toEqual([]);\nexpect(result?.edgeDeltas).toEqual([]);\nexpect(result?.groupDeltas).toEqual([]);",
+          "strategy": "fc.record({baseRef: fc.string(), targetRef: fc.string()})",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "target-becomes-available-after-base": {
+          "body": "let current: Diagram | undefined;\nconst target = (): Diagram | undefined => current;\nconst state = createDiffState(target, \"target-ref\");\nstate.setBase(makeDiagram(\"base\"), \"base-ref\");\nexpect(state.delta()).toBeUndefined();\ncurrent = makeDiagram(\"target\");\nconst result = state.delta();\nexpect(result?.schemaVersion).toBe(1);\nexpect(result?.baseRef).toBe(\"base-ref\");\nexpect(result?.targetRef).toBe(\"target-ref\");",
+          "strategy": "",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        },
+        "target-updates-with-base": {
+          "body": "let current = makeDiagram(value[0]);\nlet reads = 0;\nconst target = (): Diagram | undefined => {\n  reads += 1;\n  return current;\n};\nconst state = createDiffState(target, \"target-ref\");\nstate.setBase(makeDiagram(\"base\"), \"base-ref\");\nstate.delta();\nconst readsAfterFirstDelta = reads;\ncurrent = makeDiagram(value[1]);\nconst result = state.delta();\nexpect(reads).toBeGreaterThan(readsAfterFirstDelta);\nexpect(result?.baseRef).toBe(\"base-ref\");\nexpect(result?.targetRef).toBe(\"target-ref\");",
+          "strategy": "fc.array(fc.string(), {minLength: 2, maxLength: 8})",
+          "helpersUsed": [
+            "makeDiagram"
+          ]
+        }
+      },
+      "helpers": {
+        "makeDiagram": "const makeDiagram = (id: string): Diagram => create(DiagramSchema, {id});"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/diff/url_param_diagram_source.ts/UrlParamDiagramSource#",
+      "codes": {
+        "inline-value-precedence": {
+          "body": "const inline = value.inline;\nconst remote = value.remote;\nconst originalFetch = globalThis.fetch;\nlet fetchCalls = 0;\nglobalThis.fetch = (async (..._args: Parameters<typeof fetch>): Promise<Response> => {\n  fetchCalls += 1;\n  return new Response('{}', { status: 200 });\n}) as typeof fetch;\nconst source = new UrlParamDiagramSource(inline, remote);\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(true);\n  expect(fetchCalls).toBe(0);\n}).finally(() => {\n  globalThis.fetch = originalFetch;\n});",
+          "strategy": "fc.record({ inline: fc.integer().map((n) => btoa(JSON.stringify({ version: n }))), remote: fc.option(fc.string(), { nil: null }) })",
+          "helpersUsed": []
+        },
+        "missing-diagram-source": {
+          "body": "const source = new UrlParamDiagramSource(null, null);\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(false);\n});",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "remote-fetch-failure": {
+          "body": "const originalFetch = globalThis.fetch;\nglobalThis.fetch = (async (_input: RequestInfo | URL): Promise<Response> => {\n  return new Response('', { status: value.status });\n}) as typeof fetch;\nconst source = new UrlParamDiagramSource(null, value.url);\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(false);\n  if (!result.ok) {\n    expect(result.error.kind).toBe('io');\n    expect(result.error.message).toContain(value.url);\n    expect(result.error.message).toContain(String(value.status));\n  }\n}).finally(() => {\n  globalThis.fetch = originalFetch;\n});",
+          "strategy": "fc.record({ url: fc.string(), status: fc.oneof(fc.integer({ min: 100, max: 199 }), fc.integer({ min: 300, max: 599 })) })",
+          "helpersUsed": []
+        },
+        "remote-success": {
+          "body": "const originalFetch = globalThis.fetch;\nlet requestedUrl: string | undefined;\nglobalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {\n  requestedUrl = String(input);\n  return new Response('{}', { status: value.status });\n}) as typeof fetch;\nconst source = new UrlParamDiagramSource(null, value.url);\nreturn source.load().then((result) => {\n  expect(requestedUrl).toBe(value.url);\n  expect(result.ok).toBe(true);\n}).finally(() => {\n  globalThis.fetch = originalFetch;\n});",
+          "strategy": "fc.record({ url: fc.string(), status: fc.integer({ min: 200, max: 299 }) })",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/diff/url_param_diagram_source.ts/UrlParamDiagramSource#load().",
+      "codes": {
+        "non-success-url-response": {
+          "body": "const originalFetch = globalThis.fetch;\nglobalThis.fetch = async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => new Response('', { status: value });\nconst source = new UrlParamDiagramSource('https://example.com/failing-diagram');\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(false);\n  if (!result.ok) {\n    expect(result.error.kind).toBe('io');\n    expect(result.error.message).toContain('https://example.com/failing-diagram');\n    expect(result.error.message).toContain(String(value));\n  }\n}).finally(() => {\n  globalThis.fetch = originalFetch;\n});",
+          "strategy": "fc.integer({ min: 100, max: 599 }).filter((status) => status < 200 || status >= 300)",
+          "helpersUsed": []
+        },
+        "valid-inline-base64": {
+          "body": "const expected = JSON.parse(atob(value)) as { id: string };\nconst source = new UrlParamDiagramSource(value);\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(true);\n  if (result.ok) {\n    expect(result.value.id).toBe(expected.id);\n  }\n});",
+          "strategy": "fc.record({ id: fc.stringMatching(/^[A-Za-z0-9 _-]*$/), schemaVersion: fc.integer({ min: 0, max: 1000 }) }).map((diagram) => btoa(JSON.stringify(diagram)))",
+          "helpersUsed": []
+        },
+        "valid-url-response": {
+          "body": "const responseBody = JSON.stringify({ id: 'loaded-diagram', schemaVersion: 1 });\nconst originalFetch = globalThis.fetch;\nglobalThis.fetch = async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => new Response(responseBody, { status: 200 });\nconst source = new UrlParamDiagramSource(value);\nreturn source.load().then((result) => {\n  expect(result.ok).toBe(true);\n  if (result.ok) {\n    expect(result.value.id).toBe('loaded-diagram');\n  }\n}).finally(() => {\n  globalThis.fetch = originalFetch;\n});",
+          "strategy": "fc.integer({ min: 0, max: 100000 }).map((n) => `https://example.com/diagram/${n}`)",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/scene/scene.ts/createScene().",
+      "codes": {
+        "asynchronous-build-pending": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "base-attached-changed-or-detached": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "delta-present": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "delta-undefined": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "error-result": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "initial-scene-build": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "layout-error-with-detail": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "layout-error-without-detail": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "layout-success-render-error": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "new-unbound-element": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "state-or-theme-change": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "successful-result": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "codes": {
+        "diagram-source-fails": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "diagram-source-loads": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "document-not-yet-loaded": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        },
+        "no-diagram-source": {
+          "body": "",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/select_diagram_source.ts/selectDiagramSource().",
+      "codes": {
+        "base-d-present": {
+          "body": "const params = new URLSearchParams();\nparams.set('base_d', value);\nexpect(selectDiagramSource(params)).toBeInstanceOf(UrlParamDiagramSource);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "base-fetch-present": {
+          "body": "const params = new URLSearchParams();\nparams.set('base_fetch', value);\nexpect(selectDiagramSource(params)).toBeInstanceOf(UrlParamDiagramSource);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "base-gh-present": {
+          "body": "const params = new URLSearchParams();\nparams.set('base_gh', value.gh);\nif (value.path !== undefined) {\n  params.set('base_path', value.path);\n}\nif (value.ref !== undefined) {\n  params.set('base_ref', value.ref);\n}\nexpect(selectDiagramSource(params)).toBeInstanceOf(UrlParamDiagramSource);",
+          "strategy": "fc.record({ gh: fc.string(), path: fc.option(fc.string(), { nil: undefined }), ref: fc.option(fc.string(), { nil: undefined }) })",
+          "helpersUsed": []
+        },
+        "base-gist-present": {
+          "body": "const params = new URLSearchParams();\nparams.set('base_gist', value);\nexpect(selectDiagramSource(params)).toBeInstanceOf(UrlParamDiagramSource);",
+          "strategy": "fc.string()",
+          "helpersUsed": []
+        },
+        "modifiers-without-github-source": {
+          "body": "const params = new URLSearchParams();\nif (value.path !== undefined) {\n  params.set('base_path', value.path);\n}\nif (value.ref !== undefined) {\n  params.set('base_ref', value.ref);\n}\nexpect(selectDiagramSource(params)).toBeUndefined();",
+          "strategy": "fc.record({ path: fc.option(fc.string(), { nil: undefined }), ref: fc.option(fc.string(), { nil: undefined }) })",
+          "helpersUsed": []
+        },
+        "no-source-parameters": {
+          "body": "const params = new URLSearchParams();\nexpect(selectDiagramSource(params)).toBeUndefined();",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/shell/url_params.ts/CONTENT_PARAMS.",
+      "codes": {
+        "declared-content-params": {
+          "body": "expect(CONTENT_PARAMS).toEqual(['d', 's', 'base_d']);\nexpect(CONTENT_PARAMS).not.toContain('base_fetch');\nexpect(CONTENT_PARAMS).not.toContain('base_gh');\nexpect(CONTENT_PARAMS).not.toContain('base_path');\nexpect(CONTENT_PARAMS).not.toContain('base_ref');\nexpect(CONTENT_PARAMS).not.toContain('base_gist');",
+          "strategy": "",
+          "helpersUsed": []
+        }
+      },
+      "helpers": {}
+    },
+    {
+      "nodeId": "packages/editor/src/state/create_editor_state.ts/createEditorState().",
+      "codes": {
+        "append-empty-pending-edit": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = create(StyleEditSchema, {\n  nodeChanges: [],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [],\n});\n\nstate.appendPendingEdit(edit);\n\nexpect(state.stylesheet().pendingEdits).toEqual([edit]);\nexpect(state.version()).toBe(1);\nexpect(state.dirty()).toBe(false);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram"
+          ]
+        },
+        "append-pending-unfiltered-by-diagram": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = makeNodeEdit(value);\n\nstate.appendPendingEdit(edit);\n\nexpect(state.stylesheet().pendingEdits).toEqual([edit]);\nexpect(state.version()).toBe(1);\nexpect(state.dirty()).toBe(false);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram",
+            "makeNodeEdit"
+          ]
+        },
+        "apply-empty-edit": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = create(StyleEditSchema, {\n  nodeChanges: [],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [],\n});\n\nstate.applyStyleEdit(edit);\n\nexpect(state.stylesheet()).toEqual(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram"
+          ]
+        },
+        "apply-fully-filtered-edit": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = makeNodeEdit(value);\n\nstate.applyStyleEdit(edit);\n\nexpect(state.stylesheet()).toEqual(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(false);\nexpect(state.dirty()).toBe(false);\nexpect(state.version()).toBe(0);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram",
+            "makeNodeEdit"
+          ]
+        },
+        "apply-partially-filtered-edit": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = makeMixedEdit(value);\n\nstate.applyStyleEdit(edit);\n\nexpect(state.version()).toBe(1);\nexpect(state.dirty()).toBe(true);\nexpect(state.canUndo()).toBe(true);\nexpect(state.canRedo()).toBe(false);\nexpect(Object.keys(state.stylesheet().annotations)).toContain(value);\nexpect(state.stylesheet().nodes).toEqual({});\n\nstate.undo();\n\nexpect(state.stylesheet()).toEqual(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(true);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram",
+            "makeMixedEdit"
+          ]
+        },
+        "apply-unfiltered-edit": {
+          "body": "const stylesheet: Stylesheet = makeEmptyStylesheet();\nconst state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);\nconst edit: StyleEdit = makeAnnotationEdit(value);\n\nstate.applyStyleEdit(edit);\n\nexpect(state.version()).toBe(1);\nexpect(state.dirty()).toBe(true);\nexpect(state.canUndo()).toBe(true);\nexpect(state.canRedo()).toBe(false);\nexpect(Object.keys(state.stylesheet().annotations)).toContain(value);\n\nstate.undo();\n\nexpect(state.stylesheet()).toEqual(stylesheet);\nexpect(state.canUndo()).toBe(false);\nexpect(state.canRedo()).toBe(true);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEmptyStylesheet",
+            "makeEmptyDiagram",
+            "makeAnnotationEdit"
+          ]
+        }
+      },
+      "helpers": {
+        "makeAnnotationEdit": "const makeAnnotationEdit = (annotationId: string): StyleEdit => create(StyleEditSchema, {\n  nodeChanges: [],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [create(AnnotationStyleChangeSchema, { annotationId })],\n});",
+        "makeEmptyDiagram": "const makeEmptyDiagram = (): Diagram => create(DiagramSchema, {\n  schemaVersion: 1,\n  id: \"diagram\",\n  title: [],\n});",
+        "makeEmptyStylesheet": "const makeEmptyStylesheet = (): Stylesheet => create(StylesheetSchema, {\n  schemaVersion: 1,\n  themes: {},\n  nodes: {},\n  edges: {},\n  groups: {},\n  annotations: {},\n  pendingEdits: [],\n});",
+        "makeMixedEdit": "const makeMixedEdit = (nodeId: string): StyleEdit => create(StyleEditSchema, {\n  nodeChanges: [create(NodeStyleChangeSchema, { nodeId })],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [create(AnnotationStyleChangeSchema, { annotationId: nodeId })],\n})",
+        "makeNodeEdit": "const makeNodeEdit = (nodeId: string): StyleEdit => create(StyleEditSchema, {\n  nodeChanges: [create(NodeStyleChangeSchema, { nodeId })],\n  edgeChanges: [],\n  groupChanges: [],\n  annotationChanges: [],\n});"
+      }
+    },
+    {
+      "nodeId": "packages/editor/src/state/editable_changes.ts/editableChanges().",
+      "codes": {
+        "all-lists-empty": {
+          "body": "const nodeChanges: NodeStyleChange[] = value.map((id: string): NodeStyleChange => makeNodeChange(`stale-${id}`));\nconst result: StyleEdit = editableChanges(makeEdit(nodeChanges, [], [], []), makeDiagram([], [], []));\nexpect(result.nodeChanges).toEqual([]);\nexpect(result.edgeChanges).toEqual([]);\nexpect(result.groupChanges).toEqual([]);\nexpect(result.annotationChanges).toEqual([]);",
+          "strategy": "fc.array(fc.string())",
+          "helpersUsed": [
+            "makeNodeChange",
+            "makeEdit",
+            "makeDiagram"
+          ]
+        },
+        "annotation-changes-unfiltered": {
+          "body": "const changes: AnnotationStyleChange[] = value.map((id: string): AnnotationStyleChange => makeAnnotationChange(id));\nconst diagram: Diagram = makeDiagram([], [], []);\nconst result: StyleEdit = editableChanges(makeEdit([], [], [], changes), diagram);\nexpect(result.annotationChanges).toEqual(changes);",
+          "strategy": "fc.array(fc.string())",
+          "helpersUsed": [
+            "makeAnnotationChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "annotation-only-edit": {
+          "body": "const changes: AnnotationStyleChange[] = value.map((id: string): AnnotationStyleChange => makeAnnotationChange(id));\nconst result: StyleEdit = editableChanges(makeEdit([], [], [], changes), makeDiagram([], [], []));\nexpect(result.nodeChanges).toEqual([]);\nexpect(result.edgeChanges).toEqual([]);\nexpect(result.groupChanges).toEqual([]);\nexpect(result.annotationChanges).toEqual(changes);",
+          "strategy": "fc.array(fc.string(), {minLength: 1})",
+          "helpersUsed": [
+            "makeAnnotationChange",
+            "makeEdit",
+            "makeDiagram"
+          ]
+        },
+        "base-only-target-is-filtered": {
+          "body": "const diagram: Diagram = makeDiagram([], [], []);\nif (value === 'node') {\n  const change: NodeStyleChange = makeNodeChange('absent-node');\n  const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);\n  expect(result.nodeChanges).toEqual([]);\n} else if (value === 'edge') {\n  const change: EdgeStyleChange = makeEdgeChange('absent-edge');\n  const result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);\n  expect(result.edgeChanges).toEqual([]);\n} else {\n  const change: GroupStyleChange = makeGroupChange('absent-group');\n  const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);\n  expect(result.groupChanges).toEqual([]);\n}",
+          "strategy": "fc.constantFrom('node', 'edge', 'group')",
+          "helpersUsed": [
+            "makeNodeChange",
+            "makeEdgeChange",
+            "makeGroupChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "matching-edge-change": {
+          "body": "const change: EdgeStyleChange = makeEdgeChange(value);\nconst diagram: Diagram = makeDiagram([], [value], []);\nconst result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);\nexpect(result.edgeChanges).toEqual([change]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEdgeChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "matching-group-change": {
+          "body": "const change: GroupStyleChange = makeGroupChange(value);\nconst diagram: Diagram = makeDiagram([], [], [value]);\nconst result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);\nexpect(result.groupChanges).toEqual([change]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeGroupChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "matching-node-change": {
+          "body": "const change: NodeStyleChange = makeNodeChange(value);\nconst diagram: Diagram = makeDiagram([value], [], []);\nconst result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);\nexpect(result.nodeChanges).toEqual([change]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeNodeChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "metadata-preserved": {
+          "body": "const edit: StyleEdit = makeEdit([], [], [], []);\nedit.id = value.id;\nif (value.baseHash === undefined) {\n  edit.baseHash = undefined;\n} else {\n  edit.baseHash = value.baseHash;\n}\nconst result: StyleEdit = editableChanges(edit, makeDiagram([], [], []));\nexpect(result.id).toBe(value.id);\nexpect(result.baseHash).toBe(value.baseHash);",
+          "strategy": "fc.record({id: fc.string(), baseHash: fc.option(fc.string(), {nil: undefined})})",
+          "helpersUsed": [
+            "makeEdit",
+            "makeDiagram"
+          ]
+        },
+        "mixed-edit-entries": {
+          "body": "const nodePresent: string = `${value.node}-present`;\nconst nodeAbsent: string = `${value.node}-absent`;\nconst edgePresent: string = `${value.edge}-present`;\nconst edgeAbsent: string = `${value.edge}-absent`;\nconst groupPresent: string = `${value.group}-present`;\nconst groupAbsent: string = `${value.group}-absent`;\nconst nodePresentChange: NodeStyleChange = makeNodeChange(nodePresent);\nconst nodeAbsentChange: NodeStyleChange = makeNodeChange(nodeAbsent);\nconst edgePresentChange: EdgeStyleChange = makeEdgeChange(edgePresent);\nconst edgeAbsentChange: EdgeStyleChange = makeEdgeChange(edgeAbsent);\nconst groupPresentChange: GroupStyleChange = makeGroupChange(groupPresent);\nconst groupAbsentChange: GroupStyleChange = makeGroupChange(groupAbsent);\nconst diagram: Diagram = makeDiagram([nodePresent], [edgePresent], [groupPresent]);\nconst result: StyleEdit = editableChanges(makeEdit([nodePresentChange, nodeAbsentChange], [edgePresentChange, edgeAbsentChange], [groupPresentChange, groupAbsentChange], []), diagram);\nexpect(result.nodeChanges).toEqual([nodePresentChange]);\nexpect(result.edgeChanges).toEqual([edgePresentChange]);\nexpect(result.groupChanges).toEqual([groupPresentChange]);",
+          "strategy": "fc.record({node: fc.string(), edge: fc.string(), group: fc.string()})",
+          "helpersUsed": [
+            "makeNodeChange",
+            "makeEdgeChange",
+            "makeGroupChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "stale-edge-change": {
+          "body": "const change: EdgeStyleChange = makeEdgeChange(value);\nconst diagram: Diagram = makeDiagram([], [], []);\nconst result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);\nexpect(result.edgeChanges).toEqual([]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeEdgeChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "stale-group-change": {
+          "body": "const change: GroupStyleChange = makeGroupChange(value);\nconst diagram: Diagram = makeDiagram([], [], []);\nconst result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);\nexpect(result.groupChanges).toEqual([]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeGroupChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        },
+        "stale-node-change": {
+          "body": "const change: NodeStyleChange = makeNodeChange(value);\nconst diagram: Diagram = makeDiagram([], [], []);\nconst result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);\nexpect(result.nodeChanges).toEqual([]);",
+          "strategy": "fc.string()",
+          "helpersUsed": [
+            "makeNodeChange",
+            "makeDiagram",
+            "makeEdit"
+          ]
+        }
+      },
+      "helpers": {
+        "makeAnnotationChange": "const makeAnnotationChange = (id: string): AnnotationStyleChange => create(AnnotationStyleChangeSchema, {annotationId: id});",
+        "makeDiagram": "const makeDiagram = (nodeIds: string[], edgeIds: string[], groupIds: string[]): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {nodes: Object.fromEntries(nodeIds.map((id: string): [string, Node] => [id, create(NodeSchema, {id})])), edges: Object.fromEntries(edgeIds.map((id: string): [string, Edge] => [id, create(EdgeSchema, {id})])), groups: Object.fromEntries(groupIds.map((id: string): [string, Group] => [id, create(GroupSchema, {id})]))})});",
+        "makeEdgeChange": "const makeEdgeChange = (id: string): EdgeStyleChange => create(EdgeStyleChangeSchema, {edgeId: id});",
+        "makeEdit": "const makeEdit = (nodeChanges: NodeStyleChange[], edgeChanges: EdgeStyleChange[], groupChanges: GroupStyleChange[], annotationChanges: AnnotationStyleChange[]): StyleEdit => create(StyleEditSchema, {nodeChanges, edgeChanges, groupChanges, annotationChanges});",
+        "makeGroupChange": "const makeGroupChange = (id: string): GroupStyleChange => create(GroupStyleChangeSchema, {groupId: id});",
+        "makeNodeChange": "const makeNodeChange = (id: string): NodeStyleChange => create(NodeStyleChangeSchema, {nodeId: id});"
+      }
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "13ac0c49a7ba57df937685dfebf9c16a760a2a6b3212d603f0aae1dc07f9c1a7"
+}

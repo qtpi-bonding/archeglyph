@@ -1,0 +1,34 @@
+# New. The contract for fetching a second, read-only diagram.
+#
+# Deliberately NOT a method on HostAdapter. HostAdapter is the save target:
+# it carries canSave, canAutosave, stat and a baseHash for read-before-write.
+# The diff base is never written to and has no stylesheet of its own -- the
+# union renders under the target's stylesheet -- so none of that surface
+# applies to it.
+
+file: "packages/editor/src/diff/diagram_source.ts"
+doc: "DiagramSource contract: somewhere a second diagram can be read from."
+
+interfaces: [
+  { name: "DiagramSource"
+    doc:
+      "One method, load(), yielding a Diagram or an AdapterError.\n"
+      "\n"
+      "Reuses AdapterError from adapters/host_adapter rather than declaring a\n"
+      "parallel error type: a failed base fetch and a failed document fetch\n"
+      "are the same failure and the shell reports them the same way.\n"
+      "\n"
+      "Boundary method: never throws. A network failure, a non-2xx response\n"
+      "and unparseable JSON all return Err."
+    methods: [
+      { name: "load"
+        doc: "Fetch and parse the base diagram. Never throws."
+        is_async: true
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "archeglyph.content.v1.Diagram" } },
+          { named: { symbol: "AdapterError" } }
+        ]}}
+      }
+    ]
+  }
+]

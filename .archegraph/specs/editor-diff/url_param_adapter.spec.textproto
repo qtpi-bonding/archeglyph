@@ -1,0 +1,32 @@
+# MODIFIED. buildRemoteUrl gains a parameter so the same four URL forms
+# resolve for a second, read-only document. Without it the base diagram
+# would need its own copy of the fetch/gh/gist resolution, and the two
+# would drift the first time either gained a form.
+
+file: "packages/editor/src/adapters/url_param_adapter.ts"
+doc: "UrlParamAdapter and the URL-param resolution shared with the diff base."
+
+methods: [
+  { name: "buildRemoteUrl"
+    change_type: MODIFIED
+    doc:
+      "Gains a second parameter, `prefix`, defaulting to the empty string.\n"
+      "Every param name it reads is prefixed: with prefix \"\" it reads\n"
+      "`fetch`, `gh`, `path`, `ref`, `gist` exactly as today; with prefix\n"
+      "\"base_\" it reads `base_fetch`, `base_gh`, `base_path`, `base_ref`,\n"
+      "`base_gist`.\n"
+      "\n"
+      "Existing callers pass no second argument and must keep behaving\n"
+      "identically, including the `ref` fallback to \"main\" and the\n"
+      "fetch-then-gh-then-gist precedence.\n"
+      "\n"
+      "Returns null when no form matches under that prefix, which is how a\n"
+      "caller distinguishes \"no base requested\" from \"base requested and\n"
+      "unresolvable\"."
+    inputs: [
+      { name: "params", type: { named: { symbol: "URLSearchParams" } } },
+      { name: "prefix", type: { primitive: CHARACTER }, is_optional: true }
+    ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "string | null" } }
+  }
+]

@@ -1,0 +1,27 @@
+# New. Reads the base_* params and builds the source, or reports there is
+# no base.
+#
+# Its own file rather than a second decl inside select_adapters.ts: a diff
+# base is not an adapter -- AdapterPair carries a save target and a comment
+# backend, and neither is what this returns.
+
+file: "packages/editor/src/shell/select_diagram_source.ts"
+doc: "Pick a DiagramSource from URL params, or none."
+
+methods: [
+  { name: "selectDiagramSource"
+    doc:
+      "Returns a UrlParamDiagramSource when any of `base_d`, `base_fetch`,\n"
+      "`base_gh` or `base_gist` is present, and undefined when none of them\n"
+      "is.\n"
+      "\n"
+      "`base_path` and `base_ref` alone do NOT trigger it: both are\n"
+      "modifiers on `base_gh` and neither names a document by itself.\n"
+      "\n"
+      "The source it builds is constructed from params.get('base_d') and\n"
+      "buildRemoteUrl(params, 'base_')."
+    inputs: [ { name: "params", type: { named: { symbol: "URLSearchParams" } } } ]
+    output: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "DiagramSource | undefined" } }
+    uses: ["UrlParamDiagramSource", "DiagramSource", "buildRemoteUrl"]
+  }
+]

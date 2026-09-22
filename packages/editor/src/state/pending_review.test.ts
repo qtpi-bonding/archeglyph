@@ -2,7 +2,7 @@
 
 import { describe, test, expect } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
 import {
   NodeStyleChangeSchema,
   NodeStyleEntrySchema,
@@ -38,7 +38,12 @@ function sheet(pendingEdits: StyleEdit[]): Stylesheet {
   return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, pendingEdits });
 }
 
-const diagram = create(DiagramSchema, { schemaVersion: 1 });
+// n1 is the node every proposal here targets. It has to be IN the diagram:
+// applyStyleEdit and acceptPending both drop changes against absent ids.
+const diagram = create(DiagramSchema, {
+  schemaVersion: 1,
+  graph: create(GraphSchema, { nodes: { n1: create(NodeSchema, { id: 'n1' }) } }),
+});
 
 const pendingIds = (s: Stylesheet): Array<string> => s.pendingEdits.map((e) => e.id);
 

@@ -1,0 +1,621 @@
+{
+  "specName": "editor-diff",
+  "runnerCommand": "archegraph testgen-run-node --spec 'editor-diff' --root . --plan '.archegraph/specs/editor-diff/derived/test_plan.json'",
+  "skipPropertyTests": false,
+  "symbols": [
+    {
+      "nodeId": "packages/editor/src/adapters/url_param_adapter.ts/buildRemoteUrl().",
+      "symbolName": "buildRemoteUrl",
+      "filePath": "packages/editor/src/adapters/url_param_adapter.ts",
+      "cases": [
+        {
+          "name": "fetch-precedence",
+          "condition": "Under the selected prefix, the fetch parameter is present; its value is returned directly, even if gh, path, ref, or gist are also present.",
+          "outcome": "Returns the selected prefix's fetch value directly, ignoring any gh, path, ref, or gist values.",
+          "domain": "any non-null string value for the prefixed fetch parameter"
+        },
+        {
+          "name": "github-explicit-fields",
+          "condition": "Under the selected prefix, fetch is absent and gh is present, while path and ref are present; a raw GitHub URL is built using gh, ref, and path.",
+          "outcome": "Builds and returns a raw GitHub URL from the selected prefix's gh, ref, and path values.",
+          "domain": "any string values for gh, path, and ref"
+        },
+        {
+          "name": "github-missing-ref",
+          "condition": "Under the selected prefix, fetch is absent, gh is present, and ref is absent; the raw GitHub URL uses the fallback ref main.",
+          "outcome": "Builds and returns a raw GitHub URL using main as the missing ref.",
+          "domain": "any string values for gh and path"
+        },
+        {
+          "name": "github-missing-path",
+          "condition": "Under the selected prefix, fetch is absent, gh is present, and path is absent; the raw GitHub URL uses an empty path segment.",
+          "outcome": "Builds and returns a raw GitHub URL with an empty path segment.",
+          "domain": "any string values for gh and ref"
+        },
+        {
+          "name": "github-precedence-over-gist",
+          "condition": "Under the selected prefix, fetch is absent and both gh and gist are present; the raw GitHub URL is returned and gist is ignored.",
+          "outcome": "Builds and returns the raw GitHub URL, ignoring the gist value.",
+          "domain": "any string values for gh, path, ref, and gist"
+        },
+        {
+          "name": "gist-fallback",
+          "condition": "Under the selected prefix, both fetch and gh are absent and gist is present; the gist value is returned directly.",
+          "outcome": "Returns the selected prefix's gist value directly.",
+          "domain": "any non-null string value for the prefixed gist parameter"
+        },
+        {
+          "name": "no-matching-form",
+          "condition": "None of fetch, gh, or gist is present under the selected prefix, so no form matches and the function returns null.",
+          "outcome": "Returns null because none of fetch, gh, or gist is present under the selected prefix.",
+          "domain": "any URLSearchParams with all three prefixed selector parameters absent"
+        },
+        {
+          "name": "default-empty-prefix",
+          "condition": "The prefix argument is omitted or is the empty string, so the function reads fetch, gh, path, ref, and gist exactly under those names and follows the described precedence and fallback behavior.",
+          "outcome": "With an omitted or empty prefix, reads the unprefixed parameters and applies the existing precedence and fallback behavior.",
+          "domain": "any input scenario covered by the other cases with the empty prefix"
+        },
+        {
+          "name": "custom-prefix",
+          "condition": "A non-empty prefix is supplied, so every parameter lookup uses that prefix; for example, prefix base_ reads base_fetch, base_gh, base_path, base_ref, and base_gist, while unprefixed parameters do not select a form.",
+          "outcome": "With a non-empty prefix, reads only the correspondingly prefixed parameters, so unprefixed parameters do not select a form.",
+          "domain": "any non-empty prefix string"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_adapters_url_param_adapter_ts_buildRemoteUrl___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/canvas/canvas.tsx/Canvas.",
+      "symbolName": "Canvas",
+      "filePath": "packages/editor/src/canvas/canvas.tsx",
+      "cases": [
+        {
+          "name": "delta-passed-through",
+          "condition": "Canvas receives its declared delta input and renders GhostLayer with that exact value; Canvas does not interpret, transform, validate, or use delta for layout.",
+          "outcome": "Canvas should render GhostLayer with the exact props.delta value, passing it through unchanged without interpreting, transforming, validating, or using it for layout.",
+          "domain": "any value permitted by the declared delta type"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_canvas_canvas_tsx_Canvas_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/canvas/ghost_layer.tsx/GhostLayer.",
+      "symbolName": "GhostLayer",
+      "filePath": "packages/editor/src/canvas/ghost_layer.tsx",
+      "cases": [
+        {
+          "name": "no-pending-edits",
+          "condition": "The stylesheet has zero pending edits; the Show condition is false and GhostRender is not rendered.",
+          "outcome": "Renders nothing because the Show condition is false when there are no pending edits."
+        },
+        {
+          "name": "pending-edits-without-delta",
+          "condition": "The stylesheet has one or more pending edits and props.delta is undefined; GhostRender is rendered using the pending-edit stylesheet, and the scene pipeline behaves as it did before this change.",
+          "outcome": "Renders GhostRender with the pending-edit stylesheet and preserves the prior scene-pipeline behavior when delta is undefined.",
+          "domain": "any non-empty pending-edits collection"
+        },
+        {
+          "name": "pending-edits-with-delta",
+          "condition": "The stylesheet has one or more pending edits and props.delta is provided; GhostRender is rendered as a preview of those pending edits using the pending-edit stylesheet and the supplied delta in scenePipeline.",
+          "outcome": "Renders GhostRender as a pending-edits preview using the pending-edit stylesheet and the supplied delta in scenePipeline.",
+          "domain": "any provided delta value"
+        },
+        {
+          "name": "pipeline-success",
+          "condition": "For a rendered GhostRender, scenePipeline returns a successful LaidOutDiagram result; the component draws the same ghost-layer output as the existing implementation, with the pending edits previewed.",
+          "outcome": "Draws the same ghost-layer output as before using the successful LaidOutDiagram result while previewing the pending edits."
+        },
+        {
+          "name": "pipeline-error",
+          "condition": "For a rendered GhostRender, scenePipeline returns a PipelineError; the existing error handling is preserved.",
+          "outcome": "Preserves the existing error handling when scenePipeline returns a PipelineError."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_canvas_ghost_layer_tsx_GhostLayer_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diagram_source.ts/DiagramSource#",
+      "symbolName": "DiagramSource",
+      "filePath": "packages/editor/src/diff/diagram_source.ts",
+      "cases": [
+        {
+          "name": "successful-diagram-load",
+          "condition": "The required fetches succeed with 2xx responses and the returned JSON is parseable as a Diagram; load() resolves to Ok(Diagram).",
+          "outcome": "It resolves to Ok(Diagram) after the required fetches return 2xx responses and parseable Diagram JSON.",
+          "domain": "successful base and document responses containing valid Diagram JSON"
+        },
+        {
+          "name": "network-failure",
+          "condition": "A network failure occurs while fetching the base or document; load() resolves to Err(AdapterError) and does not throw.",
+          "outcome": "It resolves to Err(AdapterError) without throwing when a base or document fetch encounters a network failure.",
+          "domain": "any network failure during either fetch"
+        },
+        {
+          "name": "non-2xx-response",
+          "condition": "The base or document fetch returns a non-2xx response; load() resolves to Err(AdapterError) and does not throw.",
+          "outcome": "It resolves to Err(AdapterError) without throwing when the base or document fetch returns a non-2xx response.",
+          "domain": "any HTTP response status outside the 2xx range"
+        },
+        {
+          "name": "unparseable-json",
+          "condition": "A fetch succeeds but its response cannot be parsed as JSON; load() resolves to Err(AdapterError) and does not throw.",
+          "outcome": "It resolves to Err(AdapterError) without throwing when a successful fetch returns JSON that cannot be parsed.",
+          "domain": "any fetched response body that is invalid JSON"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_diagram_source_ts_DiagramSource_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diagram_source.ts/DiagramSource#load().",
+      "symbolName": "load",
+      "filePath": "packages/editor/src/diff/diagram_source.ts",
+      "cases": [
+        {
+          "name": "successful-fetch-and-parse",
+          "condition": "The base diagram is fetched and parsed successfully; the promise resolves with a successful Diagram result.",
+          "outcome": "resolves with a successful Diagram result.",
+          "domain": "any valid base diagram"
+        },
+        {
+          "name": "fetch-or-parse-failure",
+          "condition": "Fetching or parsing the base diagram fails; the promise resolves with an AdapterError result rather than throwing.",
+          "outcome": "resolves with an AdapterError result without throwing.",
+          "domain": "any fetch or parse failure"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_diagram_source_ts_DiagramSource_load___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diff_refs.ts/diffRefsFrom().",
+      "symbolName": "diffRefsFrom",
+      "filePath": "packages/editor/src/diff/diff_refs.ts",
+      "cases": [
+        {
+          "name": "ref-and-base-ref",
+          "condition": "`ref` is present, so it supplies the target even if `fetch` is also present; `base_ref` is present, so it supplies the base even if `base_fetch` is also present.",
+          "outcome": "Returns the ref value as target and the base_ref value as base.",
+          "domain": "any string value for each selected label, including the empty string"
+        },
+        {
+          "name": "ref-and-base-fetch",
+          "condition": "`ref` is present, so it supplies the target even if `fetch` is also present; `base_ref` is absent and `base_fetch` is present, so `base_fetch` supplies the base.",
+          "outcome": "Returns the ref value as target and the base_fetch value as base.",
+          "domain": "any string value for `ref` and `base_fetch`, including the empty string"
+        },
+        {
+          "name": "ref-and-no-base",
+          "condition": "`ref` is present, so it supplies the target even if `fetch` is also present; neither `base_ref` nor `base_fetch` is present, so the base is the empty string.",
+          "outcome": "Returns the ref value as target and an empty string as base.",
+          "domain": "any string value for `ref`, including the empty string"
+        },
+        {
+          "name": "fetch-and-base-ref",
+          "condition": "`ref` is absent and `fetch` is present, so `fetch` supplies the target; `base_ref` is present, so it supplies the base even if `base_fetch` is also present.",
+          "outcome": "Returns the fetch value as target and the base_ref value as base.",
+          "domain": "any string value for `fetch` and `base_ref`, including the empty string"
+        },
+        {
+          "name": "fetch-and-base-fetch",
+          "condition": "`ref` is absent and `fetch` is present, so `fetch` supplies the target; `base_ref` is absent and `base_fetch` is present, so `base_fetch` supplies the base.",
+          "outcome": "Returns the fetch value as target and the base_fetch value as base.",
+          "domain": "any string value for `fetch` and `base_fetch`, including the empty string"
+        },
+        {
+          "name": "fetch-and-no-base",
+          "condition": "`ref` is absent and `fetch` is present, so `fetch` supplies the target; neither `base_ref` nor `base_fetch` is present, so the base is the empty string.",
+          "outcome": "Returns the fetch value as target and an empty string as base.",
+          "domain": "any string value for `fetch`, including the empty string"
+        },
+        {
+          "name": "no-target-and-base-ref",
+          "condition": "Neither `ref` nor `fetch` is present, so the target is the empty string; `base_ref` is present, so it supplies the base even if `base_fetch` is also present.",
+          "outcome": "Returns an empty string as target and the base_ref value as base.",
+          "domain": "any string value for `base_ref`, including the empty string"
+        },
+        {
+          "name": "no-target-and-base-fetch",
+          "condition": "Neither `ref` nor `fetch` is present, so the target is the empty string; `base_ref` is absent and `base_fetch` is present, so `base_fetch` supplies the base.",
+          "outcome": "Returns an empty string as target and the base_fetch value as base.",
+          "domain": "any string value for `base_fetch`, including the empty string"
+        },
+        {
+          "name": "no-target-and-no-base",
+          "condition": "Neither `ref` nor `fetch` is present and neither `base_ref` nor `base_fetch` is present, so both target and base are the empty string; this includes inline-base64-style input with no ref or URL.",
+          "outcome": "Returns empty strings for both target and base.",
+          "domain": "any values for unrelated query parameters"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_diff_refs_ts_diffRefsFrom___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/diff_state.ts/createDiffState().",
+      "symbolName": "createDiffState",
+      "filePath": "packages/editor/src/diff/diff_state.ts",
+      "cases": [
+        {
+          "name": "no-base-attached",
+          "condition": "The base state is undefined or no base has been attached via setBase; delta() remains undefined rather than producing an empty Delta, regardless of the current target value.",
+          "outcome": "It keeps delta() undefined when no base is attached, regardless of the target value.",
+          "domain": "any target value, including undefined or a Diagram"
+        },
+        {
+          "name": "base-attached-target-loading",
+          "condition": "A base Diagram is attached, but target() is still undefined while the document is loading; delta() is undefined.",
+          "outcome": "It keeps delta() undefined while an attached base exists but target() is still undefined."
+        },
+        {
+          "name": "base-and-target-available",
+          "condition": "A base Diagram is attached and target() returns a Diagram; delta() is the diff from the base to the target, with base_ref set to the setBase label and target_ref set to targetRef.",
+          "outcome": "It returns diff(base, target()) with base_ref set to the setBase label and target_ref set to targetRef.",
+          "domain": "any base Diagram, target Diagram, and string labels"
+        },
+        {
+          "name": "target-updates-with-base",
+          "condition": "A base remains attached and target() changes from one Diagram to another; the memo reads the new target and produces a corresponding new Delta without another setBase call.",
+          "outcome": "It recomputes the Delta from the newly returned target while retaining the attached base.",
+          "domain": "any sequence of target Diagram values"
+        },
+        {
+          "name": "target-becomes-available-after-base",
+          "condition": "The base becomes attached while target() is undefined, then target() first returns a Diagram; delta() transitions from undefined to the computed Delta without another setBase call.",
+          "outcome": "It changes delta() from undefined to the computed diff when target() first returns a Diagram."
+        },
+        {
+          "name": "base-detached",
+          "condition": "Calling setBase(undefined) detaches an otherwise attached base; delta() returns to undefined, including when target() currently returns a Diagram.",
+          "outcome": "It returns delta() to undefined when setBase(undefined) detaches the base, even if a target is available."
+        },
+        {
+          "name": "opaque-or-blank-labels",
+          "condition": "The setBase label and targetRef are passed through as opaque base_ref and target_ref values; blank labels are allowed and do not cause rejection or alter the diff behavior.",
+          "outcome": "It passes both labels through unchanged, allowing blank values without rejection or altered diff behavior.",
+          "domain": "any strings, including the empty string"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_diff_state_ts_createDiffState___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/url_param_diagram_source.ts/UrlParamDiagramSource#",
+      "symbolName": "UrlParamDiagramSource",
+      "filePath": "packages/editor/src/diff/url_param_diagram_source.ts",
+      "cases": [
+        {
+          "name": "inline-value-precedence",
+          "condition": "The inline base64 diagram is non-null; load decodes it with atob and fromJson and does not fetch the URL, even if a remote URL is also non-null.",
+          "outcome": "Decodes the non-null inline base64 diagram with atob and fromJson without fetching the remote URL.",
+          "domain": "any non-null inline base64 diagram, with the URL null or any URL"
+        },
+        {
+          "name": "remote-success",
+          "condition": "The inline value is null and the remote URL is non-null; load fetches the URL, accepts a 2xx response, and parses its body with fromJson.",
+          "outcome": "Fetches the non-null remote URL and parses its accepted 2xx response body with fromJson.",
+          "domain": "any remote URL with a 2xx response"
+        },
+        {
+          "name": "remote-fetch-failure",
+          "condition": "The inline value is null and the remote URL is non-null, but the fetch response is non-2xx; load returns an Err of kind 'io' whose message names the URL and status.",
+          "outcome": "Returns an Err of kind 'io' whose message names the remote URL and non-2xx status.",
+          "domain": "any remote URL with a non-2xx response status"
+        },
+        {
+          "name": "missing-diagram-source",
+          "condition": "Both the inline value and remote URL are null; load returns Err rather than an empty diagram because the link is malformed.",
+          "outcome": "Returns Err because neither diagram source exists, rather than rendering an empty diagram."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_url_param_diagram_source_ts_UrlParamDiagramSource_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/diff/url_param_diagram_source.ts/UrlParamDiagramSource#load().",
+      "symbolName": "load",
+      "filePath": "packages/editor/src/diff/url_param_diagram_source.ts",
+      "cases": [
+        {
+          "name": "valid-inline-base64",
+          "condition": "The source contains inline base64-encoded diagram data that atob decodes and fromJson parses successfully, so load resolves with Ok containing the Diagram.",
+          "outcome": "Decodes the inline base64 with atob, parses it with fromJson, and resolves with Ok containing the Diagram.",
+          "domain": "any valid base64 encoding of a valid diagram JSON value"
+        },
+        {
+          "name": "valid-url-response",
+          "condition": "The source refers to a URL whose fetch response is 2xx and whose body fromJson parses successfully, so load resolves with Ok containing the Diagram.",
+          "outcome": "Fetches the URL, parses its 2xx response body with fromJson, and resolves with Ok containing the Diagram.",
+          "domain": "any URL returning a 2xx response with valid diagram JSON"
+        },
+        {
+          "name": "non-success-url-response",
+          "condition": "The source refers to a URL whose fetch response is non-2xx; load resolves with Err of kind 'io' and a message naming the URL and response status, matching UrlParamAdapter.load's wording.",
+          "outcome": "Resolves with Err of kind 'io' whose message names the URL and response status, matching UrlParamAdapter.load's wording.",
+          "domain": "any non-2xx HTTP status"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_diff_url_param_diagram_source_ts_UrlParamDiagramSource_load___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/scene/scene.ts/createScene().",
+      "symbolName": "createScene",
+      "filePath": "packages/editor/src/scene/scene.ts",
+      "cases": [
+        {
+          "name": "initial-scene-build",
+          "condition": "A required state, themes accessor, layout engine, and delta accessor are provided; the initial resource source is read and scenePipeline successfully lays out the diagram, rendering and geometry construction also succeed.",
+          "outcome": "Reads the initial source and asynchronously builds the scene through scenePipeline, rendering it and constructing its geometry when all succeed."
+        },
+        {
+          "name": "delta-undefined",
+          "condition": "The required delta accessor yields undefined, so the scene is built from the current state diagram without a base delta.",
+          "outcome": "Builds the scene from the current state diagram without applying a base delta."
+        },
+        {
+          "name": "delta-present",
+          "condition": "The delta accessor yields a Delta, so scenePipeline uses the delta together with the current diagram; component bindings are seeded for the merged union, including elements that exist only in the base.",
+          "outcome": "Passes the delta with the current diagram to scenePipeline and seeds bindings for the merged union, including base-only elements.",
+          "domain": "any Delta"
+        },
+        {
+          "name": "base-attached-changed-or-detached",
+          "condition": "A base is attached, changed, or detached through the delta source; the resource source changes and rebuilds the scene in the same way as an edit.",
+          "outcome": "Rebuilds the scene whenever the delta reflects a base attachment, change, or detachment.",
+          "domain": "one of: base attachment, base change, base detachment"
+        },
+        {
+          "name": "state-or-theme-change",
+          "condition": "The state version or themes accessor value changes, causing the resource source to change and the scene to rebuild.",
+          "outcome": "Rebuilds the scene when the state version or themes value changes the resource source.",
+          "domain": "any state version or themes-map update"
+        },
+        {
+          "name": "new-unbound-element",
+          "condition": "The current diagram contains an element created or otherwise present without component bindings; the per-build seeding call supplies bindings before scenePipeline runs.",
+          "outcome": "Seeds component bindings for the current diagram before scenePipeline runs.",
+          "domain": "any element lacking component bindings"
+        },
+        {
+          "name": "layout-error-without-detail",
+          "condition": "scenePipeline returns an error whose detail is undefined; createScene returns a SceneError with the pipeline stage and the message `layout failed at stage \"<stage>\"`.",
+          "outcome": "Returns a SceneError containing the pipeline stage and `layout failed at stage \"<stage>\"`."
+        },
+        {
+          "name": "layout-error-with-detail",
+          "condition": "scenePipeline returns an error with a detail string; createScene returns a SceneError with the pipeline stage and the message `<stage>: <detail>`.",
+          "outcome": "Returns a SceneError containing the pipeline stage and `<stage>: <detail>`.",
+          "domain": "any pipeline stage and detail string"
+        },
+        {
+          "name": "layout-success-render-error",
+          "condition": "scenePipeline succeeds but SvgRendererImpl.render returns an error; createScene returns a render-stage SceneError containing the renderer error message.",
+          "outcome": "Returns a render-stage SceneError containing the renderer error message.",
+          "domain": "any renderer error message"
+        },
+        {
+          "name": "asynchronous-build-pending",
+          "condition": "The resource has not produced a result yet; the returned scene has undefined geometry and error while loading tracks the resource loading state.",
+          "outcome": "Leaves geometry and error undefined while exposing the resource loading state through loading()."
+        },
+        {
+          "name": "successful-result",
+          "condition": "The asynchronous resource result is Ok; the effect stores the built scene geometry and clears any previous scene error.",
+          "outcome": "Stores the resulting scene geometry and clears any previous scene error."
+        },
+        {
+          "name": "error-result",
+          "condition": "The asynchronous resource result is Err; the effect stores the scene error and does not replace geometry with a successful result.",
+          "outcome": "Stores the scene error without replacing the existing geometry with a successful result."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_scene_scene_ts_createScene___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/app.tsx/App.",
+      "symbolName": "App",
+      "filePath": "packages/editor/src/shell/app.tsx",
+      "cases": [
+        {
+          "name": "no-diagram-source",
+          "condition": "The URL parameters select no diagram source; bootstrap does not load a base, while diff state is still created and remains available for the loaded document.",
+          "outcome": "It does not load a base, but creates the diff state with an accessor that remains available for the loaded document.",
+          "domain": "URLSearchParams values for which selectDiagramSource returns undefined"
+        },
+        {
+          "name": "diagram-source-loads",
+          "condition": "The URL parameters select a diagram source and its load() resolves successfully; the loaded diagram is installed as the diff base using diffRefsFrom(params).base.",
+          "outcome": "It awaits the source load once and sets the loaded diagram as the diff base using diffRefsFrom(params).base.",
+          "domain": "any successfully loaded base diagram and corresponding URL parameter set"
+        },
+        {
+          "name": "diagram-source-fails",
+          "condition": "The URL parameters select a diagram source but its load() resolves with Err, such as a missing or inaccessible base; the StateIsland error signal reports the failure rather than only setting loadError.",
+          "outcome": "It reports the base-load failure through the StateIsland error signal rather than only setting loadError.",
+          "domain": "any AdapterError returned by the selected source load"
+        },
+        {
+          "name": "document-not-yet-loaded",
+          "condition": "The diff state accessor is evaluated before the editor document resolves; it yields undefined, while the accessor itself already exists.",
+          "outcome": "It creates the diff state immediately, with its accessor yielding undefined until the editor document resolves."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_shell_app_tsx_App_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/select_diagram_source.ts/selectDiagramSource().",
+      "symbolName": "selectDiagramSource",
+      "filePath": "packages/editor/src/shell/select_diagram_source.ts",
+      "cases": [
+        {
+          "name": "no-source-parameters",
+          "condition": "None of base_d, base_fetch, base_gh, or base_gist is present; the function returns undefined.",
+          "outcome": "It returns undefined when none of base_d, base_fetch, base_gh, or base_gist is present."
+        },
+        {
+          "name": "base-d-present",
+          "condition": "base_d is present, with no requirement that its value be non-empty; the function returns a UrlParamDiagramSource constructed using params.get('base_d') and buildRemoteUrl(params, 'base_').",
+          "outcome": "It returns a UrlParamDiagramSource constructed from params.get('base_d') and buildRemoteUrl(params, 'base_').",
+          "domain": "any present base_d value"
+        },
+        {
+          "name": "base-fetch-present",
+          "condition": "base_fetch is present, with no requirement that its value be non-empty; the function returns a UrlParamDiagramSource.",
+          "outcome": "It returns a UrlParamDiagramSource when base_fetch is present, regardless of its value.",
+          "domain": "any present base_fetch value"
+        },
+        {
+          "name": "base-gh-present",
+          "condition": "base_gh is present, with or without the base_path and base_ref modifiers; the function returns a UrlParamDiagramSource.",
+          "outcome": "It returns a UrlParamDiagramSource when base_gh is present, whether or not base_path or base_ref is also present.",
+          "domain": "any present base_gh value and any base_path/base_ref modifier values"
+        },
+        {
+          "name": "base-gist-present",
+          "condition": "base_gist is present, with no requirement that its value be non-empty; the function returns a UrlParamDiagramSource.",
+          "outcome": "It returns a UrlParamDiagramSource when base_gist is present, regardless of its value.",
+          "domain": "any present base_gist value"
+        },
+        {
+          "name": "modifiers-without-github-source",
+          "condition": "base_path and/or base_ref is present while base_gh is absent, and no other triggering parameter (base_d, base_fetch, or base_gist) is present; the modifiers alone do not trigger a source, so the function returns undefined.",
+          "outcome": "It returns undefined when only base_path and/or base_ref is present without base_gh or another triggering parameter.",
+          "domain": "any combination of base_path/base_ref presence and values"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_shell_select_diagram_source_ts_selectDiagramSource___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/shell/url_params.ts/CONTENT_PARAMS.",
+      "symbolName": "CONTENT_PARAMS",
+      "filePath": "packages/editor/src/shell/url_params.ts",
+      "cases": [
+        {
+          "name": "declared-content-params",
+          "condition": "CONTENT_PARAMS contains exactly the content parameter names 'd', 's', and the base diagram parameter 'base_d', while base locator parameters such as 'base_fetch', 'base_gh', 'base_path', 'base_ref', and 'base_gist' remain excluded",
+          "outcome": "CONTENT_PARAMS contains exactly 'd', 's', and 'base_d', while excluding 'base_fetch', 'base_gh', 'base_path', 'base_ref', and 'base_gist'."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_shell_url_params_ts_CONTENT_PARAMS_.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/create_editor_state.ts/createEditorState().",
+      "symbolName": "createEditorState",
+      "filePath": "packages/editor/src/state/create_editor_state.ts",
+      "cases": [
+        {
+          "name": "apply-empty-edit",
+          "condition": "applyStyleEdit receives an edit whose four change lists are all empty; it follows the early no-op path with no stylesheet write, undo entry, redo reset, dirty change, or version bump.",
+          "outcome": "It does nothing, leaving the stylesheet, undo and redo logs, dirty state, and version unchanged."
+        },
+        {
+          "name": "apply-fully-filtered-edit",
+          "condition": "applyStyleEdit receives an edit with changes, but editableChanges drops every change against the current diagram; the filtered edit is empty and follows the same no-op path as an initially empty edit.",
+          "outcome": "It treats the filtered edit as empty and does nothing, leaving the stylesheet, undo and redo logs, dirty state, and version unchanged.",
+          "domain": "edits whose changes all refer to diagram elements that are not editable in the current diagram"
+        },
+        {
+          "name": "apply-partially-filtered-edit",
+          "condition": "applyStyleEdit receives an edit for which editableChanges retains some changes and drops others; stylesheet application, snapshot capture, undo logging, coalescing, and redo reset use only the retained changes.",
+          "outcome": "It applies and records only the retained changes, using them for the snapshot, coalescing, undo entry, and redo reset.",
+          "domain": "edits containing both retained and dropped changes"
+        },
+        {
+          "name": "apply-unfiltered-edit",
+          "condition": "applyStyleEdit receives a non-empty edit for which editableChanges retains every change; the retained edit is written normally and is the edit recorded for undo and redo.",
+          "outcome": "It applies the edit normally and records the retained edit for undo and redo.",
+          "domain": "non-empty edits whose changes are all editable in the current diagram"
+        },
+        {
+          "name": "append-pending-unfiltered-by-diagram",
+          "condition": "appendPendingEdit receives a pending proposal; it appends the exact incoming edit to the stylesheet without applying editableChanges or checking whether its changes match the current diagram.",
+          "outcome": "It appends the exact incoming proposal without filtering it through editableChanges or checking it against the current diagram.",
+          "domain": "any pending StyleEdit, including proposals authored against a different diagram"
+        },
+        {
+          "name": "append-empty-pending-edit",
+          "condition": "appendPendingEdit receives an edit with no changes; because appendPendingEdit is not guarded, the empty proposal is still appended and the stylesheet version is incremented while dirty remains unchanged.",
+          "outcome": "It appends the empty proposal and increments the stylesheet version while leaving dirty unchanged."
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_state_create_editor_state_ts_createEditorState___.test.tsx"
+    },
+    {
+      "nodeId": "packages/editor/src/state/editable_changes.ts/editableChanges().",
+      "symbolName": "editableChanges",
+      "filePath": "packages/editor/src/state/editable_changes.ts",
+      "cases": [
+        {
+          "name": "matching-node-change",
+          "condition": "A node change targets an id that is a key of diagram.graph.nodes; that node change is retained.",
+          "outcome": "Retains a node change whose target id is a key in diagram.graph.nodes.",
+          "domain": "any node-change entry whose target id exists in diagram.graph.nodes"
+        },
+        {
+          "name": "stale-node-change",
+          "condition": "A node change targets an id that is not a key of diagram.graph.nodes; that node change is filtered out.",
+          "outcome": "Filters out a node change whose target id is absent from diagram.graph.nodes.",
+          "domain": "any node-change entry whose target id is absent from diagram.graph.nodes"
+        },
+        {
+          "name": "matching-edge-change",
+          "condition": "An edge change targets an id that is a key of diagram.graph.edges; that edge change is retained.",
+          "outcome": "Retains an edge change whose target id is a key in diagram.graph.edges.",
+          "domain": "any edge-change entry whose target id exists in diagram.graph.edges"
+        },
+        {
+          "name": "stale-edge-change",
+          "condition": "An edge change targets an id that is not a key of diagram.graph.edges; that edge change is filtered out.",
+          "outcome": "Filters out an edge change whose target id is absent from diagram.graph.edges.",
+          "domain": "any edge-change entry whose target id is absent from diagram.graph.edges"
+        },
+        {
+          "name": "matching-group-change",
+          "condition": "A group change targets an id that is a key of diagram.graph.groups; that group change is retained.",
+          "outcome": "Retains a group change whose target id is a key in diagram.graph.groups.",
+          "domain": "any group-change entry whose target id exists in diagram.graph.groups"
+        },
+        {
+          "name": "stale-group-change",
+          "condition": "A group change targets an id that is not a key of diagram.graph.groups; that group change is filtered out.",
+          "outcome": "Filters out a group change whose target id is absent from diagram.graph.groups.",
+          "domain": "any group-change entry whose target id is absent from diagram.graph.groups"
+        },
+        {
+          "name": "mixed-edit-entries",
+          "condition": "The edit contains a mixture of entries targeting present and absent nodes, edges, and/or groups; only entries targeting present graph elements remain in their respective lists.",
+          "outcome": "Retains only entries targeting present graph elements in each respective node, edge, or group list.",
+          "domain": "any combination of present and absent target ids across node, edge, and group changes"
+        },
+        {
+          "name": "annotation-changes-unfiltered",
+          "condition": "The edit contains annotation changes; all annotation changes are returned unchanged, regardless of whether their target identifiers occur in the graph, including when the graph contains no corresponding annotation entries.",
+          "outcome": "Returns all annotation changes unchanged, even when their identifiers are absent from the graph.",
+          "domain": "any annotation-change list, including an empty list"
+        },
+        {
+          "name": "metadata-preserved",
+          "condition": "The returned edit has the same id and base_hash as the input edit, independently of which change entries are filtered.",
+          "outcome": "Returns the edit with the same id and base_hash as the input.",
+          "domain": "any StyleEdit id and base_hash values"
+        },
+        {
+          "name": "all-lists-empty",
+          "condition": "No node, edge, or group change targets an element present in the corresponding graph map, and there are no annotation changes; the function returns a StyleEdit whose four change lists are empty rather than undefined.",
+          "outcome": "Returns an edit with four empty change lists when no graph-targeted or annotation changes survive.",
+          "domain": "any edit containing only absent-element changes or no changes"
+        },
+        {
+          "name": "annotation-only-edit",
+          "condition": "The edit has no surviving node, edge, or group changes but has one or more annotation changes; the annotation changes remain in the returned edit, so the result is not four-empty-lists.",
+          "outcome": "Returns the annotation changes while leaving the node, edge, and group lists empty.",
+          "domain": "any non-empty annotation-change list"
+        },
+        {
+          "name": "base-only-target-is-filtered",
+          "condition": "A change targets an element absent from the diagram, whether or not a diff is attached; the change is treated as meaningless and filtered out.",
+          "outcome": "Filters out a change targeting an absent element regardless of whether it has a diff attached.",
+          "domain": "any absent node, edge, or group target with either a base-only or diff-attached change"
+        }
+      ],
+      "outputFilePath": "packages/editor/tests/testgen_editor-diff__packages_editor_src_state_editable_changes_ts_editableChanges___.test.tsx"
+    }
+  ],
+  "schemaVersion": 5,
+  "specHash": "13ac0c49a7ba57df937685dfebf9c16a760a2a6b3212d603f0aae1dc07f9c1a7"
+}

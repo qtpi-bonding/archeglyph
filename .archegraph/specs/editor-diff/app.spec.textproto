@@ -1,0 +1,51 @@
+# MODIFIED. The wiring, without which every other decl in this pillar is
+# built and dead.
+#
+# App is the only place a Scene is created and the only place a Canvas is
+# constructed, so it is the only place the base can reach either.
+
+file: "packages/editor/src/shell/app.tsx"
+doc: "Top-level SPA component: owns the stores and the adapters, and composes the island frame over the canvas."
+
+constants: [
+  { name: "App"
+    change_type: MODIFIED
+    doc:
+      "Four additions. The existing bootstrap -- selectAdapters, loadFrom,\n"
+      "seedComponentBindings, startSession, the file sync, the save\n"
+      "controller, the editor-theme signal, the island layout -- is\n"
+      "untouched.\n"
+      "\n"
+      "1. Calls selectDiagramSource on the same URLSearchParams it already\n"
+      "   passes to selectAdapters, and calls createDiffState with an\n"
+      "   accessor yielding the loaded document's diagram or undefined, and\n"
+      "   a target label of diffRefsFrom(params).target.\n"
+      "   createDiffState is called unconditionally, in App's body, so the\n"
+      "   delta accessor exists before the document resolves.\n"
+      "\n"
+      "2. When selectDiagramSource returned a source, awaits its load() once\n"
+      "   during bootstrap and calls setBase with the diagram and a base\n"
+      "   label of diffRefsFrom(params).base.\n"
+      "\n"
+      "   On Err it sets the StateIsland error signal -- the one the island\n"
+      "   already reads as `error={...}` -- NOT setLoadError. loadError is\n"
+      "   read only inside the `fallback` of the Show that renders\n"
+      "   StartScreen, which is mounted only while the document is null, so\n"
+      "   a base failure arriving after the document loaded would display\n"
+      "   nothing at all. That silent case is the one this must avoid: a\n"
+      "   link whose base 404s would otherwise render an ordinary diagram\n"
+      "   with no sign the diff is missing.\n"
+      "\n"
+      "3. Passes the diff state's `delta` accessor as createScene's fourth\n"
+      "   argument, and `delta={diff.delta()}` to Canvas.\n"
+      "\n"
+      "4. Nothing else needs the delta. A base-only element is\n"
+      "   selectable once the scene indexes the union, but every style\n"
+      "   write in the editor funnels through\n"
+      "   EditorState.applyStyleEdit, which drops changes against ids\n"
+      "   the diagram does not contain. The guard is there, not here,\n"
+      "   and it needs no Delta.\n"
+    type: { named: { symbol: "Component", args: [{ unsupported: { reason: LITERAL_TYPE, source_excerpt: "{}" } }] } }
+    uses: ["selectDiagramSource", "createDiffState", "diffRefsFrom", "createScene", "Canvas"]
+  }
+]

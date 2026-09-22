@@ -1,0 +1,43 @@
+# New. The only DiagramSource this pillar ships: the base arrives in the URL.
+
+file: "packages/editor/src/diff/url_param_diagram_source.ts"
+doc: "UrlParamDiagramSource — a diff base read from base_* URL params."
+
+structs: [
+  { name: "UrlParamDiagramSource"
+    doc:
+      "Constructed with two values the shell has already resolved: an inline\n"
+      "base64 diagram (from `base_d`) or null, and a remote URL (from\n"
+      "buildRemoteUrl with prefix \"base_\") or null.\n"
+      "\n"
+      "load() prefers the inline value when it is non-null and fetches the\n"
+      "URL otherwise, which is the precedence UrlParamAdapter.load already\n"
+      "uses for the target document.\n"
+      "\n"
+      "It fetches NO stylesheet. UrlParamAdapter fetches a sibling\n"
+      "`.style.json` beside the target because the target is what gets\n"
+      "styled and saved; the base contributes only its graph, and the union\n"
+      "renders under the target's stylesheet.\n"
+      "\n"
+      "With both values null, load() returns Err rather than an empty\n"
+      "diagram: the shell only constructs this when a base_* param was\n"
+      "present, so reaching load() with nothing to read is a malformed link\n"
+      "and silently rendering no diff would hide it."
+    implements: [{ named: { symbol: "DiagramSource" } }]
+    methods: [
+      { name: "load"
+        doc:
+          "Decode the inline base64 with atob and fromJson, or fetch the URL\n"
+          "and fromJson its body. A non-2xx response is Err with kind 'io'\n"
+          "and a message naming the URL and status, matching\n"
+          "UrlParamAdapter.load's wording for the same failure."
+        is_async: true
+        output: { named: { symbol: "archeglyph.util.Result", args: [
+          { named: { symbol: "archeglyph.content.v1.Diagram" } },
+          { named: { symbol: "AdapterError" } }
+        ]}}
+      }
+    ]
+    typescript: {}
+  }
+]

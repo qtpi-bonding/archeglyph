@@ -1,0 +1,42 @@
+# MODIFIED. The ghost overlay is the editor's SECOND layout path, and it
+# has to lay out over the same graph the scene does.
+#
+# GhostRender lays out props.diagram on its own and draws the result
+# aligned to the scene's viewport transform. Once the scene lays out the
+# union of the diagram and the delta's deleted elements, the two graphs
+# differ, elk returns different positions, and the ghost sits offset from
+# the diagram it annotates wherever a pending edit exists.
+
+file: "packages/editor/src/canvas/ghost_layer.tsx"
+doc: "Pending-edit preview drawn over the canvas."
+
+structs: [
+  { name: "GhostLayerProps"
+    change_type: MODIFIED
+    doc: "Gains a required `delta` field carrying the current Delta or undefined, forwarded from Canvas."
+    fields: [
+      { name: "delta", type: { unsupported: { reason: UNION_AT_TYPE_POSITION, source_excerpt: "Delta | undefined" } } }
+    ]
+    typescript: { struct_kind: STRUCT_KIND_INTERFACE }
+  }
+]
+
+constants: [
+  { name: "GhostLayer"
+    change_type: MODIFIED
+    doc:
+      "One change: the layoutPipeline call inside GhostRender becomes a\n"
+      "scenePipeline call with props.delta added. It returns the same\n"
+      "Result<LaidOutDiagram, PipelineError>, so the error handling and\n"
+      "everything the component draws are unchanged. With delta undefined\n"
+      "it behaves exactly as today.\n"
+      "\n"
+      "The stylesheet this passes stays the pending-edit one the GhostSource\n"
+      "memo already builds. That is what makes this a preview of pending\n"
+      "edits rather than a second copy of the scene.\n"
+      "\n"
+      "applyAllPendingEdits is untouched."
+    type: { named: { symbol: "Component", args: [{ named: { symbol: "GhostLayerProps" } }] } }
+    uses: ["scenePipeline"]
+  }
+]

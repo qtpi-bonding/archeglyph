@@ -10,24 +10,23 @@ if (!(globalThis as { document?: unknown }).document) {
 const { render, fireEvent, cleanup } = await import('@solidjs/testing-library');
 const { createSignal } = await import('solid-js');
 const { FileIsland } = await import('./file_island');
-type FileIslandProps = import('./file_island').FileIslandProps;
 
-function props(overrides: Partial<FileIslandProps> = {}): FileIslandProps {
-  return {
-    fileName: 'checkout-v2.diag.json',
-    dirty: false,
-    canSave: false,
-    onSave: (): void => undefined,
-    editorTheme: 'blueprint',
-    onEditorTheme: (): void => undefined,
-    diffOn: true,
-    attachedIsTarget: true,
-    onCompare: (): void => undefined,
-    onToggleDiff: (): void => undefined,
-    onSwapDirection: (): void => undefined,
-    ...overrides,
-  } as FileIslandProps;
-}
+const base = {
+  fileName: 'checkout.diag.json',
+  dirty: false,
+  canSave: false,
+  status: undefined,
+  errorMessage: undefined,
+  onSave: (): void => undefined,
+  editorTheme: 'blueprint',
+  onEditorTheme: (): void => undefined,
+  comparedTo: undefined,
+  diffOn: true,
+  attachedIsTarget: true,
+  onCompare: (): void => undefined,
+  onToggleDiff: (): void => undefined,
+  onSwapDirection: (): void => undefined,
+};
 
 const button = (container: Element, label: string): HTMLButtonElement => {
   const found = Array.from(container.querySelectorAll('button')).find(
@@ -41,7 +40,7 @@ describe('attaching a diff base from the island', () => {
   test('with no base attached, Compare invites one', () => {
     const calls: string[] = [];
     const { container } = render(() => (
-      <FileIsland {...props({ onCompare: (): void => { calls.push('compare'); } })} />
+      <FileIsland {...base} onCompare={(): void => { calls.push('compare'); }} />
     ));
 
     fireEvent.click(button(container, 'Compare...'));
@@ -52,21 +51,20 @@ describe('attaching a diff base from the island', () => {
 
   test('an attached base is named, and the toggle is offered', () => {
     const calls: string[] = [];
-    const [base, setBase] = createSignal<string | undefined>(undefined);
+    const [attached, setAttached] = createSignal<string | undefined>(undefined);
     const { container } = render(() => (
       <FileIsland
-        {...props({
-          comparedTo: base(),
-          onToggleDiff: (): void => { calls.push('toggle'); },
-        })}
+        {...base}
+        comparedTo={attached()}
+        onToggleDiff={(): void => { calls.push('toggle'); }}
       />
     ));
 
-    expect(container.textContent).not.toContain('checkout.diag.json');
+    expect(container.textContent).not.toContain('checkout-v2.diag.json');
 
-    setBase('checkout.diag.json');
+    setAttached('checkout-v2.diag.json');
 
-    expect(container.textContent).toContain('checkout.diag.json');
+    expect(container.textContent).toContain('checkout-v2.diag.json');
     fireEvent.click(button(container, 'Toggle diff'));
     expect(calls).toEqual(['toggle']);
     cleanup();
@@ -77,30 +75,28 @@ describe('attaching a diff base from the island', () => {
     const [attachedIsTarget, setAttachedIsTarget] = createSignal<boolean>(true);
     const { container } = render(() => (
       <FileIsland
-        {...props({
-          fileName: 'checkout.diag.json',
-          comparedTo: 'checkout-v2.diag.json',
-          attachedIsTarget: attachedIsTarget(),
-          onSwapDirection: (): void => { calls.push('swap'); },
-        })}
+        {...base}
+        comparedTo="checkout-v2.diag.json"
+        attachedIsTarget={attachedIsTarget()}
+        onSwapDirection={(): void => { calls.push('swap'); }}
       />
     ));
     const text = (): string => container.textContent ?? '';
 
-    expect(text()).toContain('checkout.diag.json \u2192 checkout-v2.diag.json');
+    expect(text()).toContain('checkout.diag.json → checkout-v2.diag.json');
 
     fireEvent.click(button(container, 'Swap diff direction'));
     expect(calls).toEqual(['swap']);
 
     setAttachedIsTarget(false);
-    expect(text()).toContain('checkout-v2.diag.json \u2192 checkout.diag.json');
+    expect(text()).toContain('checkout-v2.diag.json → checkout.diag.json');
     cleanup();
   });
 
-  test('the toggle reads as the state it is in, not the state it would reach', () => {
+  test('the toggle reads as the state it is in, and is the same button', () => {
     const [on, setOn] = createSignal<boolean>(true);
     const { container } = render(() => (
-      <FileIsland {...props({ comparedTo: 'checkout.diag.json', diffOn: on() })} />
+      <FileIsland {...base} comparedTo="checkout-v2.diag.json" diffOn={on()} />
     ));
 
     const toggle = button(container, 'Toggle diff');
@@ -111,6 +107,7 @@ describe('attaching a diff base from the island', () => {
 
     expect(toggle.textContent).toBe('Off');
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(button(container, 'Toggle diff')).toBe(toggle);
     cleanup();
   });
 });

@@ -21,71 +21,118 @@ export class FileIslandProps {
   onSwapDirection!: () => void;
 }
 
-/**
- * File name, then a dirty dot, then the status text, then Save, then the
- * palette picker.
- */
+const row: JSX.CSSProperties = {
+  display: 'flex',
+  'align-items': 'center',
+  gap: '6px',
+  'min-width': '0',
+};
+
+const dot = (color: string): JSX.CSSProperties => ({
+  width: '7px',
+  height: '7px',
+  'border-radius': '50%',
+  background: color,
+  display: 'inline-block',
+  'flex-shrink': '0',
+});
+
 export const FileIsland: Component<FileIslandProps> = (props: FileIslandProps): JSX.Element => {
   return (
-    <div class="ag-island" style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '0 8px', height: '40px', background: 'var(--ag-panel)', 'border-bottom': '1px solid var(--ag-edge)' }}>
-      <span style={{ flex: '1', 'font-size': '14px' }}>{props.fileName}</span>
-      <Show when={props.dirty && props.status !== 'error'}>
+    <div
+      class="ag-island"
+      style={{
+        display: 'flex',
+        'flex-direction': 'column',
+        gap: '6px',
+        padding: '8px 10px',
+        width: '100%',
+        'box-sizing': 'border-box',
+        background: 'var(--ag-panel)',
+        border: '1px solid var(--ag-edge)',
+        'border-radius': '6px',
+      }}
+    >
+      <div style={row}>
         <span
-          aria-label="Unsaved changes"
-          title="Unsaved changes"
-          style={{ width: '7px', height: '7px', 'border-radius': '50%', background: 'var(--ag-teal)', display: 'inline-block' }}
-        />
-      </Show>
-      <Show when={props.status === 'error'}>
-        <span
-          aria-label={props.errorMessage ?? 'Save failed'}
-          title={props.errorMessage ?? 'Save failed'}
-          style={{ width: '7px', height: '7px', 'border-radius': '50%', background: 'var(--ag-danger)', display: 'inline-block' }}
-        />
-      </Show>
-      <Show when={statusLabel(props.status) !== ''}>
-        <span style={{ 'font-size': '12px', color: props.status === 'error' ? 'var(--ag-danger)' : 'var(--ag-fg-3)' }}>
-          {statusLabel(props.status)}
+          title={props.fileName}
+          style={{
+            flex: '1',
+            'font-size': '13px',
+            'min-width': '0',
+            overflow: 'hidden',
+            'text-overflow': 'ellipsis',
+            'white-space': 'nowrap',
+          }}
+        >
+          {props.fileName}
         </span>
-      </Show>
-      <Show when={props.canSave}>
-        <button onClick={props.onSave}>Save</button>
-      </Show>
-      <Show
-        when={props.comparedTo}
-        fallback={<button onClick={props.onCompare}>Compare...</button>}
-      >
+        <Show when={props.dirty && props.status !== 'error'}>
+          <span aria-label="Unsaved changes" title="Unsaved changes" style={dot('var(--ag-teal)')} />
+        </Show>
+        <Show when={props.status === 'error'}>
+          <span
+            aria-label={props.errorMessage ?? 'Save failed'}
+            title={props.errorMessage ?? 'Save failed'}
+            style={dot('var(--ag-danger)')}
+          />
+        </Show>
+        <Show when={statusLabel(props.status) !== ''}>
+          <span style={{ 'font-size': '11px', color: props.status === 'error' ? 'var(--ag-danger)' : 'var(--ag-fg-3)' }}>
+            {statusLabel(props.status)}
+          </span>
+        </Show>
+        <Show when={props.canSave}>
+          <button type="button" onClick={props.onSave}>Save</button>
+        </Show>
+      </div>
+
+      <Show when={props.comparedTo}>
         {(name): JSX.Element => (
-          <>
-            <span style={{ 'font-size': '12px', color: 'var(--ag-fg-3)' }}>
-              {props.attachedIsTarget ? props.fileName : name()}
-              {' \u2192 '}
-              {props.attachedIsTarget ? name() : props.fileName}
-            </span>
-            <button aria-label="Swap diff direction" onClick={props.onSwapDirection}>
-              {'\u21c4'}
-            </button>
-            <button
-              aria-label="Toggle diff"
-              aria-pressed={props.diffOn}
-              onClick={props.onToggleDiff}
-              style={{ color: props.diffOn ? 'var(--ag-teal)' : 'var(--ag-fg-3)' }}
-            >
-              {props.diffOn ? 'Diff' : 'Off'}
-            </button>
-          </>
+          <span
+            style={{
+              'font-size': '11px',
+              color: 'var(--ag-fg-3)',
+              'line-height': '1.4',
+              'overflow-wrap': 'anywhere',
+            }}
+          >
+            {props.attachedIsTarget ? props.fileName : name()}
+            {' → '}
+            {props.attachedIsTarget ? name() : props.fileName}
+          </span>
         )}
       </Show>
-      <select
-        aria-label="Editor theme"
-        value={props.editorTheme}
-        onChange={(event): void => { props.onEditorTheme(event.currentTarget.value); }}
-        style={{ 'margin-left': '8px' }}
-      >
-        {EDITOR_THEMES.map((theme) => (
-          <option value={theme.name}>{theme.label}</option>
-        ))}
-      </select>
+
+      <div style={row}>
+        <Show
+          when={props.comparedTo}
+          fallback={<button type="button" onClick={props.onCompare}>Compare...</button>}
+        >
+          <button type="button" aria-label="Swap diff direction" onClick={props.onSwapDirection}>
+            {'⇄'}
+          </button>
+          <button
+            type="button"
+            aria-label="Toggle diff"
+            aria-pressed={props.diffOn}
+            onClick={props.onToggleDiff}
+            style={{ color: props.diffOn ? 'var(--ag-teal)' : 'var(--ag-fg-3)' }}
+          >
+            {props.diffOn ? 'Diff' : 'Off'}
+          </button>
+        </Show>
+        <select
+          aria-label="Editor theme"
+          value={props.editorTheme}
+          onChange={(event): void => { props.onEditorTheme(event.currentTarget.value); }}
+          style={{ 'margin-left': 'auto', 'min-width': '0', 'max-width': '120px' }}
+        >
+          {EDITOR_THEMES.map((theme) => (
+            <option value={theme.name}>{theme.label}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 };

@@ -31,7 +31,7 @@ export function resolveDiffRoles(tokens?: Tokens): DiffRoles | undefined {
   });
 }
 
-const ANCHOR = '$roles.node_outline';
+const ANCHOR = '$roles.edge_stroke';
 
 function rotatedFrom(tokens: Tokens): DiffRoles | undefined {
   const anchor = { color: ANCHOR };

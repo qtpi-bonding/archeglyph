@@ -4,7 +4,7 @@
   "title": [
     {
       "locale": "en",
-      "source": "archeglyph — package architecture"
+      "source": "archeglyph — package architecture (Dependency)"
     }
   ],
   "graph": {
@@ -104,7 +104,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "28"
+          "kind": "Dependency",
+          "archeglyph.references": "13"
         }
       },
       "core__proto": {
@@ -116,7 +117,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "1109"
+          "kind": "Dependency",
+          "archeglyph.references": "521"
         }
       },
       "core__themes": {
@@ -128,7 +130,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "12"
+          "kind": "Dependency",
+          "archeglyph.references": "6"
         }
       },
       "editor__core": {
@@ -140,7 +143,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "1125"
+          "kind": "Dependency",
+          "archeglyph.references": "531"
         }
       },
       "editor__proto": {
@@ -152,7 +156,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "1536"
+          "kind": "Dependency",
+          "archeglyph.references": "692"
         }
       },
       "editor__themes": {
@@ -164,7 +169,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "14"
+          "kind": "Dependency",
+          "archeglyph.references": "7"
         }
       },
       "importer-archegraph__proto": {
@@ -176,7 +182,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "21"
+          "kind": "Dependency",
+          "archeglyph.references": "10"
         }
       },
       "ops__core": {
@@ -188,7 +195,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "62"
+          "kind": "Dependency",
+          "archeglyph.references": "28"
         }
       },
       "ops__proto": {
@@ -200,7 +208,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "132"
+          "kind": "Dependency",
+          "archeglyph.references": "60"
         }
       },
       "ops__themes": {
@@ -212,7 +221,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "2"
+          "kind": "Dependency",
+          "archeglyph.references": "1"
         }
       },
       "themes__proto": {
@@ -224,7 +234,8 @@
           }
         ],
         "tags": {
-          "archeglyph.references": "130"
+          "kind": "Dependency",
+          "archeglyph.references": "62"
         }
       }
     }

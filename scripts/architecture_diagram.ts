@@ -6,8 +6,11 @@ import { DiagramSchema, LocalizationSchema } from '@archeglyph/proto/gen/content
 import { fromArchegraph } from '@archeglyph/importer-archegraph';
 
 const GCODE = '.archegraph/gcode.pb';
-const OUT = 'examples/archeglyph-architecture.diag.json';
-const STYLE_OUT = 'examples/archeglyph-architecture.style.json';
+
+const KIND = process.argv[2] ?? 'Dependency';
+const suffix = KIND === 'Dependency' ? '' : `-${KIND.toLowerCase()}`;
+const OUT = `examples/archeglyph-architecture${suffix}.diag.json`;
+const STYLE_OUT = `examples/archeglyph-architecture${suffix}.style.json`;
 
 const raw = fromBinary(ArcheviewSchema, new Uint8Array(await Bun.file(GCODE).arrayBuffer()));
 
@@ -27,11 +30,9 @@ for (const id of Object.keys(raw.nodes)) {
 
 const key = (from: string, to: string): string => `${from} ${to}`;
 
-const HIERARCHY: ReadonlySet<string> = new Set(['Containment']);
-
 const weights = new Map<string, number>();
 for (const edge of Object.values(raw.edges)) {
-  if (HIERARCHY.has(edge.kindLabel)) { continue; }
+  if (edge.kindLabel !== KIND) { continue; }
   const from = packageOf(edge.source);
   const to = packageOf(edge.target);
   if (from === undefined || to === undefined || from === to) { continue; }
@@ -55,7 +56,7 @@ const rolled = create(ArcheviewSchema, {
       return [`${from}__${to}`, create(ViewEdgeSchema, { source: from, target: to, kindLabel: '' })];
     }),
   ),
-  metadata: { projectName: 'archeglyph-architecture' },
+  metadata: { projectName: `archeglyph-architecture${suffix}` },
 });
 
 const imported = fromArchegraph(rolled);
@@ -63,13 +64,20 @@ const imported = fromArchegraph(rolled);
 const edges = Object.fromEntries(
   Object.entries(imported.graph?.edges ?? {}).map(([id, edge]) => [
     id,
-    { ...edge, tags: { ...edge.tags, 'archeglyph.references': String(weights.get(key(edge.source, edge.target)) ?? 0) } },
+    {
+      ...edge,
+      tags: {
+        ...edge.tags,
+        kind: KIND,
+        'archeglyph.references': String(weights.get(key(edge.source, edge.target)) ?? 0),
+      },
+    },
   ]),
 );
 
 const diagram = create(DiagramSchema, {
   ...imported,
-  title: [create(LocalizationSchema, { locale: 'en', source: 'archeglyph — package architecture' })],
+  title: [create(LocalizationSchema, { locale: 'en', source: `archeglyph — package architecture (${KIND})` })],
   graph: { ...imported.graph!, edges },
   metadata: { ...imported.metadata!, canonicalLocale: 'en' },
 });
@@ -85,4 +93,4 @@ const style = {
 };
 await Bun.write(STYLE_OUT, JSON.stringify(style, null, 2) + '\n');
 
-console.log(`wrote ${OUT} and ${STYLE_OUT}: ${members.size} packages, ${weights.size} edges`);
+console.log(`wrote ${OUT}: kind=${KIND}, ${members.size} packages, ${weights.size} edges`);

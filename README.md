@@ -6,7 +6,7 @@ A node-and-edge graph rendering tool with strict content/style separation — li
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
 
-**Status:** design phase. Spec is in [`docs/design.md`](docs/design.md). Implementation has not started.
+**Status:** shipped — core engine, all seven CLI operations, and the visual editor. Full design spec in [`docs/design.md`](docs/design.md); current state in [`docs/status.md`](docs/status.md).
 
 ## What it is
 
@@ -16,13 +16,13 @@ Three properties, in order of importance:
 2. **Output is deterministic.** Same `(content, style, theme, archeglyph version)` → byte-identical SVG. Git diffs of generated SVGs are meaningful.
 3. **AI-compat is by design, not magic.** All edits are expressible as typed operations on the style file. AI agents read and write the same files humans do, through the same operations.
 
-archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for [archegraph](../archegraph) and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
+archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 
 ## Family
 
 archeglyph is part of the `arche-` family of tools (Greek *archē* = origin/principle):
 
-- **[archegraph](../archegraph)** — the originating code-architecture graph
+- **archegraph** — the originating code-architecture graph
 - **archescope** — the explorer/visualizer for archegraph
 - **archebuild** — build orchestration over archegraph
 - **archeglyph** — the carved (rendered) form of an `arche-` graph
@@ -46,29 +46,25 @@ theme.theme.json     ──┘
 
 All three files are canonical proto3 JSON. The renderer emits a deterministic SVG with an embedded provenance comment.
 
-## File structure (planned)
+## File structure
 
 ```
 archeglyph/
-├── proto/
-│   ├── content.proto    # Diagram, Graph, Node/Edge/Group, Localization
-│   ├── style.proto      # Stylesheet, *StyleEntry, *Layout, Glyph2D/Glyph1D/Typography
-│   ├── theme.proto      # Theme, Tokens, NodeComponent/EdgeComponent/AnnotationComponent
-│   └── ops.proto        # EditOp + Set/Unset variants
-├── src/
-│   ├── core/            # loaders, resolver, layout, renderer, ops
-│   ├── cli/             # render, validate, init, format, watch, edit, bind
-│   ├── editor/          # visual editor (web app) — host-agnostic
-│   └── server/          # local Bun server for `edit` command
+├── proto/                    # content/style/theme .proto — the on-disk file format
 ├── packages/
+│   ├── proto/                # TypeScript generated from the protos by buf
+│   ├── core/                 # loaders, resolver, layout, renderer, pipeline, geometry
+│   ├── ops/                  # the seven operations, shared by CLI and MCP
+│   ├── cli/                  # command dispatcher over the op registry
+│   ├── editor/               # visual editor SPA (SolidJS), host-agnostic
+│   ├── themes/               # bundled light / dark / blueprint themes
 │   └── importer-archegraph/
-├── themes/              # default-light / default-dark themes
-├── examples/            # sample diagrams
-└── docs/
-    └── design.md        # full design spec
+├── examples/                 # sample diagrams
+├── test/goldens/             # committed SVGs — the determinism gate
+└── docs/design.md            # full design spec
 ```
 
-## Tech stack (planned)
+## Tech stack
 
 - **Language:** TypeScript
 - **Runtime:** [Bun](https://bun.sh)
@@ -89,15 +85,15 @@ The styling vocabulary is organized as three orthogonal "glyph" types:
 
 Themes ship reusable named components composing these glyphs. Stylesheets bind elements to theme components by name; binding logic (e.g., "all backend services use this preset") lives in tools (`archeglyph bind` CLI, importers, AI agents) which produce explicit per-element bindings as their output.
 
-## CLI surface (planned for v1)
+## CLI surface
 
 ```
 archeglyph render <content> [<style>] [--theme <theme>] [-o <out.svg>]
 archeglyph validate <content> [<style>] [--theme <theme>]
+archeglyph diff <before> <after>             # emit the change set between two diagrams
 archeglyph init [--name <name>]
 archeglyph format <file>
 archeglyph watch <content> [--style <…>] [--theme <…>] [-o <out.svg>]
-archeglyph edit <content> [--style <…>]      # spin up local web editor
 archeglyph bind <content> [<style>] --where <predicate> --component <name>
 ```
 
@@ -106,7 +102,7 @@ archeglyph bind <content> [<style>] --where <predicate> --component <name>
 See [`docs/design.md` §2](docs/design.md) for the full set. Highlights:
 
 - **Content/style separation** — visual editor never writes to content
-- **Schema-first extensibility** — schemas accommodate every planned feature; v1 implementation may be slimmer
+- **Schema-first extensibility** — schemas accommodate every planned feature; the implementation may be slimmer
 - **Determinism** — same inputs → byte-identical SVG, with provenance comment
 - **Kernel + adapters** — core is general; archegraph is one importer
 - **Host-agnostic visual editor** — abstract HostAdapter; standalone web (v1), VS Code extension (later), native (later)

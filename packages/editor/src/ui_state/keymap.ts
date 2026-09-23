@@ -49,6 +49,8 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 'd', meta: true }, command: 'duplicate' },
   { chord: { key: 'k', meta: true }, command: 'open-palette' },
   { chord: { key: '?', shift: true }, command: 'open-help' },
+  { chord: { key: 'd' }, command: 'toggle-diff' },
+  { chord: { key: 'd', shift: true }, command: 'swap-diff-direction' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {
@@ -58,7 +60,7 @@ export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: bo
     const chordUsesShift = chord.shift === true;
 
     if (
-      chord.key === event.key &&
+      chord.key.toLowerCase() === event.key.toLowerCase() &&
       chordUsesMeta === eventUsesMeta &&
       chordUsesShift === event.shiftKey
     ) {

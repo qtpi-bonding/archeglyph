@@ -41,3 +41,9 @@ jobs:
           buf generate
           git diff --exit-code -- packages/proto/src/gen \
             || { echo "::error::packages/proto/src/gen is stale -- run \`bun run proto:gen\`"; exit 1; }
+
+      - name: CLI manual is current
+        run: |
+          bun run manual
+          git diff --exit-code -- skills/archeglyph-manual \
+            || { echo "::error::skills/archeglyph-manual is stale -- run \`bun run manual\`"; exit 1; }

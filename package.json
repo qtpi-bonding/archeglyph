@@ -11,6 +11,7 @@
     "proto:lint": "buf lint",
     "proto:format": "buf format -w",
     "archeglyph": "bun packages/cli/bin/archeglyph.ts",
+    "manual": "bun scripts/manual.ts",
     "typecheck": "tsc --noEmit",
     "spdx": "bun scripts/spdx.ts",
     "spdx:fix": "bun scripts/spdx.ts --fix",

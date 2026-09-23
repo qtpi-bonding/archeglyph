@@ -160,21 +160,19 @@ Themes ship reusable named components composing these glyphs. Stylesheets bind e
 
 ## CLI surface
 
-Every operation takes named flags; there are no positional arguments.
+Seven operations — `render`, `validate`, `diff`, `init`, `format`, `watch`,
+`bind` — each taking named flags. There are no positional arguments.
 
-```
-archeglyph render   --diagram <f> [--style <f>] [--theme <t>] [--delta <f>] [--out <f>]
-archeglyph validate --diagram <f> [--style <f>] [--theme <t>]
-archeglyph diff     --base <f> --target <f> [--out <f>] [--include-unchanged]
-archeglyph init     [--name <name>]
-archeglyph format   --file <f>
-archeglyph watch    --diagram <f> [--style <f>] [--theme <t>] [--out <f>]
-archeglyph bind     --diagram <f> [--style <f>] --where <predicate>
-                    --component <name> [--element-type node|edge|group]
-```
+**The reference is generated, not written.**
+[`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md) is
+rendered from the same operation registry the CLI parses its flags from, so it
+cannot document a flag that does not exist. CI regenerates it and fails if the
+committed copy has fallen behind. `archeglyph <subcommand> --help` prints the
+same content at the terminal.
 
-`--theme` accepts a bundled name (`light`, `dark`, `blueprint`) or a path to a
-`.theme.json`. Run `archeglyph <subcommand> --help` for the authoritative list.
+It is written as an agent skill because coding agents are a first-class caller
+here: point one at that file and it has the whole surface, with types,
+defaults and which flags are required.
 
 ## Design principles
 

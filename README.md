@@ -64,6 +64,19 @@ archeglyph/
 └── docs/design.md            # full design spec
 ```
 
+## A note on agent-local files
+
+This project is developed with AI coding agents, and is the first from-scratch
+dogfood target for [archegraph](#family) — the `.archegraph/specs/**/*.spec.textproto`
+files and the `spec/<pillar>-v1` tags are the record of that, and every pillar's
+build can be reproduced from them.
+
+Some files referenced in the design docs are deliberately not published, because
+they only describe one machine's setup: `CLAUDE.md` (agent operating
+instructions), `.claude/skills/` (a symlink into a sibling checkout), and
+`docs/comparisons/`. Prose in `docs/` that points at them is a record of how the
+work was done, not a broken link.
+
 ## Tech stack
 
 - **Language:** TypeScript

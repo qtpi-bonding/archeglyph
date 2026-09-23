@@ -4,7 +4,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { createRoot } from 'solid-js';
+import { createRoot, createSignal } from 'solid-js';
 import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
 import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import type { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
@@ -64,6 +64,37 @@ describe('a base attached to the editor renders as a diff', () => {
       const request = seen();
       expect(request).toBeDefined();
       expect(Object.keys(request!.diagram.nodes).sort()).toEqual(['dropped', 'kept']);
+
+      dispose();
+    });
+  });
+
+  test('gating the delta off drops the union back to the target', async () => {
+    const { engine, seen } = spyEngine();
+
+    await createRoot(async (dispose) => {
+      const target = diagramOf('kept');
+      const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: 1 }));
+      const diff = createDiffState(() => state.diagram(), 'HEAD');
+      const [on, setOn] = createSignal<boolean>(true);
+
+      createScene(
+        state,
+        () => new Map([['default', theme]]),
+        engine,
+        () => (on() ? diff.delta() : undefined),
+      );
+      diff.setBase(diagramOf('kept', 'dropped'), 'main');
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes).sort()).toEqual(['dropped', 'kept']);
+
+      setOn(false);
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes)).toEqual(['kept']);
+
+      setOn(true);
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes).sort()).toEqual(['dropped', 'kept']);
 
       dispose();
     });

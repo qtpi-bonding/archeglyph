@@ -138,6 +138,7 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
       beginTextEdit: (): void => { calls.push('beginTextEdit'); },
       attachBase: (): void => { calls.push('attachBase'); },
       clearBase: (): void => { calls.push('clearBase'); },
+      toggleDiff: (): void => { calls.push('toggleDiff'); },
     },
   };
 }

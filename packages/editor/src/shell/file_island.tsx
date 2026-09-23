@@ -14,8 +14,9 @@ export class FileIslandProps {
   editorTheme!: string;
   onEditorTheme!: (a0: string) => void;
   comparedTo?: string;
+  diffOn!: boolean;
   onCompare!: () => void;
-  onClearComparison!: () => void;
+  onToggleDiff!: () => void;
 }
 
 /**
@@ -57,7 +58,14 @@ export const FileIsland: Component<FileIslandProps> = (props: FileIslandProps): 
             <span style={{ 'font-size': '12px', color: 'var(--ag-fg-3)' }}>
               vs {name()}
             </span>
-            <button aria-label="Clear comparison" onClick={props.onClearComparison}>x</button>
+            <button
+              aria-label="Toggle diff"
+              aria-pressed={props.diffOn}
+              onClick={props.onToggleDiff}
+              style={{ color: props.diffOn ? 'var(--ag-teal)' : 'var(--ag-fg-3)' }}
+            >
+              {props.diffOn ? 'Diff' : 'Off'}
+            </button>
           </>
         )}
       </Show>

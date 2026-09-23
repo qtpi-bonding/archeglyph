@@ -20,8 +20,9 @@ function props(overrides: Partial<FileIslandProps> = {}): FileIslandProps {
     onSave: (): void => undefined,
     editorTheme: 'blueprint',
     onEditorTheme: (): void => undefined,
+    diffOn: true,
     onCompare: (): void => undefined,
-    onClearComparison: (): void => undefined,
+    onToggleDiff: (): void => undefined,
     ...overrides,
   } as FileIslandProps;
 }
@@ -47,14 +48,14 @@ describe('attaching a diff base from the island', () => {
     cleanup();
   });
 
-  test('an attached base is named, and can be cleared', () => {
+  test('an attached base is named, and the toggle is offered', () => {
     const calls: string[] = [];
     const [base, setBase] = createSignal<string | undefined>(undefined);
     const { container } = render(() => (
       <FileIsland
         {...props({
           comparedTo: base(),
-          onClearComparison: (): void => { calls.push('clear'); },
+          onToggleDiff: (): void => { calls.push('toggle'); },
         })}
       />
     ));
@@ -64,8 +65,25 @@ describe('attaching a diff base from the island', () => {
     setBase('checkout.diag.json');
 
     expect(container.textContent).toContain('checkout.diag.json');
-    fireEvent.click(button(container, 'Clear comparison'));
-    expect(calls).toEqual(['clear']);
+    fireEvent.click(button(container, 'Toggle diff'));
+    expect(calls).toEqual(['toggle']);
+    cleanup();
+  });
+
+  test('the toggle reads as the state it is in, not the state it would reach', () => {
+    const [on, setOn] = createSignal<boolean>(true);
+    const { container } = render(() => (
+      <FileIsland {...props({ comparedTo: 'checkout.diag.json', diffOn: on() })} />
+    ));
+
+    const toggle = button(container, 'Toggle diff');
+    expect(toggle.textContent).toBe('Diff');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+
+    setOn(false);
+
+    expect(toggle.textContent).toBe('Off');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
     cleanup();
   });
 });

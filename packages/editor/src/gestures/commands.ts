@@ -55,6 +55,7 @@ export interface CommandContext {
   beginTextEdit: (ref: ElementRef) => void;
   attachBase?: () => void;
   clearBase?: () => void;
+  toggleDiff?: () => void;
 }
 
 /**
@@ -323,6 +324,12 @@ export const COMMANDS: Array<Command> = [
     id: 'compare-with' as CommandId,
     label: 'Compare with file...',
     run: ({ attachBase }: CommandContext): void => attachBase?.(),
+    appliesTo: 'global',
+  },
+  {
+    id: 'toggle-diff' as CommandId,
+    label: 'Toggle diff',
+    run: ({ toggleDiff }: CommandContext): void => toggleDiff?.(),
     appliesTo: 'global',
   },
   {

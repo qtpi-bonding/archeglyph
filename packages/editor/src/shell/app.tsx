@@ -10,6 +10,7 @@ import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES 
 import { readUrlParams } from './url_params';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
+import type { Delta } from '@archeglyph/proto/gen/content_pb';
 import { FilePickerDiagramSource } from '../diff/file_picker_diagram_source';
 import type { DiagramSource } from '../diff/diagram_source';
 import { diffRefsFrom, type DiffRefs } from '../diff/diff_refs';
@@ -92,6 +93,8 @@ export const App: Component<{}> = (): JSX.Element => {
   const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(undefined);
   const [syncError, setSyncError] = createSignal<string | undefined>(undefined);
   const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);
+  const [diffOn, setDiffOn] = createSignal<boolean>(true);
+  const activeDelta = (): Delta | undefined => (diffOn() ? diff.delta() : undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -140,7 +143,7 @@ export const App: Component<{}> = (): JSX.Element => {
     // scene() still null, which the `scene={scene()!}` assertion hides from
     // tsc and which no test sees, because nothing mounts App.
     batch((): void => {
-      setScene(createScene(nextState, () => themes, layoutEngine, diff.delta));
+      setScene(createScene(nextState, () => themes, layoutEngine, activeDelta));
       setState(nextState);
     });
   }
@@ -232,6 +235,11 @@ export const App: Component<{}> = (): JSX.Element => {
   function onClearComparison(): void {
     diff.setBase(undefined, '');
     setComparedTo(undefined);
+    setDiffOn(true);
+  }
+
+  function onToggleDiff(): void {
+    setDiffOn((on: boolean): boolean => !on);
   }
 
   onMount((): void => {
@@ -285,7 +293,7 @@ export const App: Component<{}> = (): JSX.Element => {
         canvas={
           <Canvas
             diagram={state()!.diagram()}
-            delta={diff.delta()}
+            delta={activeDelta()}
             layoutEngine={layoutEngine}
             scene={scene()!}
             stylesheet={state()!.stylesheet()}
@@ -298,6 +306,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onKeyEcho={onKeyEcho}
             onCompare={onCompare}
             onClearComparison={onClearComparison}
+            onToggleDiff={onToggleDiff}
             registerCommandContext={(getContext: () => CommandContext): void => {
               setCommandContext((): CommandContextAccessor => getContext);
             }}
@@ -328,8 +337,9 @@ export const App: Component<{}> = (): JSX.Element => {
             editorTheme={chrome().name}
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
             comparedTo={comparedTo()}
+            diffOn={diffOn()}
             onCompare={onCompare}
-            onClearComparison={onClearComparison}
+            onToggleDiff={onToggleDiff}
           />
         }
         pending={

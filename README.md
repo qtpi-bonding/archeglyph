@@ -28,6 +28,56 @@ Three properties, in order of importance:
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 
+## Install
+
+**Requires [Bun](https://bun.sh) 1.3 or newer.** The CLI is TypeScript executed
+directly by Bun; there is no build step and no compiled binary.
+
+```bash
+git clone https://github.com/qtpi-bonding/archeglyph
+cd archeglyph
+bun install
+```
+
+There is no npm package yet — every workspace package is still at `0.0.0`, so
+`bunx archeglyph` does not work. Cloning is the only supported route today.
+
+## Quick start
+
+Render one of the bundled examples and open the result:
+
+```bash
+bun run archeglyph render \
+  --diagram examples/checkout.diag.json \
+  --style   examples/checkout.style.json \
+  --theme   blueprint \
+  --out     checkout.svg
+```
+
+That writes a self-contained SVG you can commit and embed. Swap `--theme` for
+`light` or `dark` and re-run: the topology is identical, only the styling
+moves. Drop `--style` entirely and the layout engine places everything itself.
+
+To see a diff between two revisions of a diagram:
+
+```bash
+bun run archeglyph diff \
+  --base   examples/checkout.diag.json \
+  --target examples/checkout-v2.diag.json \
+  --out    delta.json
+bun run archeglyph render --diagram examples/checkout-v2.diag.json \
+  --style examples/checkout-v2.style.json --theme blueprint \
+  --delta delta.json --out diff.svg
+```
+
+For the visual editor, which writes only to the stylesheet:
+
+```bash
+bun run dev:editor
+```
+
+It runs locally at the address Vite prints. There is no hosted instance yet.
+
 ## Family
 
 archeglyph is part of the `arche-` family of tools (Greek *archē* = origin/principle):
@@ -110,15 +160,21 @@ Themes ship reusable named components composing these glyphs. Stylesheets bind e
 
 ## CLI surface
 
+Every operation takes named flags; there are no positional arguments.
+
 ```
-archeglyph render <content> [<style>] [--theme <theme>] [-o <out.svg>]
-archeglyph validate <content> [<style>] [--theme <theme>]
-archeglyph diff <before> <after>             # emit the change set between two diagrams
-archeglyph init [--name <name>]
-archeglyph format <file>
-archeglyph watch <content> [--style <…>] [--theme <…>] [-o <out.svg>]
-archeglyph bind <content> [<style>] --where <predicate> --component <name>
+archeglyph render   --diagram <f> [--style <f>] [--theme <t>] [--delta <f>] [--out <f>]
+archeglyph validate --diagram <f> [--style <f>] [--theme <t>]
+archeglyph diff     --base <f> --target <f> [--out <f>] [--include-unchanged]
+archeglyph init     [--name <name>]
+archeglyph format   --file <f>
+archeglyph watch    --diagram <f> [--style <f>] [--theme <t>] [--out <f>]
+archeglyph bind     --diagram <f> [--style <f>] --where <predicate>
+                    --component <name> [--element-type node|edge|group]
 ```
+
+`--theme` accepts a bundled name (`light`, `dark`, `blueprint`) or a path to a
+`.theme.json`. Run `archeglyph <subcommand> --help` for the authoritative list.
 
 ## Design principles
 

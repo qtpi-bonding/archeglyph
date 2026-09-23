@@ -10,6 +10,7 @@
     "proto:gen": "buf generate",
     "proto:lint": "buf lint",
     "proto:format": "buf format -w",
+    "archeglyph": "bun packages/cli/bin/archeglyph.ts",
     "typecheck": "tsc --noEmit",
     "spdx": "bun scripts/spdx.ts",
     "spdx:fix": "bun scripts/spdx.ts --fix",

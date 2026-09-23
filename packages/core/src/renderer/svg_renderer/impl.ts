@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { Localization, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
+
 import { create } from '@bufbuild/protobuf';
 import {
   ArrowheadVariant,
@@ -48,6 +50,13 @@ function groupLabelPlacement(group: LaidOutGroup): { anchor: Vec2; align: TextAl
   const top: number = group.position.y + inset;
   const bottom: number = group.position.y + group.size.y - inset / 2;
 
+  if (group.isSuperNode && group.layout?.labelPosition === undefined) {
+    return {
+      anchor: point(centerX, group.position.y + group.size.y / 2),
+      align: TextAlign.ALIGN_CENTER,
+    };
+  }
+
   switch (group.layout?.labelPosition) {
     case GroupLabelPosition.GROUP_LABEL_TOP_CENTER:
       return { anchor: point(centerX, top), align: TextAlign.ALIGN_CENTER };
@@ -62,6 +71,15 @@ function groupLabelPlacement(group: LaidOutGroup): { anchor: Vec2; align: TextAl
     default:
       return { anchor: point(left, top), align: TextAlign.ALIGN_LEFT };
   }
+}
+
+
+function groupLabel(group: LaidOutGroup): Localization[] {
+  if (!group.isSuperNode || group.hiddenDescendantCount <= 0) {
+    return group.label;
+  }
+  return group.label.map((l: Localization): Localization =>
+    create(LocalizationSchema, { locale: l.locale, source: `${l.source} +${group.hiddenDescendantCount}` }));
 }
 
 function point(x: number, y: number): Vec2 {
@@ -158,7 +176,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const labelTypography: Typography = group.typography.align !== undefined
         ? group.typography
         : create(TypographySchema, { ...group.typography, align: placement.align });
-      const labelSvg: string = textElement(group.label, labelTypography, placement.anchor);
+      const labelSvg: string = textElement(groupLabel(group), labelTypography, placement.anchor, group.isSuperNode);
       groupsSvg += `<g id="group-${group.id}" data-element-id="${group.id}" data-kind="group">${shape}${labelSvg}</g>`;
     }
 

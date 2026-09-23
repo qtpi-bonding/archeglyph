@@ -14,7 +14,6 @@ import { DeltaOverlay } from './delta_overlay';
 import { DiffRoles } from './diff_roles';
 import { resolveDiffRoles } from './diff_roles';
 import { recolorLine, recolorShape } from './recolor_shape';
-import { recolorTypography } from './recolor_text';
 
 function changeOf(map: Record<string, ChangeType>, id: string): ChangeType {
   const change = map[id];
@@ -32,7 +31,7 @@ export function applyDiffPalette(laidOut: LaidOutDiagram, overlay: DeltaOverlay,
     nodes[id] = init(new LaidOutNode(), {
       ...node,
       shape: recolorShape(node.shape, change, diffRoles),
-      typography: recolorTypography(node.typography, change, diffRoles),
+      typography: node.typography,
     });
   }
 
@@ -42,7 +41,7 @@ export function applyDiffPalette(laidOut: LaidOutDiagram, overlay: DeltaOverlay,
     groups[id] = init(new LaidOutGroup(), {
       ...group,
       shape: recolorShape(group.shape, change, diffRoles),
-      typography: recolorTypography(group.typography, change, diffRoles),
+      typography: group.typography,
     });
   }
 
@@ -52,7 +51,7 @@ export function applyDiffPalette(laidOut: LaidOutDiagram, overlay: DeltaOverlay,
     edges[id] = init(new LaidOutEdge(), {
       ...edge,
       connection: recolorLine(edge.connection, change, diffRoles),
-      typography: recolorTypography(edge.typography, change, diffRoles),
+      typography: edge.typography,
     });
   }
 
@@ -64,7 +63,7 @@ export function applyDiffPalette(laidOut: LaidOutDiagram, overlay: DeltaOverlay,
     annotations[id] = init(new LaidOutAnnotation(), {
       ...annotation,
       shape: recolorShape(annotation.shape, ChangeType.UNCHANGED, diffRoles),
-      typography: recolorTypography(annotation.typography, ChangeType.UNCHANGED, diffRoles),
+      typography: annotation.typography,
       callout: annotation.callout === undefined
         ? undefined
         : recolorLine(annotation.callout, ChangeType.UNCHANGED, diffRoles),

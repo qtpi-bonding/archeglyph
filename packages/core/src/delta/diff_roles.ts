@@ -7,9 +7,12 @@ export class DiffRoles {
   modified!: string;
   deleted!: string;
 }
+import { ChangeType } from '../../../proto/src/gen/content_pb';
 import { Tokens } from '../../../proto/src/gen/theme_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { resolveTokensIn } from '../resolver/token_resolver';
+import { rotationFor } from './diff_color';
+import { rotateHue } from './hue';
 
 export function resolveDiffRoles(tokens?: Tokens): DiffRoles | undefined {
   if (tokens === undefined) return undefined;
@@ -19,11 +22,25 @@ export function resolveDiffRoles(tokens?: Tokens): DiffRoles | undefined {
     modified: '$roles.diff_modified',
     deleted: '$roles.diff_deleted',
   };
-  if (resolveTokensIn(roles, tokens).length > 0) return undefined;
+  if (resolveTokensIn(roles, tokens).length > 0) return rotatedFrom(tokens);
 
   return init(new DiffRoles(), {
     added: roles.added,
     modified: roles.modified,
     deleted: roles.deleted,
+  });
+}
+
+const ANCHOR = '$roles.node_outline';
+
+function rotatedFrom(tokens: Tokens): DiffRoles | undefined {
+  const anchor = { color: ANCHOR };
+  if (resolveTokensIn(anchor, tokens).length > 0) return undefined;
+
+  const color = anchor.color;
+  return init(new DiffRoles(), {
+    added: rotateHue(color, rotationFor(color, ChangeType.ADDED)),
+    modified: rotateHue(color, rotationFor(color, ChangeType.MODIFIED)),
+    deleted: rotateHue(color, rotationFor(color, ChangeType.DELETED)),
   });
 }

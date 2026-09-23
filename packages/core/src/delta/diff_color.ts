@@ -18,7 +18,7 @@ function arcTo(hue: number, target: number): number {
 
 // Per colour, not fixed: one angle means different hues from different bases,
 // so only a per-base choice keeps added reading green and deleted red.
-function rotationFor(color: string, change: ChangeType): number {
+export function rotationFor(color: string, change: ChangeType): number {
   const base = hueOf(color);
   if (base === undefined) {
     return SLOTS[0]!;

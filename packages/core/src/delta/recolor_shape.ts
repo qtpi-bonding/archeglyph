@@ -20,7 +20,7 @@ import {
 import { DiffRoles } from './diff_roles';
 import { diffColorFor } from './diff_color';
 
-const GHOST_OPACITY_SCALE = 0.4;
+const WASH_OPACITY = 0.18;
 
 // A second channel alongside colour. The mark survives greyscale, print and a
 // colour-blind reader, none of which the diff palette does on its own, and it
@@ -31,9 +31,14 @@ const GLYPH_FOR_CHANGE: ReadonlyMap<ChangeType, StrokePattern> = new Map([
   [ChangeType.MODIFIED, StrokePattern.DELTA],
 ]);
 
-function recolorStroke(stroke: Stroke, change: ChangeType, diffRoles: DiffRoles | undefined): Stroke {
+function recolorStroke(
+  stroke: Stroke,
+  change: ChangeType,
+  diffRoles: DiffRoles | undefined,
+  recolor: boolean,
+): Stroke {
   const next = create(StrokeSchema, { ...stroke });
-  if (stroke.paint.case === 'color') {
+  if (recolor && stroke.paint.case === 'color') {
     next.paint = {
       case: 'color',
       value: { ...stroke.paint.value, value: diffColorFor(stroke.paint.value.value, change, diffRoles) },
@@ -54,16 +59,17 @@ function recolorGlow(glow: Glow, change: ChangeType, diffRoles: DiffRoles | unde
   return next;
 }
 
-function recolorFill(fill: Fill, change: ChangeType, diffRoles: DiffRoles | undefined): Fill {
+function washFill(fill: Fill, change: ChangeType, diffRoles: DiffRoles | undefined): Fill {
   const next = create(FillSchema, { ...fill });
+  if (change === ChangeType.UNCHANGED || change === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
+    return next;
+  }
   if (fill.paint.case === 'color') {
     next.paint = {
       case: 'color',
       value: { ...fill.paint.value, value: diffColorFor(fill.paint.value.value, change, diffRoles) },
     };
-  }
-  if (change === ChangeType.DELETED) {
-    next.opacity = (fill.opacity ?? 1) * GHOST_OPACITY_SCALE;
+    next.opacity = WASH_OPACITY;
   }
   return next;
 }
@@ -71,29 +77,22 @@ function recolorFill(fill: Fill, change: ChangeType, diffRoles: DiffRoles | unde
 export function recolorShape(glyph: Glyph2D, change: ChangeType, diffRoles?: DiffRoles): Glyph2D {
   const next = create(Glyph2DSchema, { ...glyph });
   if (glyph.stroke !== undefined) {
-    next.stroke = recolorStroke(glyph.stroke, change, diffRoles);
+    next.stroke = recolorStroke(glyph.stroke, change, diffRoles, false);
   }
   if (glyph.fill !== undefined) {
-    next.fill = recolorFill(glyph.fill, change, diffRoles);
+    next.fill = washFill(glyph.fill, change, diffRoles);
   }
   if (glyph.glow !== undefined) {
-    next.glow = recolorGlow(glyph.glow, change, diffRoles);
+    next.glow = glyph.glow;
   }
-  next.decorations = glyph.decorations.map((decoration) =>
-    decoration.color === undefined
-      ? decoration
-      : {
-          ...decoration,
-          color: { ...decoration.color, value: diffColorFor(decoration.color.value, change, diffRoles) },
-        },
-  );
+  next.decorations = glyph.decorations;
   return next;
 }
 
 export function recolorLine(glyph: Glyph1D, change: ChangeType, diffRoles?: DiffRoles): Glyph1D {
   const next = create(Glyph1DSchema, { ...glyph });
   if (glyph.stroke !== undefined) {
-    next.stroke = recolorStroke(glyph.stroke, change, diffRoles);
+    next.stroke = recolorStroke(glyph.stroke, change, diffRoles, true);
   }
   if (glyph.glow !== undefined) {
     next.glow = recolorGlow(glyph.glow, change, diffRoles);

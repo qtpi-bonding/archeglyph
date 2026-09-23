@@ -15,12 +15,10 @@ import {
   Glyph2DSchema,
   StrokePattern,
   StrokeSchema,
-  TypographySchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { DiffRoles } from './diff_roles';
 import { recolorLine, recolorShape } from './recolor_shape';
-import { recolorTypography } from './recolor_text';
 
 const TABLE: DiffRoles = init(new DiffRoles(), {
   added: '#00ff00',
@@ -31,7 +29,7 @@ const TABLE: DiffRoles = init(new DiffRoles(), {
 const color = (v: string) => create(ColorSchema, { value: v });
 
 describe('recolorShape', () => {
-  test('replaces stroke, fill, glow and decoration colours from the table', () => {
+  test('the fill takes the diff colour; stroke, glow and decorations keep theirs', () => {
     const glyph = create(Glyph2DSchema, {
       stroke: create(StrokeSchema, { paint: { case: 'color', value: color('#112233') } }),
       fill: create(FillSchema, { paint: { case: 'color', value: color('#445566') } }),
@@ -41,10 +39,22 @@ describe('recolorShape', () => {
 
     const out = recolorShape(glyph, ChangeType.ADDED, TABLE);
 
-    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#00ff00');
     expect(out.fill?.paint.case === 'color' && out.fill.paint.value.value).toBe('#00ff00');
-    expect(out.glow?.color?.value).toBe('#00ff00');
-    expect(out.decorations[0]?.color?.value).toBe('#00ff00');
+    expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#112233');
+    expect(out.glow?.color?.value).toBe('#778899');
+    expect(out.decorations[0]?.color?.value).toBe('#aabbcc');
+  });
+
+  test('a washed fill is opaque enough to read, whatever the theme authored', () => {
+    const faint = create(Glyph2DSchema, {
+      fill: create(FillSchema, { paint: { case: 'color', value: color('#445566') }, opacity: 0.02 }),
+    });
+    const solid = create(Glyph2DSchema, {
+      fill: create(FillSchema, { paint: { case: 'color', value: color('#ffffff') }, opacity: 1 }),
+    });
+
+    expect(recolorShape(faint, ChangeType.ADDED, TABLE).fill?.opacity).toBeCloseTo(0.18, 6);
+    expect(recolorShape(solid, ChangeType.ADDED, TABLE).fill?.opacity).toBeCloseTo(0.18, 6);
   });
 
   test('leaves a gradient paint alone', () => {
@@ -68,26 +78,24 @@ describe('recolorShape', () => {
     expect(out.glow).toBeUndefined();
   });
 
-  // Ghosting is relative to what the theme already set. The bundled group
-  // components ship dashed at opacity 0.06, so an absolute rule would be
-  // invisible on one channel and backwards on the other.
-  test('DELETED marks the stroke with minuses and scales fill opacity to 0.4 of its old value', () => {
+  test('DELETED marks the stroke with minuses and washes the fill red', () => {
     const glyph = create(Glyph2DSchema, {
       stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '5,4' } }),
-      fill: create(FillSchema, { opacity: 0.06 }),
+      fill: create(FillSchema, { paint: { case: 'color', value: color('#445566') }, opacity: 0.06 }),
     });
 
     const out = recolorShape(glyph, ChangeType.DELETED, TABLE);
 
     expect(out.stroke?.dashing.case).toBe('pattern');
     expect(out.stroke?.dashing.value).toBe(StrokePattern.MINUS);
-    expect(out.fill?.opacity).toBeCloseTo(0.024, 6);
+    expect(out.fill?.paint.case === 'color' && out.fill.paint.value.value).toBe('#ff0000');
+    expect(out.fill?.opacity).toBeCloseTo(0.18, 6);
   });
 
-  test('DELETED treats an unset fill opacity as 1', () => {
+  test('DELETED leaves an unpainted fill alone', () => {
     const glyph = create(Glyph2DSchema, { fill: create(FillSchema, {}) });
 
-    expect(recolorShape(glyph, ChangeType.DELETED, TABLE).fill?.opacity).toBeCloseTo(0.4, 6);
+    expect(recolorShape(glyph, ChangeType.DELETED, TABLE).fill?.opacity).toBeUndefined();
   });
 
   test('DELETED creates neither a stroke nor a fill that was absent', () => {
@@ -97,19 +105,18 @@ describe('recolorShape', () => {
     expect(out.fill).toBeUndefined();
   });
 
-  // Every change type overrides the author's dashing, because the glyph IS the
-  // marking; only DELETED also ghosts the fill.
-  test('MODIFIED marks the stroke with deltas and leaves opacity alone', () => {
+  test('MODIFIED marks the stroke with deltas and washes the fill', () => {
     const glyph = create(Glyph2DSchema, {
       stroke: create(StrokeSchema, { dashing: { case: 'customDasharray', value: '2,3' } }),
-      fill: create(FillSchema, { opacity: 0.06 }),
+      fill: create(FillSchema, { paint: { case: 'color', value: color('#445566') }, opacity: 0.06 }),
     });
 
     const out = recolorShape(glyph, ChangeType.MODIFIED, TABLE);
 
     expect(out.stroke?.dashing.case).toBe('pattern');
     expect(out.stroke?.dashing.value).toBe(StrokePattern.DELTA);
-    expect(out.fill?.opacity).toBeCloseTo(0.06, 6);
+    expect(out.fill?.paint.case === 'color' && out.fill.paint.value.value).toBe('#0000ff');
+    expect(out.fill?.opacity).toBeCloseTo(0.18, 6);
   });
 
   test('ADDED marks the stroke with pluses', () => {
@@ -208,50 +215,5 @@ describe('recolorLine', () => {
     const out = recolorLine(glyph, ChangeType.MODIFIED, undefined);
 
     expect(out.stroke?.paint.case === 'color' && out.stroke.paint.value.value).toBe('#f38aff');
-  });
-});
-
-describe('recolorTypography', () => {
-  test('replaces both colours', () => {
-    const typography = create(TypographySchema, {
-      color: color('#112233'),
-      background: color('#445566'),
-    });
-
-    const out = recolorTypography(typography, ChangeType.DELETED, TABLE);
-
-    expect(out.color?.value).toBe('#ff0000');
-    expect(out.background?.value).toBe('#ff0000');
-  });
-
-  test('an unset colour stays unset', () => {
-    const out = recolorTypography(create(TypographySchema, { color: color('#112233') }), ChangeType.ADDED, TABLE);
-
-    expect(out.color?.value).toBe('#00ff00');
-    expect(out.background).toBeUndefined();
-  });
-
-  // Typography has no dashing and no opacity, so DELETED gets no ghosting.
-  test('non-colour fields are carried through', () => {
-    const typography = create(TypographySchema, {
-      color: color('#112233'),
-      font: 'Inter',
-      size: 12,
-      visible: true,
-    });
-
-    const out = recolorTypography(typography, ChangeType.DELETED, TABLE);
-
-    expect(out.font).toBe('Inter');
-    expect(out.size).toBe(12);
-    expect(out.visible).toBe(true);
-  });
-
-  test('the input is not mutated', () => {
-    const typography = create(TypographySchema, { color: color('#112233') });
-
-    recolorTypography(typography, ChangeType.ADDED, TABLE);
-
-    expect(typography.color?.value).toBe('#112233');
   });
 });

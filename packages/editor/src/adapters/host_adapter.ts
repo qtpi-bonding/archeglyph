@@ -11,6 +11,7 @@ export class LoadResult {
   stylesheet?: Stylesheet;
   baseHash!: string;
   stamp?: FileStamp;
+  fileName?: string;
 }
 
 /** Error returned when a host operation cannot be completed safely. */

@@ -82,7 +82,10 @@ export const App: Component<{}> = (): JSX.Element => {
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
   const refs: DiffRefs = diffRefsFrom(params);
-  const diff: DiffState = createDiffState(() => state()?.diagram(), refs.target);
+  const [sessionName, setSessionName] = createSignal<string>(
+    params.get('file') ?? params.get('name') ?? 'Untitled',
+  );
+  const diff: DiffState = createDiffState(() => state()?.diagram(), sessionName);
   const [scene, setScene] = createSignal<Scene | null>(null);
   const [loading, setLoading] = createSignal<boolean>(autoLoad);
   const [loadError, setLoadError] = createSignal<string | undefined>(undefined);
@@ -95,8 +98,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);
   const [diffOn, setDiffOn] = createSignal<boolean>(true);
   const activeDelta = (): Delta | undefined => (diffOn() ? diff.delta() : undefined);
-  const standIn = (): Diagram | undefined =>
-    (!diffOn() && diff.reversed() ? diff.attached() : undefined);
+  const standIn = (): Diagram | undefined => (diffOn() ? undefined : diff.baseStandIn());
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -179,6 +181,9 @@ export const App: Component<{}> = (): JSX.Element => {
       }
     }
     setLoading(false);
+    if (result.value.fileName !== undefined) {
+      setSessionName(result.value.fileName);
+    }
     startSession(createEditorState(result.value.diagram, stylesheet), result.value);
   }
 
@@ -209,33 +214,33 @@ export const App: Component<{}> = (): JSX.Element => {
     void pair.adapter.load().then(loadFrom);
   }
 
-  async function attachBase(source: DiagramSource, baseRef: string, label: string): Promise<void> {
+  async function attachFrom(source: DiagramSource, ref: string, asTarget: boolean): Promise<void> {
     const result = await source.load();
     if (result.kind === 'err') {
-      setSyncError(`archeglyph: failed to load diff base: ${result.error.message}`);
+      setSyncError(`archeglyph: failed to load the file to compare: ${result.error.message}`);
       return;
     }
     setSyncError(undefined);
-    diff.setBase(result.value, baseRef);
-    setComparedTo(label);
+    diff.attach(result.value, ref, asTarget);
+    setComparedTo(ref);
   }
 
   function onCompare(): void {
     const source: FilePickerDiagramSource = new FilePickerDiagramSource();
     void source.load().then((result): void => {
       if (result.kind === 'err') {
-        setSyncError(`archeglyph: failed to load diff base: ${result.error.message}`);
+        setSyncError(`archeglyph: failed to load the file to compare: ${result.error.message}`);
         return;
       }
-      const name: string = source.fileName() ?? 'base';
+      const name: string = source.fileName() ?? 'attached';
       setSyncError(undefined);
-      diff.setBase(result.value, name);
+      diff.attach(result.value, name, true);
       setComparedTo(name);
     });
   }
 
   function onClearComparison(): void {
-    diff.setBase(undefined, '');
+    diff.detach();
     setComparedTo(undefined);
     setDiffOn(true);
   }
@@ -245,7 +250,7 @@ export const App: Component<{}> = (): JSX.Element => {
   }
 
   function onSwapDirection(): void {
-    diff.setReversed((was: boolean): boolean => !was);
+    diff.swap();
   }
 
   onMount((): void => {
@@ -254,7 +259,7 @@ export const App: Component<{}> = (): JSX.Element => {
       void pair.adapter.load().then(loadFrom);
       const source: DiagramSource | undefined = selectDiagramSource(params);
       if (source !== undefined) {
-        void attachBase(source, refs.base, refs.base === '' ? 'base' : refs.base);
+        void attachFrom(source, refs.base === '' ? 'base' : refs.base, false);
       }
     }
     onCleanup((): void => {
@@ -263,7 +268,6 @@ export const App: Component<{}> = (): JSX.Element => {
     });
   });
 
-  const fileName: string = params.get('file') ?? params.get('name') ?? 'Untitled';
   const [flash, setFlash] = createSignal<ReadonlyArray<EchoToken>>([]);
   let flashTimer: ReturnType<typeof setTimeout> | undefined;
   const onKeyEcho = (tokens: ReadonlyArray<EchoToken> | undefined): void => {
@@ -335,7 +339,7 @@ export const App: Component<{}> = (): JSX.Element => {
         }
         file={
           <FileIsland
-            fileName={fileName}
+            fileName={sessionName()}
             dirty={state()!.dirty()}
             canSave={pair.adapter.canSave()}
             status={saveController()?.status()}
@@ -345,7 +349,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
             comparedTo={comparedTo()}
             diffOn={diffOn()}
-            reversed={diff.reversed()}
+            attachedIsTarget={diff.attachedIsTarget()}
             onCompare={onCompare}
             onToggleDiff={onToggleDiff}
             onSwapDirection={onSwapDirection}

@@ -16,31 +16,63 @@ function diagramOf(...ids: string[]) {
   });
 }
 
-function changeOf(delta: { nodeDeltas: Array<{ nodeId: string; changeType: ChangeType }> }, id: string): ChangeType | undefined {
+function changeOf(
+  delta: { nodeDeltas: Array<{ nodeId: string; changeType: ChangeType }> },
+  id: string,
+): ChangeType | undefined {
   return delta.nodeDeltas.find((d) => d.nodeId === id)?.changeType;
 }
 
 describe('diff direction', () => {
-  test('reversing swaps which file is the before', () => {
+  test('an attached target makes the open document the base', () => {
     createRoot((dispose) => {
       const open = diagramOf('shared', 'onlyOpen');
-      const state = createDiffState(() => open, 'open.diag.json');
-      state.setBase(diagramOf('shared', 'onlyAttached'), 'attached.diag.json');
+      const state = createDiffState(() => open, () => 'open.diag.json');
+      state.attach(diagramOf('shared', 'onlyAttached'), 'attached.diag.json', true);
 
       const forward = state.delta()!;
-      expect(forward.baseRef).toBe('attached.diag.json');
-      expect(forward.targetRef).toBe('open.diag.json');
-      expect(changeOf(forward, 'onlyOpen')).toBe(ChangeType.ADDED);
-      expect(changeOf(forward, 'onlyAttached')).toBe(ChangeType.DELETED);
+      expect(forward.baseRef).toBe('open.diag.json');
+      expect(forward.targetRef).toBe('attached.diag.json');
+      expect(changeOf(forward, 'onlyOpen')).toBe(ChangeType.DELETED);
+      expect(changeOf(forward, 'onlyAttached')).toBe(ChangeType.ADDED);
+      expect(state.baseStandIn()).toBeUndefined();
 
-      state.setReversed((was: boolean): boolean => !was);
+      state.swap();
 
       const back = state.delta()!;
-      expect(back.baseRef).toBe('open.diag.json');
-      expect(back.targetRef).toBe('attached.diag.json');
-      expect(changeOf(back, 'onlyOpen')).toBe(ChangeType.DELETED);
-      expect(changeOf(back, 'onlyAttached')).toBe(ChangeType.ADDED);
+      expect(back.baseRef).toBe('attached.diag.json');
+      expect(back.targetRef).toBe('open.diag.json');
+      expect(changeOf(back, 'onlyOpen')).toBe(ChangeType.ADDED);
+      expect(changeOf(back, 'onlyAttached')).toBe(ChangeType.DELETED);
+      expect(state.baseStandIn()).toBeDefined();
 
+      dispose();
+    });
+  });
+
+  test('an attached base makes the open document the target', () => {
+    createRoot((dispose) => {
+      const state = createDiffState(() => diagramOf('onlyOpen'), () => 'open');
+      state.attach(diagramOf('onlyAttached'), 'attached', false);
+
+      const delta = state.delta()!;
+      expect(delta.baseRef).toBe('attached');
+      expect(changeOf(delta, 'onlyOpen')).toBe(ChangeType.ADDED);
+
+      dispose();
+    });
+  });
+
+  test('detaching returns the delta to undefined', () => {
+    createRoot((dispose) => {
+      const state = createDiffState(() => diagramOf('a'), () => 'open');
+      state.attach(diagramOf('b'), 'attached', true);
+      expect(state.delta()).toBeDefined();
+
+      state.detach();
+
+      expect(state.delta()).toBeUndefined();
+      expect(state.baseStandIn()).toBeUndefined();
       dispose();
     });
   });

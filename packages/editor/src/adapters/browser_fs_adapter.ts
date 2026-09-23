@@ -88,7 +88,9 @@ export class BrowserFsAdapter implements HostAdapter {
         const stamp: FileStamp | undefined = styleHandle === null
           ? undefined
           : await this.fileStamp(styleHandle);
-        return init(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
+        return init(new LoadResult(), {
+          diagram: diagResult.value, stylesheet, baseHash, stamp, fileName: diagHandle.name,
+        });
       } else {
         throw new Error(diagResult.error.message);
       }
@@ -136,7 +138,9 @@ export class BrowserFsAdapter implements HostAdapter {
         const stamp: FileStamp | undefined = styleFile === null
           ? undefined
           : { lastModified: styleFile.lastModified, size: styleFile.size };
-        return init(new LoadResult(), { diagram: diagResult.value, stylesheet, baseHash, stamp });
+        return init(new LoadResult(), {
+          diagram: diagResult.value, stylesheet, baseHash, stamp, fileName: diagFile.name,
+        });
       } else {
         throw new Error(diagResult.error.message);
       }

@@ -52,13 +52,13 @@ describe('a base attached to the editor renders as a diff', () => {
     await createRoot(async (dispose) => {
       const target = diagramOf('kept');
       const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: 1 }));
-      const diff = createDiffState(() => state.diagram(), 'HEAD');
+      const diff = createDiffState(() => state.diagram(), () => 'HEAD');
 
       createScene(state, () => new Map([['default', theme]]), engine, diff.delta);
       await settle();
 
       // `dropped` is base-only, so the Delta records it DELETED.
-      diff.setBase(diagramOf('kept', 'dropped'), 'main');
+      diff.attach(diagramOf('kept', 'dropped'), 'main', false);
       await settle();
 
       const request = seen();
@@ -75,7 +75,7 @@ describe('a base attached to the editor renders as a diff', () => {
     await createRoot(async (dispose) => {
       const target = diagramOf('kept');
       const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: 1 }));
-      const diff = createDiffState(() => state.diagram(), 'HEAD');
+      const diff = createDiffState(() => state.diagram(), () => 'HEAD');
       const [on, setOn] = createSignal<boolean>(true);
 
       createScene(
@@ -84,7 +84,7 @@ describe('a base attached to the editor renders as a diff', () => {
         engine,
         () => (on() ? diff.delta() : undefined),
       );
-      diff.setBase(diagramOf('kept', 'dropped'), 'main');
+      diff.attach(diagramOf('kept', 'dropped'), 'main', false);
       await settle();
       expect(Object.keys(seen()!.diagram.nodes).sort()).toEqual(['dropped', 'kept']);
 
@@ -105,16 +105,16 @@ describe('a base attached to the editor renders as a diff', () => {
 
     await createRoot(async (dispose) => {
       const state = createEditorState(diagramOf('inSession'), create(StylesheetSchema, { schemaVersion: 1 }));
-      const diff = createDiffState(() => state.diagram(), 'open');
+      const diff = createDiffState(() => state.diagram(), () => 'open');
       const [showOther, setShowOther] = createSignal<boolean>(false);
 
-      diff.setBase(diagramOf('inAttached'), 'attached');
+      diff.attach(diagramOf('inAttached'), 'attached', false);
       createScene(
         state,
         () => new Map([['default', theme]]),
         engine,
         () => undefined,
-        () => (showOther() ? diff.attached() : undefined),
+        () => (showOther() ? diff.baseStandIn() : undefined),
       );
       await settle();
       expect(Object.keys(seen()!.diagram.nodes)).toEqual(['inSession']);

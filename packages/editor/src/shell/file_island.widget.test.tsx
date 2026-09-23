@@ -21,7 +21,7 @@ function props(overrides: Partial<FileIslandProps> = {}): FileIslandProps {
     editorTheme: 'blueprint',
     onEditorTheme: (): void => undefined,
     diffOn: true,
-    reversed: false,
+    attachedIsTarget: true,
     onCompare: (): void => undefined,
     onToggleDiff: (): void => undefined,
     onSwapDirection: (): void => undefined,
@@ -72,28 +72,28 @@ describe('attaching a diff base from the island', () => {
     cleanup();
   });
 
-  test('the direction is stated, base first, and swapping reverses it', () => {
+  test('the direction is stated base-first, and swapping reverses it', () => {
     const calls: string[] = [];
-    const [reversed, setReversed] = createSignal<boolean>(false);
+    const [attachedIsTarget, setAttachedIsTarget] = createSignal<boolean>(true);
     const { container } = render(() => (
       <FileIsland
         {...props({
           fileName: 'checkout.diag.json',
           comparedTo: 'checkout-v2.diag.json',
-          reversed: reversed(),
+          attachedIsTarget: attachedIsTarget(),
           onSwapDirection: (): void => { calls.push('swap'); },
         })}
       />
     ));
     const text = (): string => container.textContent ?? '';
 
-    expect(text()).toContain('checkout-v2.diag.json \u2192 checkout.diag.json');
+    expect(text()).toContain('checkout.diag.json \u2192 checkout-v2.diag.json');
 
     fireEvent.click(button(container, 'Swap diff direction'));
     expect(calls).toEqual(['swap']);
 
-    setReversed(true);
-    expect(text()).toContain('checkout.diag.json \u2192 checkout-v2.diag.json');
+    setAttachedIsTarget(false);
+    expect(text()).toContain('checkout-v2.diag.json \u2192 checkout.diag.json');
     cleanup();
   });
 

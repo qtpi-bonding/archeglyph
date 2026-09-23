@@ -15,7 +15,7 @@ export class FileIslandProps {
   onEditorTheme!: (a0: string) => void;
   comparedTo?: string;
   diffOn!: boolean;
-  reversed!: boolean;
+  attachedIsTarget!: boolean;
   onCompare!: () => void;
   onToggleDiff!: () => void;
   onSwapDirection!: () => void;
@@ -58,9 +58,9 @@ export const FileIsland: Component<FileIslandProps> = (props: FileIslandProps): 
         {(name): JSX.Element => (
           <>
             <span style={{ 'font-size': '12px', color: 'var(--ag-fg-3)' }}>
-              {props.reversed ? props.fileName : name()}
+              {props.attachedIsTarget ? props.fileName : name()}
               {' \u2192 '}
-              {props.reversed ? name() : props.fileName}
+              {props.attachedIsTarget ? name() : props.fileName}
             </span>
             <button aria-label="Swap diff direction" onClick={props.onSwapDirection}>
               {'\u21c4'}

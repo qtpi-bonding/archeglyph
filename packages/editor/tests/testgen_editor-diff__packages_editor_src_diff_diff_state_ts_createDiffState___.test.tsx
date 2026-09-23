@@ -16,7 +16,7 @@ describe('testgen_diff__createDiffState', () => {
     test('no_base_attached', () => {
         fc.assert(
             fc.property(fc.oneof(fc.constant(undefined), fc.string().map((id: string): Diagram => makeDiagram(id))), (value) => {
-        const state = createDiffState(() => value, "target");
+        const state = createDiffState(() => value, () => "target");
         expect(state.delta()).toBeUndefined();
             })
         );
@@ -25,8 +25,8 @@ describe('testgen_diff__createDiffState', () => {
     // WHEN: A base Diagram is attached, but target() is still undefined while the document is loading; delta() is undefined.
     // THEN: It keeps delta() undefined while an attached base exists but target() is still undefined.
     test('base_attached_target_loading', () => {
-        const state = createDiffState(() => undefined, "target");
-        state.setBase(makeDiagram("base"), "base-ref");
+        const state = createDiffState(() => undefined, () => "target");
+        state.attach(makeDiagram("base"), "base-ref", false);
         expect(state.delta()).toBeUndefined();
     });
 
@@ -35,8 +35,8 @@ describe('testgen_diff__createDiffState', () => {
             fc.property(fc.record({baseId: fc.string(), targetId: fc.string(), baseRef: fc.string(), targetRef: fc.string()}), (value) => {
         const base = makeDiagram(value.baseId);
         const target = makeDiagram(value.targetId);
-        const state = createDiffState(() => target, value.targetRef);
-        state.setBase(base, value.baseRef);
+        const state = createDiffState(() => target, () => value.targetRef);
+        state.attach(base, value.baseRef, false);
         const result = state.delta();
         expect(result?.schemaVersion).toBe(1);
         expect(result?.baseRef).toBe(value.baseRef);
@@ -55,8 +55,8 @@ describe('testgen_diff__createDiffState', () => {
         // createMemo recomputes on SIGNAL change, so the target has to be one.
         createRoot((dispose) => {
           const [current, setCurrent] = createSignal<Diagram | undefined>(makeDiagram(value[0]));
-          const state = createDiffState(current, "target-ref");
-          state.setBase(makeDiagram("base"), "base-ref");
+          const state = createDiffState(current, () => "target-ref");
+          state.attach(makeDiagram("base"), "base-ref", false);
           const first = state.delta();
           setCurrent(makeDiagram(value[1]));
           const result = state.delta();
@@ -75,8 +75,8 @@ describe('testgen_diff__createDiffState', () => {
         // HAND-REPAIRED: see target_updates_with_base.
         createRoot((dispose) => {
           const [current, setCurrent] = createSignal<Diagram | undefined>(undefined);
-          const state = createDiffState(current, "target-ref");
-          state.setBase(makeDiagram("base"), "base-ref");
+          const state = createDiffState(current, () => "target-ref");
+          state.attach(makeDiagram("base"), "base-ref", false);
           expect(state.delta()).toBeUndefined();
           setCurrent(makeDiagram("target"));
           const result = state.delta();
@@ -87,22 +87,22 @@ describe('testgen_diff__createDiffState', () => {
         });
     });
 
-    // WHEN: Calling setBase(undefined) detaches an otherwise attached base; delta() returns to undefined, including when target() currently returns a Diagram.
-    // THEN: It returns delta() to undefined when setBase(undefined) detaches the base, even if a target is available.
+    // WHEN: detach() removes an otherwise attached diagram; delta() returns to undefined, including when the session currently has a Diagram.
+    // THEN: It returns delta() to undefined, even if a session diagram is available.
     test('base_detached', () => {
         let current = makeDiagram("target");
-        const state = createDiffState(() => current, "target-ref");
-        state.setBase(makeDiagram("base"), "base-ref");
+        const state = createDiffState(() => current, () => "target-ref");
+        state.attach(makeDiagram("base"), "base-ref", false);
         expect(state.delta()?.baseRef).toBe("base-ref");
-        state.setBase(undefined, "ignored");
+        state.detach();
         expect(state.delta()).toBeUndefined();
     });
 
     test('opaque_or_blank_labels', () => {
         fc.assert(
             fc.property(fc.record({baseRef: fc.string(), targetRef: fc.string()}), (value) => {
-        const state = createDiffState(() => makeDiagram("target"), value.targetRef);
-        state.setBase(makeDiagram("base"), value.baseRef);
+        const state = createDiffState(() => makeDiagram("target"), () => value.targetRef);
+        state.attach(makeDiagram("base"), value.baseRef, false);
         const result = state.delta();
         expect(result?.baseRef).toBe(value.baseRef);
         expect(result?.targetRef).toBe(value.targetRef);

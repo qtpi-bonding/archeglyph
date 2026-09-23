@@ -228,6 +228,130 @@ describe('visibility_filter', () => {
     }
   });
 
+  test('CONTRACTED group: cross-boundary edges that collapse onto the same pair merge into one carrying the count', () => {
+    const diagram = create(DiagramSchema, {
+      id: 'd1',
+      graph: {
+        nodes: {
+          outside: { label: [], tags: {} },
+          inner1: { label: [], tags: {}, parentGroup: 'g1' },
+          inner2: { label: [], tags: {}, parentGroup: 'g1' },
+          inner3: { label: [], tags: {}, parentGroup: 'g1' },
+        },
+        edges: {
+          e1: { source: 'inner1', target: 'outside', label: [], ordinal: 0, tags: {} },
+          e2: { source: 'inner2', target: 'outside', label: [], ordinal: 0, tags: {} },
+          e3: { source: 'inner3', target: 'outside', label: [], ordinal: 0, tags: {} },
+        },
+        groups: { g1: { label: [], tags: {} } },
+      },
+    });
+    const stylesheet = create(StylesheetSchema, {
+      groups: {
+        g1: create(GroupStyleEntrySchema, {
+          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+        }),
+      },
+    });
+    const result = filterImpl.filter(filterReq(diagram, stylesheet));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const edges = Object.values(result.value.edges);
+      expect(edges).toHaveLength(1);
+      expect(edges[0].source).toBe('g1');
+      expect(edges[0].target).toBe('outside');
+      expect(edges[0].tags.get('archeglyph.bundled')).toBe('3');
+      expect(edges[0].label[0]?.source).toBe('\u00d73');
+    }
+  });
+
+  test('bundling splits by kind: two kinds between the same pair stay two edges, each with its own count', () => {
+    const diagram = create(DiagramSchema, {
+      id: 'd1',
+      graph: {
+        nodes: {
+          outside: { label: [], tags: {} },
+          inner1: { label: [], tags: {}, parentGroup: 'g1' },
+          inner2: { label: [], tags: {}, parentGroup: 'g1' },
+          inner3: { label: [], tags: {}, parentGroup: 'g1' },
+        },
+        edges: {
+          e1: { source: 'inner1', target: 'outside', label: [], ordinal: 0, tags: { kind: 'calls' } },
+          e2: { source: 'inner2', target: 'outside', label: [], ordinal: 0, tags: { kind: 'calls' } },
+          e3: { source: 'inner3', target: 'outside', label: [], ordinal: 0, tags: { kind: 'reads' } },
+        },
+        groups: { g1: { label: [], tags: {} } },
+      },
+    });
+    const stylesheet = create(StylesheetSchema, {
+      groups: {
+        g1: create(GroupStyleEntrySchema, {
+          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+        }),
+      },
+    });
+    const result = filterImpl.filter(filterReq(diagram, stylesheet));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const edges = Object.values(result.value.edges);
+      expect(edges).toHaveLength(2);
+      const byKind = new Map(edges.map((e) => [e.tags.get('kind'), e]));
+      expect(byKind.get('calls')?.tags.get('archeglyph.bundled')).toBe('2');
+      expect(byKind.get('reads')?.id).toBe('e3');
+    }
+  });
+
+  test('a bundled edge keeps the label its contributors shared and appends the count', () => {
+    const diagram = create(DiagramSchema, {
+      id: 'd1',
+      graph: {
+        nodes: {
+          outside: { label: [], tags: {} },
+          inner1: { label: [], tags: {}, parentGroup: 'g1' },
+          inner2: { label: [], tags: {}, parentGroup: 'g1' },
+        },
+        edges: {
+          e1: { source: 'inner1', target: 'outside', label: [{ locale: 'en', source: 'depends_on' }], ordinal: 0, tags: {} },
+          e2: { source: 'inner2', target: 'outside', label: [{ locale: 'en', source: 'depends_on' }], ordinal: 0, tags: {} },
+        },
+        groups: { g1: { label: [], tags: {} } },
+      },
+    });
+    const stylesheet = create(StylesheetSchema, {
+      groups: {
+        g1: create(GroupStyleEntrySchema, {
+          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+        }),
+      },
+    });
+    const result = filterImpl.filter(filterReq(diagram, stylesheet));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const edges = Object.values(result.value.edges);
+      expect(edges).toHaveLength(1);
+      expect(edges[0].label[0]?.source).toBe('depends_on \u00d72');
+    }
+  });
+
+  test('parallel edges the author wrote are left alone when no contraction remapped them', () => {
+    const diagram = create(DiagramSchema, {
+      id: 'd1',
+      graph: {
+        nodes: { a: { label: [], tags: {} }, b: { label: [], tags: {} } },
+        edges: {
+          reads: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
+          writes: { source: 'a', target: 'b', label: [], ordinal: 1, tags: {} },
+        },
+        groups: {},
+      },
+    });
+    const result = filterImpl.filter(filterReq(diagram, undefined));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(Object.keys(result.value.edges).sort()).toEqual(['reads', 'writes']);
+    }
+  });
+
   test('nested groups: node inside a CONTRACTED inner group nested in a BOUNDED outer group is absorbed by the inner (immediate) contraction, outer stays intact', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',

@@ -24,6 +24,7 @@ import { Inspector } from '../inspector/inspector';
 import { AdapterPair, selectAdapters } from './select_adapters';
 import { createUiState } from '../ui_state/ui_state';
 import { Scene, SceneError, createScene } from '../scene/scene';
+import { createSceneSlot, type SceneSlot } from '../scene/scene_slot';
 import { LayoutEngineImpl } from '@archeglyph/core/layout/layout_engine';
 import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { createBrowserElk } from '@archeglyph/core/layout/elk_host_browser';
@@ -86,7 +87,8 @@ export const App: Component<{}> = (): JSX.Element => {
     params.get('file') ?? params.get('name') ?? 'Untitled',
   );
   const diff: DiffState = createDiffState(() => state()?.diagram(), sessionName);
-  const [scene, setScene] = createSignal<Scene | null>(null);
+  const sceneSlot: SceneSlot = createSceneSlot();
+  const scene: () => Scene | null = sceneSlot.scene;
   const [loading, setLoading] = createSignal<boolean>(autoLoad);
   const [loadError, setLoadError] = createSignal<string | undefined>(undefined);
   const [commandContext, setCommandContext] = createSignal<MaybeCommandContextAccessor>(undefined);
@@ -147,7 +149,8 @@ export const App: Component<{}> = (): JSX.Element => {
     // scene() still null, which the `scene={scene()!}` assertion hides from
     // tsc and which no test sees, because nothing mounts App.
     batch((): void => {
-      setScene(createScene(nextState, () => themes, layoutEngine, activeDelta, standIn));
+      sceneSlot.install((): Scene =>
+        createScene(nextState, () => themes, layoutEngine, activeDelta, standIn));
       setState(nextState);
     });
   }
@@ -265,6 +268,7 @@ export const App: Component<{}> = (): JSX.Element => {
     onCleanup((): void => {
       saveController()?.dispose();
       fileSync?.stop();
+      sceneSlot.dispose();
     });
   });
 

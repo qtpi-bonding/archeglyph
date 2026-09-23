@@ -65,6 +65,9 @@
       "@archeglyph/themes": [
         "./packages/themes/src/index.ts"
       ],
+      "@archeglyph/importer-archegraph": [
+        "./packages/importer-archegraph/src/index.ts"
+      ],
       "@archeglyph/core/pipeline": [
         "./packages/core/src/pipeline/index.ts"
       ],

@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "id": "archeglyph-architecture",
+  "title": [
+    {
+      "locale": "en",
+      "source": "archeglyph — package architecture"
+    }
+  ],
+  "graph": {
+    "nodes": {
+      "cli": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "cli"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "17",
+          "archegraph.kind": "Package"
+        }
+      },
+      "core": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "core"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "1075",
+          "archegraph.kind": "Package"
+        }
+      },
+      "editor": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "editor"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "2475",
+          "archegraph.kind": "Package"
+        }
+      },
+      "importer-archegraph": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "importer-archegraph"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "8",
+          "archegraph.kind": "Package"
+        }
+      },
+      "ops": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "ops"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "268",
+          "archegraph.kind": "Package"
+        }
+      },
+      "proto": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "proto"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "424",
+          "archegraph.kind": "Package"
+        }
+      },
+      "themes": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "themes"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "42",
+          "archegraph.kind": "Package"
+        }
+      }
+    },
+    "edges": {
+      "cli__ops": {
+        "source": "cli",
+        "target": "ops",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "28"
+        }
+      },
+      "core__proto": {
+        "source": "core",
+        "target": "proto",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "1109"
+        }
+      },
+      "core__themes": {
+        "source": "core",
+        "target": "themes",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "12"
+        }
+      },
+      "editor__core": {
+        "source": "editor",
+        "target": "core",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "1125"
+        }
+      },
+      "editor__proto": {
+        "source": "editor",
+        "target": "proto",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "1536"
+        }
+      },
+      "editor__themes": {
+        "source": "editor",
+        "target": "themes",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "14"
+        }
+      },
+      "importer-archegraph__proto": {
+        "source": "importer-archegraph",
+        "target": "proto",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "21"
+        }
+      },
+      "ops__core": {
+        "source": "ops",
+        "target": "core",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "62"
+        }
+      },
+      "ops__proto": {
+        "source": "ops",
+        "target": "proto",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "132"
+        }
+      },
+      "ops__themes": {
+        "source": "ops",
+        "target": "themes",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "2"
+        }
+      },
+      "themes__proto": {
+        "source": "themes",
+        "target": "proto",
+        "label": [
+          {
+            "locale": "en"
+          }
+        ],
+        "tags": {
+          "archeglyph.references": "130"
+        }
+      }
+    }
+  },
+  "metadata": {
+    "generator": "archegraph-importer-v1",
+    "canonicalLocale": "en"
+  }
+}

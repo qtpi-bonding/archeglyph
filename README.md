@@ -73,14 +73,22 @@ here: point one at that file and it has the whole surface.
 
 ## Family
 
-archeglyph is part of the `arche-` family of tools (Greek *archē* = origin/principle):
+The name is *archē* (ἀρχή, origin/principle) + *glyphē* (γλυφή,
+carving/inscription) — the carved form of an origin graph.
 
-- **archegraph** — the originating code-architecture graph
-- **archescope** — the explorer/visualizer for archegraph
-- **archebuild** — build orchestration over archegraph
-- **archeglyph** — the carved (rendered) form of an `arche-` graph
+The origin graph in question is **archegraph**, a code-architecture verifier
+that extracts a structural graph from a codebase. archeglyph is its first
+from-scratch dogfood target, and the two co-evolved: the diagram at the top of
+this README is archegraph's view of this repository, rendered by archeglyph.
+archegraph is not public yet.
 
-Etymology: *archē* (ἀρχή, origin/principle) + *glyphē* (γλυφή, carving/inscription) — "the carved form of the origin graph."
+That relationship is recorded rather than asserted. The
+`.archegraph/specs/**/*.spec.textproto` files and the `spec/<pillar>-v1` tags
+are the build history of every pillar in this project, and each one can be
+replayed from them.
+
+archeglyph does not depend on any of it. It is a general node-and-edge engine;
+archegraph is one importer, alongside DOT, Mermaid and JSON later.
 
 ## How it works (overview)
 
@@ -98,37 +106,6 @@ theme.theme.json     ──┘
 - **theme** — design system: tokens (colors, fonts, sizes) + named components
 
 All three files are canonical proto3 JSON. The renderer emits a deterministic SVG with an embedded provenance comment.
-
-## File structure
-
-```
-archeglyph/
-├── proto/                    # content/style/theme .proto — the on-disk file format
-├── packages/
-│   ├── proto/                # TypeScript generated from the protos by buf
-│   ├── core/                 # loaders, resolver, layout, renderer, pipeline, geometry
-│   ├── ops/                  # the seven operations, shared by CLI and MCP
-│   ├── cli/                  # command dispatcher over the op registry
-│   ├── editor/               # visual editor SPA (SolidJS), host-agnostic
-│   ├── themes/               # bundled light / dark / blueprint themes
-│   └── importer-archegraph/
-├── examples/                 # sample diagrams
-├── test/goldens/             # committed SVGs — the determinism gate
-└── docs/design.md            # full design spec
-```
-
-## A note on agent-local files
-
-This project is developed with AI coding agents, and is the first from-scratch
-dogfood target for [archegraph](#family) — the `.archegraph/specs/**/*.spec.textproto`
-files and the `spec/<pillar>-v1` tags are the record of that, and every pillar's
-build can be reproduced from them.
-
-Some files referenced in the design docs are deliberately not published, because
-they only describe one machine's setup: `CLAUDE.md` (agent operating
-instructions), `.claude/skills/` (a symlink into a sibling checkout), and
-`docs/comparisons/`. Prose in `docs/` that points at them is a record of how the
-work was done, not a broken link.
 
 ## Tech stack
 
@@ -161,6 +138,13 @@ See [`docs/design.md` §2](docs/design.md) for the full set. Highlights:
 - **Kernel + adapters** — core is general; archegraph is one importer
 - **Host-agnostic visual editor** — abstract HostAdapter; standalone web (v1), VS Code extension (later), native (later)
 - **Structural defaults in code, stylistic in schema** — schema captures data; merge mechanics live in code
+
+## A note on agent-local files
+
+Some files the design docs mention are deliberately unpublished, because they
+describe one machine rather than the project: `CLAUDE.md`, `.claude/skills/`
+(a symlink into a sibling checkout), and `docs/comparisons/`. A reference to
+one in `docs/` is a record of how the work was done, not a broken link.
 
 ## License
 

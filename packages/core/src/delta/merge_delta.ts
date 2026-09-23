@@ -26,48 +26,63 @@ export function mergeDelta(target: Diagram, delta: Delta): DeltaOverlay {
   const groupTypes: Record<string, ChangeType> = {};
   const restoredNodes = new Set<string>();
   const restoredGroups = new Set<string>();
+  const restoredEdges = new Set<string>();
 
   for (const key of Object.keys(nodes)) nodeTypes[key] = ChangeType.UNCHANGED;
   for (const key of Object.keys(edges)) edgeTypes[key] = ChangeType.UNCHANGED;
   for (const key of Object.keys(groups)) groupTypes[key] = ChangeType.UNCHANGED;
 
   for (const entry of delta.nodeDeltas) {
-    if (entry.changeType === ChangeType.DELETED) {
-      if (entry.before !== undefined) {
-        nodes[entry.nodeId] = entry.before;
-        nodeTypes[entry.nodeId] = ChangeType.DELETED;
+    const absent = nodes[entry.nodeId] === undefined;
+    const side = entry.changeType === ChangeType.DELETED ? entry.before : entry.after;
+    if (entry.changeType === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
+      continue;
+    }
+    if (absent) {
+      if (side !== undefined) {
+        nodes[entry.nodeId] = side;
+        nodeTypes[entry.nodeId] = entry.changeType;
         restoredNodes.add(entry.nodeId);
       }
-    } else if (entry.changeType !== ChangeType.CHANGE_TYPE_UNSPECIFIED && nodes[entry.nodeId] !== undefined) {
+    } else {
       nodeTypes[entry.nodeId] = entry.changeType;
     }
   }
 
   for (const entry of delta.edgeDeltas) {
-    if (entry.changeType === ChangeType.DELETED) {
-      if (entry.before !== undefined) {
-        edges[entry.edgeId] = entry.before;
-        edgeTypes[entry.edgeId] = ChangeType.DELETED;
+    const absent = edges[entry.edgeId] === undefined;
+    const side = entry.changeType === ChangeType.DELETED ? entry.before : entry.after;
+    if (entry.changeType === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
+      continue;
+    }
+    if (absent) {
+      if (side !== undefined) {
+        edges[entry.edgeId] = side;
+        edgeTypes[entry.edgeId] = entry.changeType;
+        restoredEdges.add(entry.edgeId);
       }
-    } else if (entry.changeType !== ChangeType.CHANGE_TYPE_UNSPECIFIED && edges[entry.edgeId] !== undefined) {
+    } else {
       edgeTypes[entry.edgeId] = entry.changeType;
     }
   }
 
   for (const entry of delta.groupDeltas) {
-    if (entry.changeType === ChangeType.DELETED) {
-      if (entry.before !== undefined) {
-        groups[entry.groupId] = entry.before;
-        groupTypes[entry.groupId] = ChangeType.DELETED;
+    const absent = groups[entry.groupId] === undefined;
+    const side = entry.changeType === ChangeType.DELETED ? entry.before : entry.after;
+    if (entry.changeType === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
+      continue;
+    }
+    if (absent) {
+      if (side !== undefined) {
+        groups[entry.groupId] = side;
+        groupTypes[entry.groupId] = entry.changeType;
         restoredGroups.add(entry.groupId);
       }
-    } else if (entry.changeType !== ChangeType.CHANGE_TYPE_UNSPECIFIED && groups[entry.groupId] !== undefined) {
+    } else {
       groupTypes[entry.groupId] = entry.changeType;
     }
   }
 
-  // Resolve containment only after all three maps have been assembled.  In
-  // particular, a deleted node may make a deleted edge valid again.
   for (const key of restoredNodes) {
     const node = nodes[key];
     if (node.parentGroup !== undefined && groups[node.parentGroup] === undefined) {
@@ -82,7 +97,7 @@ export function mergeDelta(target: Diagram, delta: Delta): DeltaOverlay {
   }
   for (const key of Object.keys(edges)) {
     const edge = edges[key];
-    if (edgeTypes[key] === ChangeType.DELETED &&
+    if (restoredEdges.has(key) &&
         (nodes[edge.source] === undefined || nodes[edge.target] === undefined)) {
       delete edges[key];
       delete edgeTypes[key];

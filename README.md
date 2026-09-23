@@ -6,6 +6,16 @@ A node-and-edge graph rendering tool with strict content/style separation — li
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
 
+![archeglyph's own package architecture](docs/img/architecture-blueprint.svg)
+
+<sub>Not a drawing. [archegraph](#family) indexed this repository, the resulting
+graph was rolled up to one node per workspace package, and archeglyph rendered
+it in the `blueprint` theme — no hand-placed boxes, no hand-drawn lines. An
+edge means one package references another somewhere in its source; the
+reference counts are in
+[`examples/archeglyph-architecture.diag.json`](examples/archeglyph-architecture.diag.json).
+Regenerate with `bun run scripts/architecture_diagram.ts`.</sub>
+
 **Status:** shipped — core engine, all seven CLI operations, and the visual editor. Full design spec in [`docs/design.md`](docs/design.md); current state in [`docs/status.md`](docs/status.md).
 
 ## What it is

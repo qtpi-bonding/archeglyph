@@ -27,8 +27,11 @@ for (const id of Object.keys(raw.nodes)) {
 
 const key = (from: string, to: string): string => `${from} ${to}`;
 
+const HIERARCHY: ReadonlySet<string> = new Set(['Containment']);
+
 const weights = new Map<string, number>();
 for (const edge of Object.values(raw.edges)) {
+  if (HIERARCHY.has(edge.kindLabel)) { continue; }
   const from = packageOf(edge.source);
   const to = packageOf(edge.target);
   if (from === undefined || to === undefined || from === to) { continue; }

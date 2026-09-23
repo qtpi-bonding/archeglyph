@@ -1,7 +1,7 @@
 ---
 name: archeglyph-manual
 description: Command reference for the archeglyph CLI, generated from --help — do not edit by hand.
-manual-source-hash: 9d8fb8f62a60be036b489dd6df2e580366624883b5f533aee007d19c9edafacd
+manual-source-hash: 666b01e45485bb64d5cf7074e97b37e7ef0940d8f6ddf3ea0efa8fad6d57a9a8
 ---
 
 # archeglyph command reference
@@ -31,7 +31,6 @@ Subcommands:
   bind      Bind a theme component to matching diagram elements in a stylesheet
   watch     Watch a diagram file and re-render on changes
   diff      Compare two diagram files and emit the change set between them
-  mcp       Run the Model Context Protocol stdio server
   help      Show this help (or pass --help to any subcommand)
 
 Run `archeglyph <subcommand> --help` for per-command details.

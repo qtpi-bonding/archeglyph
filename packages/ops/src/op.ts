@@ -47,13 +47,3 @@ export async function dispatchCli<P, O>(
   if (text.length > 0) process.stdout.write(text + '\n');
   return op.exitCode?.(output) ?? 0;
 }
-
-export async function dispatchMcp<P, O>(
-  op: Operation<P, O>,
-  params: P,
-  ctx: OpContext,
-): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const output = await op.execute(params, ctx);
-  const json = JSON.stringify(output, null, 2);
-  return { content: [{ type: 'text', text: json }] };
-}

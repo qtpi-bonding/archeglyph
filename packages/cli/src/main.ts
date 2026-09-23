@@ -2,7 +2,6 @@
 
 import { ZodError } from 'zod';
 import { REGISTRY, formatRootHelp, formatOpHelp, parseArgv, createOpContext, dispatchCli } from '@archeglyph/ops';
-import { runMcpServer } from './mcp_server';
 import { init } from '@archeglyph/proto/util/init';
 
 function formatZodError(err: unknown): string {
@@ -52,12 +51,6 @@ export async function run(argv: string[]): Promise<void> {
 
   const subcommand = argv[0];
   const rest = argv.slice(1);
-
-  if (subcommand === 'mcp') {
-    const ctx = createOpContext();
-    await runMcpServer(ctx);
-    process.exit(0);
-  }
 
   const op = REGISTRY.find(o => o.name === subcommand);
   if (op === undefined) {

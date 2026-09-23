@@ -166,7 +166,7 @@ export function formatOpHelp(op: Operation<unknown, unknown>): string {
 export function formatRootHelp(ops: Operation<unknown, unknown>[]): string {
   const metas: OpMeta[] = ops as unknown as OpMeta[];
   const opNames: string[] = metas.map((op: OpMeta) => op.name);
-  const allNames: string[] = opNames.concat(['mcp', 'help']);
+  const allNames: string[] = opNames.concat(['help']);
   const maxName: number = allNames.reduce((acc: number, name: string) => Math.max(acc, name.length), 0);
 
   const subLines: string[] = metas.map((op: OpMeta): string => {
@@ -174,7 +174,6 @@ export function formatRootHelp(ops: Operation<unknown, unknown>[]): string {
   });
 
   const fixedLines: string[] = [
-    `  ${'mcp'.padEnd(maxName)}  Run the Model Context Protocol stdio server`,
     `  ${'help'.padEnd(maxName)}  Show this help (or pass --help to any subcommand)`,
   ];
 

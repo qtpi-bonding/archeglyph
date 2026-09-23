@@ -5,4 +5,3 @@
 // directory-style imports (`from '../<dir>'`) resolve to <dir>/index.ts.
 
 export * from './main';
-export * from './mcp_server';

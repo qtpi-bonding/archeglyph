@@ -56,6 +56,7 @@ export interface CommandContext {
   attachBase?: () => void;
   clearBase?: () => void;
   toggleDiff?: () => void;
+  swapDiffDirection?: () => void;
 }
 
 /**
@@ -330,6 +331,12 @@ export const COMMANDS: Array<Command> = [
     id: 'toggle-diff' as CommandId,
     label: 'Toggle diff',
     run: ({ toggleDiff }: CommandContext): void => toggleDiff?.(),
+    appliesTo: 'global',
+  },
+  {
+    id: 'swap-diff-direction' as CommandId,
+    label: 'Swap diff direction',
+    run: ({ swapDiffDirection }: CommandContext): void => swapDiffDirection?.(),
     appliesTo: 'global',
   },
   {

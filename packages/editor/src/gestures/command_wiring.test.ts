@@ -139,6 +139,7 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
       attachBase: (): void => { calls.push('attachBase'); },
       clearBase: (): void => { calls.push('clearBase'); },
       toggleDiff: (): void => { calls.push('toggleDiff'); },
+      swapDiffDirection: (): void => { calls.push('swapDiffDirection'); },
     },
   };
 }

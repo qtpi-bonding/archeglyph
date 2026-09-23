@@ -242,6 +242,10 @@ export const App: Component<{}> = (): JSX.Element => {
     setDiffOn((on: boolean): boolean => !on);
   }
 
+  function onSwapDirection(): void {
+    diff.setReversed((was: boolean): boolean => !was);
+  }
+
   onMount((): void => {
     if (autoLoad) {
       setLoading(true);
@@ -307,6 +311,7 @@ export const App: Component<{}> = (): JSX.Element => {
             onCompare={onCompare}
             onClearComparison={onClearComparison}
             onToggleDiff={onToggleDiff}
+            onSwapDirection={onSwapDirection}
             registerCommandContext={(getContext: () => CommandContext): void => {
               setCommandContext((): CommandContextAccessor => getContext);
             }}
@@ -338,8 +343,10 @@ export const App: Component<{}> = (): JSX.Element => {
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
             comparedTo={comparedTo()}
             diffOn={diffOn()}
+            reversed={diff.reversed()}
             onCompare={onCompare}
             onToggleDiff={onToggleDiff}
+            onSwapDirection={onSwapDirection}
           />
         }
         pending={

@@ -61,6 +61,7 @@ export interface CanvasProps {
   onCompare?: () => void;
   onClearComparison?: () => void;
   onToggleDiff?: () => void;
+  onSwapDirection?: () => void;
   /** Registers an accessor for the live command context owned by the canvas. */
   registerCommandContext: (getContext: () => CommandContext) => void;
   /** Receives a SCREEN point, not a diagram one: the menu is positioned in
@@ -405,6 +406,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       attachBase: props.onCompare,
       clearBase: props.onClearComparison,
       toggleDiff: props.onToggleDiff,
+      swapDiffDirection: props.onSwapDirection,
     });
     props.registerCommandContext(getCommandContext);
     // Tool-independent: double-click is a direct-manipulation gesture, and a

@@ -52,3 +52,10 @@ archebuild.db-wal
 
 # archegraph per-node build worktrees (transient; recreated by every build)
 .claude/worktrees/
+
+# Agent working files — local only, machine-specific paths
+/CLAUDE.md
+# Symlink into a sibling checkout; dangles for anyone else
+/.claude/skills
+# Competitor analysis, not part of the published project
+/docs/comparisons/

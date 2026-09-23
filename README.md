@@ -20,11 +20,12 @@ Regenerate with `bun run scripts/architecture_diagram.ts`.</sub>
 
 ## What it is
 
-Three properties, in order of importance:
+Four properties, in order of importance:
 
 1. **Content is canonical.** The text file *is* the graph. Topology cannot be edited via the visual editor. The visual editor only writes to the style sidecar.
 2. **Output is deterministic.** Same `(content, style, theme, archeglyph version)` → byte-identical SVG. Git diffs of generated SVGs are meaningful.
 3. **AI-compat is by design, not magic.** All edits are expressible as typed operations on the style file. AI agents read and write the same files humans do, through the same operations.
+4. **Change is a first-class object.** `diff` computes a typed change set between two revisions of a diagram, and the renderer draws it — added, changed and deleted elements coloured in place, with deletions still shown rather than silently absent. A diagram becomes reviewable in a pull request rather than a before-and-after a reader has to hold in their head.
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 
@@ -42,9 +43,7 @@ bun install
 There is no npm package yet — every workspace package is still at `0.0.0`, so
 `bunx archeglyph` does not work. Cloning is the only supported route today.
 
-## Quick start
-
-Render one of the bundled examples and open the result:
+Confirm it works by rendering a bundled example:
 
 ```bash
 bun run archeglyph render \
@@ -54,29 +53,23 @@ bun run archeglyph render \
   --out     checkout.svg
 ```
 
-That writes a self-contained SVG you can commit and embed. Swap `--theme` for
-`light` or `dark` and re-run: the topology is identical, only the styling
-moves. Drop `--style` entirely and the layout engine places everything itself.
-
-To see a diff between two revisions of a diagram:
-
-```bash
-bun run archeglyph diff \
-  --base   examples/checkout.diag.json \
-  --target examples/checkout-v2.diag.json \
-  --out    delta.json
-bun run archeglyph render --diagram examples/checkout-v2.diag.json \
-  --style examples/checkout-v2.style.json --theme blueprint \
-  --delta delta.json --out diff.svg
-```
-
 For the visual editor, which writes only to the stylesheet:
 
 ```bash
 bun run dev:editor
 ```
 
-It runs locally at the address Vite prints. There is no hosted instance yet.
+It serves locally at the address Vite prints. There is no hosted instance yet.
+
+**Everything else is in
+[`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —
+every subcommand and flag, with types, defaults, and which are required. It is
+generated from the same operation registry the CLI parses its flags from, so it
+cannot document something that does not exist, and CI fails when it falls
+behind. `archeglyph <subcommand> --help` prints the same content at a terminal.
+
+It is written as an agent skill because coding agents are a first-class caller
+here: point one at that file and it has the whole surface.
 
 ## Family
 
@@ -157,22 +150,6 @@ The styling vocabulary is organized as three orthogonal "glyph" types:
 - **Typography** — visual identity of text: font, color, size, weight, alignment, visibility
 
 Themes ship reusable named components composing these glyphs. Stylesheets bind elements to theme components by name; binding logic (e.g., "all backend services use this preset") lives in tools (`archeglyph bind` CLI, importers, AI agents) which produce explicit per-element bindings as their output.
-
-## CLI surface
-
-Seven operations — `render`, `validate`, `diff`, `init`, `format`, `watch`,
-`bind` — each taking named flags. There are no positional arguments.
-
-**The reference is generated, not written.**
-[`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md) is
-rendered from the same operation registry the CLI parses its flags from, so it
-cannot document a flag that does not exist. CI regenerates it and fails if the
-committed copy has fallen behind. `archeglyph <subcommand> --help` prints the
-same content at the terminal.
-
-It is written as an agent skill because coding agents are a first-class caller
-here: point one at that file and it has the whole surface, with types,
-defaults and which flags are required.
 
 ## Design principles
 

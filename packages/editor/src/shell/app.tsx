@@ -60,8 +60,6 @@ type MaybeCommandContextAccessor = CommandContextAccessor | undefined;
 export const App: Component<{}> = (): JSX.Element => {
   const params: URLSearchParams = readUrlParams(window.location);
   const pair: AdapterPair = selectAdapters(params);
-  const refs: DiffRefs = diffRefsFrom(params);
-  const diff: DiffState = createDiffState(() => state()?.diagram(), refs.target);
   // The editor binds one theme as `default`, which is what an unqualified
   // `component` in the stylesheet resolves against.
   const themes: ReadonlyMap<string, Theme> = new Map([['default', getBundledTheme('blueprint')]]);
@@ -80,6 +78,8 @@ export const App: Component<{}> = (): JSX.Element => {
   const ui = createUiState();
   const autoLoad: boolean = params.has('d') || params.has('s') || params.has('fetch') || params.has('gh') || params.has('pr') || params.has('issue');
   const [state, setState] = createSignal<EditorState | null>(null);
+  const refs: DiffRefs = diffRefsFrom(params);
+  const diff: DiffState = createDiffState(() => state()?.diagram(), refs.target);
   const [scene, setScene] = createSignal<Scene | null>(null);
   const [loading, setLoading] = createSignal<boolean>(autoLoad);
   const [loadError, setLoadError] = createSignal<string | undefined>(undefined);

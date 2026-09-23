@@ -198,6 +198,7 @@ function glyphEdgeComponent() {
     connection: create(Glyph1DSchema, {
       stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.edge_stroke' }) } }),
     }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.edge_label' }) }),
   });
 }
 
@@ -290,6 +291,7 @@ function blueprintEdgeComponent() {
         end: ArrowheadVariant.ARROWHEAD_FILLED,
       }),
     }),
+    typography: create(TypographySchema, { color: create(ColorSchema, { value: '$roles.edge_label' }) }),
   });
 }
 

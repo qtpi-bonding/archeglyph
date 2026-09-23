@@ -79,6 +79,24 @@ function vec2(x: number, y: number): Vec2 {
   return create(Vec2Schema, { x, y });
 }
 
+function boxSize(
+  layout: { size?: Vec2 } | undefined,
+  label: ReadonlyArray<{ source: string }>,
+  typography: { font?: string; size?: number } | undefined,
+): { width: number; height: number } {
+  if (layout?.size !== undefined) {
+    return { width: layout.size.x, height: layout.size.y };
+  }
+  let width: number = DEFAULT_WIDTH;
+  let height: number = DEFAULT_HEIGHT;
+  for (const content of label) {
+    const measured = measureLabel(content.source, typography?.font ?? '', typography?.size ?? 16);
+    width = Math.max(width, measured.x);
+    height = Math.max(height, measured.y);
+  }
+  return { width, height };
+}
+
 export class ElkAdapterImpl implements LayoutAdapter {
   async seedPositions(diagram: ResolvedDiagram, pinned: Map<string, Vec2>): Promise<Map<string, Vec2>> {
     return seedNewcomers(diagram, pinned, this.elk);
@@ -95,8 +113,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         groupElkNodes[group.id] = group.isSuperNode
           ? {
               id: group.id,
-              width: group.layout?.size?.x ?? DEFAULT_WIDTH,
-              height: group.layout?.size?.y ?? DEFAULT_HEIGHT,
+              ...boxSize(group.layout, group.label, group.typography),
               ...(position !== undefined
                 ? {
                     x: position.x,
@@ -107,8 +124,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
             }
           : {
               id: group.id,
-              width: group.layout?.size?.x ?? DEFAULT_WIDTH,
-              height: group.layout?.size?.y ?? DEFAULT_HEIGHT,
+              ...boxSize(group.layout, group.label, group.typography),
               children: [],
               edges: [],
               ...(position !== undefined
@@ -146,8 +162,7 @@ export class ElkAdapterImpl implements LayoutAdapter {
         const position = node.layout?.position;
         const elkNode: ElkNode = {
           id: node.id,
-          width: node.layout?.size?.x ?? DEFAULT_WIDTH,
-          height: node.layout?.size?.y ?? DEFAULT_HEIGHT,
+          ...boxSize(node.layout, node.label, node.typography),
           ...(position !== undefined
             ? {
                 x: position.x,

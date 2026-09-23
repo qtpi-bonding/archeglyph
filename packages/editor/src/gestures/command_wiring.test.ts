@@ -136,6 +136,8 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
       save: (): void => { calls.push('save'); },
       focusInspector: (): void => { calls.push('focusInspector'); },
       beginTextEdit: (): void => { calls.push('beginTextEdit'); },
+      attachBase: (): void => { calls.push('attachBase'); },
+      clearBase: (): void => { calls.push('clearBase'); },
     },
   };
 }

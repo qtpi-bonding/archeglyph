@@ -13,6 +13,9 @@ export class FileIslandProps {
   onSave!: () => void;
   editorTheme!: string;
   onEditorTheme!: (a0: string) => void;
+  comparedTo?: string;
+  onCompare!: () => void;
+  onClearComparison!: () => void;
 }
 
 /**
@@ -44,6 +47,19 @@ export const FileIsland: Component<FileIslandProps> = (props: FileIslandProps): 
       </Show>
       <Show when={props.canSave}>
         <button onClick={props.onSave}>Save</button>
+      </Show>
+      <Show
+        when={props.comparedTo}
+        fallback={<button onClick={props.onCompare}>Compare...</button>}
+      >
+        {(name): JSX.Element => (
+          <>
+            <span style={{ 'font-size': '12px', color: 'var(--ag-fg-3)' }}>
+              vs {name()}
+            </span>
+            <button aria-label="Clear comparison" onClick={props.onClearComparison}>x</button>
+          </>
+        )}
       </Show>
       <select
         aria-label="Editor theme"

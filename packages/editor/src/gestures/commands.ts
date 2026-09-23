@@ -53,6 +53,8 @@ export interface CommandContext {
   save: () => void;
   focusInspector?: () => void;
   beginTextEdit: (ref: ElementRef) => void;
+  attachBase?: () => void;
+  clearBase?: () => void;
 }
 
 /**
@@ -315,6 +317,18 @@ export const COMMANDS: Array<Command> = [
     run: (context: CommandContext): void => {
       context.ui.setSelection(context.geometry?.index.map((entry) => entry.ref) ?? []);
     },
+    appliesTo: 'global',
+  },
+  {
+    id: 'compare-with' as CommandId,
+    label: 'Compare with file...',
+    run: ({ attachBase }: CommandContext): void => attachBase?.(),
+    appliesTo: 'global',
+  },
+  {
+    id: 'clear-comparison' as CommandId,
+    label: 'Clear comparison',
+    run: ({ clearBase }: CommandContext): void => clearBase?.(),
     appliesTo: 'global',
   },
   {

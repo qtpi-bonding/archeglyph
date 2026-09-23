@@ -10,6 +10,8 @@ import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES 
 import { readUrlParams } from './url_params';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
+import { FilePickerDiagramSource } from '../diff/file_picker_diagram_source';
+import type { DiagramSource } from '../diff/diagram_source';
 import { diffRefsFrom, type DiffRefs } from '../diff/diff_refs';
 import { AdapterError, LoadResult } from '../adapters/host_adapter';
 import { Result } from '@archeglyph/proto/util/result';
@@ -89,6 +91,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [expanded, setExpanded] = createSignal<boolean>(false);
   const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(undefined);
   const [syncError, setSyncError] = createSignal<string | undefined>(undefined);
+  const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -201,24 +204,44 @@ export const App: Component<{}> = (): JSX.Element => {
     void pair.adapter.load().then(loadFrom);
   }
 
-  async function attachBase(): Promise<void> {
-    const source = selectDiagramSource(params);
-    if (source === undefined) {
-      return;
-    }
+  async function attachBase(source: DiagramSource, baseRef: string, label: string): Promise<void> {
     const result = await source.load();
     if (result.kind === 'err') {
       setSyncError(`archeglyph: failed to load diff base: ${result.error.message}`);
       return;
     }
-    diff.setBase(result.value, refs.base);
+    setSyncError(undefined);
+    diff.setBase(result.value, baseRef);
+    setComparedTo(label);
+  }
+
+  function onCompare(): void {
+    const source: FilePickerDiagramSource = new FilePickerDiagramSource();
+    void source.load().then((result): void => {
+      if (result.kind === 'err') {
+        setSyncError(`archeglyph: failed to load diff base: ${result.error.message}`);
+        return;
+      }
+      const name: string = source.fileName() ?? 'base';
+      setSyncError(undefined);
+      diff.setBase(result.value, name);
+      setComparedTo(name);
+    });
+  }
+
+  function onClearComparison(): void {
+    diff.setBase(undefined, '');
+    setComparedTo(undefined);
   }
 
   onMount((): void => {
     if (autoLoad) {
       setLoading(true);
       void pair.adapter.load().then(loadFrom);
-      void attachBase();
+      const source: DiagramSource | undefined = selectDiagramSource(params);
+      if (source !== undefined) {
+        void attachBase(source, refs.base, refs.base === '' ? 'base' : refs.base);
+      }
     }
     onCleanup((): void => {
       saveController()?.dispose();
@@ -273,6 +296,8 @@ export const App: Component<{}> = (): JSX.Element => {
             onSave={onSave}
             onContextMenu={(point: Vec2): void => { setContextMenuPoint(point); }}
             onKeyEcho={onKeyEcho}
+            onCompare={onCompare}
+            onClearComparison={onClearComparison}
             registerCommandContext={(getContext: () => CommandContext): void => {
               setCommandContext((): CommandContextAccessor => getContext);
             }}
@@ -302,6 +327,9 @@ export const App: Component<{}> = (): JSX.Element => {
             onSave={onSave}
             editorTheme={chrome().name}
             onEditorTheme={(name: string): void => { setChrome(findEditorTheme(name) ?? EDITOR_THEMES[0]); }}
+            comparedTo={comparedTo()}
+            onCompare={onCompare}
+            onClearComparison={onClearComparison}
           />
         }
         pending={

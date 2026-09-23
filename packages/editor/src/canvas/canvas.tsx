@@ -58,6 +58,8 @@ export interface CanvasProps {
   /** Called for the Save command. The canvas owns the keydown listener, so
       Cmd/Ctrl+S is dead without it. */
   onSave?: () => void;
+  onCompare?: () => void;
+  onClearComparison?: () => void;
   /** Registers an accessor for the live command context owned by the canvas. */
   registerCommandContext: (getContext: () => CommandContext) => void;
   /** Receives a SCREEN point, not a diagram one: the menu is positioned in
@@ -399,6 +401,8 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
       save: (): void => { props.onSave?.(); },
       focusInspector: props.onFocusInspector,
       beginTextEdit,
+      attachBase: props.onCompare,
+      clearBase: props.onClearComparison,
     });
     props.registerCommandContext(getCommandContext);
     // Tool-independent: double-click is a direct-manipulation gesture, and a

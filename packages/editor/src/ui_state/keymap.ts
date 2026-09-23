@@ -50,7 +50,7 @@ export const KEYMAP: KeymapEntry[] = [
   { chord: { key: 'k', meta: true }, command: 'open-palette' },
   { chord: { key: '?', shift: true }, command: 'open-help' },
   { chord: { key: 'd' }, command: 'toggle-diff' },
-  { chord: { key: 'd', shift: true }, command: 'swap-diff-direction' },
+  { chord: { key: 'x' }, command: 'swap-diff-direction' },
 ];
 export function resolveChord(event: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): CommandId | undefined {
   for (const entry of KEYMAP) {

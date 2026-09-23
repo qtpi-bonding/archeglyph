@@ -26,9 +26,11 @@ describe('shift chords, as a browser reports them', () => {
     expect(resolveChord({ key: 'V', metaKey: false, ctrlKey: false, shiftKey: true })).toBeUndefined();
   });
 
-  test('the diff pair follows the ring pair: d toggles, Shift+D swaps', () => {
+  test('the diff keys are unshifted, and Cmd+D still duplicates', () => {
     expect(resolveChord({ key: 'd', metaKey: false, ctrlKey: false, shiftKey: false })).toBe('toggle-diff');
-    expect(resolveChord({ key: 'D', metaKey: false, ctrlKey: false, shiftKey: true })).toBe('swap-diff-direction');
+    expect(resolveChord({ key: 'x', metaKey: false, ctrlKey: false, shiftKey: false })).toBe('swap-diff-direction');
     expect(resolveChord({ key: 'd', metaKey: true, ctrlKey: false, shiftKey: false })).toBe('duplicate');
+    expect(resolveChord({ key: 'D', metaKey: false, ctrlKey: false, shiftKey: true })).toBeUndefined();
+    expect(resolveChord({ key: 'X', metaKey: false, ctrlKey: false, shiftKey: true })).toBeUndefined();
   });
 });

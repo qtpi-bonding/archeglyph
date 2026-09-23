@@ -10,7 +10,7 @@ import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES 
 import { readUrlParams } from './url_params';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
-import type { Delta } from '@archeglyph/proto/gen/content_pb';
+import type { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
 import { FilePickerDiagramSource } from '../diff/file_picker_diagram_source';
 import type { DiagramSource } from '../diff/diagram_source';
 import { diffRefsFrom, type DiffRefs } from '../diff/diff_refs';
@@ -95,6 +95,8 @@ export const App: Component<{}> = (): JSX.Element => {
   const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);
   const [diffOn, setDiffOn] = createSignal<boolean>(true);
   const activeDelta = (): Delta | undefined => (diffOn() ? diff.delta() : undefined);
+  const standIn = (): Diagram | undefined =>
+    (!diffOn() && diff.reversed() ? diff.attached() : undefined);
   let focusInspector: (() => void) | undefined;
   const [saveController, setSaveController] = createSignal<SaveController | null>(null);
   let fileSync: FileSync | undefined;
@@ -143,7 +145,7 @@ export const App: Component<{}> = (): JSX.Element => {
     // scene() still null, which the `scene={scene()!}` assertion hides from
     // tsc and which no test sees, because nothing mounts App.
     batch((): void => {
-      setScene(createScene(nextState, () => themes, layoutEngine, activeDelta));
+      setScene(createScene(nextState, () => themes, layoutEngine, activeDelta, standIn));
       setState(nextState);
     });
   }

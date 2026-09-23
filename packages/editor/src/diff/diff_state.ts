@@ -5,11 +5,11 @@ import { diff } from '@archeglyph/core/diff';
 import type { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
 
 export function createDiffState(session: Accessor<Diagram | undefined>, sessionRef: string): DiffState {
-  const [attached, setAttached] = createSignal<{ diagram: Diagram; ref: string } | undefined>(undefined);
+  const [attachedRecord, setAttached] = createSignal<{ diagram: Diagram; ref: string } | undefined>(undefined);
   const [reversed, setReversed] = createSignal<boolean>(false);
 
   const delta = createMemo<Delta | undefined>(() => {
-    const other = attached();
+    const other = attachedRecord();
     const open = session();
     if (other === undefined || open === undefined) {
       return undefined;
@@ -20,8 +20,11 @@ export function createDiffState(session: Accessor<Diagram | undefined>, sessionR
     return { ...diff(base, target), baseRef, targetRef };
   });
 
+  const attached = (): Diagram | undefined => attachedRecord()?.diagram;
+
   return {
     delta,
+    attached,
     reversed,
     setReversed,
     setBase: (diagram: Diagram | undefined, baseRef: string): void => {
@@ -31,6 +34,7 @@ export function createDiffState(session: Accessor<Diagram | undefined>, sessionR
 }
 export interface DiffState {
   delta: Accessor<Delta | undefined>;
+  attached: Accessor<Diagram | undefined>;
   reversed: Accessor<boolean>;
   setReversed: (next: (prev: boolean) => boolean) => void;
   setBase: (diagram: Diagram | undefined, baseRef: string) => void;

@@ -9,7 +9,7 @@ import { scenePipeline } from '@archeglyph/core/pipeline';
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
-import { Delta } from '@archeglyph/proto/gen/content_pb';
+import { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
 import { Err, Ok, Result } from '@archeglyph/proto/util/result';
 import { Accessor, createEffect, createResource, createSignal } from 'solid-js';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -74,18 +74,29 @@ export interface ElementBounds {
   bounds: Bounds;
   parentGroup?: string;
 }
-export function createScene(state: EditorState, themes: Accessor<ReadonlyMap<string, Theme>>, layoutEngine: LayoutEngine, delta: Accessor<Delta | undefined>): Scene {
-  type SceneSource = { version: number; themes: ReadonlyMap<string, Theme>; delta: Delta | undefined };
+export function createScene(state: EditorState, themes: Accessor<ReadonlyMap<string, Theme>>, layoutEngine: LayoutEngine, delta: Accessor<Delta | undefined>, standIn?: Accessor<Diagram | undefined>): Scene {
+  type SceneSource = {
+    version: number;
+    themes: ReadonlyMap<string, Theme>;
+    delta: Delta | undefined;
+    standIn: Diagram | undefined;
+  };
   type SceneResult = Result<SceneGeometry, SceneError>;
 
   const [snapshot] = createResource<SceneResult, SceneSource>(
-    () => ({ version: state.version(), themes: themes(), delta: delta() }),
+    () => ({
+      version: state.version(),
+      themes: themes(),
+      delta: delta(),
+      standIn: standIn === undefined ? undefined : standIn(),
+    }),
     async (source: SceneSource): Promise<SceneResult> => {
+      const shown: Diagram = source.standIn ?? state.diagram();
       // Every rebuild, not just at load: an element created mid-session has no
       // component and resolves with no shape or typography. Idempotent.
-      const seeded = seedComponentBindings(state.diagram(), state.stylesheet(), source.themes.get('default'));
+      const seeded = seedComponentBindings(shown, state.stylesheet(), source.themes.get('default'));
       const layoutResult = await scenePipeline(
-        state.diagram(),
+        shown,
         seeded,
         source.themes,
         layoutEngine,

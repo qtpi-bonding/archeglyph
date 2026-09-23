@@ -21,6 +21,10 @@ describe('testgen_state__createEditorState', () => {
     // HAND-REPAIRED: the diagram now carries the node each edit targets.
     // applyStyleEdit drops changes against ids the graph does not contain,
     // so a graph-less diagram made every case below a silent no-op.
+    // HAND-REPAIRED: protobuf-es drops a '__proto__' map key, so no diagram
+    // can carry that node and the property's premise is unsatisfiable for it.
+    const holdable = (): fc.Arbitrary<string> => fc.string().filter((id) => id !== '__proto__');
+
     const makeDiagram = (nodeId?: string): Diagram => create(DiagramSchema, {
         schemaVersion: 1, id: "diagram",
         graph: create(GraphSchema, nodeId === undefined ? {} : {
@@ -48,7 +52,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('apply_style_edit_with_changes', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(holdable(), (value) => {
         const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value));
         expect(state.canUndo()).toBe(true);
@@ -74,7 +78,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('apply_style_edit_coalescing_key', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(holdable(), (value) => {
         const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value), value);
         expect(state.canUndo()).toBe(true);
@@ -98,7 +102,7 @@ describe('testgen_state__createEditorState', () => {
 
     test('undo_with_history', () => {
         fc.assert(
-            fc.property(fc.string(), (value) => {
+            fc.property(holdable(), (value) => {
         const state = createEditorState(makeDiagram(value), makeStylesheet([]));
         state.applyStyleEdit(makeChangedEdit(value));
         const afterApply: Stylesheet = state.stylesheet();

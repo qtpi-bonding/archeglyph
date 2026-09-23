@@ -99,4 +99,35 @@ describe('a base attached to the editor renders as a diff', () => {
       dispose();
     });
   });
+
+  test('with the diff off, the stand-in is what reaches layout', async () => {
+    const { engine, seen } = spyEngine();
+
+    await createRoot(async (dispose) => {
+      const state = createEditorState(diagramOf('inSession'), create(StylesheetSchema, { schemaVersion: 1 }));
+      const diff = createDiffState(() => state.diagram(), 'open');
+      const [showOther, setShowOther] = createSignal<boolean>(false);
+
+      diff.setBase(diagramOf('inAttached'), 'attached');
+      createScene(
+        state,
+        () => new Map([['default', theme]]),
+        engine,
+        () => undefined,
+        () => (showOther() ? diff.attached() : undefined),
+      );
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes)).toEqual(['inSession']);
+
+      setShowOther(true);
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes)).toEqual(['inAttached']);
+
+      setShowOther(false);
+      await settle();
+      expect(Object.keys(seen()!.diagram.nodes)).toEqual(['inSession']);
+
+      dispose();
+    });
+  });
 });

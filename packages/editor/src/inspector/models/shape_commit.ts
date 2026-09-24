@@ -59,6 +59,25 @@ function getCurrentShapeFieldValue(
   return undefined;
 }
 
+
+/**
+ * The path a cleared shape field occupies. `after` merges, so a rebuilt
+ * Glyph2D without the field would leave the old value in place.
+ */
+function clearedShapePath(field: string, value: unknown): ReadonlyArray<string> {
+  if (value !== undefined) {
+    return [];
+  }
+  const paths: Record<string, string> = {
+    cornerRadius: 'shape.cornerRadius',
+    fill: 'shape.fill',
+    strokeColor: 'shape.stroke.paint',
+    strokeWidth: 'shape.stroke.width',
+  };
+  const path: string | undefined = paths[field];
+  return path === undefined ? [] : [path];
+}
+
 function buildUpdatedGlyph2D(existingShape: any, field: string, value: any): any {
   const shapeInit = initOf(existingShape);
 
@@ -145,7 +164,7 @@ export function commitShape(
         }
 
         const patched = patchNodeEntry(existing, { shape: updatedShape });
-        return nodeChange(id, patched);
+        return nodeChange(id, patched, clearedShapePath(field, value));
       })
       .filter((c): c is any => c !== undefined);
 
@@ -166,7 +185,7 @@ export function commitShape(
         }
 
         const patched = patchGroupEntry(existing, { shape: updatedShape });
-        return groupChange(id, patched);
+        return groupChange(id, patched, clearedShapePath(field, value));
       })
       .filter((c): c is any => c !== undefined);
 
@@ -187,7 +206,7 @@ export function commitShape(
         }
 
         const patched = patchAnnotationEntry(existing, { shape: updatedShape });
-        return annotationChange(id, patched);
+        return annotationChange(id, patched, clearedShapePath(field, value));
       })
       .filter((c): c is any => c !== undefined);
 

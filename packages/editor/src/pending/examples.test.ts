@@ -91,4 +91,13 @@ describe('examples/stack-managed carries a review to look at', () => {
     expect({ y: moved?.y }).toEqual({ y: 208 });
     expect(stylesheet.nodes['segment']?.layout?.position?.y).toBe(288);
   });
+
+  // `app` is pinned, tinted by the recolour, and touched by nothing else.
+  test('a proposal that only recolours does not move what it tints', async () => {
+    const { stylesheet } = await open('stack-managed');
+    const ghost = applyAllPendingEdits(stylesheet);
+
+    expect(ghost.nodes['app']?.layout?.position).toEqual(stylesheet.nodes['app']?.layout?.position);
+    expect(ghost.nodes['app']?.layout?.position?.y).toBe(130);
+  });
 });

@@ -17,8 +17,6 @@ import { LABEL_POSITION_TABLE, RENDER_MODE_TABLE } from './group_names';
 
 export type GroupField = 'padding' | 'renderMode' | 'labelPosition';
 
-// Builds the entry directly: patchGroupEntry merges, so it cannot express a
-// clear, which is what the Default row commits.
 export function commitGroup(
   model: InspectorModel,
   stylesheet: Stylesheet,
@@ -77,7 +75,7 @@ export function commitGroup(
     return groupChange(id, create(GroupStyleEntrySchema, {
       ...initOf(existing),
       layout: create(GroupLayoutSchema, layoutInit as Partial<GroupLayout>),
-    }));
+    }), resolved === undefined ? [`layout.${field}`] : []);
   });
 
   return styleEdit({

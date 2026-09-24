@@ -21,6 +21,7 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     (change) => change.nodeId,
     (change) => change.changeType,
     (change) => change.after,
+    (change) => change.unsetPaths,
   );
   const newEdges: { [key: string]: EdgeStyleEntry } = applyMapChanges(
     current.edges,
@@ -28,6 +29,7 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     (change) => change.edgeId,
     (change) => change.changeType,
     (change) => change.after,
+    (change) => change.unsetPaths,
   );
   const newGroups: { [key: string]: GroupStyleEntry } = applyMapChanges(
     current.groups,
@@ -35,6 +37,7 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     (change) => change.groupId,
     (change) => change.changeType,
     (change) => change.after,
+    (change) => change.unsetPaths,
   );
   const newAnnotations: { [key: string]: AnnotationEntry } = applyMapChanges(
     current.annotations,
@@ -42,6 +45,7 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     (change) => change.annotationId,
     (change) => change.changeType,
     (change) => change.after,
+    (change) => change.unsetPaths,
   );
 
   const newCanvas: CanvasStyle | undefined = edit.canvasAfter !== undefined ? edit.canvasAfter : current.canvas;
@@ -61,7 +65,76 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     pendingEdits: current.pendingEdits,
   });
 }
-export function applyMapChanges<C, V>(current: { [key: string]: V }, changes: C[], getId: (change: C) => string, getChangeType: (change: C) => StyleChangeType, getAfter: (change: C) => V | undefined): { [key: string]: V } {
+/** A protobuf-es message, which carries $typeName; a map or oneof wrapper does not. */
+function isMessage(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    && Object.prototype.hasOwnProperty.call(value, '$typeName');
+}
+
+/** Empty map (`{}`) or unset oneof (`{ case: undefined }` -- a key, so counting them is not enough). */
+function isUnsetComposite(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    && !isMessage(value)
+    && Object.values(value as Record<string, unknown>).every((entry) => entry === undefined);
+}
+
+/**
+ * Merges `after` over `base`, per style.proto: an absent field is unchanged,
+ * and clearing one takes `unset_paths`.
+ *
+ * Absent has four spellings: `undefined`, `[]`, `{}`, `{ case: undefined }`.
+ * A set oneof and a non-empty map replace whole. A field declared without
+ * `optional` has no absent spelling -- it arrives as `0`, which is a value,
+ * so a partial patch naming one of `Arrowheads.start`/`end` resets the other.
+ */
+function mergeDefined<V extends object>(base: V, patch: V): V {
+  const merged: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
+    if (value === undefined || (Array.isArray(value) && value.length === 0) || isUnsetComposite(value)) {
+      continue;
+    }
+    const existing: unknown = merged[key];
+    merged[key] = isMessage(existing) && isMessage(value) ? mergeDefined(existing, value) : value;
+  }
+  return merged as V;
+}
+
+/**
+ * Drops one dotted path, e.g. `layout.position`. A path naming nothing is a
+ * no-op.
+ *
+ * Repeated, map and oneof fields reset to empty rather than vanishing --
+ * `content: undefined` is not a valid message, and an empty wrapper is the
+ * unset spelling of a oneof. Paths address fields, not their contents, so a
+ * map key (`tags.kind`) or oneof member (`shape.stroke.paint.value`) no-ops.
+ */
+function withoutPath<V extends object>(entry: V, path: string): V {
+  const separator: number = path.indexOf('.');
+  const head: string = separator === -1 ? path : path.slice(0, separator);
+  const source = entry as Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(source, head)) {
+    return entry;
+  }
+  if (separator === -1) {
+    const current: unknown = source[head];
+    if (Array.isArray(current)) {
+      return { ...source, [head]: [] } as V;
+    }
+    if (!isMessage(current) && typeof current === 'object' && current !== null) {
+      return { ...source, [head]: {} } as V;
+    }
+    const { [head]: _dropped, ...kept } = source;
+    return kept as V;
+  }
+  const child: unknown = source[head];
+  if (!isMessage(child)) {
+    return entry;
+  }
+  return { ...source, [head]: withoutPath(child, path.slice(separator + 1)) } as V;
+}
+
+
+export function applyMapChanges<C, V extends object>(current: { [key: string]: V }, changes: C[], getId: (change: C) => string, getChangeType: (change: C) => StyleChangeType, getAfter: (change: C) => V | undefined, getUnsetPaths: (change: C) => ReadonlyArray<string>): { [key: string]: V } {
   const deleteIds: Set<string> = new Set();
   for (const change of changes) {
     if (getChangeType(change) === StyleChangeType.DELETED) {
@@ -79,10 +152,19 @@ export function applyMapChanges<C, V>(current: { [key: string]: V }, changes: C[
   for (const change of changes) {
     if (getChangeType(change) !== StyleChangeType.DELETED) {
       const after: V | undefined = getAfter(change);
-      if (after !== undefined) {
+      const unsetPaths: ReadonlyArray<string> = getUnsetPaths(change);
+      const existing: V | undefined = result[getId(change)];
+      const base: V | undefined = existing === undefined
+        ? after
+        : (after === undefined ? existing : mergeDefined(existing, after));
+      if (base !== undefined) {
+        let value: V = base;
+        for (const path of unsetPaths) {
+          value = withoutPath(value, path);
+        }
         // Assignment to '__proto__' sets the prototype instead of an entry.
         Object.defineProperty(result, getId(change), {
-          value: after, enumerable: true, writable: true, configurable: true,
+          value, enumerable: true, writable: true, configurable: true,
         });
       }
     }

@@ -169,6 +169,41 @@ describe('commitShape', () => {
     });
   });
 
+  describe('clearing a stroke part', () => {
+    const strokedNode = () => create(StylesheetSchema, {
+      schemaVersion: 1,
+      nodes: {
+        n1: nodeEntry({
+          shape: create(Glyph2DSchema, {
+            stroke: create(StrokeSchema, {
+              paint: { case: 'color', value: create(ColorSchema, { value: '#00ff00' }) },
+              width: 3,
+            }),
+          }),
+        }),
+      },
+      edges: {},
+      groups: {},
+      annotations: {},
+      pendingEdits: [],
+    });
+    const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
+
+    test('undefined strokeColor clears the paint and leaves the width', () => {
+      const sheet = strokedNode();
+      const applied = applyStyleEditToStylesheet(sheet, commitShape(model, sheet, 'strokeColor', undefined)!);
+      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBeUndefined();
+      expect(applied.nodes['n1'].shape?.stroke?.width).toBe(3);
+    });
+
+    test('undefined strokeWidth clears the width and leaves the paint', () => {
+      const sheet = strokedNode();
+      const applied = applyStyleEditToStylesheet(sheet, commitShape(model, sheet, 'strokeWidth', undefined)!);
+      expect(applied.nodes['n1'].shape?.stroke?.width).toBeUndefined();
+      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBe('color');
+    });
+  });
+
   describe('strokeColor field', () => {
     test('sets stroke color on a node', () => {
       const sheet = stylesheet();

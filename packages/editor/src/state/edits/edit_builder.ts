@@ -21,13 +21,9 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
 
-// NOTE: every *StyleChange carries `unset_paths` (proto/style.proto:514,
-// "explicit field-clearing"), and NOTHING in this repo implements it --
-// applyMapChanges ignores the field entirely. Do not reach for it to clear a
-// field; build an entry that lacks the field instead (see layout_command's
-// withoutNodePosition). The empty arrays below are only there because the
-// generated code wrote them.
-export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleChange {
+// `unsetPaths` is how a change clears a field: `after` merges, so a field left
+// out of it is unchanged rather than removed.
+export function edgeChange(edgeId: string, after?: EdgeStyleEntry, unsetPaths: ReadonlyArray<string> = []): EdgeStyleChange {
   return create(EdgeStyleChangeSchema, {
     edgeId,
     // An absent `after` means "drop this entry", which the schema spells
@@ -35,12 +31,12 @@ export function edgeChange(edgeId: string, after?: EdgeStyleEntry): EdgeStyleCha
     // MODIFIED change with no entry is a silent no-op.
     changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
-    unsetPaths: [],
+    unsetPaths: [...unsetPaths],
     kinds: [],
   });
 }
 
-export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleChange {
+export function nodeChange(nodeId: string, after?: NodeStyleEntry, unsetPaths: ReadonlyArray<string> = []): NodeStyleChange {
   return create(NodeStyleChangeSchema, {
     nodeId,
     // An absent `after` means "drop this entry", which the schema spells
@@ -48,22 +44,22 @@ export function nodeChange(nodeId: string, after?: NodeStyleEntry): NodeStyleCha
     // MODIFIED change with no entry is a silent no-op.
     changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
-    unsetPaths: [],
+    unsetPaths: [...unsetPaths],
     kinds: [],
   });
 }
 
-export function annotationChange(annotationId: string, after?: AnnotationEntry): AnnotationStyleChange {
+export function annotationChange(annotationId: string, after?: AnnotationEntry, unsetPaths: ReadonlyArray<string> = []): AnnotationStyleChange {
   return create(AnnotationStyleChangeSchema, {
     annotationId,
     changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.ADDED,
     ...(after === undefined ? {} : { after }),
-    unsetPaths: [],
+    unsetPaths: [...unsetPaths],
     kinds: [],
   });
 }
 
-export function groupChange(groupId: string, after?: GroupStyleEntry): GroupStyleChange {
+export function groupChange(groupId: string, after?: GroupStyleEntry, unsetPaths: ReadonlyArray<string> = []): GroupStyleChange {
   return create(GroupStyleChangeSchema, {
     groupId,
     // An absent `after` means "drop this entry", which the schema spells
@@ -71,7 +67,7 @@ export function groupChange(groupId: string, after?: GroupStyleEntry): GroupStyl
     // MODIFIED change with no entry is a silent no-op.
     changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
     ...(after === undefined ? {} : { after }),
-    unsetPaths: [],
+    unsetPaths: [...unsetPaths],
     kinds: [],
   });
 }

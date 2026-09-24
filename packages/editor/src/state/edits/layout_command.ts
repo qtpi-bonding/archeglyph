@@ -4,11 +4,9 @@
 
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import {
-  GroupLayoutSchema,
   GroupStyleChange,
   GroupStyleEntry,
   GroupStyleEntrySchema,
-  NodeLayoutSchema,
   NodeStyleChange,
   NodeStyleEntry,
   NodeStyleEntrySchema,
@@ -24,45 +22,30 @@ import { initOf, patchGroupEntry, patchNodeEntry } from './entry_patch';
 import { ElementMove } from './move';
 
 /**
- * An entry with its layout position removed, layout dropped entirely if that
- * was all it held.
- *
- * There is no "unset this field" channel in the schema: a StyleChange carries
- * a whole `after` entry and applyStyleEditToStylesheet replaces the old one
- * with it. So clearing a pin means writing an entry that does not have the
- * position, not asking for it to be removed.
+ * Which path unpinning clears. `layout` whole when position was all it held,
+ * so an emptied layout does not linger; otherwise just the position.
  */
-function withoutNodePosition(existing: NodeStyleEntry | undefined): NodeStyleEntry {
+function nodePositionPath(existing: NodeStyleEntry | undefined): ReadonlyArray<string> {
   const layout = existing?.layout;
   const keepsLayout = layout !== undefined
     && (layout.size !== undefined || layout.rotation !== undefined);
-  return create(NodeStyleEntrySchema, {
-    ...initOf(existing),
-    ...(keepsLayout
-      ? { layout: create(NodeLayoutSchema, { ...initOf(layout), position: undefined }) }
-      : { layout: undefined }),
-  });
+  return [keepsLayout ? 'layout.position' : 'layout'];
 }
 
-function withoutGroupPosition(existing: GroupStyleEntry | undefined): GroupStyleEntry {
+function groupPositionPath(existing: GroupStyleEntry | undefined): ReadonlyArray<string> {
   const layout = existing?.layout;
   const keepsLayout = layout !== undefined
     && (layout.size !== undefined || layout.padding !== undefined
       || layout.renderMode !== undefined || layout.labelPosition !== undefined);
-  return create(GroupStyleEntrySchema, {
-    ...initOf(existing),
-    ...(keepsLayout
-      ? { layout: create(GroupLayoutSchema, { ...initOf(layout), position: undefined }) }
-      : { layout: undefined }),
-  });
+  return [keepsLayout ? 'layout.position' : 'layout'];
 }
 
 export function unpinAllEdit(stylesheet: Stylesheet): StyleEdit {
   return styleEdit({
     nodeChanges: Object.keys(stylesheet.nodes).map((nodeId) =>
-      nodeChange(nodeId, withoutNodePosition(stylesheet.nodes[nodeId]))),
+      nodeChange(nodeId, create(NodeStyleEntrySchema, {}), nodePositionPath(stylesheet.nodes[nodeId]))),
     groupChanges: Object.keys(stylesheet.groups).map((groupId) =>
-      groupChange(groupId, withoutGroupPosition(stylesheet.groups[groupId]))),
+      groupChange(groupId, create(GroupStyleEntrySchema, {}), groupPositionPath(stylesheet.groups[groupId]))),
     description: 'Unpin all nodes and groups',
   });
 }
@@ -76,9 +59,9 @@ export function unpinElementsEdit(stylesheet: Stylesheet, refs: Array<ElementMov
   // a mixed selection still unpins the parts that can be.
   return styleEdit({
     nodeChanges: nodeIds.map((nodeId) =>
-      nodeChange(nodeId, withoutNodePosition(stylesheet.nodes[nodeId]))),
+      nodeChange(nodeId, create(NodeStyleEntrySchema, {}), nodePositionPath(stylesheet.nodes[nodeId]))),
     groupChanges: groupIds.map((groupId) =>
-      groupChange(groupId, withoutGroupPosition(stylesheet.groups[groupId]))),
+      groupChange(groupId, create(GroupStyleEntrySchema, {}), groupPositionPath(stylesheet.groups[groupId]))),
     description: 'Unpin selection',
   });
 }
@@ -142,7 +125,9 @@ export function pinAllEdit(stylesheet: Stylesheet, diagram: LaidOutDiagram): Sty
  * entry.
  *
  * The materialized changes come FIRST so the caller's own changes win for any
- * element they also touch: applyMapChanges takes the last change per id.
+ * element they also touch: applyMapChanges merges each change over the one
+ * before it, so a field the caller names beats the materialized position while
+ * a field it leaves alone still gets pinned.
  *
  * Elements already carrying a position in the stylesheet are skipped, so this
  * is a no-op from the second gesture onwards.

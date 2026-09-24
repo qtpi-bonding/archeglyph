@@ -80,17 +80,19 @@ export function commitTypography(model: InspectorModel, stylesheet: Stylesheet, 
     typographyInit[field] = value;
   }
   const typography = create(TypographySchema, typographyInit as Partial<Typography>);
+  // `after` merges, so a field dropped from the init alone stays set.
+  const unsetPaths: ReadonlyArray<string> = value === undefined ? [`typography.${field}`] : [];
 
   if (model.kind === 'node') {
-    return setNodesGlyphEdit(stylesheet, model.ids, { typography });
+    return setNodesGlyphEdit(stylesheet, model.ids, { typography }, unsetPaths);
   }
   if (model.kind === 'edge') {
-    return setEdgeGlyphEdit(stylesheet, firstId, { typography });
+    return setEdgeGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
   }
   if (model.kind === 'group') {
-    return setGroupGlyphEdit(stylesheet, firstId, { typography });
+    return setGroupGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
   }
-  return setAnnotationGlyphEdit(stylesheet, firstId, { typography });
+  return setAnnotationGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
 }
 export function commitLayout(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet, field: 'x' | 'y' | 'width' | 'height', value: number | undefined): StyleEdit | undefined {
   if (model.kind === 'edge' || model.ids.length === 0) {

@@ -47,6 +47,9 @@ export function setAnnotationAnchorEdit(stylesheet: Stylesheet, id: string, anch
   // can detach an annotation that was previously anchored.
   if (anchor === undefined) {
     change.unsetPaths.push('anchor');
+  } else if (anchor.anchorPosition === undefined) {
+    // The hint is target-local, so it does not survive a change of target.
+    change.unsetPaths.push('anchor.anchorPosition');
   }
 
   return styleEdit({ annotationChanges: [change] });

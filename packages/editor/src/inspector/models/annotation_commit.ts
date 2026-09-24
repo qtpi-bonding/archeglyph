@@ -13,8 +13,6 @@ import { annotationChange, styleEdit } from '../../state/edits/edit_builder';
 import { initOf } from '../../state/edits/entry_patch';
 import { setAnnotationAnchorEdit } from '../../state/edits/annotation';
 
-// Builds the entry directly: patchAnnotationEntry merges, so it cannot express
-// a clear, which is what the Default row commits.
 export function commitAnnotationRotation(
   model: InspectorModel,
   stylesheet: Stylesheet,
@@ -41,7 +39,7 @@ export function commitAnnotationRotation(
     return annotationChange(id, create(AnnotationEntrySchema, {
       ...initOf(existing),
       layout: create(AnnotationLayoutSchema, layoutInit as Partial<AnnotationLayout>),
-    }));
+    }), value === undefined ? ['layout.rotation'] : []);
   });
 
   return styleEdit({ annotationChanges, description: 'Edit annotation rotation' });

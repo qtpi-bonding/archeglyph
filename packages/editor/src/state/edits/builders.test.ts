@@ -685,6 +685,36 @@ describe('setAnnotationAnchorEdit', () => {
     expect(applied.annotations['a1'].content[0].source).toBe('keep me');
     expect(applied.annotations['a1'].shape?.cornerRadius).toBe(9);
   });
+
+  // The hint is target-local, and no editor UI writes it back.
+  test('re-anchoring drops the old target\'s attachment hint', () => {
+    const before = create(AnnotationAnchorSchema, {
+      refId: 'n1', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
+    });
+    const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor: before }) } });
+
+    const applied = applyStyleEditToStylesheet(
+      sheet,
+      setAnnotationAnchorEdit(sheet, 'a1', create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.NODE })),
+    );
+
+    expect(applied.annotations['a1'].anchor?.refId).toBe('n2');
+    expect(applied.annotations['a1'].anchor?.anchorPosition).toBeUndefined();
+  });
+
+  test('re-anchoring keeps a hint the new anchor states for itself', () => {
+    const before = create(AnnotationAnchorSchema, {
+      refId: 'n1', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
+    });
+    const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor: before }) } });
+    const next = create(AnnotationAnchorSchema, {
+      refId: 'n2', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 1, y: 0 }),
+    });
+
+    const applied = applyStyleEditToStylesheet(sheet, setAnnotationAnchorEdit(sheet, 'a1', next));
+
+    expect(applied.annotations['a1'].anchor?.anchorPosition).toEqual(create(Vec2Schema, { x: 1, y: 0 }));
+  });
 });
 
 describe('deleteAnnotationEdit', () => {

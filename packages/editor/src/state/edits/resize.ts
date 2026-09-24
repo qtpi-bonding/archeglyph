@@ -43,7 +43,7 @@ export function clearGroupSizeEdit(stylesheet: Stylesheet, groupId: string): Sty
         });
 
   return styleEdit({
-    groupChanges: [groupChange(groupId, after)],
+    groupChanges: [groupChange(groupId, after, ['layout.size'])],
     description: 'Clear group size override',
   });
 }
@@ -66,7 +66,7 @@ export function clearNodeSizeEdit(stylesheet: Stylesheet, nodeId: string): Style
         });
 
   return styleEdit({
-    nodeChanges: [nodeChange(nodeId, after)],
+    nodeChanges: [nodeChange(nodeId, after, ['layout.size'])],
     description: 'Clear node size override',
   });
 }
@@ -107,7 +107,7 @@ export function clearAnnotationSizeEdit(stylesheet: Stylesheet, annotationId: st
         });
 
   return styleEdit({
-    annotationChanges: [annotationChange(annotationId, after)],
+    annotationChanges: [annotationChange(annotationId, after, ['layout.size'])],
     description: 'Clear annotation size override',
   });
 }

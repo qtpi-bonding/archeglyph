@@ -125,9 +125,6 @@ describe('visibility', () => {
 });
 
 describe('pinning', () => {
-  // Regression: the generated unpinAllEdit set an `unsetPaths` field via
-  // Object.assign. NodeStyleChange has no such field, so nothing read it and
-  // unpinning silently did nothing — while typechecking and verifying clean.
   test('unpinAll actually removes the position', () => {
     const before = loadedStylesheet();
     expect(before.nodes.n1.layout?.position).toBeDefined();

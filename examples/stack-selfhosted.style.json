@@ -9,6 +9,14 @@
         }
       }
     },
+    "app": {
+      "layout": {
+        "position": {
+          "x": 190,
+          "y": 110
+        }
+      }
+    },
     "auth": {
       "layout": {
         "position": {
@@ -36,7 +44,7 @@
     "backups": {
       "layout": {
         "position": {
-          "x": 470,
+          "x": 640,
           "y": 110
         }
       }
@@ -47,7 +55,7 @@
     "ours": {
       "layout": {
         "position": {
-          "x": 230,
+          "x": 400,
           "y": 20
         }
       }

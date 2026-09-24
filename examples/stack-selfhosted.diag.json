@@ -17,6 +17,14 @@
           }
         ]
       },
+      "app": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Django + HTMX"
+          }
+        ]
+      },
       "auth": {
         "label": [
           {
@@ -54,16 +62,20 @@
       }
     },
     "edges": {
-      "web__auth": {
+      "web__app": {
         "source": "web",
+        "target": "app"
+      },
+      "app__auth": {
+        "source": "app",
         "target": "auth"
       },
-      "web__db": {
-        "source": "web",
+      "app__db": {
+        "source": "app",
         "target": "db"
       },
-      "web__cache": {
-        "source": "web",
+      "app__cache": {
+        "source": "app",
         "target": "cache"
       },
       "db__backups": {

@@ -13,7 +13,15 @@
         "label": [
           {
             "locale": "en",
-            "source": "Vercel"
+            "source": "Heroku"
+          }
+        ]
+      },
+      "app": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Django + HTMX"
           }
         ]
       },
@@ -21,7 +29,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "Clerk"
+            "source": "Auth0"
           }
         ],
         "parentGroup": "hosted"
@@ -48,27 +56,31 @@
         "label": [
           {
             "locale": "en",
-            "source": "Vercel Analytics"
+            "source": "Segment"
           }
         ],
         "parentGroup": "hosted"
       }
     },
     "edges": {
-      "web__auth": {
+      "web__app": {
         "source": "web",
+        "target": "app"
+      },
+      "app__auth": {
+        "source": "app",
         "target": "auth"
       },
-      "web__db": {
-        "source": "web",
+      "app__db": {
+        "source": "app",
         "target": "db"
       },
-      "web__cache": {
-        "source": "web",
+      "app__cache": {
+        "source": "app",
         "target": "cache"
       },
-      "web__analytics": {
-        "source": "web",
+      "app__analytics": {
+        "source": "app",
         "target": "analytics"
       }
     },

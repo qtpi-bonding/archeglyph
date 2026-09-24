@@ -28,8 +28,9 @@ Four properties, in order of importance:
 
 ![a diff between two revisions of the same diagram](docs/img/stack-diff-dark.svg)
 
-<sub>One diagram against an earlier revision of itself: red struck through is
-gone, green is new, and everything else moved. Rendered from
+<sub>One diagram against an earlier revision of itself. Red struck through is
+gone, green is new, and the undecorated box in the middle is the application —
+the thing the migration did not touch. Rendered from
 `examples/stack-managed.diag.json` and `examples/stack-selfhosted.diag.json`
 with `archeglyph diff` piped into `render --delta`.</sub>
 

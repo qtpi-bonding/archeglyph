@@ -9,6 +9,14 @@
         }
       }
     },
+    "app": {
+      "layout": {
+        "position": {
+          "x": 190,
+          "y": 110
+        }
+      }
+    },
     "auth": {
       "layout": {
         "position": {
@@ -47,7 +55,7 @@
     "hosted": {
       "layout": {
         "position": {
-          "x": 230,
+          "x": 400,
           "y": 20
         }
       }
@@ -86,7 +94,7 @@
           }
         },
         {
-          "nodeId": "web",
+          "nodeId": "app",
           "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
           "kinds": [
             "STYLE_CHANGE_KIND_SHAPE"
@@ -106,7 +114,7 @@
       ],
       "edgeChanges": [
         {
-          "edgeId": "web__cache",
+          "edgeId": "app__cache",
           "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
           "kinds": [
             "STYLE_CHANGE_KIND_CONNECTION"

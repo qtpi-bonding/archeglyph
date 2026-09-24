@@ -10,7 +10,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "Vercel Analytics"
+            "source": "Segment"
           }
         ],
         "parentGroup": "hosted"
@@ -23,7 +23,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "Clerk"
+            "source": "Auth0"
           }
         ],
         "parentGroup": "hosted"
@@ -101,7 +101,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "Vercel"
+            "source": "Heroku"
           }
         ]
       },
@@ -117,19 +117,19 @@
   ],
   "edgeDeltas": [
     {
+      "edgeId": "app__analytics",
+      "changeType": "DELETED",
+      "before": {
+        "source": "app",
+        "target": "analytics"
+      }
+    },
+    {
       "edgeId": "db__backups",
       "changeType": "ADDED",
       "after": {
         "source": "db",
         "target": "backups"
-      }
-    },
-    {
-      "edgeId": "web__analytics",
-      "changeType": "DELETED",
-      "before": {
-        "source": "web",
-        "target": "analytics"
       }
     }
   ],

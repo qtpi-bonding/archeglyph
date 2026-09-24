@@ -69,6 +69,22 @@ function withSeededPositions(diagram: ResolvedDiagram, seeded: Map<string, Vec2>
   }) as ResolvedDiagram;
 }
 
+/** Inset on each side mirrors the renderer's, which is one font size. */
+function labelRoom(
+  label: ReadonlyArray<{ source: string }>,
+  typography: { font?: string; size?: number } | undefined,
+): { x: number; y: number } {
+  const fontSize: number = typography?.size ?? 13;
+  let width: number = 0;
+  let height: number = 0;
+  for (const content of label) {
+    const measured = measureLabel(content.source, typography?.font ?? '', fontSize);
+    width = Math.max(width, measured.x + 2 * fontSize);
+    height = Math.max(height, measured.y + 2 * fontSize);
+  }
+  return { x: width, y: height };
+}
+
 export class LayoutEngineImpl implements LayoutEngine {
   constructor(private readonly adapter: LayoutAdapter) {}
 
@@ -193,6 +209,9 @@ export class LayoutEngineImpl implements LayoutEngine {
       }
       // Same rule the ELK path gets via nodeSize.minimum: an override is a
       // MINIMUM, so a group grows on request and still contains its children.
+      const room = labelRoom(group.label, group.typography);
+      width = Math.max(width, room.x);
+      height = Math.max(height, room.y);
       const requested = group.layout?.size;
       const size = requested === undefined
         ? { x: width, y: height }

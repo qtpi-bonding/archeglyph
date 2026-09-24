@@ -205,13 +205,15 @@ export class ElkAdapterImpl implements LayoutAdapter {
           };
         }
         const requested = group.layout?.size;
-        if (requested !== undefined) {
-          elkGroup.layoutOptions = {
-            ...(elkGroup.layoutOptions ?? {}),
-            'org.eclipse.elk.nodeSize.constraints': 'MINIMUM_SIZE',
-            'org.eclipse.elk.nodeSize.minimum': `(${requested.x},${requested.y})`,
-          };
-        }
+        const measured = boxSize(undefined, group.label, group.typography);
+        const inset: number = group.typography?.size ?? 13;
+        const minWidth: number = Math.max(requested?.x ?? 0, measured.width + 2 * inset);
+        const minHeight: number = Math.max(requested?.y ?? 0, measured.height);
+        elkGroup.layoutOptions = {
+          ...(elkGroup.layoutOptions ?? {}),
+          'org.eclipse.elk.nodeSize.constraints': 'MINIMUM_SIZE',
+          'org.eclipse.elk.nodeSize.minimum': `(${minWidth},${minHeight})`,
+        };
       }
 
       const layoutOptions: Record<string, string> = {

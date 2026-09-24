@@ -209,10 +209,12 @@ export class ElkAdapterImpl implements LayoutAdapter {
         const inset: number = group.typography?.size ?? 13;
         const minWidth: number = Math.max(requested?.x ?? 0, measured.width + 2 * inset);
         const minHeight: number = Math.max(requested?.y ?? 0, measured.height);
+        const band: number = group.label.length > 0 ? Math.round(measured.height + 2 * inset) : inset;
         elkGroup.layoutOptions = {
           ...(elkGroup.layoutOptions ?? {}),
           'org.eclipse.elk.nodeSize.constraints': 'MINIMUM_SIZE',
           'org.eclipse.elk.nodeSize.minimum': `(${minWidth},${minHeight})`,
+          'org.eclipse.elk.padding': `[top=${band},left=${inset},bottom=${inset},right=${inset}]`,
         };
       }
 

@@ -41,14 +41,17 @@ import { init } from '@archeglyph/proto/util/init';
  * Typography.align from the stylesheet or theme still wins; this only fills
  * in the one the position implies.
  */
+const GROUP_LABEL_PADDING: number = 12;
+
 function groupLabelPlacement(group: LaidOutGroup): { anchor: Vec2; align: TextAlign } {
   const size: number = group.typography.size ?? 13;
-  const inset: number = size;
-  const left: number = group.position.x + inset;
-  const right: number = group.position.x + group.size.x - inset;
+  const ascent: number = size * 0.8;
+  const descent: number = size * 0.2;
+  const left: number = group.position.x + GROUP_LABEL_PADDING;
+  const right: number = group.position.x + group.size.x - GROUP_LABEL_PADDING;
   const centerX: number = group.position.x + group.size.x / 2;
-  const top: number = group.position.y + inset;
-  const bottom: number = group.position.y + group.size.y - inset / 2;
+  const top: number = group.position.y + GROUP_LABEL_PADDING + ascent;
+  const bottom: number = group.position.y + group.size.y - GROUP_LABEL_PADDING - descent;
 
   if (group.isSuperNode && group.layout?.labelPosition === undefined) {
     return {

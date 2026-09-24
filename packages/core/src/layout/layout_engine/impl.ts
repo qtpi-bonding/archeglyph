@@ -79,8 +79,8 @@ function labelRoom(
   let height: number = 0;
   for (const content of label) {
     const measured = measureLabel(content.source, typography?.font ?? '', fontSize);
-    width = Math.max(width, measured.x + 2 * fontSize);
-    height = Math.max(height, measured.y + 2 * fontSize);
+    width = Math.max(width, measured.x + 2 * 12);
+    height = Math.max(height, measured.y + 2 * 12);
   }
   return { x: width, y: height };
 }

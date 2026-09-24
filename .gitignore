@@ -59,3 +59,15 @@ archebuild.db-wal
 /.claude/skills
 # Competitor analysis, not part of the published project
 /docs/comparisons/
+# Design and process docs — the how-it-was-built record, not part of the
+# published project. Still on disk locally; see the README.
+/docs/superpowers/
+/docs/agent-tools.md
+/docs/architecture.md
+/docs/design.md
+/docs/editor-ui-review.md
+/docs/implementation-order.md
+/docs/relaxing-koine-constraints.md
+/docs/status.md
+/docs/style-guide.md
+/docs/test-build-loop.md

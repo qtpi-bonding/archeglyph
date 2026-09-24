@@ -28,9 +28,7 @@ and draws as the ghost you can see behind the canvas. Regenerate with
 
 **Status:** pre-1.0. The engine, all seven CLI operations and the visual editor
 are shipped and tested; there is no npm package and no user guide beyond the
-generated CLI reference. Design spec in
-[`docs/design.md`](docs/design.md), the full list of what is missing in
-[`docs/status.md`](docs/status.md).
+generated CLI reference.
 
 ## What it is
 
@@ -174,7 +172,7 @@ Themes ship reusable named components composing these glyphs. Stylesheets bind e
 
 ## Design principles
 
-See [`docs/design.md` §2](docs/design.md) for the full set. Highlights:
+The ones that shape everything else:
 
 - **Content/style separation** — visual editor never writes to content
 - **Schema-first extensibility** — schemas accommodate every planned feature; the implementation may be slimmer
@@ -185,10 +183,18 @@ See [`docs/design.md` §2](docs/design.md) for the full set. Highlights:
 
 ## A note on agent-local files
 
-Some files the design docs mention are deliberately unpublished, because they
-describe one machine rather than the project: `CLAUDE.md`, `.claude/skills/`
-(a symlink into a sibling checkout), and `docs/comparisons/`. A reference to
-one in `docs/` is a record of how the work was done, not a broken link.
+Some files this repository refers to are deliberately unpublished, because
+they describe one machine, or how the project was built, rather than the
+project itself: `CLAUDE.md`, `.claude/skills/` (a symlink into a sibling
+checkout), `docs/comparisons/`, and the design and process docs that used to
+sit in `docs/` — the design spec, the architecture and style guides, the
+implementation order, and the plans and specs under `docs/superpowers/`.
+
+The `.archegraph/specs/*.spec.textproto` files and some source comments still
+cite them by path. Those citations are a record of what the code was written
+against, not broken links: the schemas in `proto/` are the actual definition
+of the file format, and the generated CLI reference is the actual definition
+of the command surface.
 
 ## License
 

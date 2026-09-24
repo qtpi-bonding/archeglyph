@@ -8,15 +8,14 @@ The graph topology lives in one text file. The visual styling lives in a sidecar
 
 ![archeglyph's own package architecture](docs/img/architecture-blueprint.svg)
 
-<sub>Not a drawing. [archegraph](#family) indexed this repository, the resulting
-graph was rolled up to one node per workspace package, and archeglyph rendered
-it in the `blueprint` theme — no hand-placed boxes, no hand-drawn lines. An
-edge means one package references another somewhere in its source; the
-reference counts are in
-[`examples/archeglyph-architecture.diag.json`](examples/archeglyph-architecture.diag.json).
-Regenerate with `bun run scripts/architecture_diagram.ts`.</sub>
+<sub>Not a drawing — archeglyph rendered this from its own source. See
+[Family](#family).</sub>
 
-**Status:** shipped — core engine, all seven CLI operations, and the visual editor. Full design spec in [`docs/design.md`](docs/design.md); current state in [`docs/status.md`](docs/status.md).
+**Status:** pre-1.0. The engine, all seven CLI operations and the visual editor
+are shipped and tested; there is no npm package, no hosted editor and no user
+guide beyond the generated CLI reference. Design spec in
+[`docs/design.md`](docs/design.md), the full list of what is missing in
+[`docs/status.md`](docs/status.md).
 
 ## What it is
 
@@ -24,7 +23,7 @@ Four properties, in order of importance:
 
 1. **Content is canonical.** The text file *is* the graph. Topology cannot be edited via the visual editor. The visual editor only writes to the style sidecar.
 2. **Output is deterministic.** Same `(content, style, theme, archeglyph version)` → byte-identical SVG. Git diffs of generated SVGs are meaningful.
-3. **AI-compat is by design, not magic.** All edits are expressible as typed operations on the style file. AI agents read and write the same files humans do, through the same operations.
+3. **Every edit is a typed operation on the style file** — whether it came from a human, the CLI, or an agent. There is no separate "AI mode"; agents read and write the same files, through the same operations, and their proposals land in `pending_edits` for a human to accept or reject.
 4. **Change is a first-class object.** `diff` computes a typed change set between two revisions of a diagram, and the renderer draws it — added, changed and deleted elements coloured in place, with deletions still shown rather than silently absent. A diagram becomes reviewable in a pull request rather than a before-and-after a reader has to hold in their head.
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
@@ -40,8 +39,8 @@ cd archeglyph
 bun install
 ```
 
-There is no npm package yet — every workspace package is still at `0.0.0`, so
-`bunx archeglyph` does not work. Cloning is the only supported route today.
+Cloning is the only route today: every workspace package is still `0.0.0`, so
+`bunx archeglyph` has nothing to fetch.
 
 Confirm it works by rendering a bundled example:
 
@@ -78,14 +77,15 @@ carving/inscription) — the carved form of an origin graph.
 
 The origin graph in question is **archegraph**, a code-architecture verifier
 that extracts a structural graph from a codebase. archeglyph is its first
-from-scratch dogfood target, and the two co-evolved: the diagram at the top of
-this README is archegraph's view of this repository, rendered by archeglyph.
-archegraph is not public yet.
+from-scratch dogfood target, and the two co-evolved. archegraph is not public
+yet.
 
-That relationship is recorded rather than asserted. The
-`.archegraph/specs/**/*.spec.textproto` files and the `spec/<pillar>-v1` tags
-are the build history of every pillar in this project, and each one can be
-replayed from them.
+The diagram at the top of this README is archegraph's view of this repository,
+rolled up to one node per workspace package — an edge means one package's
+source names something from another's. Regenerate it with `bun run
+scripts/architecture_diagram.ts`. The `.archegraph/specs/` directory and the
+`spec/<pillar>-v1` tags hold the build history of every pillar here, if you
+would rather check that than take it on trust.
 
 archeglyph does not depend on any of it. It is a general node-and-edge engine;
 archegraph is one importer, alongside DOT, Mermaid and JSON later.

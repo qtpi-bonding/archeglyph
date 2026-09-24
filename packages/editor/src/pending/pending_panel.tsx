@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Component, For, JSX, Show } from 'solid-js';
-import { PendingItem } from './pending_model';
+import { PendingItem, pendingMeta } from './pending_model';
 import { ThreadView } from './thread_view';
 
 export interface PendingPanelProps {
@@ -67,11 +67,7 @@ export const PendingPanel: Component<PendingPanelProps> = (
             >
               <div class="ag-pending-row-summary">
                 <div class="ag-pending-description">{item.description}</div>
-                <div class="ag-pending-meta">
-                  <span class="ag-pending-author">{item.author}</span>
-                  <span>{item.changeCount} changes</span>
-                  <span>{item.comments.length} comments</span>
-                </div>
+                <div class="ag-pending-meta">{pendingMeta(item)}</div>
                 <div class="ag-pending-actions">
                   <button
                     type="button"

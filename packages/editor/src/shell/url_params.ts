@@ -49,3 +49,7 @@ export function buildInlineUrl(base: string, diagramB64: string, stylesheetB64?:
   }
   return `${base}#${fragment.toString()}`;
 }
+
+export function reviewOpen(params: URLSearchParams): boolean {
+  return params.get('review') === 'open';
+}

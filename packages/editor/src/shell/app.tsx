@@ -7,7 +7,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
-import { readUrlParams } from './url_params';
+import { readUrlParams, reviewOpen } from './url_params';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
 import type { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
@@ -94,7 +94,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [commandContext, setCommandContext] = createSignal<MaybeCommandContextAccessor>(undefined);
   const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
   const [contextMenuPoint, setContextMenuPoint] = createSignal<Vec2 | undefined>(undefined);
-  const [expanded, setExpanded] = createSignal<boolean>(false);
+  const [expanded, setExpanded] = createSignal<boolean>(reviewOpen(params));
   const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(undefined);
   const [syncError, setSyncError] = createSignal<string | undefined>(undefined);
   const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);

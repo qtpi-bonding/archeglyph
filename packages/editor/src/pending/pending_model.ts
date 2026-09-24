@@ -27,3 +27,11 @@ export interface PendingItem {
   changeCount: number;
   comments: ReadonlyArray<Comment>;
 }
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
+
+export function pendingMeta(item: PendingItem): string {
+  return [item.author, count(item.changeCount, 'change'), count(item.comments.length, 'comment')].join(' \u00b7 ');
+}

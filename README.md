@@ -3,7 +3,9 @@
 [![Try the editor](https://img.shields.io/badge/try%20it-live%20editor-2ea9a0.svg)](https://qtpi-bonding.github.io/archeglyph/)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
-A node-and-edge graph rendering tool with strict content/style separation — like LaTeX for diagrams.
+A diagram preparation system for node-and-edge graphs, with a visual editor.
+Deterministic SVGs you can commit to git and review in a pull request, where
+agents and humans propose changes, comment, and annotate.
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
 
@@ -47,6 +49,15 @@ arrived. The plain box in the middle is the application, which the migration
 did not touch. It uses the `dark` theme because `light` and `dark` declare
 colours for added, changed and deleted, where `blueprint` declares none and
 rotates hue instead.</sub>
+
+![the editor with three proposed changes open for review](docs/img/editor-review.png)
+
+<sub>The visual editor, with the same diagram and three proposals open. Two
+came from an agent and one from a person; each carries a description, a change
+count and a discussion thread, and each is accepted or rejected on its own. A
+proposal never touches the saved file until it is accepted — it lives in
+`Stylesheet.pending_edits` and draws as the ghost overlay you can see behind
+the panel. Regenerate with `bun run editor:screenshot`.</sub>
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 

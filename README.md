@@ -1,6 +1,6 @@
 # archeglyph
 
-[![Try the editor](https://img.shields.io/badge/try%20it-live%20editor-2ea9a0.svg)](https://qtpi-bonding.github.io/archeglyph/)
+[![Try the editor](https://img.shields.io/badge/try%20it-live%20editor-2ea9a0.svg)](https://qtpi-bonding.github.io/archeglyph/?gh=qtpi-bonding/archeglyph&path=examples/stack-managed.diag.json)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
 A diagram preparation system for node-and-edge graphs, with a visual editor.
@@ -8,6 +8,14 @@ Deterministic SVGs you can commit to git and review in a pull request, where
 agents and humans propose changes, comment, and annotate.
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
+
+### → [Try the editor in your browser](https://qtpi-bonding.github.io/archeglyph/?gh=qtpi-bonding/archeglyph&path=examples/stack-managed.diag.json)
+
+No install, no account. That link opens the diagram below — pulled from
+`examples/` in this repo — with its three proposed changes waiting for review.
+Everything runs in the page; nothing is uploaded. To edit your own files
+instead, open the editor with [no parameters](https://qtpi-bonding.github.io/archeglyph/)
+and pick them off disk.
 
 ![the editor with three proposed changes open for review](docs/img/editor-review.png)
 
@@ -19,8 +27,8 @@ and draws as the ghost you can see behind the canvas. Regenerate with
 `bun run editor:screenshot`.</sub>
 
 **Status:** pre-1.0. The engine, all seven CLI operations and the visual editor
-are shipped and tested; there is no npm package, no hosted editor and no user
-guide beyond the generated CLI reference. Design spec in
+are shipped and tested; there is no npm package and no user guide beyond the
+generated CLI reference. Design spec in
 [`docs/design.md`](docs/design.md), the full list of what is missing in
 [`docs/status.md`](docs/status.md).
 

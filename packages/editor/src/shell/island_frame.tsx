@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { JSX } from 'solid-js';
+import type { ViewportInsets } from '../ui_state/viewport_math';
 
 /**
  * Gap in CSS pixels between an island and the viewport edge. 12.
@@ -30,7 +31,21 @@ export class IslandFrameProps {
 }
 
 /** Matches the inspector, so the two columns frame the canvas evenly. */
-const SIDE_COLUMN_WIDTH: string = '268px';
+export const SIDE_COLUMN_WIDTH: number = 268;
+
+/**
+ * Canvas edges a viewport fit must leave clear.
+ *
+ * Only the side columns count. They are full-height and always rendered;
+ * the toolbar and corner islands are short and sit over margin the fit
+ * padding already leaves.
+ */
+export const CANVAS_INSETS: ViewportInsets = {
+  left: ISLAND_INSET + SIDE_COLUMN_WIDTH,
+  right: ISLAND_INSET + SIDE_COLUMN_WIDTH,
+  top: 0,
+  bottom: 0,
+};
 
 /** Render one positioning-only island slot. */
 function IslandSlot(props: {
@@ -102,7 +117,7 @@ export const IslandFrame = (props: IslandFrameProps): JSX.Element => {
             'flex-direction': 'column',
             'align-items': 'flex-end',
             gap: '8px',
-            width: SIDE_COLUMN_WIDTH,
+            width: `${SIDE_COLUMN_WIDTH}px`,
             'max-height': '100%',
           }}>
             {props.file}

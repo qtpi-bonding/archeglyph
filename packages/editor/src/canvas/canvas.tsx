@@ -12,6 +12,7 @@ import { Scene, SceneGeometry } from '../scene/scene';
 import { Handle, handleAtPoint, hitTestPoint } from '../scene/hit_test';
 import { ElementRef, UiState } from '../ui_state/ui_state';
 import { centerBoundsInRect, ContainerRect, fitBoundsToRect, screenToDiagram } from '../ui_state/viewport_math';
+import { CANVAS_INSETS } from '../shell/island_frame';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer } from './ghost_layer';
@@ -447,7 +448,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const rect: ContainerRect = containerRect();
     if (!fitDone() && currentGeometry !== undefined && rect.width > 0 && rect.height > 0) {
       const bounds: Bounds = currentGeometry.contentBounds;
-      props.ui.setViewport(fitBoundsToRect(bounds, rect, 24));
+      props.ui.setViewport(fitBoundsToRect(bounds, rect, 24, CANVAS_INSETS));
       setFitDone(true);
     }
   });

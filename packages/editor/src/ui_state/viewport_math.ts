@@ -34,19 +34,50 @@ export function screenToDiagram(viewport: Viewport, containerRect: ContainerRect
   const localY = screenPt.y - containerRect.top;
   return { x: (localX - viewport.panX) / viewport.zoom, y: (localY - viewport.panY) / viewport.zoom };
 }
-export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, padding: number): Viewport {
+/** Edges of the container something opaque covers, in CSS pixels. */
+export interface ViewportInsets {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+export const NO_INSETS: ViewportInsets = { left: 0, right: 0, top: 0, bottom: 0 };
+
+/**
+ * The insets, shrunk together so they never claim more than half the axis.
+ *
+ * A window narrower than its own chrome would otherwise fit the diagram into
+ * nothing. Shrinking proportionally rather than dropping them at a threshold
+ * keeps the scale continuous, so dragging a window across the width where the
+ * columns stop fitting does not jump.
+ */
+function affordable(extent: number, near: number, far: number): { near: number; far: number } {
+  const total = near + far;
+  if (total <= 0) {
+    return { near: 0, far: 0 };
+  }
+  const scale = Math.min(1, extent / 2 / total);
+  return { near: near * scale, far: far * scale };
+}
+
+export function fitBoundsToRect(bounds: Bounds, containerRect: ContainerRect, padding: number, insets: ViewportInsets = NO_INSETS): Viewport {
   const contentWidth = bounds.maxX - bounds.minX;
   const contentHeight = bounds.maxY - bounds.minY;
-  const availWidth = containerRect.width - padding * 2;
-  const availHeight = containerRect.height - padding * 2;
+  const horizontal = affordable(containerRect.width, insets.left, insets.right);
+  const vertical = affordable(containerRect.height, insets.top, insets.bottom);
+  const clearWidth = containerRect.width - horizontal.near - horizontal.far;
+  const clearHeight = containerRect.height - vertical.near - vertical.far;
+  const availWidth = clearWidth - padding * 2;
+  const availHeight = clearHeight - padding * 2;
   const zoom = contentWidth <= 0 || contentHeight <= 0
     ? 1
     : Math.min(availWidth / contentWidth, availHeight / contentHeight);
   const centre = boundsCentre(bounds);
   return {
     zoom,
-    panX: containerRect.width / 2 - centre.x * zoom,
-    panY: containerRect.height / 2 - centre.y * zoom,
+    panX: horizontal.near + clearWidth / 2 - centre.x * zoom,
+    panY: vertical.near + clearHeight / 2 - centre.y * zoom,
   };
 }
 export function centerBoundsInRect(viewport: Viewport, bounds: Bounds, containerRect: ContainerRect): Viewport {

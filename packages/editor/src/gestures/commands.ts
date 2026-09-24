@@ -5,6 +5,7 @@ import { Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { Bounds } from '@archeglyph/core/geometry/bounds';
 import type { CommandId } from '../ui_state/keymap';
 import { ContainerRect, fitBoundsToRect, screenToDiagram, zoomAboutPoint } from '../ui_state/viewport_math';
+import { CANVAS_INSETS } from '../shell/island_frame';
 import { EditorState } from '../state/editor_state';
 import { SceneGeometry } from '../scene/scene';
 import { UiState, ElementRef } from '../ui_state/ui_state';
@@ -262,7 +263,7 @@ function runZoomFit(context: CommandContext): void {
     || context.geometry === undefined || context.geometry.index.length === 0) {
     return;
   }
-  context.ui.setViewport(fitBoundsToRect(context.geometry.contentBounds, context.rect, FIT_PADDING));
+  context.ui.setViewport(fitBoundsToRect(context.geometry.contentBounds, context.rect, FIT_PADDING, CANVAS_INSETS));
 }
 
 export const COMMANDS: Array<Command> = [

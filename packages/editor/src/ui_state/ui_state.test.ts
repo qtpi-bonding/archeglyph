@@ -19,6 +19,7 @@ import {
   diagramToScreen,
   zoomAboutPoint,
   fitBoundsToRect,
+  NO_INSETS,
   type ContainerRect,
 } from './viewport_math';
 import {
@@ -244,6 +245,59 @@ describe('viewport_math: fitBoundsToRect', () => {
     expect(withPadding.zoom).toBeLessThan(noPadding.zoom);
     // With 100px padding each side: avail = 800 -> zoom = 8.
     expect(withPadding.zoom).toBeCloseTo(8, 10);
+  });
+});
+
+describe('viewport_math: fitBoundsToRect clears the island columns', () => {
+  const columns = { left: 280, right: 280, top: 0, bottom: 0 };
+
+  test('content lands between the columns, not underneath them', () => {
+    const contentBounds = bounds(0, 0, 1000, 200);
+    const containerRect = rect(0, 0, 1200, 800);
+
+    const result = fitBoundsToRect(contentBounds, containerRect, 24, columns);
+    const left = diagramToScreen(result, containerRect, { x: 0, y: 0 }).x;
+    const right = diagramToScreen(result, containerRect, { x: 1000, y: 0 }).x;
+
+    expect(left).toBeGreaterThanOrEqual(280);
+    expect(right).toBeLessThanOrEqual(1200 - 280);
+  });
+
+  test('the fit is tighter than one that ignores the columns', () => {
+    const contentBounds = bounds(0, 0, 1000, 200);
+    const containerRect = rect(0, 0, 1200, 800);
+
+    expect(fitBoundsToRect(contentBounds, containerRect, 24, columns).zoom)
+      .toBeLessThan(fitBoundsToRect(contentBounds, containerRect, 24).zoom);
+  });
+
+  test('a window narrower than its own chrome still keeps half of it clear', () => {
+    const contentBounds = bounds(0, 0, 100, 100);
+    const containerRect = rect(0, 0, 400, 400);
+
+    const result = fitBoundsToRect(contentBounds, containerRect, 0, columns);
+    const left = diagramToScreen(result, containerRect, { x: 0, y: 0 }).x;
+    const right = diagramToScreen(result, containerRect, { x: 100, y: 0 }).x;
+
+    expect(left).toBeCloseTo(100, 6);
+    expect(right - left).toBeCloseTo(200, 6);
+  });
+
+  test('the scale is continuous across the width where the columns stop fitting', () => {
+    const contentBounds = bounds(0, 0, 1000, 200);
+    const zoomAt = (width: number): number =>
+      fitBoundsToRect(contentBounds, rect(0, 0, width, 800), 24, columns).zoom;
+
+    // 1120 is the seam: below it the columns no longer fit in half the width.
+    expect(Math.abs(zoomAt(1121) - zoomAt(1120))).toBeLessThan(0.01);
+  });
+
+  test('omitting the insets leaves the fit exactly where it was', () => {
+    const contentBounds = bounds(0, 0, 100, 50);
+    const containerRect = rect(0, 0, 1000, 1000);
+
+    expect(fitBoundsToRect(contentBounds, containerRect, 24, NO_INSETS))
+      .toEqual(fitBoundsToRect(contentBounds, containerRect, 24));
   });
 });
 

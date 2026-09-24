@@ -79,7 +79,9 @@ For the visual editor, which writes only to the stylesheet:
 bun run dev:editor
 ```
 
-It serves locally at the address Vite prints. There is no hosted instance yet.
+It serves locally at the address Vite prints. A GitHub Pages workflow is in
+the repository and the build uses a relative base, so it runs from any
+subpath — but Pages is not switched on yet, so there is no public instance.
 
 **Everything else is in
 [`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —

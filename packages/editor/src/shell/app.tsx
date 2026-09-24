@@ -55,6 +55,7 @@ import { pendingItems } from '../pending/pending_model';
 import { mergeThreads } from '../pending/merge_threads';
 import { newComment } from '../pending/comment_builder';
 import { CommentBackend } from '../adapters/comment_backend';
+import { unreadableMessage } from '../adapters/comment_envelope';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -178,7 +179,8 @@ export const App: Component<{}> = (): JSX.Element => {
       setSyncError(undefined);
       const threads = await backend.fetchThreads();
       if (threads.kind === 'ok') {
-        stylesheet = mergeThreads(stylesheet, threads.value);
+        stylesheet = mergeThreads(stylesheet, threads.value.entries);
+        setSyncError(unreadableMessage(threads.value.unreadable));
       } else {
         setSyncError(threads.error.message);
       }

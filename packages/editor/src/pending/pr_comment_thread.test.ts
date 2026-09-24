@@ -40,7 +40,7 @@ test('a review comment threads onto the pending edit its envelope names', async 
   const threads = await new GitForgePrBackend(forge, 'qtpi-bonding/archeglyph/1').fetchThreads();
   expect(threads.kind).toBe('ok');
 
-  const after = pendingItems(mergeThreads(sheet, threads.kind === 'ok' ? threads.value : []));
+  const after = pendingItems(mergeThreads(sheet, threads.kind === 'ok' ? threads.value.entries : []));
   expect(after.map((i) => i.comments.length)).toEqual([3, 2, 2]);
   expect(after[0]!.comments.at(-1)!.body).toContain('trust boundary');
 });

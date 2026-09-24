@@ -6,8 +6,25 @@ import { Result } from '@archeglyph/proto/util/result';
 import { AdapterError } from './host_adapter';
 
 export interface CommentBackend {
-  fetchThreads(): Promise<Result<Array<ThreadEntry>, AdapterError>>;
+  fetchThreads(): Promise<Result<ThreadFetch, AdapterError>>;
   postComment(editRef: string, comment: Comment): Promise<Result<void, AdapterError>>;
+}
+
+/**
+ * What one pass over a forge's comments produced.
+ *
+ * `unreadable` is not an error: the threads that did parse are still worth
+ * showing. It is what the panel reports so an author can fix the block they
+ * hand-wrote.
+ */
+export class ThreadFetch {
+  entries!: ReadonlyArray<ThreadEntry>;
+  unreadable!: ReadonlyArray<UnreadableComment>;
+}
+
+export class UnreadableComment {
+  author?: string;
+  reason!: string;
 }
 
 export class ThreadEntry {

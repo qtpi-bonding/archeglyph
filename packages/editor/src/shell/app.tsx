@@ -7,7 +7,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
-import { readUrlParams, reviewOpen } from './url_params';
+import { readUrlParams, reviewOpen, selectedProposal } from './url_params';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
 import type { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
@@ -55,6 +55,7 @@ import { pendingItems } from '../pending/pending_model';
 import { mergeThreads } from '../pending/merge_threads';
 import { newComment } from '../pending/comment_builder';
 import { CommentBackend } from '../adapters/comment_backend';
+import { unreadableMessage } from '../adapters/comment_envelope';
 
 const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createBrowserElk()));
 
@@ -95,7 +96,7 @@ export const App: Component<{}> = (): JSX.Element => {
   const [dismissedError, setDismissedError] = createSignal<SceneError | undefined>(undefined);
   const [contextMenuPoint, setContextMenuPoint] = createSignal<Vec2 | undefined>(undefined);
   const [expanded, setExpanded] = createSignal<boolean>(reviewOpen(params));
-  const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(undefined);
+  const [selectedPendingId, setSelectedPendingId] = createSignal<string | undefined>(selectedProposal(params));
   const [syncError, setSyncError] = createSignal<string | undefined>(undefined);
   const [comparedTo, setComparedTo] = createSignal<string | undefined>(undefined);
   const [diffOn, setDiffOn] = createSignal<boolean>(true);
@@ -178,7 +179,8 @@ export const App: Component<{}> = (): JSX.Element => {
       setSyncError(undefined);
       const threads = await backend.fetchThreads();
       if (threads.kind === 'ok') {
-        stylesheet = mergeThreads(stylesheet, threads.value);
+        stylesheet = mergeThreads(stylesheet, threads.value.entries);
+        setSyncError(unreadableMessage(threads.value.unreadable));
       } else {
         setSyncError(threads.error.message);
       }

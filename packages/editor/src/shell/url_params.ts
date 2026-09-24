@@ -53,3 +53,15 @@ export function buildInlineUrl(base: string, diagramB64: string, stylesheetB64?:
 export function reviewOpen(params: URLSearchParams): boolean {
   return params.get('review') === 'open';
 }
+
+/**
+ * The proposal a link opens expanded, by `StyleEdit.id`.
+ *
+ * A locator, so it stays in the query. Naming one that is not in the
+ * stylesheet selects nothing rather than erroring -- a link outlives the
+ * proposal it points at, which is accepted or rejected and then gone.
+ */
+export function selectedProposal(params: URLSearchParams): string | undefined {
+  const id: string | null = params.get('proposal');
+  return id === null || id === '' ? undefined : id;
+}

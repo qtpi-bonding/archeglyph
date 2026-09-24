@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "stack",
+  "title": [
+    {
+      "locale": "en",
+      "source": "Self-hosted stack"
+    }
+  ],
+  "graph": {
+    "nodes": {
+      "web": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Caddy"
+          }
+        ]
+      },
+      "auth": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Keycloak"
+          }
+        ],
+        "parentGroup": "ours"
+      },
+      "db": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Postgres"
+          }
+        ],
+        "parentGroup": "ours"
+      },
+      "cache": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Valkey"
+          }
+        ],
+        "parentGroup": "ours"
+      },
+      "backups": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "restic"
+          }
+        ]
+      }
+    },
+    "edges": {
+      "web__auth": {
+        "source": "web",
+        "target": "auth"
+      },
+      "web__db": {
+        "source": "web",
+        "target": "db"
+      },
+      "web__cache": {
+        "source": "web",
+        "target": "cache"
+      },
+      "db__backups": {
+        "source": "db",
+        "target": "backups"
+      }
+    },
+    "groups": {
+      "ours": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "One VPS, Docker Compose"
+          }
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "generator": "hand",
+    "canonicalLocale": "en"
+  }
+}

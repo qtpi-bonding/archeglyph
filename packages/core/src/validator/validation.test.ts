@@ -860,8 +860,8 @@ describe('loaders: loadDelta', () => {
 
   // Wire enum spelling is 'DELETED', not the proto constant name.
   test('loadDelta reads back exactly what the diff op writes', async () => {
-    const base = await loadDiagram(await Bun.file('examples/checkout.diag.json').text());
-    const target = await loadDiagram(await Bun.file('examples/checkout-v2.diag.json').text());
+    const base = await loadDiagram(await Bun.file('examples/stack-managed.diag.json').text());
+    const target = await loadDiagram(await Bun.file('examples/stack-selfhosted.diag.json').text());
     if (base.kind !== 'ok' || target.kind !== 'ok') throw new Error('fixture load failed');
 
     const delta = diff(base.value, target.value);

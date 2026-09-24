@@ -36,16 +36,16 @@ interface Case {
 // take the table path, `blueprint` declares none and rotates hue instead, so
 // dropping one would leave a whole branch of diff_color uncovered.
 const CASES: ReadonlyArray<Case> = [
-  { name: 'checkout-light', diagram: 'examples/checkout.diag.json', style: 'examples/checkout.style.json', theme: 'light' },
-  { name: 'checkout-dark', diagram: 'examples/checkout.diag.json', style: 'examples/checkout.style.json', theme: 'dark' },
-  { name: 'checkout-blueprint', diagram: 'examples/checkout.diag.json', style: 'examples/checkout.style.json', theme: 'blueprint' },
+  { name: 'stack-managed-light', diagram: 'examples/stack-managed.diag.json', style: 'examples/stack-managed.style.json', theme: 'light' },
+  { name: 'stack-managed-dark', diagram: 'examples/stack-managed.diag.json', style: 'examples/stack-managed.style.json', theme: 'dark' },
+  { name: 'stack-managed-blueprint', diagram: 'examples/stack-managed.diag.json', style: 'examples/stack-managed.style.json', theme: 'blueprint' },
   { name: 'pipeline-light', diagram: 'examples/pipeline.diag.json', style: 'examples/pipeline.style.json', theme: 'light' },
   { name: 'pipeline-dark', diagram: 'examples/pipeline.diag.json', style: 'examples/pipeline.style.json', theme: 'dark' },
   { name: 'pipeline-blueprint', diagram: 'examples/pipeline.diag.json', style: 'examples/pipeline.style.json', theme: 'blueprint' },
-  { name: 'checkout-v2-blueprint', diagram: 'examples/checkout-v2.diag.json', style: 'examples/checkout-v2.style.json', theme: 'blueprint' },
-  { name: 'diff-light', diagram: 'examples/checkout-v2.diag.json', style: 'examples/checkout-v2.style.json', theme: 'light', diff: true },
-  { name: 'diff-dark', diagram: 'examples/checkout-v2.diag.json', style: 'examples/checkout-v2.style.json', theme: 'dark', diff: true },
-  { name: 'diff-blueprint', diagram: 'examples/checkout-v2.diag.json', style: 'examples/checkout-v2.style.json', theme: 'blueprint', diff: true },
+  { name: 'stack-selfhosted-blueprint', diagram: 'examples/stack-selfhosted.diag.json', style: 'examples/stack-selfhosted.style.json', theme: 'blueprint' },
+  { name: 'diff-light', diagram: 'examples/stack-selfhosted.diag.json', style: 'examples/stack-selfhosted.style.json', theme: 'light', diff: true },
+  { name: 'diff-dark', diagram: 'examples/stack-selfhosted.diag.json', style: 'examples/stack-selfhosted.style.json', theme: 'dark', diff: true },
+  { name: 'diff-blueprint', diagram: 'examples/stack-selfhosted.diag.json', style: 'examples/stack-selfhosted.style.json', theme: 'blueprint', diff: true },
 ];
 
 async function compare(name: string, extension: string, actual: string): Promise<void> {
@@ -68,21 +68,21 @@ describe('golden renders', () => {
 
   beforeAll(async () => {
     scratch = await mkdtemp(join(tmpdir(), 'archeglyph-golden-'));
-    deltaPath = join(scratch, 'checkout-to-v2.delta.json');
+    deltaPath = join(scratch, 'stack.delta.json');
   });
 
   // Runs first, and the diff cases depend on the file it leaves behind. Bun
   // runs tests in declaration order within a file, so this is ordering by
   // position rather than by a hook -- stated because it is easy to break by
   // moving the block.
-  test('delta: checkout -> checkout-v2', async () => {
+  test('delta: managed -> self-hosted', async () => {
     const output = await diffOp.execute(
-      { base: 'examples/checkout.diag.json', target: 'examples/checkout-v2.diag.json', out: deltaPath },
+      { base: 'examples/stack-managed.diag.json', target: 'examples/stack-selfhosted.diag.json', out: deltaPath },
       createOpContext(PROJECT_ROOT),
     );
     expect(output.changed).toBe(true);
     const written = await readFile(deltaPath, 'utf8');
-    await compare('checkout-to-v2.delta', 'json', written);
+    await compare('stack.delta', 'json', written);
   });
 
   for (const testCase of CASES) {
@@ -108,8 +108,8 @@ describe('golden renders', () => {
   // stale golden rather than as non-determinism.
   test('rendering twice yields identical bytes', async () => {
     const params = {
-      diagram: 'examples/checkout.diag.json',
-      style: 'examples/checkout.style.json',
+      diagram: 'examples/stack-managed.diag.json',
+      style: 'examples/stack-managed.style.json',
       theme: 'blueprint',
     };
     const first = await renderOp.execute({ ...params, out: join(scratch, 'twice-a.svg') }, createOpContext(PROJECT_ROOT));

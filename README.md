@@ -26,6 +26,13 @@ Four properties, in order of importance:
 3. **Every edit is a typed operation on the style file** — whether it came from a human, the CLI, or an agent. There is no separate "AI mode"; agents read and write the same files, through the same operations, and their proposals land in `pending_edits` for a human to accept or reject.
 4. **Change is a first-class object.** `diff` computes a typed change set between two revisions of a diagram, and the renderer draws it — added, changed and deleted elements coloured in place, with deletions still shown rather than silently absent. A diagram becomes reviewable in a pull request rather than a before-and-after a reader has to hold in their head.
 
+![a diff between two revisions of the same diagram](docs/img/stack-diff-dark.svg)
+
+<sub>One diagram against an earlier revision of itself: red struck through is
+gone, green is new, and everything else moved. Rendered from
+`examples/stack-managed.diag.json` and `examples/stack-selfhosted.diag.json`
+with `archeglyph diff` piped into `render --delta`.</sub>
+
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 
 ## Install
@@ -46,10 +53,10 @@ Confirm it works by rendering a bundled example:
 
 ```bash
 bun run archeglyph render \
-  --diagram examples/checkout.diag.json \
-  --style   examples/checkout.style.json \
+  --diagram examples/stack-managed.diag.json \
+  --style   examples/stack-managed.style.json \
   --theme   blueprint \
-  --out     checkout.svg
+  --out     stack.svg
 ```
 
 For the visual editor, which writes only to the stylesheet:

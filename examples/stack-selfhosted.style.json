@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "nodes": {
+    "web": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 110
+        }
+      }
+    },
+    "auth": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 16
+        }
+      }
+    },
+    "db": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 96
+        }
+      }
+    },
+    "cache": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 176
+        }
+      }
+    },
+    "backups": {
+      "layout": {
+        "position": {
+          "x": 470,
+          "y": 110
+        }
+      }
+    }
+  },
+  "edges": {},
+  "groups": {
+    "ours": {
+      "layout": {
+        "position": {
+          "x": 230,
+          "y": 20
+        }
+      }
+    }
+  }
+}

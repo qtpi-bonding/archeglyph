@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "baseRef": "examples/stack-managed.diag.json",
+  "targetRef": "examples/stack-selfhosted.diag.json",
+  "nodeDeltas": [
+    {
+      "nodeId": "analytics",
+      "changeType": "DELETED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Vercel Analytics"
+          }
+        ],
+        "parentGroup": "hosted"
+      }
+    },
+    {
+      "nodeId": "auth",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Clerk"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Keycloak"
+          }
+        ],
+        "parentGroup": "ours"
+      }
+    },
+    {
+      "nodeId": "backups",
+      "changeType": "ADDED",
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "restic"
+          }
+        ]
+      }
+    },
+    {
+      "nodeId": "cache",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Upstash Redis"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Valkey"
+          }
+        ],
+        "parentGroup": "ours"
+      }
+    },
+    {
+      "nodeId": "db",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "PlanetScale"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Postgres"
+          }
+        ],
+        "parentGroup": "ours"
+      }
+    },
+    {
+      "nodeId": "web",
+      "changeType": "MODIFIED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Vercel"
+          }
+        ]
+      },
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Caddy"
+          }
+        ]
+      }
+    }
+  ],
+  "edgeDeltas": [
+    {
+      "edgeId": "db__backups",
+      "changeType": "ADDED",
+      "after": {
+        "source": "db",
+        "target": "backups"
+      }
+    },
+    {
+      "edgeId": "web__analytics",
+      "changeType": "DELETED",
+      "before": {
+        "source": "web",
+        "target": "analytics"
+      }
+    }
+  ],
+  "groupDeltas": [
+    {
+      "groupId": "hosted",
+      "changeType": "DELETED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Someone else's servers"
+          }
+        ]
+      }
+    },
+    {
+      "groupId": "ours",
+      "changeType": "ADDED",
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "One VPS, Docker Compose"
+          }
+        ]
+      }
+    }
+  ]
+}

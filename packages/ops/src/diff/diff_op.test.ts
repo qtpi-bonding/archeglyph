@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, test } from 'bun:test';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DeltaSchema } from '@archeglyph/proto/gen/content_pb';
@@ -14,8 +14,8 @@ import { REGISTRY } from '../registry';
 const repoRoot = join(new URL('.', import.meta.url).pathname, '../../../..');
 const ctx = createOpContext(repoRoot);
 
-const BEFORE = 'examples/checkout.diag.json';
-const AFTER = 'examples/checkout-v2.diag.json';
+const BEFORE = 'examples/stack-managed.diag.json';
+const AFTER = 'examples/stack-selfhosted.diag.json';
 
 describe('diff op', () => {
   test('it is in the registry under the name the CLI dispatches on', () => {
@@ -32,15 +32,13 @@ describe('diff op', () => {
   test('it counts every change type across all three entity kinds', async () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
 
-    expect(out.nodes).toEqual({ added: 1, deleted: 1, modified: 3 });
-    expect(out.edges).toEqual({ added: 2, deleted: 1, modified: 1 });
-    expect(out.groups).toEqual({ added: 1, deleted: 1, modified: 1 });
+    expect(out.nodes).toEqual({ added: 1, deleted: 1, modified: 4 });
+    expect(out.edges).toEqual({ added: 1, deleted: 1, modified: 0 });
+    expect(out.groups).toEqual({ added: 1, deleted: 1, modified: 0 });
     expect(out.changed).toBe(true);
   });
 
   test('the refs name the two files, not the diagram id', async () => {
-    // Both revisions carry id "checkout" -- Diagram.id is stable across
-    // revisions by definition, so it identifies neither side.
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
     expect({ base: out.baseRef, target: out.targetRef }).toEqual({ base: BEFORE, target: AFTER });
   });
@@ -58,14 +56,27 @@ describe('diff op', () => {
 
     expect(out.outPath).toBe(target);
     const delta = fromJson(DeltaSchema, await readFile(target, 'utf8'));
-    expect(delta.groupDeltas.map((d): string => d.groupId)).toEqual(['edge', 'external', 'services']);
+    expect(delta.groupDeltas.map((d): string => d.groupId)).toEqual(['hosted', 'ours']);
     expect(delta.baseRef).toBe(BEFORE);
   });
 
   test('without --out nothing is written and the summary still reports', async () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
     expect(out.outPath).toBeUndefined();
-    expect(diffOp.format?.(out)).toContain('groups: +1 -1 ~1');
+    expect(diffOp.format?.(out)).toContain('groups: +1 -1 ~0');
+  });
+
+  test('a group whose label changes reports as modified', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'archeglyph-diff-group-'));
+    const edited = join(dir, 'relabelled.diag.json');
+    const source = JSON.parse(await readFile(BEFORE, 'utf8')) as {
+      graph: { groups: Record<string, { label: { locale: string; source: string }[] }> };
+    };
+    source.graph.groups['hosted'].label = [{ locale: 'en', source: 'Rented servers' }];
+    await writeFile(edited, JSON.stringify(source), 'utf8');
+
+    const out = await diffOp.execute({ base: BEFORE, target: edited }, ctx);
+    expect(out.groups).toEqual({ added: 0, deleted: 0, modified: 1 });
   });
 
   test('a bad path fails at the load stage rather than throwing raw', async () => {

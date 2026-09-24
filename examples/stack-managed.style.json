@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "nodes": {
+    "web": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 110
+        }
+      }
+    },
+    "auth": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 16
+        }
+      }
+    },
+    "db": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 96
+        }
+      }
+    },
+    "cache": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 176
+        }
+      }
+    },
+    "analytics": {
+      "layout": {
+        "position": {
+          "x": 16,
+          "y": 256
+        }
+      }
+    }
+  },
+  "edges": {},
+  "groups": {
+    "hosted": {
+      "layout": {
+        "position": {
+          "x": 230,
+          "y": 20
+        }
+      }
+    }
+  },
+  "pendingEdits": [
+    {
+      "schemaVersion": 1,
+      "id": "a1b2c3d4e5f60001",
+      "author": "ai:claude",
+      "description": "Tint the hop that leaves our network",
+      "timestampMs": "1758412800000",
+      "state": "STYLE_EDIT_STATE_PENDING",
+      "nodeChanges": [
+        {
+          "nodeId": "cache",
+          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_SHAPE"
+          ],
+          "description": "Someone else runs it. Amber so it reads as outside the trust boundary.",
+          "after": {
+            "shape": {
+              "fill": {
+                "color": {
+                  "value": "#4A3410"
+                }
+              },
+              "stroke": {
+                "color": {
+                  "value": "#F59E0B"
+                },
+                "width": 1.5
+              }
+            }
+          }
+        },
+        {
+          "nodeId": "web",
+          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_SHAPE"
+          ],
+          "description": "The only thing that talks to it.",
+          "after": {
+            "shape": {
+              "stroke": {
+                "color": {
+                  "value": "#F59E0B"
+                },
+                "width": 1.5
+              }
+            }
+          }
+        }
+      ],
+      "edgeChanges": [
+        {
+          "edgeId": "web__cache",
+          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_CONNECTION"
+          ],
+          "after": {
+            "connection": {
+              "stroke": {
+                "color": {
+                  "value": "#F59E0B"
+                },
+                "pattern": "STROKE_PATTERN_DASHED"
+              }
+            }
+          }
+        }
+      ],
+      "thread": {
+        "resolved": false,
+        "comments": [
+          {
+            "id": "c0000000000000a1",
+            "author": "ai:claude",
+            "timestampMs": "1758412800000",
+            "body": "Three elements form the egress path. Tinting all three makes the trust boundary readable without adding a group."
+          },
+          {
+            "id": "c0000000000000a2",
+            "author": "user:sam",
+            "timestampMs": "1758416400000",
+            "replyTo": "c0000000000000a1",
+            "body": "Agreed on the cache and the edge. Not sure about filling `web` too \u2014 it is still ours. Stroke only is the right call."
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "a1b2c3d4e5f60002",
+      "author": "ai:claude",
+      "description": "Swap the cache and analytics so the egress hop is not the longest line",
+      "timestampMs": "1758420000000",
+      "state": "STYLE_EDIT_STATE_PENDING",
+      "nodeChanges": [
+        {
+          "nodeId": "analytics",
+          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_LAYOUT"
+          ],
+          "after": {
+            "layout": {
+              "position": {
+                "x": 16,
+                "y": 176
+              }
+            }
+          }
+        },
+        {
+          "nodeId": "cache",
+          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_LAYOUT"
+          ],
+          "after": {
+            "layout": {
+              "position": {
+                "x": 16,
+                "y": 256
+              }
+            }
+          }
+        }
+      ],
+      "thread": {
+        "resolved": false,
+        "comments": [
+          {
+            "id": "c0000000000000b1",
+            "author": "ai:claude",
+            "timestampMs": "1758420000000",
+            "body": "`inventory` and `checkout` both point at the orders db, and `payments` sits between them, so the two edges cross. Swapping the lower two rows removes the crossing and leaves every other edge alone."
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "a1b2c3d4e5f60003",
+      "author": "user:sam",
+      "description": "Note the egress budget where someone will look for it",
+      "timestampMs": "1758423600000",
+      "state": "STYLE_EDIT_STATE_PENDING",
+      "annotationChanges": [
+        {
+          "annotationId": "egress-budget",
+          "changeType": "STYLE_CHANGE_TYPE_ADDED",
+          "kinds": [
+            "STYLE_CHANGE_KIND_CONTENT",
+            "STYLE_CHANGE_KIND_ANCHOR",
+            "STYLE_CHANGE_KIND_CALLOUT"
+          ],
+          "after": {
+            "content": [
+              {
+                "locale": "en",
+                "source": "~40 GB/month egress.\nThat is the line item that moved us off."
+              }
+            ],
+            "layout": {
+              "position": {
+                "x": 470,
+                "y": 320
+              },
+              "size": {
+                "x": 220,
+                "y": 56
+              }
+            },
+            "anchor": {
+              "refId": "web",
+              "refKind": "REF_KIND_NODE"
+            },
+            "shape": {
+              "fill": {
+                "color": {
+                  "value": "#132A3A"
+                }
+              },
+              "stroke": {
+                "color": {
+                  "value": "#2C6E8F"
+                }
+              }
+            },
+            "typography": {
+              "size": 11,
+              "color": {
+                "value": "#9FC5DA"
+              }
+            },
+            "callout": {
+              "stroke": {
+                "color": {
+                  "value": "#2C6E8F"
+                },
+                "pattern": "STROKE_PATTERN_DOTTED"
+              }
+            }
+          }
+        }
+      ],
+      "thread": {
+        "resolved": false,
+        "comments": [
+          {
+            "id": "c0000000000000d1",
+            "author": "user:sam",
+            "timestampMs": "1758423600000",
+            "body": "This keeps getting asked in review. Putting it on the diagram instead of the runbook."
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "stack",
+  "title": [
+    {
+      "locale": "en",
+      "source": "Managed stack"
+    }
+  ],
+  "graph": {
+    "nodes": {
+      "web": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Vercel"
+          }
+        ]
+      },
+      "auth": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Clerk"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "db": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "PlanetScale"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "cache": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Upstash Redis"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "analytics": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Vercel Analytics"
+          }
+        ],
+        "parentGroup": "hosted"
+      }
+    },
+    "edges": {
+      "web__auth": {
+        "source": "web",
+        "target": "auth"
+      },
+      "web__db": {
+        "source": "web",
+        "target": "db"
+      },
+      "web__cache": {
+        "source": "web",
+        "target": "cache"
+      },
+      "web__analytics": {
+        "source": "web",
+        "target": "analytics"
+      }
+    },
+    "groups": {
+      "hosted": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Someone else's servers"
+          }
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "generator": "hand",
+    "canonicalLocale": "en"
+  }
+}

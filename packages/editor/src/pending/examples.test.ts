@@ -41,7 +41,7 @@ async function svgFor(diagram: Diagram, stylesheet: Stylesheet, themeName = 'blu
   return svg.value;
 }
 
-describe.each(['pipeline', 'checkout', 'checkout-v2'])('examples/%s', (name: string) => {
+describe.each(['pipeline', 'stack-managed', 'stack-selfhosted'])('examples/%s', (name: string) => {
   test.each(BUNDLED_THEME_NAMES)('loads and renders under %s', async (themeName: string) => {
     const { diagram, stylesheet } = await open(name);
     expect((await svgFor(diagram, stylesheet, themeName)).length).toBeGreaterThan(0);
@@ -56,9 +56,9 @@ describe.each(['pipeline', 'checkout', 'checkout-v2'])('examples/%s', (name: str
   });
 });
 
-describe('examples/checkout carries a review to look at', () => {
+describe('examples/stack-managed carries a review to look at', () => {
   test('three proposals, each with a description and a thread', async () => {
-    const { stylesheet } = await open('checkout');
+    const { stylesheet } = await open('stack-managed');
     const items = pendingItems(stylesheet);
 
     expect(items.length).toBe(3);
@@ -71,7 +71,7 @@ describe('examples/checkout carries a review to look at', () => {
 
   test('the ghost layer differs from the saved one', async () => {
     // A proposal that folds to the same stylesheet renders an invisible diff.
-    const { diagram, stylesheet } = await open('checkout');
+    const { diagram, stylesheet } = await open('stack-managed');
     const saved = await svgFor(diagram, stylesheet);
     const ghost = await svgFor(diagram, applyAllPendingEdits(stylesheet));
 
@@ -79,16 +79,16 @@ describe('examples/checkout carries a review to look at', () => {
   });
 
   test('it covers a recolour, a move, and an added annotation', async () => {
-    const { diagram, stylesheet } = await open('checkout');
+    const { diagram, stylesheet } = await open('stack-managed');
     const saved = await svgFor(diagram, stylesheet);
     const ghost = await svgFor(diagram, applyAllPendingEdits(stylesheet));
 
     const amber = '#F59E0B';
     expect({ saved: saved.includes(amber), ghost: ghost.includes(amber) }).toEqual({ saved: false, ghost: true });
-    expect({ saved: saved.includes('retries'), ghost: ghost.includes('retries') }).toEqual({ saved: false, ghost: true });
+    expect({ saved: saved.includes('egress'), ghost: ghost.includes('egress') }).toEqual({ saved: false, ghost: true });
 
-    const moved = applyAllPendingEdits(stylesheet).nodes['payments']?.layout?.position;
+    const moved = applyAllPendingEdits(stylesheet).nodes['analytics']?.layout?.position;
     expect({ y: moved?.y }).toEqual({ y: 176 });
-    expect(stylesheet.nodes['payments']?.layout?.position?.y).toBe(96);
+    expect(stylesheet.nodes['analytics']?.layout?.position?.y).toBe(256);
   });
 });

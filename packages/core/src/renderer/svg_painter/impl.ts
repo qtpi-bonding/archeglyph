@@ -19,7 +19,7 @@ const MARK_BOX: number = 9;
 // rotates to the path's local direction.
 const GLYPH_MARKS: ReadonlyMap<StrokePattern, string> = new Map([
   [StrokePattern.PLUS, '<path d="M -3,0 L 3,0 M 0,-3 L 0,3" fill="none" stroke-width="1.5"/>'],
-  [StrokePattern.MINUS, '<path d="M -3.4,0 L 3.4,0" fill="none" stroke-width="1.5"/>'],
+  [StrokePattern.MINUS, '<path d="M -3,0 L 3,0" fill="none" stroke-width="3.2"/>'],
   [StrokePattern.DELTA, '<path d="M 3.1,0 L -2.3,2.7 L -2.3,-2.7 Z" stroke="none"/>'],
 ]);
 

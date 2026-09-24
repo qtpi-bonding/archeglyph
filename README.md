@@ -26,13 +26,25 @@ Four properties, in order of importance:
 3. **Every edit is a typed operation on the style file** — whether it came from a human, the CLI, or an agent. There is no separate "AI mode"; agents read and write the same files, through the same operations, and their proposals land in `pending_edits` for a human to accept or reject.
 4. **Change is a first-class object.** `diff` computes a typed change set between two revisions of a diagram, and the renderer draws it — added, changed and deleted elements coloured in place, with deletions still shown rather than silently absent. A diagram becomes reviewable in a pull request rather than a before-and-after a reader has to hold in their head.
 
-![a diff between two revisions of the same diagram](docs/img/stack-diff-dark.svg)
+<table>
+<tr>
+<td width="50%"><img src="docs/img/stack-managed-blueprint.svg" alt="before: an app on managed services"></td>
+<td width="50%"><img src="docs/img/stack-selfhosted-blueprint.svg" alt="after: the same app self-hosted"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>before</b></sub></td>
+<td align="center"><sub><b>after</b></sub></td>
+</tr>
+</table>
 
-<sub>One diagram against an earlier revision of itself. Red struck through is
-gone, green is new, and the undecorated box in the middle is the application —
-the thing the migration did not touch. Rendered from
-`examples/stack-managed.diag.json` and `examples/stack-selfhosted.diag.json`
-with `archeglyph diff` piped into `render --delta`.</sub>
+![the diff between them](docs/img/stack-diff-dark.svg)
+
+<sub>The third picture is not drawn by hand either — it is `archeglyph diff`
+between the first two, rendered with `render --delta`. Red struck through is
+gone, green is new, and the undecorated box in the middle is the application,
+which the migration did not touch. It uses the `dark` theme because `light` and
+`dark` declare colours for added, changed and deleted, where `blueprint`
+declares none and rotates hue instead.</sub>
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 

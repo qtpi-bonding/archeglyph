@@ -1,0 +1,77 @@
+name: diagrams
+
+on:
+  pull_request:
+    paths:
+      - '**/*.diag.json'
+      - '**/*.style.json'
+      - '**/*.theme.json'
+      - 'packages/core/**'
+      - 'scripts/pr_diagrams.ts'
+      - '.github/workflows/diagrams.yml'
+
+# Only what posting one comment needs. `pull_request` rather than
+# `pull_request_target`: this job runs the pull request's own code, including
+# whatever `bun install` executes, and pull_request_target would hand that a
+# writable token. The cost is that a fork's pull request gets no comment,
+# which the guard on the comment step makes explicit rather than a failure.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff against the base branch needs its history.
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - run: bun install --frozen-lockfile
+
+      - name: diagrams this pull request touches
+        id: changed
+        run: |
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+            | grep -E '\.diag\.json$' > changed.txt || true
+          echo "count=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          cat changed.txt
+
+      # The head SHA, not github.sha: that is the merge commit, which no raw
+      # URL resolves against once the run is over.
+      - name: render them
+        if: steps.changed.outputs.count != '0'
+        run: |
+          bun run scripts/pr_diagrams.ts \
+            --sha "${{ github.event.pull_request.head.sha }}" \
+            --repo "${{ github.repository }}" \
+            --out comment.md \
+            $(cat changed.txt)
+
+      - name: post or update the comment
+        # A fork's token is read-only, so this would fail rather than post.
+        if: >-
+          steps.changed.outputs.count != '0' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = require('node:fs').readFileSync('comment.md', 'utf8');
+            const marker = '<!-- archeglyph-diagrams -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const existing = await github.paginate(
+              github.rest.issues.listComments, { owner, repo, issue_number });
+            const mine = existing.find((c) => c.body.startsWith(marker));
+
+            if (mine === undefined) {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            } else {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            }

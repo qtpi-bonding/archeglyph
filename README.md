@@ -98,6 +98,66 @@ It serves locally at the address Vite prints. The same build is hosted at
 anything — it reads and writes files on your own machine through the File
 System Access API, so nothing you open is uploaded.
 
+## In a pull request
+
+Render the diagram and commit the SVG next to its source:
+
+```bash
+bun run archeglyph render \
+  --diagram docs/arch.diag.json \
+  --style   docs/arch.style.json \
+  --theme   dark \
+  --out     docs/arch.svg
+```
+
+GitHub then shows it two ways.
+
+In **Files changed** this happens on its own. An added SVG renders as a
+picture rather than as XML, and a changed one gets the image diff — two-up,
+swipe and onion-skin — so a reviewer sees which part of the diagram moved.
+
+In a **comment or pull request description** you write the link, pinned to a
+commit rather than a branch:
+
+```markdown
+<img src="https://raw.githubusercontent.com/OWNER/REPO/COMMIT_SHA/docs/arch.svg" width="700">
+```
+
+A branch name there resolves to whatever that branch holds later, so the
+picture in an old comment changes without anyone touching the comment. A
+commit SHA does not.
+
+To post the change rather than the result, render the delta — this is how the
+third picture above was made:
+
+```bash
+bun run archeglyph diff \
+  --base   examples/stack-managed.diag.json \
+  --target examples/stack-selfhosted.diag.json \
+  --out    delta.json
+
+bun run archeglyph render \
+  --diagram examples/stack-selfhosted.diag.json \
+  --delta   delta.json \
+  --theme   dark \
+  --out     change.svg
+```
+
+GitHub serves these sandboxed, so the SVG loads nothing external. A font it
+names has to already be on the reader's machine, which is why a generic
+family travels further than a specific one.
+
+To skip the manual step, [`.github/workflows/diagrams.yml`](.github/workflows/diagrams.yml)
+does it for you: on a pull request that touches a diagram it re-renders each
+one, and keeps a single comment showing the current picture. It also says when
+a committed SVG no longer matches the source it was rendered from, which is
+the same determinism the golden renders check. The convention it follows is
+that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+
+It comments only on pull requests from the repository itself. A fork's token
+is read-only by design, and the alternative (`pull_request_target`) would hand
+a writable token to code from the fork.
+
 **Everything else is in
 [`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —
 every subcommand and flag, with types, defaults, and which are required. It is

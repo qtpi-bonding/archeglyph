@@ -50,6 +50,7 @@ jobs:
           bun run scripts/pr_diagrams.ts \
             --sha "${{ github.event.pull_request.head.sha }}" \
             --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number }}" \
             --out comment.md \
             $(cat changed.txt)
 

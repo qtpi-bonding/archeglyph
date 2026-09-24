@@ -192,3 +192,151 @@ body {
   font-family: var(--ag-font-ui);
   font-size: 11px;
 }
+
+/* Proposals and their comment threads. The markup carried these class names
+   from the start with no rules behind them, so a thread rendered as bare
+   default HTML on the panel ground: author and timestamp ran together into
+   one string and the body sat at the browser's 16px default in a 12px panel. */
+.ag-pending-row-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ag-pending-description {
+  color: var(--ag-fg);
+  line-height: 1.4;
+}
+
+.ag-pending-meta {
+  color: var(--ag-fg-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ag-pending-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ag-pending-thread {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ag-edge);
+  cursor: default;
+}
+
+.ag-thread-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ag-thread-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ag-thread-empty {
+  color: var(--ag-fg-3);
+  font-style: italic;
+}
+
+/* The left rule carries who is speaking, so an agent's comment and a
+   person's are told apart without reading the name. */
+.ag-thread-comment {
+  padding: 7px 9px;
+  background: var(--ag-field);
+  border-radius: var(--ag-radius);
+  border-left: 2px solid var(--ag-teal);
+}
+
+.ag-thread-comment[data-kind="ai"] {
+  border-left-color: var(--ag-purple);
+}
+
+.ag-thread-comment header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ag-thread-author {
+  color: var(--ag-fg-2);
+  font-weight: 600;
+}
+
+.ag-thread-badge {
+  color: var(--ag-purple);
+  border: 1px solid var(--ag-purple);
+  border-radius: 2px;
+  padding: 0 3px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Pushed to the far end, so names stay left-aligned down the thread however
+   long each one is. */
+.ag-thread-comment time {
+  margin-left: auto;
+  color: var(--ag-fg-3);
+  font-size: 10px;
+  font-family: var(--ag-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* pre-wrap keeps authored line breaks; break-word stops a pasted url or a
+   long identifier widening the island. */
+.ag-thread-body {
+  color: var(--ag-fg);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.ag-thread-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding-left: 9px;
+  border-left: 1px solid var(--ag-edge);
+}
+
+.ag-thread-replies .ag-thread-comment {
+  background: color-mix(in srgb, var(--ag-field) 70%, var(--ag-panel));
+}
+
+.ag-thread-reply {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ag-thread-reply textarea {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 6px;
+  resize: vertical;
+  font: inherit;
+  color: var(--ag-fg);
+  background: var(--ag-field);
+  border: 1px solid var(--ag-edge);
+  border-radius: var(--ag-radius);
+}
+
+.ag-thread-reply textarea::placeholder {
+  color: var(--ag-fg-3);
+}
+
+.ag-thread-reply textarea:focus-visible {
+  outline: 1px solid var(--ag-blue);
+  outline-offset: 1px;
+}

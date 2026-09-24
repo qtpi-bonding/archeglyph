@@ -40,11 +40,12 @@ Four properties, in order of importance:
 ![the diff between them](docs/img/stack-diff-dark.svg)
 
 <sub>The third picture is not drawn by hand either — it is `archeglyph diff`
-between the first two, rendered with `render --delta`. Red struck through is
-gone, green is new, and the undecorated box in the middle is the application,
-which the migration did not touch. It uses the `dark` theme because `light` and
-`dark` declare colours for added, changed and deleted, where `blueprint`
-declares none and rotates hue instead.</sub>
+between the first two, rendered with `render --delta`. Everything replaced is
+drawn twice: struck through in red where it left, and in green where it
+arrived. The plain box in the middle is the application, which the migration
+did not touch. It uses the `dark` theme because `light` and `dark` declare
+colours for added, changed and deleted, where `blueprint` declares none and
+rotates hue instead.</sub>
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 

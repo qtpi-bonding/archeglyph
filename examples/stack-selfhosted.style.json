@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "nodes": {
-    "web": {
+    "caddy": {
       "layout": {
         "position": {
           "x": 16,
-          "y": 60
+          "y": 130
         }
       }
     },
@@ -13,39 +13,39 @@
       "layout": {
         "position": {
           "x": 190,
-          "y": 60
+          "y": 130
         }
       }
     },
-    "auth": {
+    "keycloak": {
       "layout": {
         "position": {
           "x": 16,
-          "y": 40
+          "y": 48
         }
       }
     },
-    "db": {
+    "postgres": {
       "layout": {
         "position": {
           "x": 16,
-          "y": 120
+          "y": 128
         }
       }
     },
-    "cache": {
+    "valkey": {
       "layout": {
         "position": {
           "x": 16,
-          "y": 200
+          "y": 208
         }
       }
     },
-    "backups": {
+    "restic": {
       "layout": {
         "position": {
-          "x": 770,
-          "y": 60
+          "x": 920,
+          "y": 130
         }
       }
     }
@@ -55,7 +55,7 @@
     "ours": {
       "layout": {
         "position": {
-          "x": 470,
+          "x": 560,
           "y": 16
         }
       }

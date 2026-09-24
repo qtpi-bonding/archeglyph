@@ -87,8 +87,8 @@ describe('examples/stack-managed carries a review to look at', () => {
     expect({ saved: saved.includes(amber), ghost: ghost.includes(amber) }).toEqual({ saved: false, ghost: true });
     expect({ saved: saved.includes('egress'), ghost: ghost.includes('egress') }).toEqual({ saved: false, ghost: true });
 
-    const moved = applyAllPendingEdits(stylesheet).nodes['analytics']?.layout?.position;
-    expect({ y: moved?.y }).toEqual({ y: 200 });
-    expect(stylesheet.nodes['analytics']?.layout?.position?.y).toBe(280);
+    const moved = applyAllPendingEdits(stylesheet).nodes['segment']?.layout?.position;
+    expect({ y: moved?.y }).toEqual({ y: 208 });
+    expect(stylesheet.nodes['segment']?.layout?.position?.y).toBe(288);
   });
 });

@@ -259,15 +259,19 @@ export async function seedNewcomers(
     dx /= anchors.size;
     dy /= anchors.size;
 
-    // Move the whole component, not individual newcomers, when it overlaps a
-    // pinned element that was not among its anchors.
+    const occupied = pinnedRects.concat(
+      [...result.entries()].map(([id, at]) => {
+        const item = elements.get(id)!;
+        return { id, x: at.x, y: at.y, width: item.width, height: item.height };
+      }),
+    );
     let shiftY = 0;
     while (true) {
       const collision = [...component].sort().some(id => {
         const item = laid.get(id)!;
-        return pinnedRects.some(pin => boundsIntersects(
+        return occupied.some(taken => boundsIntersects(
           { minX: item.x + dx, minY: item.y + dy + shiftY, maxX: item.x + dx + item.width, maxY: item.y + dy + shiftY + item.height },
-          rect(pin),
+          rect(taken),
         ));
       });
       if (!collision) break;

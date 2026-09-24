@@ -32,8 +32,8 @@ describe('diff op', () => {
   test('it counts every change type across all three entity kinds', async () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
 
-    expect(out.nodes).toEqual({ added: 1, deleted: 1, modified: 4 });
-    expect(out.edges).toEqual({ added: 1, deleted: 1, modified: 0 });
+    expect(out.nodes).toEqual({ added: 5, deleted: 5, modified: 0 });
+    expect(out.edges).toEqual({ added: 5, deleted: 5, modified: 0 });
     expect(out.groups).toEqual({ added: 1, deleted: 1, modified: 0 });
     expect(out.changed).toBe(true);
   });
@@ -64,6 +64,19 @@ describe('diff op', () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
     expect(out.outPath).toBeUndefined();
     expect(diffOp.format?.(out)).toContain('groups: +1 -1 ~0');
+  });
+
+  test('a node whose label changes reports as modified', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'archeglyph-diff-node-'));
+    const edited = join(dir, 'relabelled.diag.json');
+    const source = JSON.parse(await readFile(BEFORE, 'utf8')) as {
+      graph: { nodes: Record<string, { label: { locale: string; source: string }[] }> };
+    };
+    source.graph.nodes['app'].label = [{ locale: 'en', source: 'Django + Alpine' }];
+    await writeFile(edited, JSON.stringify(source), 'utf8');
+
+    const out = await diffOp.execute({ base: BEFORE, target: edited }, ctx);
+    expect(out.nodes).toEqual({ added: 0, deleted: 0, modified: 1 });
   });
 
   test('a group whose label changes reports as modified', async () => {

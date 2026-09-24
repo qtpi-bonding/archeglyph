@@ -9,14 +9,6 @@
   ],
   "graph": {
     "nodes": {
-      "web": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "Caddy"
-          }
-        ]
-      },
       "app": {
         "label": [
           {
@@ -25,7 +17,15 @@
           }
         ]
       },
-      "auth": {
+      "caddy": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Caddy"
+          }
+        ]
+      },
+      "keycloak": {
         "label": [
           {
             "locale": "en",
@@ -34,7 +34,7 @@
         ],
         "parentGroup": "ours"
       },
-      "db": {
+      "postgres": {
         "label": [
           {
             "locale": "en",
@@ -43,7 +43,7 @@
         ],
         "parentGroup": "ours"
       },
-      "cache": {
+      "valkey": {
         "label": [
           {
             "locale": "en",
@@ -52,7 +52,7 @@
         ],
         "parentGroup": "ours"
       },
-      "backups": {
+      "restic": {
         "label": [
           {
             "locale": "en",
@@ -62,25 +62,25 @@
       }
     },
     "edges": {
-      "web__app": {
-        "source": "web",
+      "caddy__app": {
+        "source": "caddy",
         "target": "app"
       },
-      "app__auth": {
+      "app__keycloak": {
         "source": "app",
-        "target": "auth"
+        "target": "keycloak"
       },
-      "app__db": {
+      "app__postgres": {
         "source": "app",
-        "target": "db"
+        "target": "postgres"
       },
-      "app__cache": {
+      "app__valkey": {
         "source": "app",
-        "target": "cache"
+        "target": "valkey"
       },
-      "db__backups": {
-        "source": "db",
-        "target": "backups"
+      "postgres__restic": {
+        "source": "postgres",
+        "target": "restic"
       }
     },
     "groups": {

@@ -9,14 +9,6 @@
   ],
   "graph": {
     "nodes": {
-      "web": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "Heroku"
-          }
-        ]
-      },
       "app": {
         "label": [
           {
@@ -25,7 +17,15 @@
           }
         ]
       },
-      "auth": {
+      "heroku": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Heroku"
+          }
+        ]
+      },
+      "auth0": {
         "label": [
           {
             "locale": "en",
@@ -34,7 +34,7 @@
         ],
         "parentGroup": "hosted"
       },
-      "db": {
+      "planetscale": {
         "label": [
           {
             "locale": "en",
@@ -43,7 +43,7 @@
         ],
         "parentGroup": "hosted"
       },
-      "cache": {
+      "upstash": {
         "label": [
           {
             "locale": "en",
@@ -52,7 +52,7 @@
         ],
         "parentGroup": "hosted"
       },
-      "analytics": {
+      "segment": {
         "label": [
           {
             "locale": "en",
@@ -63,25 +63,25 @@
       }
     },
     "edges": {
-      "web__app": {
-        "source": "web",
+      "heroku__app": {
+        "source": "heroku",
         "target": "app"
       },
-      "app__auth": {
+      "app__auth0": {
         "source": "app",
-        "target": "auth"
+        "target": "auth0"
       },
-      "app__db": {
+      "app__planetscale": {
         "source": "app",
-        "target": "db"
+        "target": "planetscale"
       },
-      "app__cache": {
+      "app__upstash": {
         "source": "app",
-        "target": "cache"
+        "target": "upstash"
       },
-      "app__analytics": {
+      "app__segment": {
         "source": "app",
-        "target": "analytics"
+        "target": "segment"
       }
     },
     "groups": {

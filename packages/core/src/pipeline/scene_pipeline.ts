@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { create } from '@bufbuild/protobuf';
 import { type Delta, type Diagram } from '@archeglyph/proto/gen/content_pb';

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The panel is a renderer, and this repo has no DOM harness, so most of it is
 // checked by hand. The exception is the one DECISION it makes: which of the

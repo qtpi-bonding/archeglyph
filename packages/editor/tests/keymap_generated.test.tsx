@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // Tests for keymap.ts generated from archegraph testgen for editor-shell-islands spec.
 // These tests are hand-maintained; the CommandId type-only block was dropped

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
-// Adds or checks the AGPL SPDX header on every source file. --fix writes.
+// Adds or checks the MPL SPDX header on every source file. --fix writes.
 //
 // Files come from `git ls-files` rather than a directory walk: a walk would
 // have to re-implement .gitignore to avoid node_modules and build output.
@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 
-const SPDX = 'SPDX-License-Identifier: AGPL-3.0-or-later';
+const SPDX = 'SPDX-License-Identifier: MPL-2.0';
 
 // How the header is written in each language. A file type absent here is one
 // the script leaves alone -- notably .json, which has no comment syntax at all,
@@ -88,7 +88,7 @@ for (const path of tracked()) {
 }
 
 if (missing.length === 0) {
-  console.log('spdx: every source file carries the AGPL header');
+  console.log('spdx: every source file carries the MPL header');
   process.exit(0);
 }
 

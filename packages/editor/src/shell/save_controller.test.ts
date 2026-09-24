@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The save controller against a fake host, the way a repository is faked in a
 // unit test. No DOM: Solid's reactivity runs headless inside createRoot.

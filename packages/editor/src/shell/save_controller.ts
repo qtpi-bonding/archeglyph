@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Accessor, createEffect, createSignal } from 'solid-js';
 import { EditorState } from '../state/editor_state';

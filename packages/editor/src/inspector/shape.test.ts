@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The Shape and Line sections' decisions. As with the rest of the inspector,
 // they live in pure functions because there is no DOM harness here.

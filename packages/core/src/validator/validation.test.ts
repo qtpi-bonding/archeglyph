@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // Tests for the input-validation and diffing layers: validator/, loaders/,
 // diff/. The validator's entire job is rejecting malformed input, and it was

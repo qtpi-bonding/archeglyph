@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { create, fromBinary, toJson } from '@bufbuild/protobuf';
 import { ArcheviewSchema, ViewEdgeSchema, ViewNodeSchema } from '@archeglyph/proto/gen/archegraph/view_pb';

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // The reason these tests exist: a browser sends the query string and strips the
 // fragment. Put a diagram in `?d=` and it lands in the host's access logs; put

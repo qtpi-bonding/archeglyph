@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { buildRemoteUrl } from '../adapters/url_param_adapter';
 import { DiagramSource } from '../diff/diagram_source';

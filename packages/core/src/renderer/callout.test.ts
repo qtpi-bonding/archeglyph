@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The headline claim of the `annotation-anchor` pillar, as one concrete case:
 // an annotation whose style entry carries an anchor renders a line to the

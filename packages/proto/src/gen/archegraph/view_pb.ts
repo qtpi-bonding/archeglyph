@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Vendored from archegraph @ crates/core/proto/view.proto (commit 42b66e2)
 // Stripped: buf/validate annotations, node_data.proto import, proto_data field.
 // Keep in sync with upstream when upgrading archegraph.

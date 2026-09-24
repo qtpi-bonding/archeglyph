@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Component, For, JSX, Show } from 'solid-js';
 import type { EchoToken } from './key_echo';

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // Coordinate-frame regressions, which are the ones that look right in every
 // signal except the picture. tsc cannot see them, archegraph verify cannot see

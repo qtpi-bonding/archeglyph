@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The headline claim of the `editor-annotations` pillar, reduced to the part
 // that can be checked without a browser: dragging an annotation's grip onto an

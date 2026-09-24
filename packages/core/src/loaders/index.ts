@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // Boundary adapter (docs/style-guide.md §3.7): Result-wrapping facade over
 // the throwing `Loader` interface. Pure-logic callers in core/ get

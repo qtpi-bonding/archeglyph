@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The gesture machines, exercised as the canvas drives them: a press is routed
 // to a decision, the decision opens a session, the session previews, and the

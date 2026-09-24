@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // With a base attached the scene lays out the union, so an element only the
 // base has still reaches layout.
 

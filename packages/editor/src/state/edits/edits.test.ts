@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // A StyleChange carries a WHOLE entry, not a field, so every builder here has
 // to rebuild the entry around the one thing it is changing. Get that wrong and

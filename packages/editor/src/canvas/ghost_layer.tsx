@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';

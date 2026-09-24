@@ -64,7 +64,7 @@ execution:
           `@archeglyph/proto/util/init`.
         - Spread, destructuring, default params, per-method generics, `extends Error`
           are all allowed — do not write around them.
-      - First line of every new file: `// SPDX-License-Identifier: AGPL-3.0-or-later`.
+      - First line of every new file: `// SPDX-License-Identifier: MPL-2.0`.
       - For services: write a class `<Interface>Impl implements <Interface>`.
         Import the interface and request/response types from `./schema_gen`.
         For data-model types (Diagram / Stylesheet / Theme etc.), import from the

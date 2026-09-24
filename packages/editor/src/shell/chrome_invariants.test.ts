@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Source-level: happy-dom implements neither pointer-events nor layout.
 
 import { describe, expect, test } from 'bun:test';

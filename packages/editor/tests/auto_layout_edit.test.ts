@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // HAND-MAINTAINED, for the same reason as
 // packages/core/tests/layout_pinning.test.ts: tests/testgen.test.ts is the

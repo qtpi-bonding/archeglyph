@@ -2,7 +2,7 @@
   "name": "archeglyph",
   "version": "0.0.0",
   "private": true,
-  "license": "AGPL-3.0-or-later",
+  "license": "MPL-2.0",
   "workspaces": [
     "packages/*"
   ],

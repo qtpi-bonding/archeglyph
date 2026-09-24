@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // HAND-MAINTAINED. These three cases began life as `archegraph testgen`
 // output, were wrong, and were rewritten against the actual design. They live

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // A group's size override reaches ELK as a MINIMUM, so it grows on request and
 // stops at the extent of its children rather than clipping them.
 

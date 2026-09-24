@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // Tests for deterministic label measurement (packages/core/src/text/font_metrics).
 // Per .archegraph/specs/font_metrics/font_metrics.spec.textproto: this is a

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // An element created after load has no component, so seeding only at load
 // leaves it with no shape or typography.
 

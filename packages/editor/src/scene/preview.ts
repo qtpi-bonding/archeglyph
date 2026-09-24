@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { EdgeRouting } from '@archeglyph/proto/gen/style_pb';
 import { routeOrthogonal, routeStraight } from '@archeglyph/core/layout/edge_router';

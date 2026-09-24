@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { type Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { toJson } from '@archeglyph/proto/util/json';

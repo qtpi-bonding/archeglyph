@@ -1,7 +1,7 @@
 {
   "name": "@archeglyph/editor",
   "version": "0.0.0",
-  "license": "AGPL-3.0-or-later",
+  "license": "MPL-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

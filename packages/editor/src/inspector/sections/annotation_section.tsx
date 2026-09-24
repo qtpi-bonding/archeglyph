@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Component, createMemo, JSX, Show } from 'solid-js';
 import { NumberFieldInput } from '../fields/number_field';

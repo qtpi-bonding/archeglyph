@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // A label anchored at a box's centre needs both axes told, or SVG starts the
 // text at the anchor with the baseline on it and the label leaves the shape.
 

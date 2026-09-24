@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Accessor, Component, createMemo, createSignal, For, JSX, onMount } from 'solid-js';
 import { PaletteAction, PaletteItem } from './palette_item';

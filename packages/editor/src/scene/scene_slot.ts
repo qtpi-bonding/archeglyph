@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { createRoot, createSignal, type Accessor } from 'solid-js';
 import { Scene } from './scene';

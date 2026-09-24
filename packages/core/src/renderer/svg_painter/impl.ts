@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { type Glyph2D, type Fill, type Stroke, type Typography, ArrowheadVariant, ShapeType, FontWeight, TextAlign, StrokePattern } from '@archeglyph/proto/gen/style_pb';
 import type { Vec2 } from '../../geometry/vec2';

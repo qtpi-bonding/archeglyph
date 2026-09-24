@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Component, createMemo, JSX } from 'solid-js';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';

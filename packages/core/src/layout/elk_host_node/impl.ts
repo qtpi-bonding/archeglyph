@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import ElkConstructor, { type ELK } from 'elkjs';
 import { createRequire } from 'node:module';

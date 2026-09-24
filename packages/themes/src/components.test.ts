@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { describe, expect, test } from 'bun:test';
 import type { Glyph2D } from '@archeglyph/proto/gen/style_pb';

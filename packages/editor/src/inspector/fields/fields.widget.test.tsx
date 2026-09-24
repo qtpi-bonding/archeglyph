@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The first widget tests in this repo -- the tier that was missing when three
 // bugs in a row reached the user.

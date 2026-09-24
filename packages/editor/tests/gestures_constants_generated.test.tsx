@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // Tests for gesture constants that pass against current code.
 // These verify properties of ZOOM_STEP arithmetic and the COMMANDS registry.

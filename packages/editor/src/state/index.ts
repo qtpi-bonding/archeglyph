@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 export type { EditorState } from './editor_state';
 export { createEditorState } from './create_editor_state';

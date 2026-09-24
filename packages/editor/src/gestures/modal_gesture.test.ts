@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // Asserts edit-for-edit equality with a pointer drag, not just the resulting
 // position: a reimplementation that dropped pin-on-touch, the parent-offset

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Diagram } from '../../../proto/src/gen/content_pb';
 import { StyleEdit } from '../../../proto/src/gen/style_pb';

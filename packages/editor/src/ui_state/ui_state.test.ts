@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // Behavioral test suite for the editor's UI-state layer, derived from:
 //   1. .archegraph/specs/editor-ui-state/*.spec.textproto (the authority —

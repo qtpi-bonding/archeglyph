@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // Tests for the geometry primitives: vec2, bounds, polyline, direction.
 // Everything downstream (node sizing, editor scene bounds) depends on

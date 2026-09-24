@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // A style change against an element the diagram does not contain is dead: it
 // writes a stylesheet entry nothing matches. Both write paths drop it.
 

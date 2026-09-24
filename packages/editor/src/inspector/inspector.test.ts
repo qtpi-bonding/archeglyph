@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // The inspector's decisions, all of which live in pure functions so that they
 // can be tested at all -- there is no DOM harness in this repo, and the old

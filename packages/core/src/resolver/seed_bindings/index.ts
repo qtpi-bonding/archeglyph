@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Phase 1.5 barrel: re-exports per-entity files in this directory so
 // directory-style imports (`from '../<dir>'`) resolve to <dir>/index.ts.
 

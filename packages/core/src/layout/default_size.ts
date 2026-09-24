@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // The box an element gets when nothing sized it. Shared so the pinned and ELK
 // branches size an unsized node identically.

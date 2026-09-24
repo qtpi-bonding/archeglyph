@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 // A hosted link is only worth opening if it shows the diagram AS STYLED. The
 // diagram file is regenerated from code on every commit; the stylesheet is

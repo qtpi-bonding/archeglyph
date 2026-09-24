@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 import { Component, For, JSX, createSignal } from 'solid-js';
 import { Comment } from '../../../proto/src/gen/style_pb';

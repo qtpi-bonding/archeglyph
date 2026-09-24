@@ -1,7 +1,7 @@
 # archeglyph
 
 [![Try the editor](https://img.shields.io/badge/try%20it-live%20editor-2ea9a0.svg)](https://qtpi-bonding.github.io/archeglyph/?gh=qtpi-bonding/archeglyph&path=examples/stack-managed.diag.json)
-[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL%202.0-blue.svg)](LICENSE)
 
 A diagram preparation system for node-and-edge graphs, with a visual editor.
 Deterministic SVGs you can commit to git and review in a pull request, where
@@ -192,8 +192,15 @@ one in `docs/` is a record of how the work was done, not a broken link.
 
 ## License
 
-**[GNU Affero General Public License v3.0 or later](LICENSE)** (AGPL-3.0-or-later).
+**[Mozilla Public License 2.0](LICENSE)** (MPL-2.0).
 
-Why AGPL: archeglyph is meant to stay open. AGPL ensures forks — including network-served forks like a hosted public instance — also remain open. You can use archeglyph freely (locally, in your project, on your own infra); modifications you distribute or host as a service must be shared back under the same license. Internal use is unrestricted.
+Why MPL: copyleft at the file level. Improve a file that came from archeglyph
+and those improvements come back; build your own thing alongside it and your
+code stays yours. That is the part AGPL gets wrong for a tool like this — it
+asks the whole surrounding product to open up, which for most people means
+their legal team says no before anyone looks at the merits.
 
-Files include `SPDX-License-Identifier: AGPL-3.0-or-later` headers as a short-form indicator.
+So: use it anywhere, embed it in anything, ship it in a proprietary product.
+The one obligation is that changes to archeglyph's own files stay open.
+
+Files include `SPDX-License-Identifier: MPL-2.0` headers as a short-form indicator.

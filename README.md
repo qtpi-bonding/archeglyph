@@ -194,13 +194,14 @@ one in `docs/` is a record of how the work was done, not a broken link.
 
 **[Mozilla Public License 2.0](LICENSE)** (MPL-2.0).
 
-Why MPL: copyleft at the file level. Improve a file that came from archeglyph
-and those improvements come back; build your own thing alongside it and your
-code stays yours. That is the part AGPL gets wrong for a tool like this — it
-asks the whole surrounding product to open up, which for most people means
-their legal team says no before anyone looks at the merits.
+MPL is a file-level copyleft:
 
-So: use it anywhere, embed it in anything, ship it in a proprietary product.
-The one obligation is that changes to archeglyph's own files stay open.
+- Use it for any purpose, including commercially.
+- Embed it in a larger work, including a proprietary one. Files you write
+  yourself are unaffected and stay under whatever licence you choose.
+- Modify a file that came from archeglyph and distribute it, and that file's
+  source has to be available under MPL-2.0.
 
-Files include `SPDX-License-Identifier: MPL-2.0` headers as a short-form indicator.
+Source files carry `SPDX-License-Identifier: MPL-2.0`, which the [MPL
+FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) accepts in place of the full
+Exhibit A notice. The project was AGPL-3.0-or-later before 2026-09-24.

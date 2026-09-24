@@ -1,5 +1,6 @@
 # archeglyph
 
+[![Try the editor](https://img.shields.io/badge/try%20it-live%20editor-2ea9a0.svg)](https://qtpi-bonding.github.io/archeglyph/)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
 A node-and-edge graph rendering tool with strict content/style separation — like LaTeX for diagrams.
@@ -79,9 +80,10 @@ For the visual editor, which writes only to the stylesheet:
 bun run dev:editor
 ```
 
-It serves locally at the address Vite prints. A GitHub Pages workflow is in
-the repository and the build uses a relative base, so it runs from any
-subpath — but Pages is not switched on yet, so there is no public instance.
+It serves locally at the address Vite prints. The same build is hosted at
+**<https://qtpi-bonding.github.io/archeglyph/>** if you would rather not clone
+anything — it reads and writes files on your own machine through the File
+System Access API, so nothing you open is uploaded.
 
 **Everything else is in
 [`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —

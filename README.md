@@ -20,10 +20,11 @@ and pick them off disk.
 ![the editor with three proposed changes open for review](docs/img/editor-review.png)
 
 <sub>The editor, reviewing three proposed changes. Two came from an agent and
-one from a person; each carries a description, a change count and a discussion
-thread, and each is accepted or rejected on its own. A proposal never touches
-the saved file until it is accepted — it lives in `Stylesheet.pending_edits`
-and draws as the ghost you can see behind the canvas. Regenerate with
+one from a person, and each is accepted or rejected on its own. The first is
+open, showing the agent's reasoning and a person's reply to it: a purple rule
+marks an agent, a teal one a person. A proposal never touches the saved file
+until it is accepted — it lives in `Stylesheet.pending_edits` and draws as the
+ghost you can see behind the canvas. Regenerate with
 `bun run editor:screenshot`.</sub>
 
 **Status:** pre-1.0. The engine, all seven CLI operations and the visual editor

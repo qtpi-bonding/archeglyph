@@ -30,7 +30,10 @@ const b64 = (text: string): string => encodeURIComponent(Buffer.from(text).toStr
 const diagram = b64(await readFile(resolve(ROOT, 'examples/stack-managed.diag.json'), 'utf8'));
 const stylesheet = b64(await readFile(resolve(ROOT, 'examples/stack-managed.style.json'), 'utf8'));
 
-const url = `http://127.0.0.1:${PORT}/?review=open#d=${diagram}&s=${stylesheet}`;
+// One proposal expanded: the thread under it is the thing the picture is
+// for, and a collapsed panel shows only that proposals exist.
+const PROPOSAL = 'a1b2c3d4e5f60001';
+const url = `http://127.0.0.1:${PORT}/?review=open&proposal=${PROPOSAL}#d=${diagram}&s=${stylesheet}`;
 
 const server = Bun.serve({
   port: PORT,

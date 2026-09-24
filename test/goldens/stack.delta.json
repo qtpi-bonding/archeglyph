@@ -141,7 +141,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "Someone else's servers"
+            "source": "Managed"
           }
         ]
       }
@@ -153,7 +153,7 @@
         "label": [
           {
             "locale": "en",
-            "source": "One VPS, Docker Compose"
+            "source": "Self-hosted"
           }
         ]
       }

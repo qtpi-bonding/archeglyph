@@ -63,6 +63,7 @@ function rect(item: Placed): Bounds {
 // Children sit this far inside their group, matching what the bundled
 // examples write by hand.
 const INSET = 16;
+const GROUP_LABEL_PADDING = 12;
 
 function parentOf(diagram: ResolvedDiagram, id: string): string | undefined {
   return diagram.nodes[id]?.parentGroup ?? diagram.groups[id]?.parentGroup;
@@ -96,9 +97,14 @@ function absoluteOrigins(diagram: ResolvedDiagram, pinned: Map<string, Vec2>, se
         minX = Math.min(minX, childAt.x);
         minY = Math.min(minY, childAt.y);
       }
+      const labelled = diagram.groups[groupId];
+      const fontSize: number = labelled?.typography?.size ?? 13;
+      const topInset: number = labelled !== undefined && labelled.label.length > 0
+        ? Math.max(INSET, Math.round(fontSize * 1.2) + 2 * GROUP_LABEL_PADDING)
+        : INSET;
       origin = minX === Number.POSITIVE_INFINITY
         ? seeded.get(groupId) ?? vec2(0, 0)
-        : vec2(minX - INSET, minY - INSET);
+        : vec2(minX - INSET, minY - topInset);
     }
     resolving.delete(groupId);
     origins.set(groupId, origin);

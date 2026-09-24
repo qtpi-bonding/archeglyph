@@ -12,7 +12,8 @@
 //
 // Usage:
 //   bun run scripts/pr_diagrams.ts --sha <head-sha> --repo owner/name \
-//     [--out body.md] [--strict] [changed paths...]
+//     [--pr <number>] [--editor <base-url>] [--out body.md] [--strict] \
+//     [changed paths...]
 //
 // With no paths it considers every tracked diagram.
 
@@ -33,6 +34,10 @@ function flag(name: string): string | undefined {
 const sha: string = flag('sha') ?? 'HEAD';
 const repo: string = flag('repo') ?? process.env['GITHUB_REPOSITORY'] ?? '';
 const out: string | undefined = flag('out');
+const pr: string | undefined = flag('pr');
+// Where the editor is served from. Another project running this workflow
+// points it at its own deployment, or at any instance it trusts.
+const editor: string = flag('editor') ?? 'https://qtpi-bonding.github.io/archeglyph/';
 const strict: boolean = process.argv.includes('--strict');
 
 const named: string[] = process.argv
@@ -80,6 +85,21 @@ function rawUrl(path: string): string {
   return `https://raw.githubusercontent.com/${repo}/${sha}/${path}`;
 }
 
+/**
+ * The editor, opened on this diagram as the pull request leaves it.
+ *
+ * `ref` is the head SHA rather than the branch, so the link keeps showing
+ * what the comment described. `pr` makes the editor read this pull
+ * request's review comments, so a proposal's thread is there too.
+ */
+function editorUrl(diagram: string): string {
+  const query: string[] = [`gh=${repo}`, `path=${diagram}`, `ref=${sha}`];
+  if (pr !== undefined) {
+    query.push(`pr=${repo}/${pr}`, 'review=open');
+  }
+  return `${editor}?${query.join('&')}`;
+}
+
 function body(rendered: ReadonlyArray<Rendered>): string {
   const lines: string[] = [MARKER, '### Diagrams', ''];
   for (const entry of rendered) {
@@ -99,7 +119,12 @@ function body(rendered: ReadonlyArray<Rendered>): string {
         '',
       );
     }
-    lines.push(`<img src="${rawUrl(entry.svg)}" width="640" alt="${entry.diagram}">`, '');
+    lines.push(
+      `<img src="${rawUrl(entry.svg)}" width="640" alt="${entry.diagram}">`,
+      '',
+      `[Open in the editor](${editorUrl(entry.diagram)})`,
+      '',
+    );
   }
   // Pinned to this commit, so the picture stays what the comment described.
   lines.push(`<sub>Rendered from \`${sha.slice(0, 7)}\` by archeglyph.</sub>`);

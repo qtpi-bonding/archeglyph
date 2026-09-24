@@ -98,6 +98,55 @@ It serves locally at the address Vite prints. The same build is hosted at
 anything — it reads and writes files on your own machine through the File
 System Access API, so nothing you open is uploaded.
 
+## In a pull request
+
+Render the diagram and commit the SVG next to its source:
+
+```bash
+bun run archeglyph render \
+  --diagram docs/arch.diag.json \
+  --style   docs/arch.style.json \
+  --theme   dark \
+  --out     docs/arch.svg
+```
+
+GitHub then shows it two ways.
+
+In **Files changed** this happens on its own. An added SVG renders as a
+picture rather than as XML, and a changed one gets the image diff — two-up,
+swipe and onion-skin — so a reviewer sees which part of the diagram moved.
+
+In a **comment or pull request description** you write the link, pinned to a
+commit rather than a branch:
+
+```markdown
+<img src="https://raw.githubusercontent.com/OWNER/REPO/COMMIT_SHA/docs/arch.svg" width="700">
+```
+
+A branch name there resolves to whatever that branch holds later, so the
+picture in an old comment changes without anyone touching the comment. A
+commit SHA does not.
+
+To post the change rather than the result, render the delta — this is how the
+third picture above was made:
+
+```bash
+bun run archeglyph diff \
+  --base   examples/stack-managed.diag.json \
+  --target examples/stack-selfhosted.diag.json \
+  --out    delta.json
+
+bun run archeglyph render \
+  --diagram examples/stack-selfhosted.diag.json \
+  --delta   delta.json \
+  --theme   dark \
+  --out     change.svg
+```
+
+GitHub serves these sandboxed, so the SVG loads nothing external. A font it
+names has to already be on the reader's machine, which is why a generic
+family travels further than a specific one.
+
 **Everything else is in
 [`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —
 every subcommand and flag, with types, defaults, and which are required. It is

@@ -147,6 +147,17 @@ GitHub serves these sandboxed, so the SVG loads nothing external. A font it
 names has to already be on the reader's machine, which is why a generic
 family travels further than a specific one.
 
+To skip the manual step, [`.github/workflows/diagrams.yml`](.github/workflows/diagrams.yml)
+does it for you: on a pull request that touches a diagram it re-renders each
+one, and keeps a single comment showing the current picture. It also says when
+a committed SVG no longer matches the source it was rendered from, which is
+the same determinism the golden renders check. The convention it follows is
+that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+
+It comments only on pull requests from the repository itself. A fork's token
+is read-only by design, and the alternative (`pull_request_target`) would hand
+a writable token to code from the fork.
+
 **Everything else is in
 [`skills/archeglyph-manual/SKILL.md`](skills/archeglyph-manual/SKILL.md)** —
 every subcommand and flag, with types, defaults, and which are required. It is

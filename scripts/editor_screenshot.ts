@@ -47,7 +47,7 @@ const chrome = spawn(CHROME, [
   '--hide-scrollbars',
   '--force-device-scale-factor=2',
   '--virtual-time-budget=10000',
-  '--window-size=1400,880',
+  '--window-size=2300,980',
   `--screenshot=${OUT}`,
   url,
 ], { stdio: 'ignore' });

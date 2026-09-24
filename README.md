@@ -9,10 +9,14 @@ agents and humans propose changes, comment, and annotate.
 
 The graph topology lives in one text file. The visual styling lives in a sidecar file. The tool deterministically renders an SVG you can commit to git and embed in PRs and docs.
 
-![archeglyph's own package architecture](docs/img/architecture-blueprint.svg)
+![the editor with three proposed changes open for review](docs/img/editor-review.png)
 
-<sub>Not a drawing — archeglyph rendered this from its own source. See
-[Family](#family).</sub>
+<sub>The editor, reviewing three proposed changes. Two came from an agent and
+one from a person; each carries a description, a change count and a discussion
+thread, and each is accepted or rejected on its own. A proposal never touches
+the saved file until it is accepted — it lives in `Stylesheet.pending_edits`
+and draws as the ghost you can see behind the canvas. Regenerate with
+`bun run editor:screenshot`.</sub>
 
 **Status:** pre-1.0. The engine, all seven CLI operations and the visual editor
 are shipped and tested; there is no npm package, no hosted editor and no user
@@ -49,15 +53,6 @@ arrived. The plain box in the middle is the application, which the migration
 did not touch. It uses the `dark` theme because `light` and `dark` declare
 colours for added, changed and deleted, where `blueprint` declares none and
 rotates hue instead.</sub>
-
-![the editor with three proposed changes open for review](docs/img/editor-review.png)
-
-<sub>The visual editor, with the same diagram and three proposals open. Two
-came from an agent and one from a person; each carries a description, a change
-count and a discussion thread, and each is accepted or rejected on its own. A
-proposal never touches the saved file until it is accepted — it lives in
-`Stylesheet.pending_edits` and draws as the ghost overlay you can see behind
-the panel. Regenerate with `bun run editor:screenshot`.</sub>
 
 archeglyph is a kernel + adapters: a general-purpose node/edge engine, with importers for archegraph and (later) DOT/Mermaid/JSON. It is not coupled to archegraph; archegraph is one consumer.
 
@@ -116,7 +111,12 @@ that extracts a structural graph from a codebase. archeglyph is its first
 from-scratch dogfood target, and the two co-evolved. archegraph is not public
 yet.
 
-The diagram at the top of this README is archegraph's view of this repository,
+![archeglyph's own package architecture](docs/img/architecture-blueprint.svg)
+
+<sub>Not a drawing — archegraph indexed this repository and archeglyph
+rendered the result.</sub>
+
+This diagram is archegraph's view of this repository,
 rolled up to one node per workspace package — an edge means one package's
 source names something from another's. Regenerate it with `bun run
 scripts/architecture_diagram.ts`. The `.archegraph/specs/` directory and the

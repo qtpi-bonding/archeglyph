@@ -1134,7 +1134,8 @@ export type NodeStyleChange = Message<"archeglyph.style.v1.NodeStyleChange"> & {
   changeType: StyleChangeType;
 
   /**
-   * populated for ADDED/MODIFIED; partial fields supported
+   * Populated for ADDED/MODIFIED; partial fields supported, merged over the
+   * existing entry. See "HOW `after` IS APPLIED" in style.proto §10.
    *
    * @generated from field: optional archeglyph.style.v1.NodeStyleEntry after = 3;
    */
@@ -1184,6 +1185,9 @@ export type EdgeStyleChange = Message<"archeglyph.style.v1.EdgeStyleChange"> & {
   changeType: StyleChangeType;
 
   /**
+   * Partial fields supported, merged over the existing entry. See "HOW
+   * `after` IS APPLIED" in style.proto §10.
+   *
    * @generated from field: optional archeglyph.style.v1.EdgeStyleEntry after = 3;
    */
   after?: EdgeStyleEntry | undefined;
@@ -1226,6 +1230,9 @@ export type GroupStyleChange = Message<"archeglyph.style.v1.GroupStyleChange"> &
   changeType: StyleChangeType;
 
   /**
+   * Partial fields supported, merged over the existing entry. See "HOW
+   * `after` IS APPLIED" in style.proto §10.
+   *
    * @generated from field: optional archeglyph.style.v1.GroupStyleEntry after = 3;
    */
   after?: GroupStyleEntry | undefined;
@@ -1268,6 +1275,9 @@ export type AnnotationStyleChange = Message<"archeglyph.style.v1.AnnotationStyle
   changeType: StyleChangeType;
 
   /**
+   * Partial fields supported, merged over the existing entry. See "HOW
+   * `after` IS APPLIED" in style.proto §10.
+   *
    * @generated from field: optional archeglyph.style.v1.AnnotationEntry after = 3;
    */
   after?: AnnotationEntry | undefined;

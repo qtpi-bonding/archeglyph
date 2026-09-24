@@ -16,9 +16,8 @@ import {
   resizeAnnotationEdit, resizeGroupEdit, resizeNodeEdit,
 } from '../state/edits/resize';
 import {
-  setAnnotationGlyphEdit, setEdgeGlyphEdit, setGroupGlyphEdit, setNodesGlyphEdit,
+  setAnnotationsGlyphEdit, setEdgesGlyphEdit, setGroupsGlyphEdit, setNodesGlyphEdit,
 } from '../state/edits/glyph';
-import { initOf } from '../state/edits/entry_patch';
 import { styleEdit } from '../state/edits/edit_builder';
 
 export function layoutModel(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet): LayoutModel {
@@ -51,48 +50,45 @@ export function layoutModel(model: InspectorModel, geometry: SceneGeometry, styl
   };
 }
 export function commitTypography(model: InspectorModel, stylesheet: Stylesheet, field: 'size' | 'color' | 'font', value: string | number | undefined): StyleEdit | undefined {
-  const firstId = model.ids[0];
-  if (firstId === undefined) {
+  if (model.ids.length === 0) {
     return undefined;
   }
 
-  const existing = model.kind === 'node'
-    ? stylesheet.nodes[firstId]?.typography
-    : model.kind === 'edge'
-      ? stylesheet.edges[firstId]?.typography
-      : model.kind === 'group'
-        ? stylesheet.groups[firstId]?.typography
-        : stylesheet.annotations[firstId]?.typography;
-  const current = field === 'color' ? existing?.color?.value : existing?.[field];
-  if (current === value) {
+  const typographyOf = (id: string): Typography | undefined => {
+    if (model.kind === 'node') return stylesheet.nodes[id]?.typography;
+    if (model.kind === 'edge') return stylesheet.edges[id]?.typography;
+    if (model.kind === 'group') return stylesheet.groups[id]?.typography;
+    return stylesheet.annotations[id]?.typography;
+  };
+  const valueOf = (id: string): string | number | undefined => {
+    const existing = typographyOf(id);
+    return field === 'color' ? existing?.color?.value : existing?.[field];
+  };
+  // One element carrying the value says nothing about the rest.
+  if (model.ids.every((id) => valueOf(id) === value)) {
     return undefined;
   }
 
-  // Glyph builders accept the complete Typography message.  Start with the
-  // existing message (rather than a message containing just the edited field)
-  // so an inspector edit cannot discard weight, alignment, or background.
-  const typographyInit = initOf(existing);
-  if (value === undefined) {
-    delete typographyInit[field];
-  } else if (field === 'color') {
-    typographyInit.color = create(ColorSchema, { value: String(value) });
-  } else {
-    typographyInit[field] = value;
-  }
-  const typography = create(TypographySchema, typographyInit as Partial<Typography>);
-  // `after` merges, so a field dropped from the init alone stays set.
+  // `after` merges, so each element keeps the fields this one does not name.
+  const typography = create(TypographySchema, value === undefined
+    ? {}
+    : field === 'color'
+      ? { color: create(ColorSchema, { value: String(value) }) }
+      : field === 'size'
+        ? { size: Number(value) }
+        : { font: String(value) });
   const unsetPaths: ReadonlyArray<string> = value === undefined ? [`typography.${field}`] : [];
 
   if (model.kind === 'node') {
     return setNodesGlyphEdit(stylesheet, model.ids, { typography }, unsetPaths);
   }
   if (model.kind === 'edge') {
-    return setEdgeGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
+    return setEdgesGlyphEdit(stylesheet, model.ids, { typography }, unsetPaths);
   }
   if (model.kind === 'group') {
-    return setGroupGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
+    return setGroupsGlyphEdit(stylesheet, model.ids, { typography }, unsetPaths);
   }
-  return setAnnotationGlyphEdit(stylesheet, firstId, { typography }, unsetPaths);
+  return setAnnotationsGlyphEdit(stylesheet, model.ids, { typography }, unsetPaths);
 }
 export function commitLayout(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet, field: 'x' | 'y' | 'width' | 'height', value: number | undefined): StyleEdit | undefined {
   if (model.kind === 'edge' || model.ids.length === 0) {

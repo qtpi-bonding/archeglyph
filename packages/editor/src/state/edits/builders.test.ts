@@ -57,11 +57,10 @@ import { resizeNodeEdit, resizeGroupEdit, resizeAnnotationEdit, clearNodeSizeEdi
 import { setNodeHiddenEdit, setNodesHiddenEdit, showAllEdit } from './visibility';
 import { addAnnotationEdit, setAnnotationTextEdit, setAnnotationAnchorEdit, deleteAnnotationEdit, localized } from './annotation';
 import {
-  setNodeGlyphEdit,
   setNodesGlyphEdit,
-  setEdgeGlyphEdit,
-  setGroupGlyphEdit,
-  setAnnotationGlyphEdit,
+  setEdgesGlyphEdit,
+  setGroupsGlyphEdit,
+  setAnnotationsGlyphEdit,
 } from './glyph';
 import { pinAllEdit, unpinAllEdit, unpinElementsEdit } from './layout_command';
 import { proposePendingEdit, findPendingEdit, removePendingEdit } from './pending';
@@ -747,7 +746,7 @@ describe('localized', () => {
 // glyph.ts
 // ===========================================================================
 
-describe('setNodeGlyphEdit / setNodesGlyphEdit', () => {
+describe('setNodesGlyphEdit', () => {
   test('absent patch fields are left alone — a single-field commit does not clobber the rest', () => {
     const sheet = emptyStylesheet({
       nodes: {
@@ -758,7 +757,7 @@ describe('setNodeGlyphEdit / setNodesGlyphEdit', () => {
         }),
       },
     });
-    const edit = setNodeGlyphEdit(sheet, 'n1', { shape: create(Glyph2DSchema, { cornerRadius: 2 }) });
+    const edit = setNodesGlyphEdit(sheet, ['n1'], { shape: create(Glyph2DSchema, { cornerRadius: 2 }) });
     const applied = applyStyleEditToStylesheet(sheet, edit);
     const after = applied.nodes['n1'];
     expect(after.shape?.cornerRadius).toBe(2);
@@ -784,26 +783,26 @@ describe('setNodeGlyphEdit / setNodesGlyphEdit', () => {
   });
 });
 
-describe('setEdgeGlyphEdit', () => {
+describe('setEdgesGlyphEdit', () => {
   test('preserves edge layout while patching connection', () => {
     const sheet = emptyStylesheet({
       edges: {
         e1: create(EdgeStyleEntrySchema, { layout: create(EdgeLayoutSchema, { waypoints: [vec2(1, 1)] }) }),
       },
     });
-    const edit = setEdgeGlyphEdit(sheet, 'e1', { component: 'edge-comp' });
+    const edit = setEdgesGlyphEdit(sheet, ['e1'], { component: 'edge-comp' });
     const applied = applyStyleEditToStylesheet(sheet, edit);
     expect(applied.edges['e1'].component).toBe('edge-comp');
     expect(applied.edges['e1'].layout?.waypoints).toEqual([vec2(1, 1)]);
   });
 });
 
-describe('setGroupGlyphEdit', () => {
+describe('setGroupsGlyphEdit', () => {
   test('setting renderMode preserves position and size', () => {
     const sheet = emptyStylesheet({
       groups: { g1: groupEntry({ layout: create(GroupLayoutSchema, { position: vec2(2, 2), size: vec2(30, 30) }) }) },
     });
-    const edit = setGroupGlyphEdit(sheet, 'g1', { renderMode: GroupRenderMode.CONTRACTED });
+    const edit = setGroupsGlyphEdit(sheet, ['g1'], { renderMode: GroupRenderMode.CONTRACTED });
     const applied = applyStyleEditToStylesheet(sheet, edit);
     expect(applied.groups['g1'].layout?.renderMode).toBe(GroupRenderMode.CONTRACTED);
     expect(applied.groups['g1'].layout?.position).toEqual(vec2(2, 2));
@@ -811,7 +810,7 @@ describe('setGroupGlyphEdit', () => {
   });
 });
 
-describe('setAnnotationGlyphEdit', () => {
+describe('setAnnotationsGlyphEdit', () => {
   test('patching callout preserves anchor and content', () => {
     const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.NODE });
     const sheet = emptyStylesheet({
@@ -819,7 +818,7 @@ describe('setAnnotationGlyphEdit', () => {
         a1: annotationEntry({ anchor, content: [create(LocalizationSchema, { locale: 'en', source: 'text' })] }),
       },
     });
-    const edit = setAnnotationGlyphEdit(sheet, 'a1', { callout: create(Glyph1DSchema, {}) });
+    const edit = setAnnotationsGlyphEdit(sheet, ['a1'], { callout: create(Glyph1DSchema, {}) });
     const applied = applyStyleEditToStylesheet(sheet, edit);
     expect(applied.annotations['a1'].anchor).toEqual(anchor);
     expect(applied.annotations['a1'].content[0].source).toBe('text');

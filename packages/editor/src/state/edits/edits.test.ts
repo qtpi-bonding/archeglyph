@@ -29,7 +29,7 @@ import { clearNodeSizeEdit, resizeAnnotationEdit, resizeNodeEdit } from './resiz
 import { setNodeHiddenEdit, showAllEdit } from './visibility';
 import { addAnnotationEdit, deleteAnnotationEdit, setAnnotationTextEdit } from './annotation';
 import { unpinAllEdit, unpinElementsEdit } from './layout_command';
-import { setNodeGlyphEdit } from './glyph';
+import { setNodesGlyphEdit } from './glyph';
 
 const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 
@@ -106,7 +106,7 @@ describe('resize', () => {
 describe('glyph', () => {
   test('writes the component without disturbing layout', () => {
     const before = loadedStylesheet();
-    const after = apply(before, setNodeGlyphEdit(before, 'n1', { component: 'boxy' }));
+    const after = apply(before, setNodesGlyphEdit(before, ['n1'], { component: 'boxy' }));
     expect(after.nodes.n1.component).toBe('boxy');
     expect(after.nodes.n1.layout?.size).toMatchObject({ x: 200, y: 80 });
   });

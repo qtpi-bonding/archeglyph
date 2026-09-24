@@ -12,7 +12,9 @@ import {
   StylesheetSchema,
   StyleChangeType,
   StyleEdit,
+  file_style,
 } from '@archeglyph/proto/gen/style_pb';
+import { FeatureSet_FieldPresence } from '@bufbuild/protobuf/wkt';
 
 export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit): Stylesheet {
   const newNodes: { [key: string]: NodeStyleEntry } = applyMapChanges(
@@ -79,13 +81,32 @@ function isUnsetComposite(value: unknown): boolean {
 }
 
 /**
+ * Message types a patch can describe one field of. A field declared without
+ * `optional` arrives as `0` whether or not the patch meant it, so a message
+ * holding one cannot say which of its fields a patch left alone -- it is a
+ * value, and naming it replaces all of it. So is a message from another file.
+ *
+ * Repeated and map fields are always implicit and carry no presence either
+ * way, hence the exemptions. Membership is pinned in the sibling test.
+ */
+export const PATCHABLE_TYPES: ReadonlySet<string> = new Set(
+  file_style.messages
+    .filter((message) => message.fields.every((field) =>
+      field.presence !== FeatureSet_FieldPresence.IMPLICIT
+      || field.fieldKind === 'list' || field.fieldKind === 'map'))
+    .map((message) => message.typeName),
+);
+
+function isPatchable(value: unknown): value is Record<string, unknown> {
+  return isMessage(value) && PATCHABLE_TYPES.has(value['$typeName'] as string);
+}
+
+/**
  * Merges `after` over `base`, per style.proto: an absent field is unchanged,
  * and clearing one takes `unset_paths`.
  *
  * Absent has four spellings: `undefined`, `[]`, `{}`, `{ case: undefined }`.
- * A set oneof and a non-empty map replace whole. A field declared without
- * `optional` has no absent spelling -- it arrives as `0`, which is a value,
- * so a partial patch naming one of `Arrowheads.start`/`end` resets the other.
+ * A set oneof, a non-empty map and a non-patchable message replace whole.
  */
 function mergeDefined<V extends object>(base: V, patch: V): V {
   const merged: Record<string, unknown> = { ...(base as Record<string, unknown>) };
@@ -94,7 +115,7 @@ function mergeDefined<V extends object>(base: V, patch: V): V {
       continue;
     }
     const existing: unknown = merged[key];
-    merged[key] = isMessage(existing) && isMessage(value) ? mergeDefined(existing, value) : value;
+    merged[key] = isPatchable(existing) && isPatchable(value) ? mergeDefined(existing, value) : value;
   }
   return merged as V;
 }

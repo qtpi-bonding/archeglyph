@@ -3,9 +3,10 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  AnnotationEntrySchema, ColorSchema, EdgeStyleEntrySchema, FillSchema, Glyph2DSchema,
+  AnnotationAnchorSchema, AnnotationEntrySchema, ArrowheadsSchema, ArrowheadVariant,
+  ColorSchema, EdgeStyleEntrySchema, FillSchema, Glyph1DSchema, Glyph2DSchema,
   GroupLayoutSchema, GroupStyleEntrySchema, NodeLayoutSchema, NodeStyleEntrySchema,
-  ShapeType, StrokeSchema, StyleChangeType, StyleEditSchema, StylesheetSchema,
+  RefKind, ShapeType, StrokeSchema, StyleChangeType, StyleEditSchema, StylesheetSchema,
   TypographySchema, Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { fromBinary, toBinary } from '@bufbuild/protobuf';
@@ -262,5 +263,73 @@ describe('a clear can be undone', () => {
     state.redo();
     expect(state.stylesheet().nodes['n']?.layout?.position).toBeUndefined();
     expect(state.stylesheet().nodes['n']?.layout?.size).toEqual(vec(120, 40));
+  });
+});
+
+describe('value objects replace whole', () => {
+  // A message with a field declared without `optional` cannot express
+  // "unchanged" for it, so naming the message replaces all of it.
+  const annotationEdit = (after: unknown) => create(StyleEditSchema, {
+    id: 'e',
+    annotationChanges: [{
+      annotationId: 'a', changeType: StyleChangeType.MODIFIED, after, unsetPaths: [],
+    } as never],
+  });
+
+  test('a new anchor does not inherit the old target\'s attachment hint', () => {
+    const sheet = create(StylesheetSchema, {
+      annotations: {
+        a: create(AnnotationEntrySchema, {
+          anchor: create(AnnotationAnchorSchema, {
+            refId: 'n1', refKind: RefKind.NODE, anchorPosition: vec(0, -1),
+          }),
+          typography: create(TypographySchema, { size: 14 }),
+        }),
+      },
+    });
+
+    const applied = applyStyleEditToStylesheet(sheet, annotationEdit(create(AnnotationEntrySchema, {
+      anchor: create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.NODE }),
+    })));
+
+    expect(applied.annotations['a']?.anchor?.refId).toBe('n2');
+    expect(applied.annotations['a']?.anchor?.anchorPosition).toBeUndefined();
+    expect(applied.annotations['a']?.typography?.size).toBe(14);
+  });
+
+  test('naming arrowheads replaces the pair and its size', () => {
+    const sheet = create(StylesheetSchema, {
+      edges: {
+        e1: create(EdgeStyleEntrySchema, {
+          connection: create(Glyph1DSchema, {
+            arrowheads: create(ArrowheadsSchema, {
+              start: ArrowheadVariant.ARROWHEAD_CIRCLE, end: ArrowheadVariant.ARROWHEAD_OPEN, size: 12,
+            }),
+            stroke: create(StrokeSchema, { paint: colour('#abcdef') }),
+          }),
+        }),
+      },
+    });
+
+    const applied = applyStyleEditToStylesheet(sheet, create(StyleEditSchema, {
+      id: 'e',
+      edgeChanges: [{
+        edgeId: 'e1',
+        changeType: StyleChangeType.MODIFIED,
+        after: create(EdgeStyleEntrySchema, {
+          connection: create(Glyph1DSchema, {
+            arrowheads: create(ArrowheadsSchema, { end: ArrowheadVariant.ARROWHEAD_FILLED }),
+          }),
+        }),
+        unsetPaths: [],
+      } as never],
+    }));
+
+    const arrowheads = applied.edges['e1']?.connection?.arrowheads;
+    expect(arrowheads?.end).toBe(ArrowheadVariant.ARROWHEAD_FILLED);
+    expect(arrowheads?.start).toBe(ArrowheadVariant.ARROWHEAD_UNSPECIFIED);
+    expect(arrowheads?.size).toBeUndefined();
+    const paint = applied.edges['e1']?.connection?.stroke?.paint;
+    expect(paint?.case === 'color' ? paint.value.value : undefined).toBe('#abcdef');
   });
 });

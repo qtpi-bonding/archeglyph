@@ -42,14 +42,10 @@ export function setAnnotationAnchorEdit(stylesheet: Stylesheet, id: string, anch
     after,
   );
 
-  // An absent optional proto field is distinct from leaving the field
-  // untouched.  Record the explicit clear on the change so applying the edit
-  // can detach an annotation that was previously anchored.
+  // Detaching takes a path; a change of target does not, since an anchor
+  // replaces whole.
   if (anchor === undefined) {
     change.unsetPaths.push('anchor');
-  } else if (anchor.anchorPosition === undefined) {
-    // The hint is target-local, so it does not survive a change of target.
-    change.unsetPaths.push('anchor.anchorPosition');
   }
 
   return styleEdit({ annotationChanges: [change] });

@@ -495,6 +495,15 @@ message AnnotationAnchor {
 // Modeled conceptually on archegraph's GraphDelta but adapted: we don't ship
 // `before` snapshots because the current stylesheet IS the local before-state.
 //
+// HOW `after` IS APPLIED: it merges over the existing entry, so a field it
+// leaves out is unchanged and clearing one takes `unset_paths`. The exception
+// is a message whose fields are not all `optional` -- Vec2, Color, Arrowheads,
+// AnnotationAnchor, Gradient, GradientStop, Decoration. Such a message cannot
+// say which of its fields a patch left alone, because a field without
+// `optional` arrives as 0 either way, so naming one replaces all of it:
+// `arrowheads: {end: FILLED}` clears `start` and `size` along with it, and a
+// position is given as both coordinates.
+//
 // SCOPE: StyleEdit is for STYLE FILE mutations only — the AI equivalent of
 // what the WYSIWYG editor can do. It can NOT propose changes to the graph
 // topology (Node/Edge/Group additions/removals/edits) — those would require
@@ -541,7 +550,9 @@ message StyleEdit {
 message NodeStyleChange {
   string node_id = 1;
   StyleChangeType change_type = 2;        // ADDED | DELETED | MODIFIED
-  optional NodeStyleEntry after = 3;      // populated for ADDED/MODIFIED; partial fields supported
+  // Populated for ADDED/MODIFIED; partial fields supported, merged over the
+  // existing entry. See "HOW `after` IS APPLIED" in style.proto §10.
+  optional NodeStyleEntry after = 3;
   repeated string unset_paths = 4;        // explicit field-clearing (e.g., "shape.stroke", "typography.color")
   repeated StyleChangeKind kinds = 5;     // categorical tags
   optional string description = 6;        // per-element rationale
@@ -550,6 +561,8 @@ message NodeStyleChange {
 message EdgeStyleChange {
   string edge_id = 1;
   StyleChangeType change_type = 2;
+  // Partial fields supported, merged over the existing entry. See "HOW
+  // `after` IS APPLIED" in style.proto §10.
   optional EdgeStyleEntry after = 3;
   repeated string unset_paths = 4;
   repeated StyleChangeKind kinds = 5;
@@ -559,6 +572,8 @@ message EdgeStyleChange {
 message GroupStyleChange {
   string group_id = 1;
   StyleChangeType change_type = 2;
+  // Partial fields supported, merged over the existing entry. See "HOW
+  // `after` IS APPLIED" in style.proto §10.
   optional GroupStyleEntry after = 3;
   repeated string unset_paths = 4;
   repeated StyleChangeKind kinds = 5;
@@ -568,6 +583,8 @@ message GroupStyleChange {
 message AnnotationStyleChange {
   string annotation_id = 1;
   StyleChangeType change_type = 2;
+  // Partial fields supported, merged over the existing entry. See "HOW
+  // `after` IS APPLIED" in style.proto §10.
   optional AnnotationEntry after = 3;
   repeated string unset_paths = 4;
   repeated StyleChangeKind kinds = 5;

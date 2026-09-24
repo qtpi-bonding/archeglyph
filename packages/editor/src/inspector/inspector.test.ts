@@ -33,6 +33,7 @@ import { inspectorModel } from './model';
 import { numberField, textField } from './field_value';
 import { commitLayout, commitTypography, layoutModel, typographyModel } from './sections_model';
 import { init } from '@archeglyph/proto/util/init';
+import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 
 const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
@@ -257,8 +258,6 @@ describe('commitTypography', () => {
   });
 
   test('changing one typography field preserves the others', () => {
-    // A StyleChange carries a WHOLE entry, so a builder handed a fresh
-    // Typography silently drops font, weight, align and background.
     const sheet = create(StylesheetSchema, {
       schemaVersion: 1,
       nodes: {
@@ -274,7 +273,7 @@ describe('commitTypography', () => {
     const model = inspectorModel(refs('node', 'n1'))!;
     const edit = commitTypography(model, sheet, 'color', '#ff0000');
 
-    const after = edit!.nodeChanges[0].after!;
+    const after = applyStyleEditToStylesheet(sheet, edit!).nodes['n1']!;
     expect(after.typography?.color?.value).toBe('#ff0000');
     expect(after.typography?.font).toBe('$fonts.heading');
     expect(after.typography?.size).toBe(14);

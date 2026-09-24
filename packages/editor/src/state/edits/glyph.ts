@@ -20,12 +20,11 @@ export interface NodeGlyphPatch {
 }
 
 // `after` merges, so clearing a field takes its path in `unsetPaths`.
-export function setAnnotationGlyphEdit(stylesheet: Stylesheet, annotationId: string, patch: AnnotationGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
-  const existing = stylesheet.annotations[annotationId];
+export function setAnnotationsGlyphEdit(stylesheet: Stylesheet, annotationIds: ReadonlyArray<string>, patch: AnnotationGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    annotationChanges: [
-      annotationChange(annotationId, patchAnnotationEntry(existing, patch), unsetPaths),
-    ],
+    annotationChanges: annotationIds.map((annotationId) =>
+      annotationChange(annotationId, patchAnnotationEntry(stylesheet.annotations[annotationId], patch), unsetPaths),
+    ),
   });
 }
 
@@ -42,13 +41,12 @@ export interface EdgeGlyphPatch {
   component?: string;
 }
 
-export function setGroupGlyphEdit(stylesheet: Stylesheet, groupId: string, patch: GroupGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
-  const existing = stylesheet.groups[groupId];
+export function setGroupsGlyphEdit(stylesheet: Stylesheet, groupIds: ReadonlyArray<string>, patch: GroupGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    groupChanges: [
-      groupChange(groupId, patchGroupEntry(existing, patch), unsetPaths),
-    ],
-    description: 'Set glyph on group',
+    groupChanges: groupIds.map((groupId) =>
+      groupChange(groupId, patchGroupEntry(stylesheet.groups[groupId], patch), unsetPaths),
+    ),
+    description: 'Set glyph on selected groups',
   });
 }
 
@@ -60,32 +58,20 @@ export interface GroupGlyphPatch {
   labelPosition?: GroupLabelPosition;
 }
 
-export function setNodesGlyphEdit(stylesheet: Stylesheet, nodeIds: Array<string>, patch: NodeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
-  const nodeChanges = nodeIds.map((nodeId) =>
-    nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch), unsetPaths),
-  );
-
+export function setNodesGlyphEdit(stylesheet: Stylesheet, nodeIds: ReadonlyArray<string>, patch: NodeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    nodeChanges,
+    nodeChanges: nodeIds.map((nodeId) =>
+      nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch), unsetPaths),
+    ),
     description: 'Set glyph on selected nodes',
   });
 }
 
-export function setNodeGlyphEdit(stylesheet: Stylesheet, nodeId: string, patch: NodeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
+export function setEdgesGlyphEdit(stylesheet: Stylesheet, edgeIds: ReadonlyArray<string>, patch: EdgeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    nodeChanges: [
-      nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch), unsetPaths),
-    ],
-    description: 'Set glyph on node',
-  });
-}
-
-export function setEdgeGlyphEdit(stylesheet: Stylesheet, edgeId: string, patch: EdgeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
-  const existing = stylesheet.edges[edgeId];
-  return styleEdit({
-    edgeChanges: [
-      edgeChange(edgeId, patchEdgeEntry(existing, patch), unsetPaths),
-    ],
-    description: 'Set glyph on edge',
+    edgeChanges: edgeIds.map((edgeId) =>
+      edgeChange(edgeId, patchEdgeEntry(stylesheet.edges[edgeId], patch), unsetPaths),
+    ),
+    description: 'Set glyph on selected edges',
   });
 }

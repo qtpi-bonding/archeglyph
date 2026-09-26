@@ -18,14 +18,14 @@ export const BUNDLED_THEME_NAMES: string[] = ['light', 'dark', 'blueprint'];
 // which is what bounds role resolution to one hop. Named by colour, not by
 // slot, so a hex two slots share is written once.
 const BLUEPRINT_PALETTE: Record<string, string> = {
-  sky:    '#8ad1ff',
+  sky:    '#38bdf8',
   navy:   '#122238',
   ice:    '#bfe3ff',
-  teal:   '#73daca',
-  violet: '#bb9af7',
+  teal:   '#2dd4bf',
+  violet: '#8b5cf6',
   slate:  '#8b98a9',
   mist:   '#b3c0cf',
-  ground: '#0f1a2b',
+  ground: '#0f1724',
 };
 
 const LIGHT_PALETTE: Record<string, string> = {
@@ -262,7 +262,7 @@ function blueprintNodeShape(strokeColor: string, fillColor: string) {
     }),
     fill: create(FillSchema, {
       paint: { case: 'color', value: create(ColorSchema, { value: fillColor }) },
-      opacity: 0.55,
+      opacity: 0,
     }),
   });
 }

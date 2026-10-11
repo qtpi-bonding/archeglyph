@@ -86,6 +86,7 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
     annotations: restoredAnnotations,
     pendingEdits: snapshot.pendingEditsBefore,
     openDepth: current.openDepth,
+    shownEdgeKinds: current.shownEdgeKinds,
   });
 }
 export interface UndoEntry {

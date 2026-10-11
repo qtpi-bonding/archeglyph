@@ -281,8 +281,15 @@ export class VisibilityFilterImpl implements VisibilityFilter {
     const filteredEdges: FilteredEdge[] = [];
     const remappedEdgeIds = new Set<string>();
     const sortedEdgeIds = sortedKeys(edgesMap);
+    // A view can name the edge kinds to draw. The others are left out here,
+    // before anything is lifted, bundled or counted, as if they were not in the
+    // diagram.
+    const shownKinds = new Set<string>(stylesheet?.shownEdgeKinds ?? []);
     for (const id of sortedEdgeIds) {
       const edge = edgesMap[id];
+      if (shownKinds.size > 0 && !shownKinds.has(edge.tags['kind'] ?? '')) {
+        continue;
+      }
       const srcHidden = hiddenNodeIds.has(edge.source);
       const tgtHidden = hiddenNodeIds.has(edge.target);
       if (srcHidden || tgtHidden) {

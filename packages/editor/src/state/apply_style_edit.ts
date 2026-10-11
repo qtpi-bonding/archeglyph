@@ -56,6 +56,7 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     annotations: newAnnotations,
     pendingEdits: current.pendingEdits,
     openDepth: current.openDepth,
+    shownEdgeKinds: current.shownEdgeKinds,
   });
 }
 /** A protobuf-es message, which carries $typeName; a map or oneof wrapper does not. */

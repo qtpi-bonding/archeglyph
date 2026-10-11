@@ -32,6 +32,7 @@ export function removePendingEdit(stylesheet: Stylesheet, editId: string): Style
     elements: stylesheet.elements,
     edges: stylesheet.edges,
     openDepth: stylesheet.openDepth,
+    shownEdgeKinds: stylesheet.shownEdgeKinds,
     annotations: stylesheet.annotations,
     pendingEdits: stylesheet.pendingEdits.filter((edit: StyleEdit) => edit.id !== editId),
   });

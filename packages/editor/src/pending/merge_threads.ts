@@ -67,5 +67,6 @@ export function mergeThreads(stylesheet: Stylesheet, entries: ReadonlyArray<Thre
     annotations: stylesheet.annotations,
     pendingEdits,
     openDepth: stylesheet.openDepth,
+    shownEdgeKinds: stylesheet.shownEdgeKinds,
   });
 }

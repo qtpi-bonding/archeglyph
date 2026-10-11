@@ -49,6 +49,11 @@ message Stylesheet {
   // are inside the cut, CLOSED beyond it. Groupings are transparent to depth.
   // Unset = unlimited.
   optional uint32 open_depth = 6;
+
+  // Edge kinds to draw, matched against each edge's `kind` tag. Edges of any
+  // other kind, or with no kind, are left out before anything is lifted or
+  // bundled, as if they were not in the diagram. Empty = every edge.
+  repeated string shown_edge_kinds = 9;
 }
 
 // Per-document canvas styling. Lives in Stylesheet only. A theme expresses

@@ -8,6 +8,7 @@ import { initOp } from './init/op';
 import { bindOp } from './bind/op';
 import { watchOp } from './watch/op';
 import { diffOp } from './diff/op';
+import { openOp } from './open/op';
 
 export const REGISTRY: Operation<unknown, unknown>[] = [
   renderOp as unknown as Operation<unknown, unknown>,
@@ -17,4 +18,5 @@ export const REGISTRY: Operation<unknown, unknown>[] = [
   bindOp as unknown as Operation<unknown, unknown>,
   watchOp as unknown as Operation<unknown, unknown>,
   diffOp as unknown as Operation<unknown, unknown>,
+  openOp as unknown as Operation<unknown, unknown>,
 ];

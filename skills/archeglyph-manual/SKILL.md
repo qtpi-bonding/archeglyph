@@ -1,7 +1,7 @@
 ---
 name: archeglyph-manual
 description: Command reference for the archeglyph CLI, generated from --help — do not edit by hand.
-manual-source-hash: 666b01e45485bb64d5cf7074e97b37e7ef0940d8f6ddf3ea0efa8fad6d57a9a8
+manual-source-hash: e98d4a4f08649e427c10af2c718e959447580f5ac92ca2a1c97c86dac417feab
 ---
 
 # archeglyph command reference
@@ -31,6 +31,7 @@ Subcommands:
   bind      Bind a theme component to matching diagram elements in a stylesheet
   watch     Watch a diagram file and re-render on changes
   diff      Compare two diagram files and emit the change set between them
+  open      Choose a view of a diagram: open the elements you name, to a depth, and leave the rest as closed blocks
   help      Show this help (or pass --help to any subcommand)
 
 Run `archeglyph <subcommand> --help` for per-command details.
@@ -85,6 +86,22 @@ Usage: archeglyph init [options]
 
 Options:
   --name  string  (no description)  [default: diagram]
+```
+
+#### `archeglyph open`
+
+```text
+archeglyph open — Choose a view of a diagram: open the elements you name, to a depth, and leave the rest as closed blocks
+
+Usage: archeglyph open [options]
+
+Options:
+  --diagram  string    The diagram to choose a view of                                                                                                          [required]
+  --style    string    The stylesheet to write; default: the one beside the diagram                                                                             [optional]
+  --id       string[]  An element to look at; repeat the flag to pick several                                                                                   [required]
+  --depth    number    How many levels of each pick to open: 0 leaves it one closed block, 1 opens it with its contents as blocks, 2 opens those too            [default: 1]
+  --hops     number    Show only the picks and what is within this many edges of them, as drawn; 0 is the picks alone. Default: show everything                 [optional]
+  --kind     string[]  Draw only edges of this kind; repeat the flag for several. Other edges are left out, and --hops follows only these. Default: every kind  [optional]
 ```
 
 #### `archeglyph render`

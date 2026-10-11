@@ -127,3 +127,26 @@ describe('dissolved is only for groupings', () => {
     expect(r.kind).toBe('err');
   });
 });
+
+describe('an id with a control character', () => {
+  test('an element id is refused, because it cannot be written into an SVG attribute', () => {
+    const r = filter(diagram({ 'a\u001fb': {} }));
+    expect(r.kind).toBe('err');
+    if (r.kind === 'err') {
+      expect(r.error.message).toContain('control character');
+    }
+  });
+
+  test('an edge id is refused too', () => {
+    const r = filter(diagram({ a: {}, b: {} }, { 'a\u001fb': { source: 'a', target: 'b' } }));
+    expect(r.kind).toBe('err');
+    if (r.kind === 'err') {
+      expect(r.error.message).toContain('control character');
+    }
+  });
+
+  test('angle brackets and quotes in an id are fine', () => {
+    const r = filter(diagram({ 'Foo#<constructor>().': {}, 'a"b': {} }));
+    expect(r.kind).toBe('ok');
+  });
+});

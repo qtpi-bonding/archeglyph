@@ -26,6 +26,9 @@
       "@archeglyph/proto/util/json": [
         "./packages/proto/src/util/json.ts"
       ],
+      "@archeglyph/proto/schema_version": [
+        "./packages/proto/src/schema_version.ts"
+      ],
       "@archeglyph/proto/gen/*": [
         "./packages/proto/src/gen/*.ts"
       ],
@@ -89,6 +92,7 @@
     "test/**/*.ts",
     "scripts/pr_comment.ts",
     "scripts/pr_comment.test.ts",
-    "scripts/pr_diagrams.ts"
+    "scripts/pr_diagrams.ts",
+    "scripts/architecture_diagram.ts"
   ]
 }

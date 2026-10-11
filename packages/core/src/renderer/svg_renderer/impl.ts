@@ -24,7 +24,7 @@ import { type LaidOutGroup } from '../../layout/laid_out_group';
 import { type LaidOutNode } from '../../layout/laid_out_node';
 import { calloutSections } from '../../layout/callout_line/impl';
 import { RenderError } from '../render_error';
-import { arrowMarkers, backgroundRect, edgePath, glyphMarks, glyphPatternOf, glyphPatterns, lineStrokeAttrs, shapePath, textElement, viewBox } from '../svg_painter';
+import { arrowMarkers, backgroundRect, edgePath, escapeXml, glyphMarks, glyphPatternOf, glyphPatterns, lineStrokeAttrs, shapePath, textElement, viewBox } from '../svg_painter';
 import { init } from '@archeglyph/proto/util/init';
 
 /**
@@ -180,7 +180,7 @@ export class SvgRendererImpl implements SvgRenderer {
         ? group.typography
         : create(TypographySchema, { ...group.typography, align: placement.align });
       const labelSvg: string = textElement(groupLabel(group), labelTypography, placement.anchor, group.isSuperNode);
-      groupsSvg += `<g id="group-${group.id}" data-element-id="${group.id}" data-kind="group">${shape}${labelSvg}</g>`;
+      groupsSvg += `<g id="group-${escapeXml(group.id)}" data-element-id="${escapeXml(group.id)}" data-kind="group">${shape}${labelSvg}</g>`;
     }
 
     let nodesSvg: string = '';
@@ -190,7 +190,7 @@ export class SvgRendererImpl implements SvgRenderer {
       const centerY: number = node.position.y + node.size.y / 2;
       const center: Vec2 = create(Vec2Schema, { x: centerX, y: centerY });
       const labelSvg: string = textElement(node.label, node.typography, center, true);
-      nodesSvg += `<g id="node-${node.id}" data-element-id="${node.id}" data-kind="node">${shape}${labelSvg}</g>`;
+      nodesSvg += `<g id="node-${escapeXml(node.id)}" data-element-id="${escapeXml(node.id)}" data-kind="node">${shape}${labelSvg}</g>`;
     }
 
     let edgesSvg: string = '';
@@ -222,7 +222,7 @@ export class SvgRendererImpl implements SvgRenderer {
             true,
           )
         : '';
-      edgesSvg += `<g id="edge-${edge.id}" data-element-id="${edge.id}" data-kind="edge">${hitStroke}${visiblePath}${labelSvg}</g>`;
+      edgesSvg += `<g id="edge-${escapeXml(edge.id)}" data-element-id="${escapeXml(edge.id)}" data-kind="edge">${hitStroke}${visiblePath}${labelSvg}</g>`;
     }
 
     let annotationsSvg: string = '';
@@ -250,7 +250,7 @@ export class SvgRendererImpl implements SvgRenderer {
         : '';
       const shape: string = shapePath(ann.shape, ann.position, ann.size);
       const labelSvg: string = textElement(ann.content, ann.typography, annCenter, true);
-      annotationsSvg += `<g id="annotation-${ann.id}" data-element-id="${ann.id}" data-kind="annotation">${calloutSvg}${shape}${labelSvg}</g>`;
+      annotationsSvg += `<g id="annotation-${escapeXml(ann.id)}" data-element-id="${escapeXml(ann.id)}" data-kind="annotation">${calloutSvg}${shape}${labelSvg}</g>`;
     }
 
     const svg: string = `<!-- archeglyph version=1 --><svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${svgWidth}" height="${svgHeight}">${defs}${backgroundRect(diagram)}${groupsSvg}${nodesSvg}${edgesSvg}${annotationsSvg}</svg>`;

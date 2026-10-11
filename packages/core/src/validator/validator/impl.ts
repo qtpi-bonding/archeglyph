@@ -8,6 +8,7 @@ import { Ok, Result } from '@archeglyph/proto/util/result';
 import { ValidateError } from '../validate_error';
 import { ValidateRequest } from '../validate_request';
 import { ValidateResponse } from '../validate_response';
+import { hasControlCharacter } from '../control_character';
 import { Violation, ViolationKind, VIOLATION_KIND_ORDER } from '../violation';
 import { Validator } from './';
 import { init } from '@archeglyph/proto/util/init';
@@ -28,6 +29,20 @@ export class ValidatorImpl implements Validator {
     };
 
     const violations: Violation[] = [];
+
+    // Check 0: ids can be written into an SVG attribute.
+    const idKinds: Array<[string, { [k: string]: unknown }]> = [['element', elementsMap], ['edge', edgesMap]];
+    for (const [label, ids] of idKinds) {
+      for (const id of sortedKeys(ids)) {
+        if (hasControlCharacter(id)) {
+          violations.push(init(new Violation(), {
+            kind: ViolationKind.ID_CONTROL_CHARACTER,
+            location: id,
+            message: `${label} id ${JSON.stringify(id)} contains a control character, which an SVG attribute cannot carry`,
+          }));
+        }
+      }
+    }
 
     // Check 1: Edge source/target reference existing entity elements.
     const sortedEdgeIds = sortedKeys(edgesMap);

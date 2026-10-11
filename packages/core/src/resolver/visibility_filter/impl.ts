@@ -10,6 +10,7 @@ import { FilterRequest } from '../filter_request';
 import { FilteredAnnotation } from '../filtered_annotation';
 import { FilteredDiagram } from '../filtered_diagram';
 import { FilteredEdge } from '../filtered_edge';
+import { hasControlCharacter } from '../../validator/control_character';
 import { childrenIndex, isGroupLike } from '../element_form';
 import { FilteredGroup } from '../filtered_group';
 import { FilteredNode } from '../filtered_node';
@@ -59,6 +60,18 @@ export class VisibilityFilterImpl implements VisibilityFilter {
     }
 
     const sortedKeys = (obj: { [k: string]: unknown }): string[] => Object.keys(obj).sort();
+
+    // An id is written into SVG attributes, which cannot carry a control
+    // character, and the render path never runs the validator.
+    for (const [label, ids] of [['element', elementsMap], ['edge', edgesMap]] as const) {
+      for (const id of sortedKeys(ids)) {
+        if (hasControlCharacter(id)) {
+          const err = new ResolveError();
+          err.message = `visibility_filter: ${label} id ${JSON.stringify(id)} contains a control character`;
+          return Err(err);
+        }
+      }
+    }
 
     const parentOf = new Map<string, string>();
     for (const id of sortedKeys(elementsMap)) {

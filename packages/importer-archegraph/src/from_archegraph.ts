@@ -21,6 +21,24 @@ export class ImportOptions {
   includeExternal?: boolean;
 }
 
+// archegraph joins the parts of an edge id (source, target, kind, position)
+// with U+001F, which an SVG attribute cannot carry. The id here follows the
+// project convention instead, parts joined by `__`. Cleaning can make two
+// different ids read the same, so a clash gets a numeric suffix; ids arrive
+// sorted, which keeps the result deterministic.
+function edgeIdAllocator(): (raw: string) => string {
+  const taken = new Set<string>();
+  return (raw: string): string => {
+    const clean = raw.replace(/[\u0000-\u001f\u007f]+/g, '__');
+    let id = clean;
+    for (let n = 2; taken.has(id); n++) {
+      id = `${clean}__${String(n)}`;
+    }
+    taken.add(id);
+    return id;
+  };
+}
+
 export function fromArchegraph(view: Archeview, options?: ImportOptions): Diagram {
   const includeExternal = options?.includeExternal ?? false;
 
@@ -99,6 +117,7 @@ export function fromArchegraph(view: Archeview, options?: ImportOptions): Diagra
   }
 
   const edges: { [key: string]: Edge } = {};
+  const edgeIdOf = edgeIdAllocator();
 
   for (const id of edgeIds) {
     const ve = view.edges[id];
@@ -114,7 +133,7 @@ export function fromArchegraph(view: Archeview, options?: ImportOptions): Diagra
     // same pair that mean different things must not merge into one bundle.
     const edgeKind = EdgeKind[ve.kind].toLowerCase();
     const kind = ve.role !== EdgeRole.EDGE_ROLE_UNSPECIFIED ? EdgeRole[ve.role].toLowerCase() : edgeKind;
-    edges[id] = create(EdgeSchema, {
+    edges[edgeIdOf(id)] = create(EdgeSchema, {
       source: ve.source,
       target: ve.target,
       tags: { ...ve.tags, kind, 'archegraph.edge_kind': edgeKind },

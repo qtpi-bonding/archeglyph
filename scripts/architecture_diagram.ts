@@ -2,6 +2,7 @@
 
 import { create, fromBinary, toJson } from '@bufbuild/protobuf';
 import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
+import { EdgeKind } from '@archeglyph/proto/gen/archegraph/common_pb';
 import { ArcheviewSchema, ViewEdgeSchema, ViewNodeSchema } from '@archeglyph/proto/gen/archegraph/view_pb';
 import { DiagramSchema, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
 import { fromArchegraph } from '@archeglyph/importer-archegraph';
@@ -33,7 +34,7 @@ const key = (from: string, to: string): string => `${from} ${to}`;
 
 const weights = new Map<string, number>();
 for (const edge of Object.values(raw.edges)) {
-  if (edge.kindLabel !== KIND) { continue; }
+  if (EdgeKind[edge.kind].toLowerCase() !== KIND.toLowerCase()) { continue; }
   const from = packageOf(edge.source);
   const to = packageOf(edge.target);
   if (from === undefined || to === undefined || from === to) { continue; }
@@ -54,7 +55,7 @@ const rolled = create(ArcheviewSchema, {
   edges: Object.fromEntries(
     [...weights.keys()].map((k) => {
       const [from, to] = k.split(' ');
-      return [`${from}__${to}`, create(ViewEdgeSchema, { source: from, target: to, kindLabel: '' })];
+      return [`${from}__${to}`, create(ViewEdgeSchema, { source: from, target: to, kind: EdgeKind[KIND.toUpperCase() as keyof typeof EdgeKind] })];
     }),
   ),
   metadata: { projectName: `archeglyph-architecture${suffix}` },

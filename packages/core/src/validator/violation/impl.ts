@@ -13,6 +13,7 @@ export enum ViolationKind {
   RENDER_MODE_DISSOLVED_ON_ENTITY = 'RENDER_MODE_DISSOLVED_ON_ENTITY',
   OPEN_DEPTH_TOO_SMALL = 'OPEN_DEPTH_TOO_SMALL',
   ANNOTATION_ANCHOR_MISSING = 'ANNOTATION_ANCHOR_MISSING',
+  ID_CONTROL_CHARACTER = 'ID_CONTROL_CHARACTER',
 }
 
 // Declaration order for deterministic violation sort. Mirrors the enum above.
@@ -27,6 +28,7 @@ export const VIOLATION_KIND_ORDER: Record<ViolationKind, number> = {
   [ViolationKind.RENDER_MODE_DISSOLVED_ON_ENTITY]: 7,
   [ViolationKind.OPEN_DEPTH_TOO_SMALL]: 8,
   [ViolationKind.ANNOTATION_ANCHOR_MISSING]: 9,
+  [ViolationKind.ID_CONTROL_CHARACTER]: 10,
 };
 
 export class Violation {

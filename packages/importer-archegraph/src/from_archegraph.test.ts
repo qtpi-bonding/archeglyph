@@ -193,3 +193,40 @@ describe('fromArchegraph containment and elements', () => {
     expect(JSON.stringify(a)).toContain('"elements"');
   });
 });
+
+describe('edge ids', () => {
+  // archegraph joins the parts of an edge id with U+001F. An SVG attribute
+  // cannot carry a control character, so the imported id must not.
+  const SEP = '\u001f';
+  const withIds = (ids: string[]) => create(ArcheviewSchema, {
+    nodes: {
+      'a#': create(ViewNodeSchema, { displayName: 'A', kind: NodeKind.STRUCT }),
+      'b#': create(ViewNodeSchema, { displayName: 'B', kind: NodeKind.STRUCT }),
+    },
+    edges: Object.fromEntries(ids.map((id) => [id, create(ViewEdgeSchema, { source: 'a#', target: 'b#', kind: EdgeKind.INVOCATION })])),
+  });
+
+  test('carry no control character', () => {
+    const d = fromArchegraph(withIds([`a#${SEP}b#${SEP}3${SEP}0`]));
+    for (const id of Object.keys(d.graph?.edges ?? {})) {
+      expect(id).not.toMatch(/[\u0000-\u001f\u007f]/);
+    }
+  });
+
+  test('keep the parts of the original id, joined by the project convention', () => {
+    const d = fromArchegraph(withIds([`a#${SEP}b#${SEP}3${SEP}0`]));
+    expect(Object.keys(d.graph?.edges ?? {})).toEqual(['a#__b#__3__0']);
+  });
+
+  test('two ids that would read the same once cleaned stay two edges', () => {
+    const d = fromArchegraph(withIds([`x${SEP}y`, 'x__y']));
+    const ids = Object.keys(d.graph?.edges ?? {});
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  test('the same input gives the same ids', () => {
+    const view = withIds([`x${SEP}y`, 'x__y', `p${SEP}q`]);
+    expect(Object.keys(fromArchegraph(view).graph?.edges ?? {})).toEqual(Object.keys(fromArchegraph(view).graph?.edges ?? {}));
+  });
+});

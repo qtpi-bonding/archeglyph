@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "id": "stack",
+  "title": [
+    {
+      "locale": "en",
+      "source": "Managed stack"
+    }
+  ],
+  "graph": {
+    "nodes": {
+      "app": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Django + HTMX"
+          }
+        ]
+      },
+      "heroku": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Heroku"
+          }
+        ]
+      },
+      "auth0": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Auth0"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "planetscale": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "PlanetScale"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "upstash": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Upstash Redis"
+          }
+        ],
+        "parentGroup": "hosted"
+      },
+      "segment": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Segment"
+          }
+        ],
+        "parentGroup": "hosted"
+      }
+    },
+    "edges": {
+      "heroku__app": {
+        "source": "heroku",
+        "target": "app"
+      },
+      "app__auth0": {
+        "source": "app",
+        "target": "auth0"
+      },
+      "app__planetscale": {
+        "source": "app",
+        "target": "planetscale"
+      },
+      "app__upstash": {
+        "source": "app",
+        "target": "upstash"
+      },
+      "app__segment": {
+        "source": "app",
+        "target": "segment"
+      }
+    },
+    "groups": {
+      "hosted": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Managed"
+          }
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "generator": "hand",
+    "canonicalLocale": "en"
+  }
+}

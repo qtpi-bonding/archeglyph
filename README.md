@@ -204,6 +204,18 @@ scripts/architecture_diagram.ts`. The `.archegraph/specs/` directory and the
 `spec/<pillar>-v1` tags hold the build history of every pillar here, if you
 would rather check that than take it on trust.
 
+The package diagram is the top of the zoom. The same index also holds every
+file, class and function, which is far too much to draw at once: 8,500 elements
+and 39,000 edges. `archeglyph open` chooses a readable piece of it.
+
+![two files of archeglyph's own source, and the calls around them](docs/img/code-view.svg)
+
+<sub>Two files, `resolver/visibility_filter/impl.ts` and
+`layout/layout_adapter/impl.ts`, each opened one level, with whatever is one
+edge away left as closed blocks and only `invocation` edges drawn. Regenerate
+with `bun run code-view`; the picks, depth, hops and kind are at the top of
+`scripts/code_view.ts`.</sub>
+
 archeglyph does not depend on any of it. It is a general node-and-edge engine;
 archegraph is one importer, alongside DOT, Mermaid and JSON later.
 

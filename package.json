@@ -12,6 +12,7 @@
     "proto:format": "buf format -w",
     "archeglyph": "bun packages/cli/bin/archeglyph.ts",
     "manual": "bun scripts/manual.ts",
+    "code-view": "bun --conditions browser scripts/code_view.ts",
     "editor:screenshot": "bun run build:editor && bun scripts/editor_screenshot.ts",
     "typecheck": "tsc --noEmit",
     "spdx": "bun scripts/spdx.ts",

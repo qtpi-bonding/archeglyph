@@ -19,7 +19,7 @@ import { describe, expect, spyOn, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
   AnnotationLayoutSchema, CanvasStyleSchema, EdgeLayoutSchema, EdgePathPosition, EdgeRouting,
-  Glyph1DSchema, Glyph2DSchema, GroupLayoutSchema, NodeLayoutSchema,
+  Glyph1DSchema, Glyph2DSchema, BoxLayoutSchema, ElementLayoutSchema,
   TypographySchema, Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import * as edgeRouter from '../src/layout/edge_router';
@@ -49,7 +49,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const node = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 10, y: 20 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 10, y: 20 }) }),
         });
         const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -70,7 +70,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const group = init(new ResolvedGroup(), { id: 'g1' });
         const positioned = init(new ResolvedNode(), {
           id: 'pinned', parentGroup: 'g1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
         const free = init(new ResolvedNode(), { id: 'free', parentGroup: 'g1' });
         const diagram = init(new ResolvedDiagram(), {
@@ -111,11 +111,11 @@ describe('testgen_layout_adapter__runLayout', () => {
         const group = init(new ResolvedGroup(), { id: 'g1' });
         const a = init(new ResolvedNode(), {
           id: 'a', parentGroup: 'g1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }),
         });
         const b = init(new ResolvedNode(), {
           id: 'b', parentGroup: 'g1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 2, y: 2 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 2, y: 2 }) }),
         });
         const diagram = init(new ResolvedDiagram(), {
           id: 'd', nodes: byId([a, b]), edges: byId([]), groups: byId([group]), annotations: byId([]),
@@ -135,7 +135,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const node = init(new ResolvedNode(), {
           id: 'origin',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: byId([]), groups: byId([]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -155,7 +155,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const leaf = init(new ResolvedGroup(), {
           id: 'leaf', isSuperNode: true,
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 7, y: 9 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 7, y: 9 }) }),
         });
         const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([]), edges: byId([]), groups: byId([leaf]), annotations: byId([]) });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -201,7 +201,7 @@ describe('testgen_layout_adapter__runLayout', () => {
         const children = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id, i) =>
           init(new ResolvedNode(), {
             id, parentGroup: 'g1',
-            layout: i === 2 ? create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }) : undefined,
+            layout: i === 2 ? create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 1, y: 1 }) }) : undefined,
           }),
         );
         const diagram = init(new ResolvedDiagram(), {
@@ -233,7 +233,7 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_one_node_has_no_layout_object_returns_false', () => {
         const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const unpinnedNode = init(new ResolvedNode(), {
           id: 'n2',
@@ -241,7 +241,7 @@ describe('testgen_layout_engine__isFullyPinned', () => {
         });
         const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const diagram = new ResolvedDiagram();
         diagram.nodes = byId([pinnedNode, unpinnedNode]);
@@ -256,15 +256,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_one_node_layout_lacks_position_returns_false', () => {
         const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const missingPositionNode = init(new ResolvedNode(), {
           id: 'n2',
-          layout: create(NodeLayoutSchema, {}),
+          layout: create(ElementLayoutSchema, {}),
         });
         const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const diagram = new ResolvedDiagram();
         diagram.nodes = byId([pinnedNode, missingPositionNode]);
@@ -279,11 +279,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_one_group_has_no_layout_object_returns_false', () => {
         const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const unpinnedGroup = init(new ResolvedGroup(), {
           id: 'g2',
@@ -302,15 +302,15 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_one_group_layout_lacks_position_returns_false', () => {
         const pinnedNode = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const pinnedGroup = init(new ResolvedGroup(), {
           id: 'g1',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const missingPositionGroup = init(new ResolvedGroup(), {
           id: 'g2',
-          layout: create(GroupLayoutSchema, {}),
+          layout: create(BoxLayoutSchema, {}),
         });
         const diagram = new ResolvedDiagram();
         diagram.nodes = byId([pinnedNode]);
@@ -325,11 +325,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_only_nodes_present_and_all_pinned_returns_true', () => {
         const node1 = init(new ResolvedNode(), {
           id: 'n1',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const node2 = init(new ResolvedNode(), {
           id: 'n2',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
         const diagram = new ResolvedDiagram();
         diagram.nodes = byId([node1, node2]);
@@ -344,11 +344,11 @@ describe('testgen_layout_engine__isFullyPinned', () => {
     test('when_only_groups_present_and_all_pinned_returns_true', () => {
         const group1 = init(new ResolvedGroup(), {
           id: 'g1',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
         });
         const group2 = init(new ResolvedGroup(), {
           id: 'g2',
-          layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
+          layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         });
         const diagram = new ResolvedDiagram();
         diagram.nodes = byId([]);
@@ -386,15 +386,15 @@ describe('testgen_layout_engine__layout', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
         const nodeB = init(new ResolvedNode(), {
           id: 'b', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(200, 0), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(200, 0), size: vec(100, 40) }),
         });
         const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
-          layout: create(GroupLayoutSchema, { position: vec(0, 200), size: vec(150, 150) }),
+          layout: create(BoxLayoutSchema, { position: vec(0, 200), size: vec(150, 150) }),
         });
         const edge = init(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
         const diagram = init(new ResolvedDiagram(), {
@@ -464,11 +464,11 @@ describe('testgen_layout_engine__layout', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
         const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
-          layout: create(GroupLayoutSchema, { position: vec(0, 100), size: vec(150, 150) }),
+          layout: create(BoxLayoutSchema, { position: vec(0, 100), size: vec(150, 150) }),
         });
         const annotation = init(new ResolvedAnnotation(), {
           id: 'ann', shape: {} as any, typography: {} as any, callout: {} as any,
@@ -553,7 +553,7 @@ describe('testgen_layout_engine__layout', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const node = init(new ResolvedNode(), {
           id: 'solo', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(42, 17), size: vec(90, 30) }),
+          layout: create(ElementLayoutSchema, { position: vec(42, 17), size: vec(90, 30) }),
         });
         const diagram = init(new ResolvedDiagram(), {
           id: 'd', canvas: {} as any, nodes: byId([node]), groups: byId([]), edges: byId([]), annotations: byId([]),
@@ -585,11 +585,11 @@ describe('testgen_layout_engine__layout', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
         const nodeB = init(new ResolvedNode(), {
           id: 'b', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(300, 250), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(300, 250), size: vec(100, 40) }),
         });
         const edge = init(new ResolvedEdge(), { id: 'e', source: 'a', target: 'b', connection: {} as any, typography: {} as any });
         const diagram = init(new ResolvedDiagram(), {
@@ -654,14 +654,14 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         orthoSpy.mockRestore();
     });
 
-    // WHEN: Diagram with one top-level node whose NodeLayout has both position and size set
+    // WHEN: Diagram with one top-level node whose ElementLayout has both position and size set
     // THEN: Returns the node laid out at its written position with its written size, unchanged.
     test('single_pinned_node_with_explicit_size_places_directly_without_measure', () => {
         const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 10, y: 20 }),
             size: create(Vec2Schema, { x: 100, y: 50 }),
           }),
@@ -695,7 +695,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         id: 'n1',
         shape: create(Glyph2DSchema, {}),
         typography: create(TypographySchema, { font: 'Noto Sans Mono', size: 12 }),
-        layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
+        layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 5, y: 5 }) }),
         label: [{ locale: 'en', source: 'hello' } as any],
       });
       const diagram = init(new ResolvedDiagram(), {
@@ -735,7 +735,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         });
     });
 
-    // WHEN: A group has a written GroupLayout.size, but also has child nodes whose combined bounding box differs from that written size
+    // WHEN: A group has a written BoxLayout.size, but also has child nodes whose combined bounding box differs from that written size
     // THEN: Ignores the group's written size and returns the group's size (and position extent) recomputed from the union of its children's actual laid-out bounding boxes.
     // A written group size is a minimum; here it exceeds the children.
     test('group_size_takes_the_written_size_as_a_minimum', () => {
@@ -744,7 +744,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -755,7 +755,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 100, y: 100 }),
             size: create(Vec2Schema, { x: 20, y: 20 }),
           }),
@@ -765,7 +765,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(GroupLayoutSchema, {
+          layout: create(BoxLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 9999, y: 9999 }),
           }),
@@ -797,7 +797,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           parentGroup: 'inner',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 30, y: 30 }),
           }),
@@ -808,7 +808,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           parentGroup: 'outer',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(GroupLayoutSchema, {
+          layout: create(BoxLayoutSchema, {
             position: create(Vec2Schema, { x: 10, y: 10 }),
           }),
           label: [],
@@ -819,7 +819,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'outer',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(GroupLayoutSchema, {
+          layout: create(BoxLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
           }),
           label: [],
@@ -853,7 +853,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(GroupLayoutSchema, {
+          layout: create(BoxLayoutSchema, {
             position: create(Vec2Schema, { x: 15, y: 25 }),
             size: create(Vec2Schema, { x: 500, y: 500 }),
           }),
@@ -886,7 +886,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -896,7 +896,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 100, y: 100 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -937,7 +937,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -947,7 +947,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 100, y: 100 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -988,7 +988,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'a',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -998,7 +998,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'b',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 100, y: 100 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -1052,7 +1052,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           parentGroup: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 40, y: 40 }),
           }),
@@ -1062,7 +1062,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'g1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(GroupLayoutSchema, {
+          layout: create(BoxLayoutSchema, {
             position: create(Vec2Schema, { x: 200, y: 200 }),
           }),
           label: [],
@@ -1073,7 +1073,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'other',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
@@ -1177,14 +1177,14 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         expect(laidAnnotation.callout).toEqual(emptyCallout);
     });
 
-    // WHEN: A node, group, or annotation has a non-zero NodeLayout/GroupLayout/AnnotationLayout.rotation value
+    // WHEN: A node, group, or annotation has a non-zero ElementLayout/BoxLayout/AnnotationLayout.rotation value
     // THEN: Returns the element's layout with the given rotation value carried through unchanged into the corresponding LaidOutDiagram entry.
     test('rotation_carried_through_unchanged_on_node_and_annotation', () => {
         const node = init(new ResolvedNode(), {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             position: create(Vec2Schema, { x: 0, y: 0 }),
             size: create(Vec2Schema, { x: 10, y: 10 }),
             rotation: 37.5,
@@ -1225,7 +1225,7 @@ describe('testgen_layout_engine__layoutFromPins', () => {
           id: 'n1',
           shape: create(Glyph2DSchema, {}),
           typography: create(TypographySchema, {}),
-          layout: create(NodeLayoutSchema, {
+          layout: create(ElementLayoutSchema, {
             size: create(Vec2Schema, { x: 10, y: 10 }),
           }),
           label: [],

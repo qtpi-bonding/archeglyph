@@ -8,8 +8,8 @@ import * as fc from 'fast-check';
 import { editableChanges } from '../src/state/editable_changes';
 import { Diagram } from '../../proto/src/gen/content_pb';
 import { StyleEdit } from '../../proto/src/gen/style_pb';
-import { DiagramSchema, Edge, EdgeSchema, GraphSchema, Group, GroupSchema, Node, NodeSchema } from '../../proto/src/gen/content_pb';
-import { AnnotationStyleChange, AnnotationStyleChangeSchema, EdgeStyleChange, EdgeStyleChangeSchema, GroupStyleChange, GroupStyleChangeSchema, NodeStyleChange, NodeStyleChangeSchema, StyleEditSchema } from '../../proto/src/gen/style_pb';
+import { DiagramSchema, Edge, EdgeSchema, Element, ElementRole, ElementSchema, GraphSchema } from '../../proto/src/gen/content_pb';
+import { AnnotationStyleChange, AnnotationStyleChangeSchema, EdgeStyleChange, EdgeStyleChangeSchema, ElementStyleChange, ElementStyleChangeSchema, StyleEditSchema } from '../../proto/src/gen/style_pb';
 
 describe('testgen_state__editableChanges', () => {
     // HAND-REPAIRED: element ids are generated through elementId, not
@@ -22,23 +22,23 @@ describe('testgen_state__editableChanges', () => {
 
     const makeAnnotationChange = (id: string): AnnotationStyleChange => create(AnnotationStyleChangeSchema, {annotationId: id});
 
-    const makeDiagram = (nodeIds: string[], edgeIds: string[], groupIds: string[]): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {nodes: Object.fromEntries(nodeIds.map((id: string): [string, Node] => [id, create(NodeSchema, {})])), edges: Object.fromEntries(edgeIds.map((id: string): [string, Edge] => [id, create(EdgeSchema, {})])), groups: Object.fromEntries(groupIds.map((id: string): [string, Group] => [id, create(GroupSchema, {})]))})});
+    const makeDiagram = (nodeIds: string[], edgeIds: string[], groupIds: string[]): Diagram => create(DiagramSchema, {graph: create(GraphSchema, {elements: {...Object.fromEntries(nodeIds.map((id: string): [string, Element] => [id, create(ElementSchema, {})])), ...Object.fromEntries(groupIds.map((id: string): [string, Element] => [id, create(ElementSchema, {role: ElementRole.GROUPING})]))}, edges: Object.fromEntries(edgeIds.map((id: string): [string, Edge] => [id, create(EdgeSchema, {})]))})});
 
     const makeEdgeChange = (id: string): EdgeStyleChange => create(EdgeStyleChangeSchema, {edgeId: id});
 
-    const makeEdit = (nodeChanges: NodeStyleChange[], edgeChanges: EdgeStyleChange[], groupChanges: GroupStyleChange[], annotationChanges: AnnotationStyleChange[]): StyleEdit => create(StyleEditSchema, {nodeChanges, edgeChanges, groupChanges, annotationChanges});
+    const makeEdit = (nodeChanges: ElementStyleChange[], edgeChanges: EdgeStyleChange[], groupChanges: ElementStyleChange[], annotationChanges: AnnotationStyleChange[]): StyleEdit => create(StyleEditSchema, {elementChanges: [...nodeChanges, ...groupChanges], edgeChanges, annotationChanges});
 
-    const makeGroupChange = (id: string): GroupStyleChange => create(GroupStyleChangeSchema, {groupId: id});
+    const makeGroupChange = (id: string): ElementStyleChange => create(ElementStyleChangeSchema, {elementId: id});
 
-    const makeNodeChange = (id: string): NodeStyleChange => create(NodeStyleChangeSchema, {nodeId: id});
+    const makeNodeChange = (id: string): ElementStyleChange => create(ElementStyleChangeSchema, {elementId: id});
 
     test('matching_node_change', () => {
         fc.assert(
             fc.property(elementId(), (value) => {
-        const change: NodeStyleChange = makeNodeChange(value);
+        const change: ElementStyleChange = makeNodeChange(value);
         const diagram: Diagram = makeDiagram([value], [], []);
         const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);
-        expect(result.nodeChanges).toEqual([change]);
+        expect(result.elementChanges).toEqual([change]);
             })
         );
     });
@@ -46,10 +46,10 @@ describe('testgen_state__editableChanges', () => {
     test('stale_node_change', () => {
         fc.assert(
             fc.property(elementId(), (value) => {
-        const change: NodeStyleChange = makeNodeChange(value);
+        const change: ElementStyleChange = makeNodeChange(value);
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);
-        expect(result.nodeChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
             })
         );
     });
@@ -79,10 +79,10 @@ describe('testgen_state__editableChanges', () => {
     test('matching_group_change', () => {
         fc.assert(
             fc.property(elementId(), (value) => {
-        const change: GroupStyleChange = makeGroupChange(value);
+        const change: ElementStyleChange = makeGroupChange(value);
         const diagram: Diagram = makeDiagram([], [], [value]);
         const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);
-        expect(result.groupChanges).toEqual([change]);
+        expect(result.elementChanges).toEqual([change]);
             })
         );
     });
@@ -90,34 +90,36 @@ describe('testgen_state__editableChanges', () => {
     test('stale_group_change', () => {
         fc.assert(
             fc.property(elementId(), (value) => {
-        const change: GroupStyleChange = makeGroupChange(value);
+        const change: ElementStyleChange = makeGroupChange(value);
         const diagram: Diagram = makeDiagram([], [], []);
         const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);
-        expect(result.groupChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
             })
         );
     });
 
+    // Nodes and groups are both elements now, so one id namespace: the generated
+    // node and group ids are prefixed by kind so the two can never collide.
     test('mixed_edit_entries', () => {
         fc.assert(
             fc.property(fc.record({node: elementId(), edge: elementId(), group: elementId()}), (value) => {
-        const nodePresent: string = `${value.node}-present`;
-        const nodeAbsent: string = `${value.node}-absent`;
+        const nodePresent: string = `node:${value.node}-present`;
+        const nodeAbsent: string = `node:${value.node}-absent`;
         const edgePresent: string = `${value.edge}-present`;
         const edgeAbsent: string = `${value.edge}-absent`;
-        const groupPresent: string = `${value.group}-present`;
-        const groupAbsent: string = `${value.group}-absent`;
-        const nodePresentChange: NodeStyleChange = makeNodeChange(nodePresent);
-        const nodeAbsentChange: NodeStyleChange = makeNodeChange(nodeAbsent);
+        const groupPresent: string = `group:${value.group}-present`;
+        const groupAbsent: string = `group:${value.group}-absent`;
+        const nodePresentChange: ElementStyleChange = makeNodeChange(nodePresent);
+        const nodeAbsentChange: ElementStyleChange = makeNodeChange(nodeAbsent);
         const edgePresentChange: EdgeStyleChange = makeEdgeChange(edgePresent);
         const edgeAbsentChange: EdgeStyleChange = makeEdgeChange(edgeAbsent);
-        const groupPresentChange: GroupStyleChange = makeGroupChange(groupPresent);
-        const groupAbsentChange: GroupStyleChange = makeGroupChange(groupAbsent);
+        const groupPresentChange: ElementStyleChange = makeGroupChange(groupPresent);
+        const groupAbsentChange: ElementStyleChange = makeGroupChange(groupAbsent);
         const diagram: Diagram = makeDiagram([nodePresent], [edgePresent], [groupPresent]);
         const result: StyleEdit = editableChanges(makeEdit([nodePresentChange, nodeAbsentChange], [edgePresentChange, edgeAbsentChange], [groupPresentChange, groupAbsentChange], []), diagram);
-        expect(result.nodeChanges).toEqual([nodePresentChange]);
+        expect(result.elementChanges.filter((change: ElementStyleChange): boolean => change.elementId === nodePresent)).toEqual([nodePresentChange]);
         expect(result.edgeChanges).toEqual([edgePresentChange]);
-        expect(result.groupChanges).toEqual([groupPresentChange]);
+        expect(result.elementChanges.filter((change: ElementStyleChange): boolean => change.elementId === groupPresent)).toEqual([groupPresentChange]);
             })
         );
     });
@@ -153,11 +155,11 @@ describe('testgen_state__editableChanges', () => {
     test('all_lists_empty', () => {
         fc.assert(
             fc.property(fc.array(elementId()), (value) => {
-        const nodeChanges: NodeStyleChange[] = value.map((id: string): NodeStyleChange => makeNodeChange(`stale-${id}`));
+        const nodeChanges: ElementStyleChange[] = value.map((id: string): ElementStyleChange => makeNodeChange(`stale-${id}`));
         const result: StyleEdit = editableChanges(makeEdit(nodeChanges, [], [], []), makeDiagram([], [], []));
-        expect(result.nodeChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
         expect(result.edgeChanges).toEqual([]);
-        expect(result.groupChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
         expect(result.annotationChanges).toEqual([]);
             })
         );
@@ -168,9 +170,9 @@ describe('testgen_state__editableChanges', () => {
             fc.property(fc.array(elementId(), {minLength: 1}), (value) => {
         const changes: AnnotationStyleChange[] = value.map((id: string): AnnotationStyleChange => makeAnnotationChange(id));
         const result: StyleEdit = editableChanges(makeEdit([], [], [], changes), makeDiagram([], [], []));
-        expect(result.nodeChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
         expect(result.edgeChanges).toEqual([]);
-        expect(result.groupChanges).toEqual([]);
+        expect(result.elementChanges).toEqual([]);
         expect(result.annotationChanges).toEqual(changes);
             })
         );
@@ -181,17 +183,17 @@ describe('testgen_state__editableChanges', () => {
             fc.property(fc.constantFrom('node', 'edge', 'group'), (value) => {
         const diagram: Diagram = makeDiagram([], [], []);
         if (value === 'node') {
-          const change: NodeStyleChange = makeNodeChange('absent-node');
+          const change: ElementStyleChange = makeNodeChange('absent-node');
           const result: StyleEdit = editableChanges(makeEdit([change], [], [], []), diagram);
-          expect(result.nodeChanges).toEqual([]);
+          expect(result.elementChanges).toEqual([]);
         } else if (value === 'edge') {
           const change: EdgeStyleChange = makeEdgeChange('absent-edge');
           const result: StyleEdit = editableChanges(makeEdit([], [change], [], []), diagram);
           expect(result.edgeChanges).toEqual([]);
         } else {
-          const change: GroupStyleChange = makeGroupChange('absent-group');
+          const change: ElementStyleChange = makeGroupChange('absent-group');
           const result: StyleEdit = editableChanges(makeEdit([], [], [change], []), diagram);
-          expect(result.groupChanges).toEqual([]);
+          expect(result.elementChanges).toEqual([]);
         }
             })
         );

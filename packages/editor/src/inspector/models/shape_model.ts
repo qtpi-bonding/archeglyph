@@ -25,13 +25,15 @@ export function shapeModel(model: InspectorModel, geometry: SceneGeometry, style
     let effectiveGlyph2D = undefined;
 
     if (model.kind === 'node') {
-      const styleEntry = stylesheet.nodes[id];
+      const styleEntry = stylesheet.elements[id];
       overrideGlyph2D = styleEntry?.shape;
       const laidOutNode = geometry.diagram.nodes[id];
       effectiveGlyph2D = laidOutNode?.shape;
     } else if (model.kind === 'group') {
-      const styleEntry = stylesheet.groups[id];
-      overrideGlyph2D = styleEntry?.shape;
+      const styleEntry = stylesheet.elements[id];
+      // A closed container is drawn from the block shape, an open one from
+      // the box.
+      overrideGlyph2D = model.block === true ? styleEntry?.shape : styleEntry?.box;
       const laidOutGroup = geometry.diagram.groups[id];
       effectiveGlyph2D = laidOutGroup?.shape;
     } else if (model.kind === 'annotation') {

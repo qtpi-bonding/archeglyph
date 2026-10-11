@@ -23,7 +23,7 @@ import { describe, expect, test } from 'bun:test';
 import ElkConstructor from 'elkjs/lib/elk.bundled.js';
 import { createRequire } from 'node:module';
 import { create } from '@bufbuild/protobuf';
-import { NodeLayoutSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayoutSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { ElkAdapterImpl } from './layout_adapter/impl';
 import { LayoutEngineImpl } from './layout_engine/impl';
 import { LayoutRequest } from './layout_request';
@@ -44,7 +44,7 @@ function engine(): LayoutEngineImpl {
 function pinnedNode(id: string, x: number, y: number): ResolvedNode {
   return init(new ResolvedNode(), {
     id,
-    layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x, y }) }),
+    layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x, y }) }),
   });
 }
 

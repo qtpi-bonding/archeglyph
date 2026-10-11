@@ -16,6 +16,7 @@ import { type ValidateParams, validateParamsSchema } from './validate_params';
 import { ValidateOutput } from './validate_output';
 import { ValidateOpError } from './validate_op_error';
 import { deriveDefaultStylePath } from '../style_path';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { init } from '@archeglyph/proto/util/init';
 import { resolveThemes } from '../themes/resolve_themes';
 
@@ -76,7 +77,7 @@ export const validateOp: Operation<ValidateParams, ValidateOutput> = {
     // Fill any missing component bindings from the theme's declared defaults,
     // so a diagram with no style file renders the same here as it does in the
     // editor. The resolver itself assumes nothing.
-    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'));
+    const seeded = seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }), themes.get('default'));
     const resolveResult = await resolvePipeline(diagramResult.value, seeded, themes);
     if (resolveResult.kind === 'err') {
       throw init(new ValidateOpError(), { stage: resolveResult.error.stage, cause: resolveResult.error });

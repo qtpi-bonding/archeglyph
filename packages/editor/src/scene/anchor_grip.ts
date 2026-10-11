@@ -4,8 +4,8 @@
 
 import { boundsCentre, boundsProjectToEdge, type Bounds } from '@archeglyph/core/geometry/bounds';
 import { type Vec2 } from '@archeglyph/core/geometry/vec2';
-import { RefKind } from '@archeglyph/proto/gen/style_pb';
 import type { ElementRef } from '../ui_state/ui_state';
+import { anchorTargetRef } from './anchor_target';
 import { elementKey } from './element_key';
 import type { SceneGeometry } from './scene';
 
@@ -54,13 +54,9 @@ export function anchorGripAt(geometry: SceneGeometry, selection: Array<ElementRe
   let towardCentre: Vec2 | undefined;
   const anchor = laidOutAnnotation?.anchor;
   if (anchor !== undefined) {
-    const targetKind = anchor.refKind === RefKind.NODE
-      ? 'node'
-      : anchor.refKind === RefKind.GROUP
-        ? 'group'
-        : undefined;
-    if (targetKind !== undefined) {
-      const targetEntry = geometry.byKey[elementKey({ kind: targetKind, id: anchor.refId })];
+    const targetRef = anchorTargetRef(geometry, anchor.refKind, anchor.refId);
+    if (targetRef !== undefined) {
+      const targetEntry = geometry.byKey[elementKey(targetRef)];
       if (targetEntry !== undefined) {
         towardCentre = boundsCentre(targetEntry.bounds);
       }

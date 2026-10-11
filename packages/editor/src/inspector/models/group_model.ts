@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import type { GroupLayout, Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import type { BoxLayout, Stylesheet } from '@archeglyph/proto/gen/style_pb';
 import type { SceneGeometry } from '../../scene/scene';
 import type { InspectorModel } from '../model';
 import { numberField, textField, NumberField, TextField } from '../field_value';
 import { LABEL_POSITION_TABLE, RENDER_MODE_TABLE } from './group_names';
 
 export interface GroupModel {
+  /** Which look this section is editing: the closed block's or the open box's. */
+  look: 'Block look' | 'Box look';
   padding: NumberField;
   renderMode: TextField;
   labelPosition: TextField;
@@ -36,20 +38,26 @@ export function groupModel(
   // another kind.
   const ids = model.kind === 'group' ? model.ids : [];
 
-  const override = (id: string): GroupLayout | undefined => stylesheet.groups[id]?.layout;
-  const effective = (id: string): GroupLayout | undefined => geometry.diagram.groups[id]?.layout;
+  const override = (id: string): BoxLayout | undefined => stylesheet.elements[id]?.boxLayout;
+  const effective = (id: string): BoxLayout | undefined => geometry.diagram.groups[id]?.layout;
 
   const overrides = ids.map(override);
   const effectives = ids.map(effective);
 
+  // The render mode sits on the entry itself, not on its box layout. The
+  // laid-out group never carried a default for it, so the effective value is
+  // the override, as it was when it travelled inside the layout.
+  const renderModeOverrides = ids.map((id) => stylesheet.elements[id]?.renderMode);
+
   return {
+    look: model.block === true ? 'Block look' : 'Box look',
     padding: numberField(
       overrides.map((layout) => layout?.padding),
       effectives.map((layout) => layout?.padding),
     ),
     renderMode: textField(
-      overrides.map((layout) => enumName(RENDER_MODE_TABLE, layout?.renderMode)),
-      effectives.map((layout) => enumName(RENDER_MODE_TABLE, layout?.renderMode)),
+      renderModeOverrides.map((renderMode) => enumName(RENDER_MODE_TABLE, renderMode)),
+      renderModeOverrides.map((renderMode) => enumName(RENDER_MODE_TABLE, renderMode)),
     ),
     labelPosition: textField(
       overrides.map((layout) => enumName(LABEL_POSITION_TABLE, layout?.labelPosition)),

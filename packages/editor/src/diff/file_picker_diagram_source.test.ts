@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { afterEach, describe, expect, test } from 'bun:test';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 
 if (!(globalThis as { document?: unknown }).document) {
@@ -10,9 +11,9 @@ if (!(globalThis as { document?: unknown }).document) {
 const { FilePickerDiagramSource } = await import('./file_picker_diagram_source');
 
 const DIAGRAM = JSON.stringify({
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'sample',
-  graph: { nodes: { a: { label: [{ locale: 'en', source: 'A' }] } }, edges: {} },
+  graph: { elements: { a: { label: [{ locale: 'en', source: 'A' }] } }, edges: {} },
 });
 
 function stubPicker(name: string, text: string): void {

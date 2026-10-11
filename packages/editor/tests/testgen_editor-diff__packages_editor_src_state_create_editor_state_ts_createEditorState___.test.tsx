@@ -11,7 +11,8 @@ import { EditorState } from '../src/state/editor_state';
 import { Diagram } from '../../proto/src/gen/content_pb';
 import { StyleEdit, StyleEditSchema, Stylesheet, StylesheetSchema } from '../../proto/src/gen/style_pb';
 import { DiagramSchema } from '../../proto/src/gen/content_pb';
-import { AnnotationStyleChangeSchema, NodeStyleChangeSchema } from '../../proto/src/gen/style_pb';
+import { AnnotationStyleChangeSchema, ElementStyleChangeSchema } from '../../proto/src/gen/style_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 describe('testgen_state__createEditorState', () => {
     // HAND-REPAIRED: ids come from elementId, not fc.string(). `create()`
@@ -22,9 +23,8 @@ describe('testgen_state__createEditorState', () => {
       fc.string().filter((id: string): boolean => id !== '__proto__');
 
     const makeAnnotationEdit = (annotationId: string): StyleEdit => create(StyleEditSchema, {
-      nodeChanges: [],
+      elementChanges: [],
       edgeChanges: [],
-      groupChanges: [],
       // HAND-REPAIRED: the change carried no changeType and no `after`, so
       // applyMapChanges wrote nothing and the assertions could not hold for
       // any id. A change with no payload is a no-op by design.
@@ -36,25 +36,23 @@ describe('testgen_state__createEditorState', () => {
     });
 
     const makeEmptyDiagram = (): Diagram => create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: "diagram",
       title: [],
     });
 
     const makeEmptyStylesheet = (): Stylesheet => create(StylesheetSchema, {
-      schemaVersion: 1,
+      schemaVersion: STYLE_SCHEMA_VERSION,
       themes: {},
-      nodes: {},
+      elements: {},
       edges: {},
-      groups: {},
       annotations: {},
       pendingEdits: [],
     });
 
     const makeMixedEdit = (nodeId: string): StyleEdit => create(StyleEditSchema, {
-      nodeChanges: [create(NodeStyleChangeSchema, { nodeId })],
+      elementChanges: [create(ElementStyleChangeSchema, { elementId: nodeId })],
       edgeChanges: [],
-      groupChanges: [],
       // HAND-REPAIRED: no changeType and no `after` made this a no-op, so
       // the edit filtered down to empty and took the early return.
       annotationChanges: [create(AnnotationStyleChangeSchema, {
@@ -65,21 +63,19 @@ describe('testgen_state__createEditorState', () => {
     })
 
     const makeNodeEdit = (nodeId: string): StyleEdit => create(StyleEditSchema, {
-      nodeChanges: [create(NodeStyleChangeSchema, { nodeId })],
+      elementChanges: [create(ElementStyleChangeSchema, { elementId: nodeId })],
       edgeChanges: [],
-      groupChanges: [],
       annotationChanges: [],
     });
 
-    // WHEN: applyStyleEdit receives an edit whose four change lists are all empty; it follows the early no-op path with no stylesheet write, undo entry, redo reset, dirty change, or version bump.
+    // WHEN: applyStyleEdit receives an edit whose three change lists are all empty; it follows the early no-op path with no stylesheet write, undo entry, redo reset, dirty change, or version bump.
     // THEN: It does nothing, leaving the stylesheet, undo and redo logs, dirty state, and version unchanged.
     test('apply_empty_edit', () => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = create(StyleEditSchema, {
-          nodeChanges: [],
+          elementChanges: [],
           edgeChanges: [],
-          groupChanges: [],
           annotationChanges: [],
         });
 
@@ -124,7 +120,7 @@ describe('testgen_state__createEditorState', () => {
         expect(state.canUndo()).toBe(true);
         expect(state.canRedo()).toBe(false);
         expect(Object.keys(state.stylesheet().annotations)).toContain(value);
-        expect(state.stylesheet().nodes).toEqual({});
+        expect(state.stylesheet().elements).toEqual({});
 
         state.undo();
 
@@ -183,9 +179,8 @@ describe('testgen_state__createEditorState', () => {
         const stylesheet: Stylesheet = makeEmptyStylesheet();
         const state: EditorState = createEditorState(makeEmptyDiagram(), stylesheet);
         const edit: StyleEdit = create(StyleEditSchema, {
-          nodeChanges: [],
+          elementChanges: [],
           edgeChanges: [],
-          groupChanges: [],
           annotationChanges: [],
         });
 

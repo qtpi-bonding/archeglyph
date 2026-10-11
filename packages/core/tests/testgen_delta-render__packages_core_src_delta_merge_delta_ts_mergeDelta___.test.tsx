@@ -5,10 +5,10 @@ import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 // Repaired by hand: message type names the body used without importing.
 // archetest.yaml now carries them in the core header for future runs.
-import { Node, Edge, Group, NodeDelta, EdgeDelta, GroupDelta } from '@archeglyph/proto/gen/content_pb';
+import { Element, Edge, ElementDelta, EdgeDelta, ElementRole } from '@archeglyph/proto/gen/content_pb';
 import {
-  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+  DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+  DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
 } from '@archeglyph/proto/gen/content_pb';
 import {
   StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
@@ -22,30 +22,26 @@ import { mergeDelta } from '../src/delta/merge_delta';
 import { ChangeType, Delta, Diagram } from '../../proto/src/gen/content_pb';
 
 describe('testgen_delta__mergeDelta', () => {
-    function makeDelta(parts: { nodeDeltas?: NodeDelta[]; edgeDeltas?: EdgeDelta[]; groupDeltas?: GroupDelta[] } = {}): Delta {
-      return create(DeltaSchema, { nodeDeltas: parts.nodeDeltas ?? [], edgeDeltas: parts.edgeDeltas ?? [], groupDeltas: parts.groupDeltas ?? [] });
+    function makeDelta(parts: { elementDeltas?: ElementDelta[]; edgeDeltas?: EdgeDelta[] } = {}): Delta {
+      return create(DeltaSchema, { elementDeltas: parts.elementDeltas ?? [], edgeDeltas: parts.edgeDeltas ?? [] });
     }
 
-    function makeDiagram(parts: { nodes?: Record<string, Node>; edges?: Record<string, Edge>; groups?: Record<string, Group> } = {}): Diagram {
-      return create(DiagramSchema, { graph: create(GraphSchema, { nodes: parts.nodes ?? {}, edges: parts.edges ?? {}, groups: parts.groups ?? {} }) });
+    function makeDiagram(parts: { elements?: Record<string, Element>; edges?: Record<string, Edge> } = {}): Diagram {
+      return create(DiagramSchema, { graph: create(GraphSchema, { elements: parts.elements ?? {}, edges: parts.edges ?? {} }) });
     }
 
     function makeEdgeDelta(key: string, changeType: ChangeType, before?: Edge): EdgeDelta {
       return create(EdgeDeltaSchema, { edgeId: key, changeType, before });
     }
 
-    function makeGroupDelta(key: string, changeType: ChangeType, before?: Group): GroupDelta {
-      return create(GroupDeltaSchema, { groupId: key, changeType, before });
-    }
-
     // Repaired by hand, twice. The helpers built the delta messages with a
     // field named `key`, which none of them has -- content.proto declares
-    // node_id, edge_id and group_id, and create() drops an unknown field
+    // element_id and edge_id, and create() drops an unknown field
     // silently, so every id was '' and restores landed under ''. The cases
-    // also built Node/Edge/Group with an `id`; those carry none, the map
+    // also built Element/Edge with an `id`; those carry none, the map
     // key being the identity.
-    function makeNodeDelta(key: string, changeType: ChangeType, before?: Node): NodeDelta {
-      return create(NodeDeltaSchema, { nodeId: key, changeType, before });
+    function makeElementDelta(key: string, changeType: ChangeType, before?: Element): ElementDelta {
+      return create(ElementDeltaSchema, { elementId: key, changeType, before });
     }
 
     // WHEN: An empty target graph and a delta with no node, edge, or group entries produce an empty overlay with matching empty change-type maps.
@@ -55,9 +51,9 @@ describe('testgen_delta__mergeDelta', () => {
         expect(result.nodes).toEqual({});
         expect(result.edges).toEqual({});
         expect(result.groups).toEqual({});
-        expect(Object.keys(result.diagram.graph?.nodes ?? {})).toEqual([]);
+        expect(Object.keys(result.diagram.graph?.elements ?? {})).toEqual([]);
         expect(Object.keys(result.diagram.graph?.edges ?? {})).toEqual([]);
-        expect(Object.keys(result.diagram.graph?.groups ?? {})).toEqual([]);
+        expect(result.diagram.graph?.elements).toEqual({});
     });
 
     test.skip('copy_target_elements_unchanged', () => {
@@ -67,11 +63,11 @@ describe('testgen_delta__mergeDelta', () => {
     test('existing_key_non_deleted_delta', () => {
         fc.assert(
             fc.property(fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED), (value) => {
-        const node = create(NodeSchema, {});
-        const target = makeDiagram({ nodes: { n: node } });
-        const result = mergeDelta(target, makeDelta({ nodeDeltas: [makeNodeDelta('n', value, node)] }));
+        const node = create(ElementSchema, {});
+        const target = makeDiagram({ elements: { n: node } });
+        const result = mergeDelta(target, makeDelta({ elementDeltas: [makeElementDelta('n', value, node)] }));
         expect(result.nodes.n).toBe(value);
-        expect(result.diagram.graph?.nodes?.n).toBe(node);
+        expect(result.diagram.graph?.elements?.n).toBe(node);
             })
         );
     });
@@ -79,9 +75,9 @@ describe('testgen_delta__mergeDelta', () => {
     test('missing_key_non_deleted_delta', () => {
         fc.assert(
             fc.property(fc.constantFrom(ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.UNCHANGED), (value) => {
-        const node = create(NodeSchema, {});
-        const result = mergeDelta(makeDiagram(), makeDelta({ nodeDeltas: [makeNodeDelta('n', value, node)] }));
-        expect(result.diagram.graph?.nodes?.n).toBeUndefined();
+        const node = create(ElementSchema, {});
+        const result = mergeDelta(makeDiagram(), makeDelta({ elementDeltas: [makeElementDelta('n', value, node)] }));
+        expect(result.diagram.graph?.elements?.n).toBeUndefined();
         expect(result.nodes.n).toBeUndefined();
             })
         );
@@ -139,10 +135,10 @@ describe('testgen_delta__mergeDelta', () => {
     // WHEN: A deleted edge between two deleted nodes survives when the edge and both endpoint nodes have set before values, because all three are present in the finished union.
     // THEN: It retains and marks DELETED an edge between two deleted nodes when the edge and both nodes have set before values.
     test('restore_edge_between_restored_nodes', () => {
-        const s = create(NodeSchema, {});
-        const t = create(NodeSchema, {});
+        const s = create(ElementSchema, {});
+        const t = create(ElementSchema, {});
         const edge = create(EdgeSchema, { source: 's', target: 't' });
-        const result = mergeDelta(makeDiagram(), makeDelta({ nodeDeltas: [makeNodeDelta('s', ChangeType.DELETED, s), makeNodeDelta('t', ChangeType.DELETED, t)], edgeDeltas: [makeEdgeDelta('e', ChangeType.DELETED, edge)] }));
+        const result = mergeDelta(makeDiagram(), makeDelta({ elementDeltas: [makeElementDelta('s', ChangeType.DELETED, s), makeElementDelta('t', ChangeType.DELETED, t)], edgeDeltas: [makeEdgeDelta('e', ChangeType.DELETED, edge)] }));
         expect(result.diagram.graph?.edges?.e).toBe(edge);
         expect(result.edges.e).toBe(ChangeType.DELETED);
     });
@@ -154,11 +150,11 @@ describe('testgen_delta__mergeDelta', () => {
     // WHEN: A DELETED group is restored as an empty group when all nodes that used to belong to it survive in target rather than being reported DELETED.
     // THEN: It restores a deleted group as an empty group when all former members survive in target.
     test('deleted_group_with_surviving_members_is_empty', () => {
-        const group = create(GroupSchema, {});
-        const member = create(NodeSchema, { parentGroup: 'g' });
-        const result = mergeDelta(makeDiagram({ nodes: { n: member } }), makeDelta({ groupDeltas: [makeGroupDelta('g', ChangeType.DELETED, group)] }));
-        expect(result.diagram.graph?.groups?.g).toBe(group);
-        expect(result.diagram.graph?.nodes?.n).toBe(member);
+        const group = create(ElementSchema, { role: ElementRole.GROUPING });
+        const member = create(ElementSchema, { parent: 'g' });
+        const result = mergeDelta(makeDiagram({ elements: { n: member } }), makeDelta({ elementDeltas: [makeElementDelta('g', ChangeType.DELETED, group)] }));
+        expect(result.diagram.graph?.elements?.g).toBe(group);
+        expect(result.diagram.graph?.elements?.n).toBe(member);
     });
 
     test.skip('preserve_existing_dangling_target_edge', () => {

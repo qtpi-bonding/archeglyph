@@ -9,9 +9,8 @@ export class DiffCounts {
 export class DiffOutput {
   baseRef!: string;
   targetRef!: string;
-  nodes!: DiffCounts;
+  elements!: DiffCounts;
   edges!: DiffCounts;
-  groups!: DiffCounts;
   changed!: boolean;
   outPath?: string;
 }

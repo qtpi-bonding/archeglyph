@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
-// Vendored from archegraph @ crates/core/proto/common.proto (commit 42b66e2)
+// Vendored from archegraph @ crates/core/proto/common.proto (commit 2e755494)
+// Stripped: buf/validate annotations.
 // Keep in sync with upstream when upgrading archegraph.
 
 syntax = "proto3";
 package archegraph.common;
+
+// ============================================================================
+// SHARED VOCABULARY (Common Types)
+// ============================================================================
 
 // Standard Computer Science Categories for Entities
 enum NodeKind {
@@ -15,70 +20,132 @@ enum NodeKind {
   ENUM = 5;
   METHOD = 6;
   FIELD = 7;
-  CONSTANT = 8;
+  CONSTANT = 8; // top-level value declarations (Rust `const`/`static`,
+  // TS `const X = value`, Python module-level assignment).
 }
 
+// Standard Categories for Relationships.
+//
+// Four-quadrant model: { structural | behavioral } × { static | runtime }.
+//   - DEPENDENCY (static structural)  : imports, type refs, inheritance
+//   - DATA       (runtime structural) : value flows at runtime — RESERVED
+//   - INVOCATION (static behavioral)  : call site found by parser
+//   - EXECUTION  (runtime behavioral) : call observed at runtime — RESERVED
+// Plus CONTAINMENT for the AST-hierarchy tree (parent → child).
 enum EdgeKind {
   EDGE_KIND_UNSPECIFIED = 0;
-  CONTAINMENT = 1;
-  DEPENDENCY = 2;
-  INVOCATION = 3;
-  DATA = 4;
-  EXECUTION = 5;
+  CONTAINMENT = 1; // "is inside" — tree edges, AST hierarchy
+  DEPENDENCY = 2; // STATIC structural: imports, type refs, inheritance
+  INVOCATION = 3; // the source calls the target
+  DATA = 4; // RUNTIME structural: value flows at runtime — reserved
+  EXECUTION = 5; // RUNTIME behavioral: call observed at runtime — reserved
 }
 
+// ISO/IEC 11404:2007 primitive datatypes — conceptually indivisible leaf types.
+// Used for type normalization when a field or node resolves to a primitive.
 enum PrimitiveKind {
   PRIMITIVE_UNSPECIFIED = 0;
-  BOOLEAN    = 1;
-  STATE      = 2;
+
+  // Logic & State
+  BOOLEAN = 1;
+  STATE = 2;
   ENUMERATED = 3;
-  VOID       = 4;
-  INTEGER    = 5;
-  RATIONAL   = 6;
-  SCALED     = 7;
-  REAL       = 8;
-  COMPLEX    = 9;
-  ORDINAL    = 10;
-  CHARACTER  = 11;
-  BIT        = 12;
-  OCTET      = 13;
-  DATE_TIME  = 14;
+  VOID = 4;
+
+  // Numbers
+  INTEGER = 5;
+  RATIONAL = 6;
+  SCALED = 7;
+  REAL = 8;
+  COMPLEX = 9;
+  ORDINAL = 10;
+
+  // Text & Binary
+  CHARACTER = 11;
+  BIT = 12;
+  OCTET = 13;
+
+  // Time
+  DATE_TIME = 14;
 }
 
+// Sub-classifies EdgeKind. Part of edge identity: (source, target, kind, role).
+// DEPENDENCY roles: EXTENDS, IMPLEMENTS, RETURN, THROWS, OVERRIDES, TYPE_OF,
+// ALIASES, TYPE_BOUND, USES. INVOCATION and CONTAINMENT edges use UNSPECIFIED.
 enum EdgeRole {
   EDGE_ROLE_UNSPECIFIED = 0;
-  EXTENDS = 1;
-  IMPLEMENTS = 2;
-  RETURN = 3;
-  THROWS = 4;
-  OVERRIDES = 5;
-  TYPE_OF = 6;
-  ALIASES = 7;
-  TYPE_BOUND = 8;
+  EXTENDS = 1; // Class inheritance (inheriting implementation)
+  IMPLEMENTS = 2; // Interface realization (contract fulfillment)
+  RETURN = 3; // Return type reference
+  THROWS = 4; // Declared error/exception type reference
+  OVERRIDES = 5; // Method-to-method override (subclass impl → parent decl)
+  TYPE_OF = 6; // Slot/field/param has this type (symmetric with RETURN)
+  ALIASES = 7; // Alias name → aliased type (Rust `type Foo = Bar`, TS `type`, Dart `typedef`)
+  TYPE_BOUND = 8; // Type parameter bound (`T: Send`, `T extends Comparable`)
+  USES = 9; // Body or initializer uses the target without calling it
+  // (a type, a constant, a function passed or stored as a value)
 }
 
+// Optional, flat bag of computed/derived per-node signals.
+// Used by both private (GraphNode) and public (ViewNode). Computed once on the
+// private graph and projected through unchanged.
+//
+// All fields are optional. Absence means "not computed", not zero. Add new
+// derived signals here instead of growing first-class fields on Node/ViewNode.
 message NodeMetrics {
-  optional uint32 depth = 1;
-  optional uint32 subtree_size = 2;
-  optional uint32 degree = 3;
+  // Containment / structural
+  optional uint32 depth = 1; // Depth in containment tree (0 = root)
+  optional uint32 subtree_size = 2; // Number of descendants (including self)
+
+  // Connectivity (counted on DEPENDENCY + INVOCATION edges — the static graph)
+  optional uint32 degree = 3; // Total edges touching this node (all kinds)
   optional uint32 fan_in = 4;
   optional uint32 fan_out = 5;
+
+  // Communities — directed Louvain on DEPENDENCY+INVOCATION subgraph.
+  // Points at the leaf (finest-level) community for the node. Coarser
+  // ancestors are reached by walking Community.parent_id up.
   optional uint32 community_id = 6;
 }
 
+// A community discovered by community detection (Louvain today; Leiden, Infomap
+// later). Communities form a tree via parent_id. NodeMetrics.community_id
+// always points at the leaf; coarser ancestors are reached by walking
+// parent_id up. Root communities have no parent_id.
+//
+// v1 ships only the final-pass partition (every parent_id is None / unset).
+// The shape supports nesting; future additions populate parent_id without a
+// wire-format change.
 message Community {
-  uint32 id = 1;
-  string label = 2;
-  optional uint32 parent_id = 3;
+  uint32 id = 1; // Matches NodeMetrics.community_id when this is a leaf
+  string label = 2; // Human-readable. Heuristic default for v1.
+  optional uint32 parent_id = 3; // Coarser community containing this one. Unset = root.
 }
 
-message EdgeMetrics {
-}
+// Optional, flat bag of computed/derived per-edge signals.
+// Mirrors NodeMetrics: same message used on both private (GraphEdge) and
+// public (ViewEdge); computed once on the private graph and projected through.
+//
+// Empty for now — add new optional, derived per-edge signals here (e.g.
+// edge betweenness, churn, weight_normalized) instead of growing first-class
+// fields on Edge/ViewEdge.
+message EdgeMetrics {}
 
+// Optional, flat bag of computed/derived per-graph signals.
+// Mirrors NodeMetrics / EdgeMetrics: same message used on both private
+// (Archegraph) and public (Archeview); computed once on the private graph
+// and projected through unchanged.
+//
+// Add new derived graph-level signals here (e.g. modularity, spectral_radius,
+// density) instead of growing first-class fields on Archegraph/Archeview.
 message GraphMetrics {
+  // Communities discovered by community detection on the DEPENDENCY+INVOCATION
+  // subgraph. Key matches NodeMetrics.community_id (and Community.id).
+  // v1 ships flat (every parent_id unset); the shape supports nesting.
   map<uint32, Community> communities = 1;
 }
 
+// Types of changes observed in a Diff
 enum ChangeType {
   CHANGE_TYPE_UNSPECIFIED = 0;
   UNCHANGED = 1;
@@ -87,6 +154,8 @@ enum ChangeType {
   MODIFIED = 4;
 }
 
+// Field cardinality / multiplicity. Single source of truth for both private
+// (graph.proto) and public (view.proto) — the only FieldLabel in the system.
 enum FieldLabel {
   FIELD_LABEL_UNSPECIFIED = 0;
   FIELD_LABEL_OPTIONAL = 1;
@@ -94,21 +163,49 @@ enum FieldLabel {
   FIELD_LABEL_REPEATED = 3;
 }
 
+// Unit of the column fields in SourceLocation / SourceContext. Mirrors SCIP's
+// PositionEncoding in the same numeric order (SCIP declares it per Document;
+// the indexer picks it by implementation language). Lines do not depend on it.
+enum PositionEncoding {
+  POSITION_ENCODING_UNSPECIFIED = 0;
+  POSITION_ENCODING_UTF8_BYTES = 1;
+  POSITION_ENCODING_UTF16_CODE_UNITS = 2;
+  POSITION_ENCODING_UTF32_CODE_POINTS = 3;
+}
+
+// A range in a source file. Used by ViewNode / GraphNode.NodeCodeData to
+// describe where a symbol is defined, and by ViewEdge.occurrences.
+//
+// Lines and columns are 0-based, as the extractors (SCIP, tree-sitter) emit
+// them. `None` means the position is unavailable. Display layers may format +1.
+// start_column / end_column are in the unit named by position_encoding, which
+// is UNSPECIFIED for locations that do not come from SCIP (e.g. spec files).
 message SourceLocation {
   string file_path = 1;
   optional uint32 start_line = 2;
   optional uint32 end_line = 3;
+  optional uint32 start_column = 4;
+  optional uint32 end_column = 5;
+  PositionEncoding position_encoding = 6; // unit of the two column fields
 }
 
+// Per-symbol validation rules lifted from spec annotations (e.g. buf.validate)
+// or extracted from runtime introspection. Mirrors graph.proto::ValidationContext,
+// promoted to common so view types can reference it without depending on
+// graph.proto. The two are semantically identical; the schema-package version
+// should be retired once consumers migrate.
 message ValidationContext {
   bool is_required = 1;
   repeated Constraint constraints = 2;
 }
 
 message Constraint {
-  string type = 1;
-  string value = 2;
-  string message = 3;
-  map<string, string> metadata = 4;
-  string source = 5;
+  string type = 1; // e.g. "min_length", "email", "regex"
+  string value = 2; // the constraint argument (often a literal)
+  string message = 3; // optional override message
+  map<string, string> metadata = 4; // language-specific extras
+  string source = 5; // origin tag (e.g. "buf.validate")
 }
+
+// Per-entity checks are `repeated CheckStep checks` on each declaration
+// (CheckStep is in typeref.proto).

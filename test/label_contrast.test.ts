@@ -11,18 +11,18 @@ const PROJECT_ROOT: string = resolve(import.meta.dir, '..');
 const THEMES: ReadonlyArray<string> = ['light', 'dark', 'blueprint'];
 
 const DIAGRAM = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: 'label-contrast',
   title: [{ locale: 'en', source: 'Label contrast' }],
   graph: {
-    nodes: {
-      a: { label: [{ locale: 'en', source: 'A' }], parentGroup: 'g' },
+    elements: {
+      a: { label: [{ locale: 'en', source: 'A' }], parent: 'g' },
       b: { label: [{ locale: 'en', source: 'B' }] },
+      g: { label: [{ locale: 'en', source: 'Group' }], role: 'ELEMENT_ROLE_GROUPING' },
     },
     edges: {
       a__b: { source: 'a', target: 'b', label: [{ locale: 'en', source: 'edge label' }] },
     },
-    groups: { g: { label: [{ locale: 'en', source: 'Group' }] } },
   },
   metadata: { generator: 'test', canonicalLocale: 'en' },
 };

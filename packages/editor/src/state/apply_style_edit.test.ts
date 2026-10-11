@@ -10,8 +10,8 @@ describe('what a patch can describe one field of', () => {
   const name = (short: string) => `archeglyph.style.v1.${short}`;
 
   test.each([
-    'NodeStyleEntry', 'EdgeStyleEntry', 'GroupStyleEntry', 'AnnotationEntry',
-    'NodeLayout', 'EdgeLayout', 'GroupLayout', 'AnnotationLayout',
+    'ElementStyleEntry', 'EdgeStyleEntry', 'AnnotationEntry',
+    'ElementLayout', 'EdgeLayout', 'BoxLayout', 'AnnotationLayout',
     'Glyph2D', 'Glyph1D', 'Typography', 'Stroke', 'Fill', 'Glow', 'CanvasStyle',
   ])('%s is patchable field by field', (short) => {
     expect(PATCHABLE_TYPES.has(name(short))).toBe(true);
@@ -25,6 +25,6 @@ describe('what a patch can describe one field of', () => {
   });
 
   test('nothing else has quietly joined the patchable side', () => {
-    expect(PATCHABLE_TYPES.size).toBe(15);
+    expect(PATCHABLE_TYPES.size).toBe(14);
   });
 });

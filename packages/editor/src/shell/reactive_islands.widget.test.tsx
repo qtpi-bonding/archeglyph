@@ -12,6 +12,7 @@ const { createSignal } = await import('solid-js');
 const { StateIsland } = await import('./state_island');
 const { PendingBanner } = await import('../pending/pending_banner');
 const { EchoIsland } = await import('./echo_island');
+const { DiagramLayer } = await import('../canvas/diagram_layer');
 const { gestureTokens } = await import('./key_echo');
 const { beginModalGesture } = await import('../ui_state/modal_gesture');
 
@@ -93,5 +94,61 @@ describe('EchoIsland follows the model', () => {
     expect(container.querySelector('.ag-echo')).toBeNull();
 
     cleanup();
+  });
+});
+
+describe('DiagramLayer dims by element id, not by the SVG kind attribute', () => {
+  // A closed container is a group in the scene but is drawn like a block, and
+  // the SVG's `data-kind` is a rendering detail the editor must not depend on.
+  // The attribute here deliberately disagrees with the scene's ref kind.
+  const svg = [
+    '<svg viewBox="0 0 10 10">',
+    '<g id="group-P" data-element-id="P" data-kind="node"></g>',
+    '<g id="node-x" data-element-id="x" data-kind="node"></g>',
+    '</svg>',
+  ].join('');
+
+  test('a closed container named by its scene ref is dimmed whatever the SVG calls it', () => {
+    const { container } = render(() => (
+      <svg><DiagramLayer svg={svg} dimmed={[{ kind: 'group', id: 'P' }]} /></svg>
+    ));
+
+    expect(container.querySelector('[data-element-id="P"]')?.classList.contains('diagram-layer-dimmed')).toBe(true);
+    expect(container.querySelector('[data-element-id="x"]')?.classList.contains('diagram-layer-dimmed')).toBe(false);
+
+    cleanup();
+  });
+});
+
+describe('DiagramLayer keeps edges, elements and annotations apart', () => {
+  // Edges, elements and annotations are separate id namespaces, so an edge and
+  // an element can share an id; dimming one must not dim the other.
+  const svg = [
+    '<svg viewBox="0 0 10 10">',
+    '<g id="node-a" data-element-id="a" data-kind="node"></g>',
+    '<g id="edge-a" data-element-id="a" data-kind="edge"></g>',
+    '<g id="annotation-a" data-element-id="a" data-kind="annotation"></g>',
+    '</svg>',
+  ].join('');
+
+  const dimmedIds = (dimmed: Array<{ kind: 'node' | 'group' | 'edge' | 'annotation'; id: string }>): string[] => {
+    const { container } = render(() => (
+      <svg><DiagramLayer svg={svg} dimmed={dimmed} /></svg>
+    ));
+    const out = Array.from(container.querySelectorAll('.diagram-layer-dimmed')).map((el) => el.id);
+    cleanup();
+    return out.sort();
+  };
+
+  test('an edge ref dims the edge only', () => {
+    expect(dimmedIds([{ kind: 'edge', id: 'a' }])).toEqual(['edge-a']);
+  });
+
+  test('an element ref dims the element only', () => {
+    expect(dimmedIds([{ kind: 'node', id: 'a' }])).toEqual(['node-a']);
+  });
+
+  test('an annotation ref dims the annotation only', () => {
+    expect(dimmedIds([{ kind: 'annotation', id: 'a' }])).toEqual(['annotation-a']);
   });
 });

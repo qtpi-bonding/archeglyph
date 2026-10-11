@@ -43,9 +43,8 @@ export function mergeThreads(stylesheet: Stylesheet, entries: ReadonlyArray<Thre
       schemaVersion: edit.schemaVersion,
       id: edit.id,
       baseHash: edit.baseHash,
-      nodeChanges: edit.nodeChanges,
+      elementChanges: edit.elementChanges,
       edgeChanges: edit.edgeChanges,
-      groupChanges: edit.groupChanges,
       annotationChanges: edit.annotationChanges,
       canvasAfter: edit.canvasAfter,
       themesAfter: edit.themesAfter,
@@ -63,10 +62,10 @@ export function mergeThreads(stylesheet: Stylesheet, entries: ReadonlyArray<Thre
     schemaVersion: stylesheet.schemaVersion,
     themes: stylesheet.themes,
     canvas: stylesheet.canvas,
-    nodes: stylesheet.nodes,
+    elements: stylesheet.elements,
     edges: stylesheet.edges,
-    groups: stylesheet.groups,
     annotations: stylesheet.annotations,
     pendingEdits,
+    openDepth: stylesheet.openDepth,
   });
 }

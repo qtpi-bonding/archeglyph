@@ -28,6 +28,7 @@ import { create } from '@bufbuild/protobuf';
 import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
 import { seedComponentBindings } from '../resolver/seed_bindings';
@@ -41,13 +42,14 @@ const require_ = createRequire(import.meta.url);
 
 /** A node inside a group, a node outside it, and edges of both kinds. */
 const GROUPED = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'grouped',
   graph: {
-    nodes: {
+    elements: {
       outside: { label: [{ locale: 'en', source: 'outside' }] },
-      inner_a: { label: [{ locale: 'en', source: 'a' }], parentGroup: 'box' },
-      inner_b: { label: [{ locale: 'en', source: 'b' }], parentGroup: 'box' },
+      inner_a: { label: [{ locale: 'en', source: 'a' }], parent: 'box' },
+      inner_b: { label: [{ locale: 'en', source: 'b' }], parent: 'box' },
+      box: { label: [{ locale: 'en', source: 'box' }], role: 'ELEMENT_ROLE_GROUPING' },
     },
     edges: {
       // crosses the group boundary — bug 2
@@ -55,7 +57,6 @@ const GROUPED = {
       // lives entirely inside the group — bug 1
       internal: { source: 'inner_a', target: 'inner_b' },
     },
-    groups: { box: { label: [{ locale: 'en', source: 'box' }] } },
   },
   metadata: { canonicalLocale: 'en' },
 };
@@ -68,7 +69,7 @@ async function layout(json: unknown): Promise<LaidOutDiagram> {
   const parsed = fromJson(DiagramSchema, JSON.stringify(json));
   const result = await layoutPipeline(
     parsed,
-    seedComponentBindings(parsed, create(StylesheetSchema, { schemaVersion: 1 }), blueprintTheme()),
+    seedComponentBindings(parsed, create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }), blueprintTheme()),
     new Map([['default', blueprintTheme()]]),
     new LayoutEngineImpl(new ElkAdapterImpl(elk)),
   );

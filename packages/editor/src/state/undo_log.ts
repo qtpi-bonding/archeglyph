@@ -5,8 +5,7 @@ import {
   AnnotationEntry,
   CanvasStyle,
   EdgeStyleEntry,
-  GroupStyleEntry,
-  NodeStyleEntry,
+  ElementStyleEntry,
   StyleEdit,
   Stylesheet,
   StylesheetSchema,
@@ -14,22 +13,22 @@ import {
 import { Option } from '@archeglyph/proto/util/result';
 
 export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapshot): Stylesheet {
-  const restoredNodes: { [key: string]: NodeStyleEntry } = {};
-  for (const id of Object.keys(current.nodes)) {
-    if (snapshot.nodes.has(id)) {
-      const val: Option<NodeStyleEntry> = snapshot.nodes.get(id) ?? null;
+  const restoredElements: { [key: string]: ElementStyleEntry } = {};
+  for (const id of Object.keys(current.elements)) {
+    if (snapshot.elements.has(id)) {
+      const val: Option<ElementStyleEntry> = snapshot.elements.get(id) ?? null;
       if (val !== null) {
-        restoredNodes[id] = val;
+        restoredElements[id] = val;
       }
     } else {
-      restoredNodes[id] = current.nodes[id];
+      restoredElements[id] = current.elements[id];
     }
   }
-  for (const id of snapshot.nodes.keys()) {
-    const val: Option<NodeStyleEntry> = snapshot.nodes.get(id) ?? null;
-    const inCurrent: boolean = Object.hasOwn(current.nodes, id);
+  for (const id of snapshot.elements.keys()) {
+    const val: Option<ElementStyleEntry> = snapshot.elements.get(id) ?? null;
+    const inCurrent: boolean = Object.hasOwn(current.elements, id);
     if (val !== null && !inCurrent) {
-      restoredNodes[id] = val;
+      restoredElements[id] = val;
     }
   }
 
@@ -49,25 +48,6 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
     const inCurrent: boolean = Object.hasOwn(current.edges, id);
     if (val !== null && !inCurrent) {
       restoredEdges[id] = val;
-    }
-  }
-
-  const restoredGroups: { [key: string]: GroupStyleEntry } = {};
-  for (const id of Object.keys(current.groups)) {
-    if (snapshot.groups.has(id)) {
-      const val: Option<GroupStyleEntry> = snapshot.groups.get(id) ?? null;
-      if (val !== null) {
-        restoredGroups[id] = val;
-      }
-    } else {
-      restoredGroups[id] = current.groups[id];
-    }
-  }
-  for (const id of snapshot.groups.keys()) {
-    const val: Option<GroupStyleEntry> = snapshot.groups.get(id) ?? null;
-    const inCurrent: boolean = Object.hasOwn(current.groups, id);
-    if (val !== null && !inCurrent) {
-      restoredGroups[id] = val;
     }
   }
 
@@ -101,11 +81,11 @@ export function restoreFromSnapshot(current: Stylesheet, snapshot: BeforeSnapsho
     schemaVersion: current.schemaVersion,
     themes: restoredThemes,
     canvas: restoredCanvas,
-    nodes: restoredNodes,
+    elements: restoredElements,
     edges: restoredEdges,
-    groups: restoredGroups,
     annotations: restoredAnnotations,
     pendingEdits: snapshot.pendingEditsBefore,
+    openDepth: current.openDepth,
   });
 }
 export interface UndoEntry {
@@ -116,12 +96,12 @@ export interface UndoEntry {
   pendingEditsAfter?: StyleEdit[];
 }
 export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSnapshot {
-  const nodes: Map<string, Option<NodeStyleEntry>> = new Map();
-  for (const change of edit.nodeChanges) {
-    const value: NodeStyleEntry | undefined = Object.hasOwn(current.nodes, change.nodeId)
-      ? current.nodes[change.nodeId]
+  const elements: Map<string, Option<ElementStyleEntry>> = new Map();
+  for (const change of edit.elementChanges) {
+    const value: ElementStyleEntry | undefined = Object.hasOwn(current.elements, change.elementId)
+      ? current.elements[change.elementId]
       : undefined;
-    nodes.set(change.nodeId, value !== undefined ? value : null);
+    elements.set(change.elementId, value !== undefined ? value : null);
   }
 
   const edges: Map<string, Option<EdgeStyleEntry>> = new Map();
@@ -130,14 +110,6 @@ export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSna
       ? current.edges[change.edgeId]
       : undefined;
     edges.set(change.edgeId, value !== undefined ? value : null);
-  }
-
-  const groups: Map<string, Option<GroupStyleEntry>> = new Map();
-  for (const change of edit.groupChanges) {
-    const value: GroupStyleEntry | undefined = Object.hasOwn(current.groups, change.groupId)
-      ? current.groups[change.groupId]
-      : undefined;
-    groups.set(change.groupId, value !== undefined ? value : null);
   }
 
   const annotations: Map<string, Option<AnnotationEntry>> = new Map();
@@ -156,9 +128,8 @@ export function captureSnapshot(current: Stylesheet, edit: StyleEdit): BeforeSna
   const themesBefore: Option<Record<string, string>> = themesTouched ? current.themes : null;
 
   return {
-    nodes,
+    elements,
     edges,
-    groups,
     annotations,
     canvasTouched,
     canvasBefore,
@@ -186,9 +157,8 @@ export function pushUndoEntry(
   return [...log, entry];
 }
 export interface BeforeSnapshot {
-  nodes: Map<string, Option<NodeStyleEntry>>;
+  elements: Map<string, Option<ElementStyleEntry>>;
   edges: Map<string, Option<EdgeStyleEntry>>;
-  groups: Map<string, Option<GroupStyleEntry>>;
   annotations: Map<string, Option<AnnotationEntry>>;
   canvasTouched: boolean;
   canvasBefore: Option<CanvasStyle>;

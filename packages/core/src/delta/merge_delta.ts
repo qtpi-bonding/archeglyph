@@ -7,45 +7,41 @@ import {
   Diagram,
   DiagramSchema,
   Edge,
+  Element,
+  ElementRole,
+  ElementSchema,
   GraphSchema,
-  Group,
-  GroupSchema,
-  Node,
-  NodeSchema,
 } from '@archeglyph/proto/gen/content_pb';
 import { init } from '@archeglyph/proto/util/init';
+import { childrenIndex, isGroupLike } from '../resolver/element_form';
 import { DeltaOverlay } from './delta_overlay';
 
 export function mergeDelta(target: Diagram, delta: Delta): DeltaOverlay {
   const graph = target.graph;
-  const nodes: { [key: string]: Node } = graph !== undefined ? { ...graph.nodes } : {};
+  const elements: { [key: string]: Element } = graph !== undefined ? { ...graph.elements } : {};
   const edges: { [key: string]: Edge } = graph !== undefined ? { ...graph.edges } : {};
-  const groups: { [key: string]: Group } = graph !== undefined ? { ...graph.groups } : {};
-  const nodeTypes: Record<string, ChangeType> = {};
+  const elementTypes: Record<string, ChangeType> = {};
   const edgeTypes: Record<string, ChangeType> = {};
-  const groupTypes: Record<string, ChangeType> = {};
-  const restoredNodes = new Set<string>();
-  const restoredGroups = new Set<string>();
+  const restoredElements = new Set<string>();
   const restoredEdges = new Set<string>();
 
-  for (const key of Object.keys(nodes)) nodeTypes[key] = ChangeType.UNCHANGED;
+  for (const key of Object.keys(elements)) elementTypes[key] = ChangeType.UNCHANGED;
   for (const key of Object.keys(edges)) edgeTypes[key] = ChangeType.UNCHANGED;
-  for (const key of Object.keys(groups)) groupTypes[key] = ChangeType.UNCHANGED;
 
-  for (const entry of delta.nodeDeltas) {
-    const absent = nodes[entry.nodeId] === undefined;
+  for (const entry of delta.elementDeltas) {
+    const absent = elements[entry.elementId] === undefined;
     const side = entry.changeType === ChangeType.DELETED ? entry.before : entry.after;
     if (entry.changeType === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
       continue;
     }
     if (absent) {
       if (side !== undefined) {
-        nodes[entry.nodeId] = side;
-        nodeTypes[entry.nodeId] = entry.changeType;
-        restoredNodes.add(entry.nodeId);
+        elements[entry.elementId] = side;
+        elementTypes[entry.elementId] = entry.changeType;
+        restoredElements.add(entry.elementId);
       }
     } else {
-      nodeTypes[entry.nodeId] = entry.changeType;
+      elementTypes[entry.elementId] = entry.changeType;
     }
   }
 
@@ -66,45 +62,25 @@ export function mergeDelta(target: Diagram, delta: Delta): DeltaOverlay {
     }
   }
 
-  for (const entry of delta.groupDeltas) {
-    const absent = groups[entry.groupId] === undefined;
-    const side = entry.changeType === ChangeType.DELETED ? entry.before : entry.after;
-    if (entry.changeType === ChangeType.CHANGE_TYPE_UNSPECIFIED) {
-      continue;
-    }
-    if (absent) {
-      if (side !== undefined) {
-        groups[entry.groupId] = side;
-        groupTypes[entry.groupId] = entry.changeType;
-        restoredGroups.add(entry.groupId);
-      }
-    } else {
-      groupTypes[entry.groupId] = entry.changeType;
+  for (const key of restoredElements) {
+    const element = elements[key];
+    if (element.parent !== undefined && elements[element.parent] === undefined) {
+      elements[key] = create(ElementSchema, { ...element, parent: undefined });
     }
   }
-
-  for (const key of restoredNodes) {
-    const node = nodes[key];
-    if (node.parentGroup !== undefined && groups[node.parentGroup] === undefined) {
-      nodes[key] = create(NodeSchema, { ...node, parentGroup: undefined });
-    }
-  }
-  for (const key of restoredGroups) {
-    const group = groups[key];
-    if (group.parentGroup !== undefined && groups[group.parentGroup] === undefined) {
-      groups[key] = create(GroupSchema, { ...group, parentGroup: undefined });
-    }
-  }
+  // A restored edge is only drawn if both endpoints still exist as ENTITY
+  // elements; one that now points at a grouping would break the endpoint rule.
+  const isEntity = (id: string): boolean =>
+    elements[id] !== undefined && elements[id].role !== ElementRole.GROUPING;
   for (const key of Object.keys(edges)) {
     const edge = edges[key];
-    if (restoredEdges.has(key) &&
-        (nodes[edge.source] === undefined || nodes[edge.target] === undefined)) {
+    if (restoredEdges.has(key) && (!isEntity(edge.source) || !isEntity(edge.target))) {
       delete edges[key];
       delete edgeTypes[key];
     }
   }
 
-  const mergedGraph = create(GraphSchema, { nodes, edges, groups });
+  const mergedGraph = create(GraphSchema, { elements, edges });
   const diagram = create(DiagramSchema, {
     schemaVersion: target.schemaVersion,
     id: target.id,
@@ -112,6 +88,19 @@ export function mergeDelta(target: Diagram, delta: Delta): DeltaOverlay {
     graph: mergedGraph,
     metadata: target.metadata,
   });
+
+  // The overlay keys change types by how an element is drawn: groups for
+  // anything with children (or a grouping), nodes for the rest.
+  const children = childrenIndex(elements);
+  const nodeTypes: Record<string, ChangeType> = {};
+  const groupTypes: Record<string, ChangeType> = {};
+  for (const key of Object.keys(elementTypes)) {
+    if (isGroupLike(elements, children, key)) {
+      groupTypes[key] = elementTypes[key];
+    } else {
+      nodeTypes[key] = elementTypes[key];
+    }
+  }
   return init(new DeltaOverlay(), {
     diagram,
     nodes: nodeTypes,

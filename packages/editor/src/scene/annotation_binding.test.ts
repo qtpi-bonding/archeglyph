@@ -15,9 +15,10 @@ import { getBundledTheme } from '@archeglyph/themes';
 import { addAnnotationEdit } from '../state/edits/annotation';
 import { createEditorState } from '../state/create_editor_state';
 import { createScene } from './scene';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const theme = getBundledTheme('blueprint');
-const diagram = create(DiagramSchema, { schemaVersion: 1, graph: create(GraphSchema, {}) });
+const diagram = create(DiagramSchema, { schemaVersion: CONTENT_SCHEMA_VERSION, graph: create(GraphSchema, {}) });
 
 function spyEngine(): { engine: LayoutEngine; seen: () => LayoutRequest | undefined } {
   let captured: LayoutRequest | undefined;
@@ -42,7 +43,7 @@ describe('an annotation added mid-session reaches layout with a resolved style',
     const { engine, seen } = spyEngine();
 
     await createRoot(async (dispose) => {
-      const state = createEditorState(diagram, create(StylesheetSchema, { schemaVersion: 1 }));
+      const state = createEditorState(diagram, create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }));
       createScene(state, () => new Map([['default', theme]]), engine, () => undefined);
       await settle();
 

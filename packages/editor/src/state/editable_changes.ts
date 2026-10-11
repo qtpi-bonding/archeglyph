@@ -4,16 +4,14 @@ import { Diagram } from '../../../proto/src/gen/content_pb';
 import { StyleEdit } from '../../../proto/src/gen/style_pb';
 
 export function editableChanges(edit: StyleEdit, diagram: Diagram): StyleEdit {
-  const nodes = diagram.graph?.nodes ?? {};
+  const elements = diagram.graph?.elements ?? {};
   const edges = diagram.graph?.edges ?? {};
-  const groups = diagram.graph?.groups ?? {};
 
   return {
     ...edit,
     // hasOwn, not `in`: `in` walks the prototype chain.
-    nodeChanges: edit.nodeChanges.filter((change) => Object.hasOwn(nodes, change.nodeId)),
+    elementChanges: edit.elementChanges.filter((change) => Object.hasOwn(elements, change.elementId)),
     edgeChanges: edit.edgeChanges.filter((change) => Object.hasOwn(edges, change.edgeId)),
-    groupChanges: edit.groupChanges.filter((change) => Object.hasOwn(groups, change.groupId)),
     annotationChanges: edit.annotationChanges,
   };
 }

@@ -179,3 +179,28 @@ describe('proposals and the inspector do not compete for one slot', () => {
     expect(frame).toContain('{props.pending}');
   });
 });
+
+describe('the editor never reads element kind from the SVG', () => {
+  // Kind comes from the scene geometry, keyed by element id. The renderer's
+  // `data-kind` follows the view role, so a closed container is a group in
+  // the scene and is drawn like a block: a reader of the attribute would
+  // disagree with the scene about it.
+  const sourceFiles = (dir: string): Array<string> => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return sourceFiles(path);
+    }
+    return /\.tsx?$/.test(entry.name) && !entry.name.includes('.test.') ? [path] : [];
+  });
+
+  test('no editor source reads data-kind off an element', () => {
+    const readers = sourceFiles(join(here, '..')).filter((file) => {
+      const source = readFileSync(file, 'utf8');
+      return /getAttribute\(\s*['"]data-kind['"]/.test(source)
+        || /dataset\.kind\b/.test(source)
+        || /\[data-kind[=\]]/.test(source);
+    });
+
+    expect(readers).toEqual([]);
+  });
+});

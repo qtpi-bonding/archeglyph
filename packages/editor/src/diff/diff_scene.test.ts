@@ -5,11 +5,12 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import { createRoot, createSignal } from 'solid-js';
-import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
 import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import type { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import type { LayoutRequest } from '@archeglyph/core/layout/layout_request';
 import { Err } from '@archeglyph/proto/util/result';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { getBundledTheme } from '@archeglyph/themes';
 
 import { createEditorState } from '../state/create_editor_state';
@@ -20,10 +21,10 @@ const theme = getBundledTheme('blueprint');
 
 function diagramOf(...ids: string[]) {
   return create(DiagramSchema, {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'd',
     graph: create(GraphSchema, {
-      nodes: Object.fromEntries(ids.map((id) => [id, create(NodeSchema, {})])),
+      elements: Object.fromEntries(ids.map((id) => [id, create(ElementSchema, {})])),
     }),
   });
 }
@@ -51,7 +52,7 @@ describe('a base attached to the editor renders as a diff', () => {
 
     await createRoot(async (dispose) => {
       const target = diagramOf('kept');
-      const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: 1 }));
+      const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }));
       const diff = createDiffState(() => state.diagram(), () => 'HEAD');
 
       createScene(state, () => new Map([['default', theme]]), engine, diff.delta);
@@ -74,7 +75,7 @@ describe('a base attached to the editor renders as a diff', () => {
 
     await createRoot(async (dispose) => {
       const target = diagramOf('kept');
-      const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: 1 }));
+      const state = createEditorState(target, create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }));
       const diff = createDiffState(() => state.diagram(), () => 'HEAD');
       const [on, setOn] = createSignal<boolean>(true);
 
@@ -104,7 +105,7 @@ describe('a base attached to the editor renders as a diff', () => {
     const { engine, seen } = spyEngine();
 
     await createRoot(async (dispose) => {
-      const state = createEditorState(diagramOf('inSession'), create(StylesheetSchema, { schemaVersion: 1 }));
+      const state = createEditorState(diagramOf('inSession'), create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }));
       const diff = createDiffState(() => state.diagram(), () => 'open');
       const [showOther, setShowOther] = createSignal<boolean>(false);
 

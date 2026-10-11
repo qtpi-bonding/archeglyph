@@ -10,6 +10,7 @@ import { create } from '@bufbuild/protobuf';
 import {
   CommentSchema, CommentThreadSchema, StyleEditSchema, StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 import { mergeThreads } from '../src/pending/merge_threads';
 
@@ -23,7 +24,7 @@ describe('testgen_pending__mergeThreads', () => {
 
     const makeStylesheet = (comments: ReadonlyArray<ReturnType<typeof makeComment> | undefined>): Parameters<typeof mergeThreads>[0] =>
       create(StylesheetSchema, {
-        schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {},
+        schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, edges: {}, annotations: {},
         pendingEdits: comments.map((threadComment, index: number) => create(StyleEditSchema, {
           id: `edit-${index + 1}`,
           thread: create(CommentThreadSchema, { comments: threadComment === undefined ? [] : [threadComment] }),
@@ -91,7 +92,7 @@ describe('testgen_pending__mergeThreads', () => {
         const existing = value.map((id: string) => makeComment(id, `existing-${id}`));
         const appended = makeComment("new-comment", "new");
         const stylesheet = create(StylesheetSchema, {
-          schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {},
+          schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, edges: {}, annotations: {},
           pendingEdits: [create(StyleEditSchema, {
             id: 'edit-1',
             thread: create(CommentThreadSchema, { comments: existing }),

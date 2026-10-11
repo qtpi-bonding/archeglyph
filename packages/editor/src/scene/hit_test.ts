@@ -8,7 +8,8 @@ import { distance } from '@archeglyph/core/geometry/vec2';
 import { distanceToPolyline } from '@archeglyph/core/geometry/polyline';
 import { ElementRef } from '../ui_state/ui_state';
 import { elementKey } from './element_key';
-import { SceneGeometry } from './scene';
+import { drawnAsBlock } from './drawn_as';
+import { ElementBounds, SceneGeometry } from './scene';
 
 export interface HandlePoint {
   handle: Handle;
@@ -16,14 +17,19 @@ export interface HandlePoint {
 }
 export function hitTestPoint(geometry: SceneGeometry, point: Vec2, edgeTolerance: number): ElementRef | undefined {
   // Keep this order independent of the renderer's paint order.  In
-  // particular, nodes deliberately win over edges, while groups are tested
-  // last so that their children remain selectable.
-  const rectKinds: Array<'annotation' | 'node'> = ['annotation', 'node'];
+  // particular, nodes deliberately win over edges, while open groups are
+  // tested last so that their children remain selectable.  A closed
+  // container is a group in the scene but is drawn as a block with nothing
+  // visible inside it, so it ranks with the nodes.
+  const rectRanks: Array<(entry: ElementBounds) => boolean> = [
+    (entry) => entry.ref.kind === 'annotation',
+    (entry) => drawnAsBlock(geometry, entry.ref),
+  ];
 
-  for (const kind of rectKinds) {
+  for (const isRanked of rectRanks) {
     for (let i = geometry.index.length - 1; i >= 0; i -= 1) {
       const entry = geometry.index[i];
-      if (entry.ref.kind === kind && boundsContains(entry.bounds, point)) {
+      if (isRanked(entry) && boundsContains(entry.bounds, point)) {
         return entry.ref;
       }
     }

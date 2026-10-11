@@ -23,10 +23,10 @@ import {
   type Diagram,
   DiagramSchema,
   GraphSchema,
-  GroupSchema,
+  ElementRole,
+  ElementSchema,
   LocalizationSchema,
-  type Node,
-  NodeSchema,
+  type Element,
 } from '@archeglyph/proto/gen/content_pb';
 import {
   type Stylesheet,
@@ -35,13 +35,14 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 
+import { diff } from '../diff';
 import { loadDelta, loadDiagram, loadStylesheet } from '../loaders';
 import { ValidatorImpl } from './validator';
 import { ValidateRequest } from './validate_request';
 import { ViolationKind } from './violation';
-import { diff } from '../diff/diff';
 import { DeltaSchema } from '@archeglyph/proto/gen/content_pb';
 import { toJson } from '@archeglyph/proto/util/json';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,9 +58,8 @@ interface DiagramJson {
   id: string;
   title?: Array<{ locale: string; source: string }>;
   graph: {
-    nodes: Record<string, { parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
+    elements: Record<string, { parent?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string>; role?: ElementRole }>;
     edges: Record<string, { source: string; target: string; label?: Array<{ locale: string; source: string }>; ordinal?: number; tags?: Record<string, string> }>;
-    groups: Record<string, { parentGroup?: string; label?: Array<{ locale: string; source: string }>; tags?: Record<string, string> }>;
   };
   metadata?: { generator?: string; canonicalLocale?: string };
 }
@@ -70,14 +70,15 @@ function diagramFromJson(json: DiagramJson): Diagram {
 
 function pipelineJson(): DiagramJson {
   return {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'pipeline',
     title: [{ locale: 'en', source: 'Render pipeline' }],
     graph: {
-      nodes: {
-        load: { parentGroup: 'core', label: [], tags: {} },
-        resolve: { parentGroup: 'core', label: [], tags: {} },
+      elements: {
+        load: { parent: 'core', label: [], tags: {} },
+        resolve: { parent: 'core', label: [], tags: {} },
         render: { label: [], tags: {} },
+        core: { label: [], tags: {}, role: ElementRole.GROUPING },
       },
       edges: {
         load__resolve: {
@@ -94,9 +95,6 @@ function pipelineJson(): DiagramJson {
           ordinal: 0,
           tags: {},
         },
-      },
-      groups: {
-        core: { label: [], tags: {} },
       },
     },
     metadata: { generator: 'hand', canonicalLocale: 'en' },
@@ -125,11 +123,11 @@ function violationKinds(response: { violations: Array<{ kind: ViolationKind }> }
 // nonexistent node, no orphaned style entry, no group cycle, no
 // parent_group -> nonexistent group)"
 // design.md "Items deferred to implementation-plan" section:
-//   "Group cycle validation rule — Group.parent_group cycles must be
+//   "Grouping cycle validation rule — Grouping.parent_group cycles must be
 //    detected at validate time."
 //   "Edge-target validation rule — every Edge.source / Edge.target must
-//    reference an existing Node.id. Same for Node.parent_group /
-//    Group.parent_group referencing existing Group.id."
+//    reference an existing Element.id. Same for Element.parent_group /
+//    Grouping.parent_group referencing existing Grouping.id."
 // ===========================================================================
 
 describe('validator: valid input', () => {
@@ -143,9 +141,9 @@ describe('validator: valid input', () => {
 
   test('an empty graph (no nodes/edges/groups) is valid', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'empty',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
@@ -156,15 +154,14 @@ describe('validator: valid input', () => {
 
   test('nodes with no edges at all is valid (edges are not required)', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'lonely-nodes',
       graph: {
-        nodes: {
+        elements: {
           a: { label: [], tags: {} },
           b: { label: [], tags: {} },
         },
         edges: {},
-        groups: {},
       },
     });
     const result = validate(diagram);
@@ -177,14 +174,13 @@ describe('validator: valid input', () => {
   test('a self-loop edge (source === target) is not flagged: nothing in ' +
     'design.md or content.proto forbids an edge from a node to itself', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'self-loop',
       graph: {
-        nodes: { a: { label: [], tags: {} } },
+        elements: { a: { label: [], tags: {} } },
         edges: {
           a__a: { source: 'a', target: 'a', label: [], ordinal: 0, tags: {} },
         },
-        groups: {},
       },
     });
     const result = validate(diagram);
@@ -198,14 +194,13 @@ describe('validator: valid input', () => {
 describe('validator: referential integrity — edges', () => {
   test('an edge whose source does not reference an existing node is EDGE_SOURCE_MISSING', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'bad-source',
       graph: {
-        nodes: { b: { label: [], tags: {} } },
+        elements: { b: { label: [], tags: {} } },
         edges: {
           ghost__b: { source: 'ghost', target: 'b', label: [], ordinal: 0, tags: {} },
         },
-        groups: {},
       },
     });
     const result = validate(diagram);
@@ -219,14 +214,13 @@ describe('validator: referential integrity — edges', () => {
 
   test('an edge whose target does not reference an existing node is EDGE_TARGET_MISSING', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'bad-target',
       graph: {
-        nodes: { a: { label: [], tags: {} } },
+        elements: { a: { label: [], tags: {} } },
         edges: {
           a__ghost: { source: 'a', target: 'ghost', label: [], ordinal: 0, tags: {} },
         },
-        groups: {},
       },
     });
     const result = validate(diagram);
@@ -238,21 +232,20 @@ describe('validator: referential integrity — edges', () => {
     }
   });
 
-  test('a node whose parent_group does not reference an existing group is NODE_PARENT_GROUP_MISSING', () => {
+  test('a node whose parent_group does not reference an existing group is ELEMENT_PARENT_MISSING', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'bad-parent-group',
       graph: {
-        nodes: { a: { parentGroup: 'ghost-group', label: [], tags: {} } },
+        elements: { a: { parent: 'ghost-group', label: [], tags: {} } },
         edges: {},
-        groups: {},
       },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).toContain(ViolationKind.NODE_PARENT_GROUP_MISSING);
-      const v = result.value.violations.find((x) => x.kind === ViolationKind.NODE_PARENT_GROUP_MISSING);
+      expect(violationKinds(result.value)).toContain(ViolationKind.ELEMENT_PARENT_MISSING);
+      const v = result.value.violations.find((x) => x.kind === ViolationKind.ELEMENT_PARENT_MISSING);
       expect(v?.location).toBe('a');
     }
   });
@@ -268,94 +261,89 @@ describe('validator: referential integrity — edges', () => {
 });
 
 describe('validator: group hierarchy', () => {
-  test('a group whose parent_group does not reference an existing group is GROUP_PARENT_GROUP_MISSING', () => {
+  test('a group whose parent_group does not reference an existing group is ELEMENT_PARENT_MISSING', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'bad-group-parent',
       graph: {
-        nodes: {},
         edges: {},
-        groups: { g1: { parentGroup: 'ghost-group', label: [], tags: {} } },
+        elements: { g1: { parent: 'ghost-group', label: [], tags: {} } },
       },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).toContain(ViolationKind.GROUP_PARENT_GROUP_MISSING);
-      const v = result.value.violations.find((x) => x.kind === ViolationKind.GROUP_PARENT_GROUP_MISSING);
+      expect(violationKinds(result.value)).toContain(ViolationKind.ELEMENT_PARENT_MISSING);
+      const v = result.value.violations.find((x) => x.kind === ViolationKind.ELEMENT_PARENT_MISSING);
       expect(v?.location).toBe('g1');
     }
   });
 
-  test('a group that is its own parent is a GROUP_CYCLE ' +
-    '(proto: "Group hierarchy must be acyclic (validation enforces)")', () => {
+  test('a group that is its own parent is a ELEMENT_CYCLE ' +
+    '(proto: "Grouping hierarchy must be acyclic (validation enforces)")', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'self-cycle',
       graph: {
-        nodes: {},
         edges: {},
-        groups: { g1: { parentGroup: 'g1', label: [], tags: {} } },
+        elements: { g1: { parent: 'g1', label: [], tags: {} } },
       },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).toContain(ViolationKind.GROUP_CYCLE);
+      expect(violationKinds(result.value)).toContain(ViolationKind.ELEMENT_CYCLE);
     }
   });
 
-  test('a two-group parent cycle (a -> b -> a) is a GROUP_CYCLE', () => {
+  test('a two-group parent cycle (a -> b -> a) is a ELEMENT_CYCLE', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'two-cycle',
       graph: {
-        nodes: {},
         edges: {},
-        groups: {
-          a: { parentGroup: 'b', label: [], tags: {} },
-          b: { parentGroup: 'a', label: [], tags: {} },
+        elements: {
+          a: { parent: 'b', label: [], tags: {} },
+          b: { parent: 'a', label: [], tags: {} },
         },
       },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).toContain(ViolationKind.GROUP_CYCLE);
+      expect(violationKinds(result.value)).toContain(ViolationKind.ELEMENT_CYCLE);
     }
   });
 
-  test('a three-group parent cycle (a -> b -> c -> a) is a GROUP_CYCLE', () => {
+  test('a three-group parent cycle (a -> b -> c -> a) is a ELEMENT_CYCLE', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'three-cycle',
       graph: {
-        nodes: {},
         edges: {},
-        groups: {
-          a: { parentGroup: 'b', label: [], tags: {} },
-          b: { parentGroup: 'c', label: [], tags: {} },
-          c: { parentGroup: 'a', label: [], tags: {} },
+        elements: {
+          a: { parent: 'b', label: [], tags: {} },
+          b: { parent: 'c', label: [], tags: {} },
+          c: { parent: 'a', label: [], tags: {} },
         },
       },
     });
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).toContain(ViolationKind.GROUP_CYCLE);
+      expect(violationKinds(result.value)).toContain(ViolationKind.ELEMENT_CYCLE);
     }
   });
 
-  test('a valid, non-cyclic nested group chain (a -> b -> c, c top-level) has no GROUP_CYCLE', () => {
+  test('a valid, non-cyclic nested group chain (a -> b -> c, c top-level) has no ELEMENT_CYCLE', () => {
     const diagram = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'chain',
       graph: {
-        nodes: {},
         edges: {},
-        groups: {
-          a: { parentGroup: 'b', label: [], tags: {} },
-          b: { parentGroup: 'c', label: [], tags: {} },
+        elements: {
+          a: { parent: 'b', label: [], tags: {} },
+          b: { parent: 'c', label: [], tags: {} },
           c: { label: [], tags: {} },
         },
       },
@@ -363,7 +351,7 @@ describe('validator: group hierarchy', () => {
     const result = validate(diagram);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(violationKinds(result.value)).not.toContain(ViolationKind.GROUP_CYCLE);
+      expect(violationKinds(result.value)).not.toContain(ViolationKind.ELEMENT_CYCLE);
     }
   });
 });
@@ -371,10 +359,10 @@ describe('validator: group hierarchy', () => {
 
 describe('validator: stylesheet references the graph (design.md §14.1 "no orphaned style entry")', () => {
   const sheet = (init: Parameters<typeof create<typeof StylesheetSchema>>[1]): Stylesheet =>
-    create(StylesheetSchema, { schemaVersion: 1, ...init });
+    create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, ...init });
 
   test('a style entry keyed to a node the graph does not define is a violation', () => {
-    const result = validate(validDiagram(), sheet({ nodes: { notAThing: {} } }));
+    const result = validate(validDiagram(), sheet({ elements: { notAThing: {} } }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(violationKinds(result.value)).toContain(ViolationKind.STYLE_TARGET_MISSING);
@@ -384,9 +372,8 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
 
   test('style entries matching real elements produce nothing', () => {
     const result = validate(validDiagram(), sheet({
-      nodes: { load: {} },
+      elements: { load: {}, core: {} },
       edges: { load__resolve: {} },
-      groups: { core: {} },
     }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -396,9 +383,9 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
 
   test('each of the three maps is checked, not just nodes', () => {
     const result = validate(validDiagram(), sheet({
-      nodes: { ghostNode: {} },
+      elements: { ghostElement: {} },
       edges: { ghostEdge: {} },
-      groups: { ghostGroup: {} },
+      annotations: { ghostAnnotation: { content: [], anchor: { refId: 'gone', refKind: RefKind.ELEMENT } } },
     }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -416,7 +403,7 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
 
   test('an annotation anchored to a missing element is a violation', () => {
     const result = validate(validDiagram(), sheet({
-      annotations: { note: { content: [], anchor: { refId: 'gone', refKind: RefKind.NODE } } },
+      annotations: { note: { content: [], anchor: { refId: 'gone', refKind: RefKind.ELEMENT } } },
     }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -426,7 +413,7 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
 
   test('an annotation anchored to a real node produces nothing', () => {
     const result = validate(validDiagram(), sheet({
-      annotations: { note: { content: [], anchor: { refId: 'load', refKind: RefKind.NODE } } },
+      annotations: { note: { content: [], anchor: { refId: 'load', refKind: RefKind.ELEMENT } } },
     }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -434,10 +421,9 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
     }
   });
 
-  test('the anchor must match the target\'s KIND, not merely exist somewhere', () => {
-    // 'load' is a node; anchoring to it as a group must not resolve.
+  test('an element anchor must not resolve an edge id', () => {
     const result = validate(validDiagram(), sheet({
-      annotations: { note: { content: [], anchor: { refId: 'load', refKind: RefKind.GROUP } } },
+      annotations: { note: { content: [], anchor: { refId: 'load__resolve', refKind: RefKind.ELEMENT } } },
     }));
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -461,11 +447,11 @@ describe('validator: stylesheet references the graph (design.md §14.1 "no orpha
 // ===========================================================================
 
 describe('loaders: schema_version handling', () => {
-  test('loadDiagram accepts schema_version 1', async () => {
+  test('loadDiagram accepts the current schema_version', async () => {
     const text = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'ok',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('ok');
@@ -475,7 +461,7 @@ describe('loaders: schema_version handling', () => {
     const text = JSON.stringify({
       schemaVersion: 0,
       id: 'zero',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('err');
@@ -484,23 +470,23 @@ describe('loaders: schema_version handling', () => {
     }
   });
 
-  test('loadDiagram rejects an unsupported schema_version (e.g. 2) with an Err', async () => {
+  test('loadDiagram rejects an unsupported schema_version (e.g. 1) with an Err', async () => {
     const text = JSON.stringify({
-      schemaVersion: 2,
+      schemaVersion: 1,
       id: 'future',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('err');
     if (result.kind === 'err') {
-      expect(result.error.message).toContain('2');
+      expect(result.error.message).toContain('1');
     }
   });
 
   test('schema_version omitted entirely defaults to proto3 zero-value 0 and is rejected', async () => {
     const text = JSON.stringify({
       id: 'no-version-field',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('err');
@@ -518,19 +504,18 @@ describe('loaders: malformed input rejection', () => {
   });
 
   test('valid JSON that is not a Diagram shape (unknown top-level field) is rejected', async () => {
-    const text = JSON.stringify({ notADiagramField: true, schemaVersion: 1 });
+    const text = JSON.stringify({ notADiagramField: true, schemaVersion: CONTENT_SCHEMA_VERSION });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('err');
   });
 
-  test('valid JSON with an unknown nested field on a Node is rejected', async () => {
+  test('valid JSON with an unknown nested field on a Element is rejected', async () => {
     const text = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'unknown-nested',
       graph: {
-        nodes: { a: { thisFieldDoesNotExist: 'x' } },
+        elements: { a: { thisFieldDoesNotExist: 'x' } },
         edges: {},
-        groups: {},
       },
     });
     const result = await loadDiagram(text);
@@ -550,7 +535,7 @@ describe('loaders: malformed input rejection', () => {
 
   test('an empty JSON object is structurally acceptable to the underlying proto ' +
     'parser (schema_version defaults to 0) but is still rejected end-to-end by the ' +
-    'schema_version === 1 check, not by a "missing id" check — Diagram.id has no ' +
+    'schema_version current-version check, not by a "missing id" check — Diagram.id has no ' +
     'presence enforcement in proto3', async () => {
     const result = await loadDiagram('{}');
     expect(result.kind).toBe('err');
@@ -561,21 +546,20 @@ describe('loaders: malformed input rejection', () => {
 
   test('valid Diagram JSON round-trips through loadDiagram with fields intact', async () => {
     const text = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'roundtrip',
       title: [{ locale: 'en', source: 'Round Trip' }],
       graph: {
-        nodes: { a: { label: [{ locale: 'en', source: 'A' }], tags: { kind: 'stage' } } },
+        elements: { a: { label: [{ locale: 'en', source: 'A' }], tags: { kind: 'stage' } } },
         edges: {},
-        groups: {},
       },
     });
     const result = await loadDiagram(text);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(result.value.id).toBe('roundtrip');
-      expect(Object.keys(result.value.graph?.nodes ?? {})).toContain('a');
-      expect(result.value.graph?.nodes['a']?.tags['kind']).toBe('stage');
+      expect(Object.keys(result.value.graph?.elements ?? {})).toContain('a');
+      expect(result.value.graph?.elements['a']?.tags['kind']).toBe('stage');
     }
   });
 });
@@ -586,9 +570,8 @@ describe('loaders: duplicate JSON object keys', () => {
     'duplicate-key detection anywhere in the load path, since by the time the ' +
     'map reaches the validator only one entry can exist per key', async () => {
     const text =
-      '{"schemaVersion":1,"id":"dup","graph":{"nodes":{"a":{},"b":{}},' +
-      '"edges":{"e1":{"source":"a","target":"b"},"e1":{"source":"b","target":"a"}},' +
-      '"groups":{}}}';
+      '{"schemaVersion":2,"id":"dup","graph":{"elements":{"a":{},"b":{}},' +
+      '"edges":{"e1":{"source":"a","target":"b"},"e1":{"source":"b","target":"a"}}}}';
     const result = await loadDiagram(text);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
@@ -610,13 +593,13 @@ describe('diff: identity', () => {
   test('diffing a diagram against itself yields no node or edge deltas', () => {
     const d = validDiagram();
     const delta = diff(d, d);
-    expect(delta.nodeDeltas).toEqual([]);
+    expect(delta.elementDeltas).toEqual([]);
     expect(delta.edgeDeltas).toEqual([]);
   });
 
   test('diffing two structurally-equal-but-distinct diagram objects yields no deltas', () => {
     const delta = diff(validDiagram(), validDiagram());
-    expect(delta.nodeDeltas).toEqual([]);
+    expect(delta.elementDeltas).toEqual([]);
     expect(delta.edgeDeltas).toEqual([]);
   });
 });
@@ -625,11 +608,11 @@ describe('diff: added / removed / modified', () => {
   test('a node present only in target is ADDED', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
-    targetJson.graph.nodes['extra'] = { label: [], tags: {} };
+    targetJson.graph.elements['extra'] = { label: [], tags: {} };
     const target = diagramFromJson(targetJson);
 
     const delta = diff(base, target);
-    const added = delta.nodeDeltas.find((d) => d.nodeId === 'extra');
+    const added = delta.elementDeltas.find((d) => d.elementId === 'extra');
     expect(added?.changeType).toBe(2 /* ADDED */);
     expect(added?.before).toBeUndefined();
     expect(added?.after).toBeDefined();
@@ -638,11 +621,11 @@ describe('diff: added / removed / modified', () => {
   test('a node present only in base is DELETED', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
-    delete targetJson.graph.nodes['render'];
+    delete targetJson.graph.elements['render'];
     const target = diagramFromJson(targetJson);
 
     const delta = diff(base, target);
-    const deleted = delta.nodeDeltas.find((d) => d.nodeId === 'render');
+    const deleted = delta.elementDeltas.find((d) => d.elementId === 'render');
     expect(deleted?.changeType).toBe(3 /* DELETED */);
     expect(deleted?.after).toBeUndefined();
     expect(deleted?.before).toBeDefined();
@@ -651,15 +634,15 @@ describe('diff: added / removed / modified', () => {
   test('a node whose fields differ between base and target is MODIFIED', () => {
     const base = diagramFromJson(pipelineJson());
     const targetJson = pipelineJson();
-    targetJson.graph.nodes['load'] = {
-      parentGroup: 'core',
+    targetJson.graph.elements['load'] = {
+      parent: 'core',
       label: [{ locale: 'en', source: 'Load!' }],
       tags: {},
     };
     const target = diagramFromJson(targetJson);
 
     const delta = diff(base, target);
-    const modified = delta.nodeDeltas.find((d) => d.nodeId === 'load');
+    const modified = delta.elementDeltas.find((d) => d.elementId === 'load');
     expect(modified?.changeType).toBe(4 /* MODIFIED */);
     expect(modified?.before?.label).toEqual([]);
     expect(modified?.after?.label?.[0]?.source).toBe('Load!');
@@ -716,7 +699,7 @@ describe('diff: added / removed / modified', () => {
     const base = validDiagram();
     const target = validDiagram();
     const delta = diff(base, target);
-    expect(delta.nodeDeltas.every((d) => d.changeType !== 1 /* UNCHANGED */)).toBe(true);
+    expect(delta.elementDeltas.every((d) => d.changeType !== 1 /* UNCHANGED */)).toBe(true);
     expect(delta.edgeDeltas.every((d) => d.changeType !== 1 /* UNCHANGED */)).toBe(true);
   });
 
@@ -724,108 +707,107 @@ describe('diff: added / removed / modified', () => {
     const base = validDiagram();
     const target = validDiagram();
     const delta = diff(base, target, { includeUnchanged: true });
-    expect(delta.nodeDeltas.length).toBeGreaterThan(0);
-    expect(delta.nodeDeltas.every((d) => d.changeType === 1 /* UNCHANGED */)).toBe(true);
+    expect(delta.elementDeltas.length).toBeGreaterThan(0);
+    expect(delta.elementDeltas.every((d) => d.changeType === 1 /* UNCHANGED */)).toBe(true);
   });
 });
 
 describe('diff: groups', () => {
-  // Groups are topology, in Graph alongside nodes and edges. Only render_mode
+  // Groupings are topology, in Graph alongside nodes and edges. Only render_mode
   // is presentational, and that lives in the style file.
-  const withGroups = (groups: Record<string, { label: string }>): Diagram =>
+  const withGroupings = (elements: Record<string, { label: string }>): Diagram =>
     create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: 'g',
       graph: create(GraphSchema, {
-        groups: Object.fromEntries(
-          Object.entries(groups).map(([id, g]) => [
+        elements: Object.fromEntries(
+          Object.entries(elements).map(([id, g]) => [
             id,
-            create(GroupSchema, { label: [create(LocalizationSchema, { locale: 'en', source: g.label })] }),
+            create(ElementSchema, { role: ElementRole.GROUPING, label: [create(LocalizationSchema, { locale: 'en', source: g.label })] }),
           ]),
         ),
       }),
     });
 
   test('a group present only in target is ADDED, carrying its after', () => {
-    const delta = diff(withGroups({}), withGroups({ svc: { label: 'Services' } }));
-    expect(delta.groupDeltas.length).toBe(1);
-    expect(delta.groupDeltas[0]!.groupId).toBe('svc');
-    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.ADDED);
-    expect(delta.groupDeltas[0]!.after?.label[0]?.source).toBe('Services');
-    expect(delta.groupDeltas[0]!.before).toBeUndefined();
+    const delta = diff(withGroupings({}), withGroupings({ svc: { label: 'Services' } }));
+    expect(delta.elementDeltas.length).toBe(1);
+    expect(delta.elementDeltas[0]!.elementId).toBe('svc');
+    expect(delta.elementDeltas[0]!.changeType).toBe(ChangeType.ADDED);
+    expect(delta.elementDeltas[0]!.after?.label[0]?.source).toBe('Services');
+    expect(delta.elementDeltas[0]!.before).toBeUndefined();
   });
 
   test('a group present only in base is DELETED, carrying its before', () => {
-    const delta = diff(withGroups({ svc: { label: 'Services' } }), withGroups({}));
-    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.DELETED);
-    expect(delta.groupDeltas[0]!.before?.label[0]?.source).toBe('Services');
-    expect(delta.groupDeltas[0]!.after).toBeUndefined();
+    const delta = diff(withGroupings({ svc: { label: 'Services' } }), withGroupings({}));
+    expect(delta.elementDeltas[0]!.changeType).toBe(ChangeType.DELETED);
+    expect(delta.elementDeltas[0]!.before?.label[0]?.source).toBe('Services');
+    expect(delta.elementDeltas[0]!.after).toBeUndefined();
   });
 
   test('a renamed group is MODIFIED and carries both sides', () => {
     const delta = diff(
-      withGroups({ svc: { label: 'Services' } }),
-      withGroups({ svc: { label: 'Core services' } }),
+      withGroupings({ svc: { label: 'Services' } }),
+      withGroupings({ svc: { label: 'Core services' } }),
     );
-    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.MODIFIED);
-    expect(delta.groupDeltas[0]!.before?.label[0]?.source).toBe('Services');
-    expect(delta.groupDeltas[0]!.after?.label[0]?.source).toBe('Core services');
+    expect(delta.elementDeltas[0]!.changeType).toBe(ChangeType.MODIFIED);
+    expect(delta.elementDeltas[0]!.before?.label[0]?.source).toBe('Services');
+    expect(delta.elementDeltas[0]!.after?.label[0]?.source).toBe('Core services');
   });
 
   test('an unchanged group is omitted, and emitted under includeUnchanged', () => {
-    const same = withGroups({ svc: { label: 'Services' } });
-    expect(diff(same, same).groupDeltas).toEqual([]);
+    const same = withGroupings({ svc: { label: 'Services' } });
+    expect(diff(same, same).elementDeltas).toEqual([]);
     const verbose = diff(same, same, { includeUnchanged: true });
-    expect(verbose.groupDeltas[0]!.changeType).toBe(ChangeType.UNCHANGED);
+    expect(verbose.elementDeltas[0]!.changeType).toBe(ChangeType.UNCHANGED);
   });
 
   test('group ids are emitted in sorted order, like nodes and edges', () => {
-    const delta = diff(withGroups({}), withGroups({
+    const delta = diff(withGroupings({}), withGroupings({
       zeta: { label: 'Z' }, alpha: { label: 'A' }, mid: { label: 'M' },
     }));
-    expect(delta.groupDeltas.map((d) => d.groupId)).toEqual(['alpha', 'mid', 'zeta']);
+    expect(delta.elementDeltas.map((d) => d.elementId)).toEqual(['alpha', 'mid', 'zeta']);
   });
 
   test('a deleted group keeps its members recoverable through their own deltas', () => {
-    // GroupDelta carries the group's own fields only -- containment lives on
-    // Node.parent_group. Rendering a deleted group means reading membership
+    // GroupingDelta carries the group's own fields only -- containment lives on
+    // Element.parent_group. Rendering a deleted group means reading membership
     // back out of the deleted members' before snapshots, so this has to hold.
-    const node = (parent: string): Node =>
-      create(NodeSchema, { parentGroup: parent, label: [create(LocalizationSchema, { locale: 'en', source: 'n' })] });
+    const node = (parent: string): Element =>
+      create(ElementSchema, { parent: parent, label: [create(LocalizationSchema, { locale: 'en', source: 'n' })] });
     const base = create(DiagramSchema, {
-      schemaVersion: 1, id: 'g',
+      schemaVersion: CONTENT_SCHEMA_VERSION, id: 'g',
       graph: create(GraphSchema, {
-        nodes: { a: node('box'), b: node('box') },
-        groups: { box: create(GroupSchema, {}) },
+        elements: { a: node('box'), b: node('box'), box: create(ElementSchema, { role: ElementRole.GROUPING }) },
       }),
     });
-    const target = create(DiagramSchema, { schemaVersion: 1, id: 'g', graph: create(GraphSchema, {}) });
+    const target = create(DiagramSchema, { schemaVersion: CONTENT_SCHEMA_VERSION, id: 'g', graph: create(GraphSchema, {}) });
 
     const delta = diff(base, target);
-    expect(delta.groupDeltas[0]!.changeType).toBe(ChangeType.DELETED);
+    expect(delta.elementDeltas[0]!.changeType).toBe(ChangeType.DELETED);
 
-    const members = delta.nodeDeltas
-      .filter((d) => d.changeType === ChangeType.DELETED && d.before?.parentGroup === 'box')
-      .map((d) => d.nodeId);
+    const members = delta.elementDeltas
+      .filter((d) => d.changeType === ChangeType.DELETED && d.before?.parent === 'box')
+      .map((d) => d.elementId);
     expect(members).toEqual(['a', 'b']);
   });
 });
 
 describe('loaders: schema_version on pending edits', () => {
   const sheetWithEdit = (editVersion: number): string => JSON.stringify({
-    schemaVersion: 1,
-    nodes: {},
+    schemaVersion: CONTENT_SCHEMA_VERSION,
+    elements: {},
     pendingEdits: [{ schemaVersion: editVersion, id: 'e1' }],
   });
 
-  test('loadStylesheet accepts a pending edit at schema_version 1', async () => {
-    const result = await loadStylesheet(sheetWithEdit(1));
+  test('loadStylesheet accepts a pending edit at the current schema_version', async () => {
+    const result = await loadStylesheet(sheetWithEdit(STYLE_SCHEMA_VERSION));
     expect(result.kind).toBe('ok');
   });
 
   // The stylesheet is version 1, so only the nested check can reject this.
-  test('loadStylesheet rejects a pending edit at an unsupported version', async () => {
-    const result = await loadStylesheet(sheetWithEdit(2));
+  test('loadStylesheet rejects a pending edit at version 1', async () => {
+    const result = await loadStylesheet(sheetWithEdit(1));
     expect(result.kind).toBe('err');
     if (result.kind === 'err') {
       expect(result.error.message).toContain('schema_version');
@@ -835,7 +817,7 @@ describe('loaders: schema_version on pending edits', () => {
 
   test('a pending edit omitting schema_version gets proto3 zero and is rejected', async () => {
     const result = await loadStylesheet(JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       pendingEdits: [{ id: 'no-version' }],
     }));
     expect(result.kind).toBe('err');
@@ -843,15 +825,15 @@ describe('loaders: schema_version on pending edits', () => {
 });
 
 describe('loaders: loadDelta', () => {
-  test('loadDelta accepts schema_version 1', async () => {
+  test('loadDelta accepts the current schema_version', async () => {
     const result = await loadDelta(JSON.stringify({
-      schemaVersion: 1, baseRef: 'a.json', targetRef: 'b.json',
+      schemaVersion: CONTENT_SCHEMA_VERSION, baseRef: 'a.json', targetRef: 'b.json',
     }));
     expect(result.kind).toBe('ok');
   });
 
-  test('loadDelta rejects an unsupported schema_version', async () => {
-    const result = await loadDelta(JSON.stringify({ schemaVersion: 2 }));
+  test('loadDelta rejects schema_version 1', async () => {
+    const result = await loadDelta(JSON.stringify({ schemaVersion: 1 }));
     expect(result.kind).toBe('err');
     if (result.kind === 'err') {
       expect(result.error.message).toContain('schema_version');
@@ -870,10 +852,10 @@ describe('loaders: loadDelta', () => {
     const result = await loadDelta(written);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.nodeDeltas.length).toBe(delta.nodeDeltas.length);
+      expect(result.value.elementDeltas.length).toBe(delta.elementDeltas.length);
       expect(result.value.edgeDeltas.length).toBe(delta.edgeDeltas.length);
-      expect(result.value.groupDeltas.length).toBe(delta.groupDeltas.length);
-      expect(result.value.nodeDeltas[0]?.changeType).toBe(delta.nodeDeltas[0]?.changeType);
+      expect(result.value.elementDeltas.length).toBe(delta.elementDeltas.length);
+      expect(result.value.elementDeltas[0]?.changeType).toBe(delta.elementDeltas[0]?.changeType);
     }
   });
 });

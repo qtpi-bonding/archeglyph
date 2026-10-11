@@ -32,17 +32,25 @@ import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import { moveCommit, resizeCommit, type MoveSession, type ResizeSession } from '../gestures/drag_machines';
 import { buildSceneGeometry, type SceneGeometry } from './scene';
+import { inspectorModel } from '../inspector/model';
+import { commitShape } from '../inspector/models/shape_commit';
+import { commitGroup } from '../inspector/models/group_commit';
+import { ElementStyleEntrySchema, GroupRenderMode, type Glyph2D } from '@archeglyph/proto/gen/style_pb';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const EXAMPLES = fileURLToPath(new URL('../../../../examples/', import.meta.url));
 const DIAGRAM_JSON = readFileSync(`${EXAMPLES}pipeline.diag.json`, 'utf8');
 const STYLE_JSON = readFileSync(`${EXAMPLES}pipeline.style.json`, 'utf8');
 
-const emptySheet = (): Stylesheet => create(StylesheetSchema, { schemaVersion: 1 });
+const emptySheet = (): Stylesheet => create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
 const shippedSheet = (): Stylesheet => fromJson(StylesheetSchema, STYLE_JSON);
 
 /** One full load -> resolve -> layout -> render -> scene pass. */
-async function sceneFor(sheet: Stylesheet): Promise<{ geometry: SceneGeometry; sheet: Stylesheet }> {
-  const diagram = fromJson(DiagramSchema, DIAGRAM_JSON);
+async function sceneFor(
+  sheet: Stylesheet,
+  diagramJson: string = DIAGRAM_JSON,
+): Promise<{ geometry: SceneGeometry; sheet: Stylesheet }> {
+  const diagram = fromJson(DiagramSchema, diagramJson);
   const theme = blueprintTheme();
   // The same seeding step the CLI ops and the editor shell perform on load.
   const seeded = seedComponentBindings(diagram, sheet, theme);
@@ -103,7 +111,7 @@ describe('a drag survives the next layout pass', () => {
     const sheet = applyStyleEditToStylesheet(first.sheet, edit);
 
     for (const node of Object.values(first.geometry.diagram.nodes)) {
-      expect(sheet.nodes[node.id]?.layout?.position).toBeDefined();
+      expect(sheet.elements[node.id]?.layout?.position).toBeDefined();
     }
   });
 
@@ -113,7 +121,7 @@ describe('a drag survives the next layout pass', () => {
 
     const edit = dragNode('load', { x: 200, y: 100 }, first.geometry, first.sheet)!;
     // Nothing to materialize: the shipped style file already pins everything.
-    expect(edit.nodeChanges.map((change) => change.nodeId)).toEqual(['load']);
+    expect(edit.elementChanges.map((change) => change.elementId)).toEqual(['load']);
 
     const after = positions((await sceneFor(applyStyleEditToStylesheet(first.sheet, edit))).geometry);
     expect(after['load']).toEqual({ x: before['load'].x + 200, y: before['load'].y + 100 });
@@ -157,5 +165,103 @@ describe('a drag survives the next layout pass', () => {
     const node = after.geometry.diagram.nodes['load'];
     expect(node.size.x).toBeCloseTo(bounds.maxX - bounds.minX + 30, 5);
     expect(node.size.y).toBeCloseTo(bounds.maxY - bounds.minY + 20, 5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A closed container is drawn as a block. These run the editor's edits through
+// the real pipeline, because the defect was invisible to everything short of
+// it: the edit was written to fields the renderer no longer reads.
+// ---------------------------------------------------------------------------
+
+const CONTAINER_JSON = JSON.stringify({
+  schemaVersion: 2,
+  id: 'closed',
+  graph: {
+    edges: { x__P: { source: 'x', target: 'P' } },
+    elements: {
+      P: { label: [{ locale: 'en', source: 'P' }] },
+      c1: { label: [{ locale: 'en', source: 'c1' }], parent: 'P' },
+      c2: { label: [{ locale: 'en', source: 'c2' }], parent: 'P' },
+      x: { label: [{ locale: 'en', source: 'x' }] },
+    },
+  },
+});
+
+const closedSheet = (): Stylesheet => create(StylesheetSchema, {
+  schemaVersion: STYLE_SCHEMA_VERSION,
+  elements: { P: create(ElementStyleEntrySchema, { renderMode: GroupRenderMode.CLOSED }) },
+});
+
+const fillOf = (glyph: Glyph2D): string | undefined =>
+  glyph.fill?.paint.case === 'color' ? glyph.fill.paint.value.value : undefined;
+
+describe('a closed container takes its edits through the block fields', () => {
+  test('the scene lists the closed container as a group drawn as a block', async () => {
+    const { geometry } = await sceneFor(closedSheet(), CONTAINER_JSON);
+
+    expect(geometry.diagram.groups['P']?.isSuperNode).toBe(true);
+    expect(geometry.diagram.nodes['c1']).toBeUndefined();
+  });
+
+  test('dragging it moves it, and writes layout rather than boxLayout', async () => {
+    const first = await sceneFor(closedSheet(), CONTAINER_JSON);
+    const before = first.geometry.diagram.groups['P'].position;
+    const session: MoveSession = { refs: [{ id: 'P', kind: 'group' }], origin: { x: 0, y: 0 } };
+
+    const edit = moveCommit(session, first.geometry, first.sheet, { x: 200, y: 100 })!;
+    const sheet = applyStyleEditToStylesheet(first.sheet, edit);
+    const second = await sceneFor(sheet, CONTAINER_JSON);
+
+    expect(sheet.elements['P'].boxLayout).toBeUndefined();
+    expect(second.geometry.diagram.groups['P'].position).toMatchObject({ x: before.x + 200, y: before.y + 100 });
+  });
+
+  test('resizing it resizes it', async () => {
+    const first = await sceneFor(closedSheet(), CONTAINER_JSON);
+    const size = first.geometry.diagram.groups['P'].size;
+    const session: ResizeSession = { ref: { id: 'P', kind: 'group' }, handle: 'se', origin: { x: 0, y: 0 } };
+
+    const edit = resizeCommit(session, first.geometry, first.sheet, { x: 60, y: 30 }, false)!;
+    const second = await sceneFor(applyStyleEditToStylesheet(first.sheet, edit), CONTAINER_JSON);
+
+    expect(second.geometry.diagram.groups['P'].size).toMatchObject({ x: size.x + 60, y: size.y + 30 });
+  });
+
+  test('a colour set while closed shows now, disappears when opened, and returns when closed again', async () => {
+    const first = await sceneFor(closedSheet(), CONTAINER_JSON);
+    const closedModel = inspectorModel([{ kind: 'group', id: 'P' }], first.geometry)!;
+    const coloured = applyStyleEditToStylesheet(
+      first.sheet,
+      commitShape(closedModel, first.sheet, 'fill', '#ff0000')!,
+    );
+    expect(fillOf((await sceneFor(coloured, CONTAINER_JSON)).geometry.diagram.groups['P'].shape)).toBe('#ff0000');
+
+    const openEdit = commitGroup(closedModel, coloured, 'renderMode', 'open')!;
+    const opened = await sceneFor(applyStyleEditToStylesheet(coloured, openEdit), CONTAINER_JSON);
+    expect(opened.geometry.diagram.groups['P'].isSuperNode).toBe(false);
+    expect(fillOf(opened.geometry.diagram.groups['P'].shape)).not.toBe('#ff0000');
+
+    const reclosed = applyStyleEditToStylesheet(
+      applyStyleEditToStylesheet(coloured, openEdit),
+      commitGroup(closedModel, applyStyleEditToStylesheet(coloured, openEdit), 'renderMode', 'closed')!,
+    );
+    expect(fillOf((await sceneFor(reclosed, CONTAINER_JSON)).geometry.diagram.groups['P'].shape)).toBe('#ff0000');
+  });
+
+  test('a box colour set while open does not change the closed block', async () => {
+    const openSheet = create(StylesheetSchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: { P: create(ElementStyleEntrySchema, { renderMode: GroupRenderMode.OPEN }) },
+    });
+    const open = await sceneFor(openSheet, CONTAINER_JSON);
+    const boxModel = inspectorModel([{ kind: 'group', id: 'P' }], open.geometry)!;
+    const boxed = applyStyleEditToStylesheet(open.sheet, commitShape(boxModel, open.sheet, 'fill', '#00ff00')!);
+    expect(fillOf((await sceneFor(boxed, CONTAINER_JSON)).geometry.diagram.groups['P'].shape)).toBe('#00ff00');
+
+    const closedAgain = applyStyleEditToStylesheet(boxed, commitGroup(boxModel, boxed, 'renderMode', 'closed')!);
+    const closed = await sceneFor(closedAgain, CONTAINER_JSON);
+    expect(closed.geometry.diagram.groups['P'].isSuperNode).toBe(true);
+    expect(fillOf(closed.geometry.diagram.groups['P'].shape)).not.toBe('#00ff00');
   });
 });

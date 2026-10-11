@@ -18,9 +18,7 @@ export interface AnnotationModel {
 
 function refKindName(kind: RefKind): string {
   switch (kind) {
-    case RefKind.NODE: return 'node';
     case RefKind.EDGE: return 'edge';
-    case RefKind.GROUP: return 'group';
     default: return 'element';
   }
 }

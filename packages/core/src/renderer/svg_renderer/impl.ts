@@ -30,7 +30,7 @@ import { init } from '@archeglyph/proto/util/init';
 /**
  * Where a group's label sits, and which way it reads from there.
  *
- * GroupLayout.label_position has been in the schema since the data model was
+ * BoxLayout.label_position has been in the schema since the data model was
  * locked but the renderer only ever drew the centre, which puts the label
  * straight through the group's own children. UNSPECIFIED therefore means
  * TOP_LEFT — the architecture-diagram convention, and what the blueprint

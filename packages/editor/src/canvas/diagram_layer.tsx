@@ -7,7 +7,6 @@ import {
   onMount,
 } from 'solid-js';
 import { ElementRef } from '../ui_state/ui_state';
-import { elementKey } from '../scene/element_key';
 
 export interface DiagramLayerProps {
   svg: string;
@@ -28,14 +27,28 @@ function installDimmingRule(): void {
   document.head.appendChild(style);
 }
 
-function isDimmed(element: Element, refs: Array<ElementRef>): boolean {
-  const id: string | null = element.getAttribute('data-element-id');
-  const kind: string | null = element.getAttribute('data-kind');
-  if (id === null || kind === null) {
-    return false;
+// Edges, elements and annotations are separate id namespaces, so an id alone
+// can name one of each. Only that namespace is read off the markup, from the
+// `edge-` / `annotation-` prefix of the rendered `<g id>`; whether an element
+// is a node or a group is never consulted, because the SVG follows how the
+// renderer drew it, which is not the scene's kind for a closed container.
+type Namespace = 'element' | 'edge' | 'annotation';
+
+function namespaceOfRef(ref: ElementRef): Namespace {
+  return ref.kind === 'edge' || ref.kind === 'annotation' ? ref.kind : 'element';
+}
+
+function namespaceOfMarkup(element: Element): Namespace {
+  const domId: string = element.getAttribute('id') ?? '';
+  if (domId.startsWith('edge-')) {
+    return 'edge';
   }
-  const key: string = `${kind}:${id}`;
-  return refs.some((ref: ElementRef): boolean => elementKey(ref) === key);
+  return domId.startsWith('annotation-') ? 'annotation' : 'element';
+}
+
+function isDimmed(element: Element, keys: Set<string>): boolean {
+  const id: string | null = element.getAttribute('data-element-id');
+  return id !== null && keys.has(`${namespaceOfMarkup(element)}:${id}`);
 }
 
 /**
@@ -87,9 +100,10 @@ export const DiagramLayer: Component<DiagramLayerProps> = (props: DiagramLayerPr
     props.svg;
     const refs: Array<ElementRef> = props.dimmed;
     host.setAttribute('data-dimmed', refs.length > 0 ? 'true' : 'false');
+    const keys: Set<string> = new Set(refs.map((ref: ElementRef): string => `${namespaceOfRef(ref)}:${ref.id}`));
     const elements: NodeListOf<Element> = host.querySelectorAll('[data-element-id]');
     elements.forEach((element: Element): void => {
-      element.classList.toggle(DIMMED_CLASS, isDimmed(element, refs));
+      element.classList.toggle(DIMMED_CLASS, isDimmed(element, keys));
     });
   });
 

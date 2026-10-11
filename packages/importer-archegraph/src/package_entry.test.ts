@@ -13,6 +13,6 @@ describe('the package entry point', () => {
 
     const diagram = fromArchegraph(view);
 
-    expect(Object.keys(diagram.graph?.nodes ?? {})).toEqual(['a#']);
+    expect(Object.keys(diagram.graph?.elements ?? {})).toEqual(['a#']);
   });
 });

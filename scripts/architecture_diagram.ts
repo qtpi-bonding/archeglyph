@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { create, fromBinary, toJson } from '@bufbuild/protobuf';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { ArcheviewSchema, ViewEdgeSchema, ViewNodeSchema } from '@archeglyph/proto/gen/archegraph/view_pb';
 import { DiagramSchema, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
 import { fromArchegraph } from '@archeglyph/importer-archegraph';
@@ -85,11 +86,10 @@ const diagram = create(DiagramSchema, {
 await Bun.write(OUT, JSON.stringify(toJson(DiagramSchema, diagram), null, 2) + '\n');
 
 const style = {
-  schemaVersion: 1,
+  schemaVersion: STYLE_SCHEMA_VERSION,
   canvas: { nodeSpacing: 56, edgeSpacing: 20 },
-  nodes: {},
+  elements: {},
   edges: {},
-  groups: {},
 };
 await Bun.write(STYLE_OUT, JSON.stringify(style, null, 2) + '\n');
 

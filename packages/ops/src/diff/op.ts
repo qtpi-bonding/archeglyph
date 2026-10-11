@@ -50,7 +50,7 @@ export const diffOp: Operation<DiffParams, DiffOutput> = {
     if (!o.changed) {
       return `no changes between ${o.baseRef} and ${o.targetRef}`;
     }
-    const parts = [line('nodes', o.nodes), line('edges', o.edges), line('groups', o.groups)]
+    const parts = [line('elements', o.elements), line('edges', o.edges)]
       .filter((part): part is string => part !== undefined);
     const written = o.outPath === undefined ? '' : `\nwrote ${o.outPath}`;
     return `${o.baseRef} -> ${o.targetRef}\n${parts.join('\n')}${written}`;
@@ -81,19 +81,17 @@ export const diffOp: Operation<DiffParams, DiffOutput> = {
       outPath = nearby.startsWith('..') ? absolute : nearby;
     }
 
-    const nodes = countBy(delta.nodeDeltas);
+    const elements = countBy(delta.elementDeltas);
     const edges = countBy(delta.edgeDeltas);
-    const groups = countBy(delta.groupDeltas);
-    const changed = [nodes, edges, groups].some(
+    const changed = [elements, edges].some(
       (counts: DiffCounts): boolean => counts.added + counts.deleted + counts.modified > 0,
     );
 
     return init(new DiffOutput(), {
       baseRef: delta.baseRef,
       targetRef: delta.targetRef,
-      nodes,
+      elements,
       edges,
-      groups,
       changed,
       outPath,
     });

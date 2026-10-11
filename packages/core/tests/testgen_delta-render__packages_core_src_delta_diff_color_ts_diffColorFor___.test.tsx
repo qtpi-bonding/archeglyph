@@ -4,8 +4,8 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+  DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+  DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
 } from '@archeglyph/proto/gen/content_pb';
 import {
   StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,

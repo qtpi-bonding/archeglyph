@@ -1,6 +1,7 @@
 {
-  "schemaVersion": 1,
-  "nodes": {
+  "schemaVersion": 2,
+  "edges": {},
+  "elements": {
     "stylesheet": {
       "layout": {
         "position": {
@@ -56,12 +57,9 @@
           "y": 108
         }
       }
-    }
-  },
-  "edges": {},
-  "groups": {
+    },
     "core": {
-      "layout": {
+      "boxLayout": {
         "position": {
           "x": 220,
           "y": 60

@@ -17,14 +17,16 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  BoxLayoutSchema,
+  ElementLayoutSchema,
+  ElementStyleEntrySchema,
   StylesheetSchema,
   Vec2Schema,
   type StyleEdit,
   type Stylesheet,
 } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
+import { LaidOutGroup } from '@archeglyph/core/layout/laid_out_group';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
 import type { EditorState } from '../state/editor_state';
 import type { ElementRef, UiState } from '../ui_state/ui_state';
@@ -32,9 +34,11 @@ import { KEYMAP, type CommandId } from '../ui_state/keymap';
 import { buildSceneGeometry } from '../scene/scene';
 import { COMMANDS, runCommand, type CommandContext } from './commands';
 import { init } from '@archeglyph/proto/util/init';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 interface Spy {
   calls: string[];
+  edits: StyleEdit[];
   context: CommandContext;
 }
 
@@ -48,10 +52,10 @@ function node(id: string, x: number, y: number): LaidOutNode {
 
 function sheet(): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {
-      n1: create(NodeStyleEntrySchema, {
-        layout: create(NodeLayoutSchema, {
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      n1: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, {
           position: create(Vec2Schema, { x: 10, y: 20 }),
           size: create(Vec2Schema, { x: 100, y: 40 }),
         }),
@@ -67,10 +71,11 @@ function sheet(): Stylesheet {
  * point -- this is the fully-wired shell the commands are entitled to assume,
  * so anything that still does nothing is inert by its own fault.
  */
-function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof node>> = [node('n1', 10, 20), node('n2', 300, 20)]): Spy {
+function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof node>> = [node('n1', 10, 20), node('n2', 300, 20)], groups: Array<LaidOutGroup> = [], startingSheet?: Stylesheet): Spy {
   const calls: string[] = [];
+  const edits: StyleEdit[] = [];
   let current: Array<ElementRef> = selection;
-  let stylesheet: Stylesheet = sheet();
+  let stylesheet: Stylesheet = startingSheet ?? sheet();
   // The `as unknown as UiState` cast below means nothing here is checked
   // against UiState, so these pairs must be present or every command that
   // touches the overlay -- or, since runCommand clears it, EVERY command at
@@ -85,6 +90,7 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
     canRedo: (): boolean => true,
     applyStyleEdit: (edit: StyleEdit): void => {
       calls.push(`applyStyleEdit:${edit.description}`);
+      edits.push(edit);
     },
     undo: (): void => { calls.push('undo'); },
     redo: (): void => { calls.push('redo'); },
@@ -122,12 +128,16 @@ function spyContext(selection: Array<ElementRef>, nodes: Array<ReturnType<typeof
   } as unknown as UiState;
 
   const geometry = buildSceneGeometry(
-    init(new LaidOutDiagram(), { nodes: Object.fromEntries(nodes.map((n) => [n.id, n])) }),
+    init(new LaidOutDiagram(), {
+      nodes: Object.fromEntries(nodes.map((n) => [n.id, n])),
+      groups: Object.fromEntries(groups.map((g) => [g.id, g])),
+    }),
     '<svg/>',
   );
 
   return {
     calls,
+    edits,
     context: {
       state,
       ui,
@@ -255,5 +265,49 @@ describe('no command is inert', () => {
     expect(spy.context.geometry?.index).toHaveLength(0);
     runCommand('zoom-fit' as CommandId, spy.context);
     expect(spy.calls).not.toContain('setViewport');
+  });
+});
+
+describe('commands on a closed container', () => {
+  // A closed container is a group in the scene but is drawn from the entry's
+  // block fields, so a command that moves or resets it has to write those.
+  const closed = (): LaidOutGroup => init(new LaidOutGroup(), {
+    id: 'P',
+    position: create(Vec2Schema, { x: 50, y: 60 }),
+    size: create(Vec2Schema, { x: 120, y: 60 }),
+    isSuperNode: true,
+    hiddenDescendantCount: 2,
+  });
+  const selection: Array<ElementRef> = [{ id: 'P', kind: 'group' }];
+  const stylesheetWithBoth = (): Stylesheet => create(StylesheetSchema, {
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      P: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, {
+          position: create(Vec2Schema, { x: 50, y: 60 }),
+          size: create(Vec2Schema, { x: 120, y: 60 }),
+        }),
+        boxLayout: create(BoxLayoutSchema, { size: create(Vec2Schema, { x: 400, y: 300 }) }),
+      }),
+    },
+  });
+
+  test('nudging writes the block position', () => {
+    const spy = spyContext(selection, [], [closed()], stylesheetWithBoth());
+    runCommand('nudge-right' as CommandId, spy.context);
+
+    const change = spy.edits[0].elementChanges.find((candidate) => candidate.elementId === 'P')!;
+    expect(change.after?.layout?.position?.x).toBe(51);
+    expect(change.after?.boxLayout?.position).toBeUndefined();
+  });
+
+  test('reset-size clears the block size and keeps the box size', () => {
+    const spy = spyContext(selection, [], [closed()], stylesheetWithBoth());
+    runCommand('reset-size' as CommandId, spy.context);
+
+    expect(spy.edits).toHaveLength(1);
+    const change = spy.edits[0].elementChanges[0];
+    expect(change.unsetPaths).toEqual(['layout.size']);
+    expect(change.after?.boxLayout?.size?.x).toBe(400);
   });
 });

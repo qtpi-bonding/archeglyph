@@ -7,6 +7,7 @@ import { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { create } from '@bufbuild/protobuf';
 import { StyleEdit, Stylesheet, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { elementKey } from '../scene/element_key';
+import { editKindOf } from '../scene/drawn_as';
 import { Handle } from '../scene/hit_test';
 import { ScenePreview, previewMove, previewResize, resizeBounds } from '../scene/preview';
 import { SceneGeometry } from '../scene/scene';
@@ -62,7 +63,7 @@ export function moveCommit(session: MoveSession, geometry: SceneGeometry, styles
       ? delta
       : { x: 0, y: 0 };
     moves.push({
-      kind: ref.kind,
+      kind: editKindOf(geometry, ref.kind, ref.id),
       id: ref.id,
       position: create(Vec2Schema, {
         x: bounds.bounds.minX + delta.x - (parent?.bounds.minX ?? 0) - parentDelta.x,
@@ -163,7 +164,7 @@ export function resizeCommit(session: ResizeSession, geometry: SceneGeometry, st
   const materialize = (edit: StyleEdit): StyleEdit =>
     withLayoutMaterialized(stylesheet, geometry.diagram, edit);
 
-  switch (session.ref.kind) {
+  switch (editKindOf(geometry, session.ref.kind, session.ref.id)) {
     case 'node':
       return materialize(resizeNodeEdit(stylesheet, session.ref.id, position, size));
     case 'group':

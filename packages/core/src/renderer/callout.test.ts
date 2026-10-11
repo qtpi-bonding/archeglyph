@@ -26,6 +26,7 @@ import {
   type Stylesheet,
 } from '@archeglyph/proto/gen/style_pb';
 import { DiagramSchema, LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
 import { seedComponentBindings } from '../resolver/seed_bindings';
@@ -56,10 +57,10 @@ function newElk(): unknown {
 }
 
 const CONTENT = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'anchored',
   graph: {
-    nodes: {
+    elements: {
       target: { label: [{ locale: 'en', source: 'target' }] },
     },
   },
@@ -75,10 +76,10 @@ function stylesheetWith(anchored: boolean): Stylesheet {
       size: create(Vec2Schema, { x: 60, y: 20 }),
     }),
     anchor: anchored
-      ? create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.NODE })
+      ? create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.ELEMENT })
       : undefined,
   });
-  return create(StylesheetSchema, { schemaVersion: 1, annotations: { note: annotation } });
+  return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, annotations: { note: annotation } });
 }
 
 async function renderWith(anchored: boolean): Promise<string> {

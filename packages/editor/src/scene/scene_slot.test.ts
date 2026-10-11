@@ -3,7 +3,7 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import { createRoot } from 'solid-js';
-import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
 import { StyleEditSchema, StylesheetSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import type { LayoutEngine } from '@archeglyph/core/layout/layout_engine';
 import type { LayoutRequest } from '@archeglyph/core/layout/layout_request';
@@ -13,17 +13,18 @@ import { createEditorState } from '../state/create_editor_state';
 import type { EditorState } from '../state/editor_state';
 import { createScene } from './scene';
 import { createSceneSlot } from './scene_slot';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const theme = getBundledTheme('blueprint');
 
 function stateOf(nodeId: string): EditorState {
   return createEditorState(
     create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: nodeId,
-      graph: create(GraphSchema, { nodes: { [nodeId]: create(NodeSchema, {}) } }),
+      graph: create(GraphSchema, { elements: { [nodeId]: create(ElementSchema, {}) } }),
     }),
-    create(StylesheetSchema, { schemaVersion: 1 }),
+    create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
   );
 }
 
@@ -42,10 +43,10 @@ function engineSpy(): { engine: LayoutEngine; seen: () => string[] } {
 
 function nudge(state: EditorState, nodeId: string): void {
   state.applyStyleEdit(create(StyleEditSchema, {
-    schemaVersion: 1,
+    schemaVersion: STYLE_SCHEMA_VERSION,
     id: `move-${nodeId}`,
-    nodeChanges: [{
-      nodeId,
+    elementChanges: [{
+      elementId: nodeId,
       changeType: 1,
       after: { layout: { position: create(Vec2Schema, { x: 1, y: 1 }) } },
     }],

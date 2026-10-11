@@ -4,7 +4,7 @@ import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
   AnnotationEntrySchema, ColorSchema, EdgeStyleEntrySchema, FontWeight,
-  GroupStyleEntrySchema, NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
   StylesheetSchema,
   TypographySchema,
 } from '@archeglyph/proto/gen/style_pb';
@@ -12,6 +12,7 @@ import {
 import { commitTypography } from './sections_model';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import type { InspectorModel } from './model';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const typography = () => create(TypographySchema, {
   size: 18,
@@ -21,10 +22,9 @@ const typography = () => create(TypographySchema, {
 });
 
 const nodeSheet = () => create(StylesheetSchema, {
-  schemaVersion: 1,
-  nodes: { n1: create(NodeStyleEntrySchema, { typography: typography() }) },
+  schemaVersion: STYLE_SCHEMA_VERSION,
+  elements: { n1: create(ElementStyleEntrySchema, { typography: typography() }) },
   edges: {},
-  groups: {},
   annotations: {},
   pendingEdits: [],
 });
@@ -39,7 +39,7 @@ describe('commitTypography clears a field the inspector defaults', () => {
   ])('%s goes back to the default', (field, read) => {
     const sheet = nodeSheet();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(nodeModel, sheet, field, undefined)!);
-    const after = applied.nodes['n1']?.typography;
+    const after = applied.elements['n1']?.typography;
 
     expect(after).toBeDefined();
     expect(read(after!)).toBeUndefined();
@@ -50,16 +50,15 @@ describe('commitTypography clears a field the inspector defaults', () => {
     const sheet = nodeSheet();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(nodeModel, sheet, 'color', undefined)!);
 
-    expect(applied.nodes['n1']?.typography?.color).toBeUndefined();
-    expect(applied.nodes['n1']?.typography?.size).toBe(18);
+    expect(applied.elements['n1']?.typography?.color).toBeUndefined();
+    expect(applied.elements['n1']?.typography?.size).toBe(18);
   });
 
   test('an edge clears the same way a node does', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {},
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {},
       edges: { e1: create(EdgeStyleEntrySchema, { typography: typography() }) },
-      groups: {},
       annotations: {},
       pendingEdits: [],
     });
@@ -74,19 +73,19 @@ describe('commitTypography clears a field the inspector defaults', () => {
     const sheet = nodeSheet();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(nodeModel, sheet, 'size', 24)!);
 
-    expect(applied.nodes['n1']?.typography?.size).toBe(24);
-    expect(applied.nodes['n1']?.typography?.font).toBe('Inter');
+    expect(applied.elements['n1']?.typography?.size).toBe(24);
+    expect(applied.elements['n1']?.typography?.font).toBe('Inter');
   });
 });
 
 describe('commitTypography over a multi-selection', () => {
   const mixedNodes = () => create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {
-      n1: create(NodeStyleEntrySchema, { typography: create(TypographySchema, { font: 'Inter', size: 12 }) }),
-      n2: create(NodeStyleEntrySchema, { typography: create(TypographySchema, { font: 'Georgia', size: 12 }) }),
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      n1: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { font: 'Inter', size: 12 }) }),
+      n2: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { font: 'Georgia', size: 12 }) }),
     },
-    edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+    edges: {}, annotations: {}, pendingEdits: [],
   });
   const bothNodes: InspectorModel = { kind: 'node', ids: ['n1', 'n2'], sections: ['typography'] };
 
@@ -94,54 +93,52 @@ describe('commitTypography over a multi-selection', () => {
     const sheet = mixedNodes();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(bothNodes, sheet, 'size', 24)!);
 
-    expect(applied.nodes['n1']?.typography?.size).toBe(24);
-    expect(applied.nodes['n2']?.typography?.size).toBe(24);
+    expect(applied.elements['n1']?.typography?.size).toBe(24);
+    expect(applied.elements['n2']?.typography?.size).toBe(24);
   });
 
   test('leaves each element its own value for the fields it did not touch', () => {
     const sheet = mixedNodes();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(bothNodes, sheet, 'size', 24)!);
 
-    expect(applied.nodes['n1']?.typography?.font).toBe('Inter');
-    expect(applied.nodes['n2']?.typography?.font).toBe('Georgia');
+    expect(applied.elements['n1']?.typography?.font).toBe('Inter');
+    expect(applied.elements['n2']?.typography?.font).toBe('Georgia');
   });
 
   test('clears the field on every selected element', () => {
     const sheet = mixedNodes();
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(bothNodes, sheet, 'size', undefined)!);
 
-    expect(applied.nodes['n1']?.typography?.size).toBeUndefined();
-    expect(applied.nodes['n2']?.typography?.size).toBeUndefined();
-    expect(applied.nodes['n2']?.typography?.font).toBe('Georgia');
+    expect(applied.elements['n1']?.typography?.size).toBeUndefined();
+    expect(applied.elements['n2']?.typography?.size).toBeUndefined();
+    expect(applied.elements['n2']?.typography?.font).toBe('Georgia');
   });
 
   test('a selection of groups is edited past the first one', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {},
+      schemaVersion: STYLE_SCHEMA_VERSION,
       edges: {},
-      groups: {
-        g1: create(GroupStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
-        g2: create(GroupStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
+        g2: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
       },
       annotations: {}, pendingEdits: [],
     });
     const model: InspectorModel = { kind: 'group', ids: ['g1', 'g2'], sections: ['typography'] };
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(model, sheet, 'size', 20)!);
 
-    expect(applied.groups['g1']?.typography?.size).toBe(20);
-    expect(applied.groups['g2']?.typography?.size).toBe(20);
+    expect(applied.elements['g1']?.typography?.size).toBe(20);
+    expect(applied.elements['g2']?.typography?.size).toBe(20);
   });
 
   test('a selection of edges is edited past the first one', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {},
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {},
       edges: {
         e1: create(EdgeStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
         e2: create(EdgeStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
-      },
-      groups: {}, annotations: {}, pendingEdits: [],
+      }, annotations: {}, pendingEdits: [],
     });
     const model: InspectorModel = { kind: 'edge', ids: ['e1', 'e2'], sections: ['typography'] };
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(model, sheet, 'size', 20)!);
@@ -152,8 +149,8 @@ describe('commitTypography over a multi-selection', () => {
 
   test('a selection of annotations is edited past the first one', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {}, edges: {}, groups: {},
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {}, edges: {},
       annotations: {
         a1: create(AnnotationEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
         a2: create(AnnotationEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
@@ -169,15 +166,15 @@ describe('commitTypography over a multi-selection', () => {
 
   test('commits even when the first element already has the value', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
-        n1: create(NodeStyleEntrySchema, { typography: create(TypographySchema, { size: 24 }) }),
-        n2: create(NodeStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        n1: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { size: 24 }) }),
+        n2: create(ElementStyleEntrySchema, { typography: create(TypographySchema, { size: 12 }) }),
       },
-      edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+      edges: {}, annotations: {}, pendingEdits: [],
     });
     const applied = applyStyleEditToStylesheet(sheet, commitTypography(bothNodes, sheet, 'size', 24)!);
 
-    expect(applied.nodes['n2']?.typography?.size).toBe(24);
+    expect(applied.elements['n2']?.typography?.size).toBe(24);
   });
 });

@@ -2,7 +2,7 @@
 syntax = "proto3";
 package archeglyph.style.v1;
 
-import "content.proto";   // for Localization (used by AnnotationEntry.content)
+import "content.proto"; // for Localization (used by AnnotationEntry.content)
 
 // ============================================================================
 // 1. ENVELOPE
@@ -26,10 +26,11 @@ message Stylesheet {
   // Document-level canvas style.
   optional CanvasStyle canvas = 3;
 
-  // Per-element style entries — four parallel maps, keyed by element id.
-  map<string, NodeStyleEntry> nodes = 4;
+  // Per-element style entries. Elements (nodes and containers alike) share
+  // one map keyed by element id; edges and annotations keep their own.
+  reserved 4, 6;
+  reserved "nodes", "groups";
   map<string, EdgeStyleEntry> edges = 5;
-  map<string, GroupStyleEntry> groups = 6;
   // Annotations — floating text/decoration on the canvas, not part of the
   // graph topology. Authored by the user; not produced by importers.
   // Whole annotation lives here (content + layout + glyphs) since they're
@@ -43,6 +44,14 @@ message Stylesheet {
   // REJECTED edits are dropped or moved out.
   // See §10 below for StyleEdit structure.
   repeated StyleEdit pending_edits = 8;
+
+  map<string, ElementStyleEntry> elements = 9;
+
+  // Default depth cut, in ENTITY levels (at least 1). Applies only to elements
+  // with no explicit render_mode: an entity is OPEN while its entity children
+  // are inside the cut, CLOSED beyond it. Groupings are transparent to depth.
+  // Unset = unlimited.
+  optional uint32 open_depth = 10;
 }
 
 // Per-document canvas styling. Lives in Stylesheet only. A theme expresses
@@ -55,12 +64,12 @@ message CanvasStyle {
   optional Color background = 1;
   optional Vec2 viewport_size = 2;
   optional double margin = 3;
-  optional double node_spacing = 4;       // elkjs hint
-  optional double edge_spacing = 5;       // elkjs hint
+  optional double node_spacing = 4; // elkjs hint
+  optional double edge_spacing = 5; // elkjs hint
 }
 
 // ============================================================================
-// 2. STYLE ENTRIES — four element-typed messages, parallel structure
+// 2. STYLE ENTRIES — element, edge and annotation entries
 // ============================================================================
 // Each style entry holds: layout + visual glyphs + component binding.
 // Visual is split into 2-3 separate glyph fields per element type:
@@ -69,44 +78,43 @@ message CanvasStyle {
 //   - text:       Typography  (text styling — for any element with a label)
 //   - callout:    Glyph1D     (annotation-specific — line to anchor)
 
-message NodeStyleEntry {
-  optional NodeLayout layout = 1;
-  optional Glyph2D shape = 2;                  // body
-  optional Typography typography = 3;          // text styling
-  optional string component = 4;               // theme component name binding
-  optional NodeVisibility visibility = 5;      // hide / contract for readability (presentation only)
+message ElementStyleEntry {
+  // An element is drawn as a block (a leaf, or a CLOSED container) or as a box
+  // (an OPEN container). The two forms have their own geometry and look, so
+  // the entry carries both.
+  optional ElementLayout layout = 1; // block form
+  optional BoxLayout box_layout = 2; // box form
+  optional GroupRenderMode render_mode = 3; // OPEN | DISSOLVED | CLOSED
+  optional Glyph2D shape = 4; // block body
+  optional Glyph2D box = 5; // box body
+  optional Typography typography = 6; // text styling
+  optional string component = 7; // theme node-component binding (block form)
+  optional string box_component = 8; // theme group-component binding (box form)
+  optional NodeVisibility visibility = 9; // HIDDEN hides the whole subtree
 }
 
 message EdgeStyleEntry {
   optional EdgeLayout layout = 1;
-  optional Glyph1D connection = 2;             // line
+  optional Glyph1D connection = 2; // line
   optional Typography typography = 3;
   optional string component = 4;
   // No visibility field — edges have no honest "hide" operation. Edge rendering
   // is derived from its endpoints' visibility (per §2.8). If you want to "remove"
-  // an edge from view, contract or hide one of its nodes.
-}
-
-message GroupStyleEntry {
-  optional GroupLayout layout = 1;
-  optional Glyph2D shape = 2;
-  optional Typography typography = 3;
-  optional string component = 4;
-  // No visibility field on groups either. The render-mode (default / collapsed /
-  // flat) is in GroupLayout.render_mode — see §3 LAYOUT below.
+  // an edge from view, close or hide one of its endpoints.
 }
 
 // ============================================================================
-// Visibility — node-only, presentation-only hiding.
+// Visibility — element-only, presentation-only hiding.
 // Per §2.8: these only affect rendering. The content file (graph topology)
-// is unchanged. Edges follow their endpoints (no edge visibility). Groups have
-// render-modes in GroupLayout — including CONTRACTED to roll up into a super-node.
-// To elide a chain of nodes: group them and CONTRACT the group.
+// is unchanged. Edges follow their endpoints (no edge visibility). Hiding an
+// element hides its whole subtree. Containers have render modes (OPEN, CLOSED,
+// DISSOLVED) in ElementStyleEntry. To elide a chain of nodes: put them in a
+// container and CLOSE it.
 // ============================================================================
 
 enum NodeVisibility {
-  NODE_VISIBILITY_UNSPECIFIED = 0;       // visible (default)
-  NODE_VISIBILITY_HIDDEN = 1;            // vanish; edges incident to this node also disappear
+  NODE_VISIBILITY_UNSPECIFIED = 0; // visible (default)
+  NODE_VISIBILITY_HIDDEN = 1; // vanish with all descendants; edges incident to a vanished element also disappear
 }
 
 // (No per-entry proposal_state / proposal_author. Proposed changes live in
@@ -120,15 +128,15 @@ enum NodeVisibility {
 // along-path. Per §2.7 — structural defaults are NOT in the schema; the layout
 // code picks defaults when fields are unset.
 
-message NodeLayout {
-  optional Vec2 position = 1;            // relative to parent (canvas or group)
+message ElementLayout {
+  optional Vec2 position = 1; // relative to parent (canvas or box)
   optional Vec2 size = 2;
-  optional double rotation = 3;          // degrees
+  optional double rotation = 3; // degrees
 }
 
 message EdgeLayout {
-  optional EdgeRouting routing = 1;             // STRAIGHT | ORTHOGONAL | CURVED | MANUAL
-  repeated Vec2 waypoints = 2;                  // used when routing = MANUAL
+  optional EdgeRouting routing = 1; // STRAIGHT | ORTHOGONAL | CURVED | MANUAL
+  repeated Vec2 waypoints = 2; // used when routing = MANUAL
   // Optional attachment hints. Coordinates are element-local normalized:
   // (0, 0) is element center, (1, 0) is right of bbox, (0, -1) is top.
   // The point is projected onto the element's actual outline at render
@@ -138,31 +146,28 @@ message EdgeLayout {
   optional Vec2 source_attach = 3;
   optional Vec2 target_attach = 4;
   // Where the label sits along the edge path. Geometric concern, not typography.
-  optional EdgePathPosition label_position = 5;        // START | MIDDLE | END | CUSTOM
-  optional double label_position_fraction = 6;         // 0..1 when label_position = CUSTOM
+  optional EdgePathPosition label_position = 5; // START | MIDDLE | END | CUSTOM
+  optional double label_position_fraction = 6; // 0..1 when label_position = CUSTOM
 }
 
-message GroupLayout {
+message BoxLayout {
   optional Vec2 position = 1;
   optional Vec2 size = 2;
   optional double padding = 3;
-  // Render mode — captures the three meaningful presentations of a group.
-  // (Replaces the earlier `bool collapsed` field; collapsed is now one of three modes.)
-  optional GroupRenderMode render_mode = 4;
-  // Where the group label sits relative to the group box. Geometric concern.
-  optional GroupLabelPosition label_position = 5;
+  // Where the element label sits relative to the box. Geometric concern.
+  optional GroupLabelPosition label_position = 4;
 }
 
 enum GroupRenderMode {
-  GROUP_RENDER_MODE_UNSPECIFIED = 0;     // default — same as BOUNDED
-  GROUP_RENDER_MODE_BOUNDED = 1;         // children visible, INSIDE a boundary box
-  GROUP_RENDER_MODE_EXPANDED = 2;        // children visible, NO boundary rendered (group's spatial extent absorbed by parent)
-  GROUP_RENDER_MODE_CONTRACTED = 3;      // single super-node; children hidden;
-                                          // cross-boundary edges terminate at the super-node
+  GROUP_RENDER_MODE_UNSPECIFIED = 0; // chosen by Stylesheet.open_depth, else OPEN
+  GROUP_RENDER_MODE_OPEN = 1; // children visible, INSIDE a boundary box
+  GROUP_RENDER_MODE_DISSOLVED = 2; // children visible, NO boundary rendered; GROUPING elements only
+  GROUP_RENDER_MODE_CLOSED = 3; // single block; children hidden;
+  // edges to the subtree terminate at the block
 }
 
 message AnnotationLayout {
-  optional Vec2 position = 1;            // canvas-relative, or anchor-parent-relative
+  optional Vec2 position = 1; // canvas-relative, or anchor-parent-relative
   optional Vec2 size = 2;
   optional double rotation = 3;
 }
@@ -196,7 +201,7 @@ enum GroupLabelPosition {
 // ============================================================================
 // 4. GLYPH TYPES — three visual primitives
 // ============================================================================
-// Glyph2D: visual identity of a shape-based element (Node, Group, Annotation).
+// Glyph2D: visual identity of a shape-based element (Element, Annotation).
 //          Geometry + outline + fill + halo + decorations.
 // Glyph1D: visual identity of a line-based element (Edge, Annotation callout).
 //          Stroke + arrowheads + glow.
@@ -207,30 +212,30 @@ message Glyph2D {
   // Shape kind — exactly one of standard or custom path.
   // When unset, renderer picks code default (typically SHAPE_RECT).
   oneof shape_kind {
-    ShapeType standard = 1;                   // standard vocabulary; see ShapeType
-    string custom_path_ref = 2;               // "$shape_paths.my_icon" — token reference
+    ShapeType standard = 1; // standard vocabulary; see ShapeType
+    string custom_path_ref = 2; // "$shape_paths.my_icon" — token reference
   }
   optional double corner_radius = 4;
-  optional Stroke stroke = 5;                 // outline
-  optional Fill fill = 6;                     // body fill
-  optional Glow glow = 7;                     // halo around the shape
-  repeated Decoration decorations = 8;        // badges/icons attached to the shape
+  optional Stroke stroke = 5; // outline
+  optional Fill fill = 6; // body fill
+  optional Glow glow = 7; // halo around the shape
+  repeated Decoration decorations = 8; // badges/icons attached to the shape
 }
 
 message Glyph1D {
-  optional Stroke stroke = 1;                 // line styling
-  optional Arrowheads arrowheads = 2;         // start/end arrow variants
-  optional Glow glow = 3;                     // halo around the line
+  optional Stroke stroke = 1; // line styling
+  optional Arrowheads arrowheads = 2; // start/end arrow variants
+  optional Glow glow = 3; // halo around the line
 }
 
 message Typography {
-  optional string font = 1;                   // "$fonts.heading" or literal
+  optional string font = 1; // "$fonts.heading" or literal
   optional Color color = 2;
   optional double size = 3;
   optional FontWeight weight = 4;
   optional TextAlign align = 5;
   optional bool visible = 6;
-  optional Color background = 7;              // text background highlight (useful on edges)
+  optional Color background = 7; // text background highlight (useful on edges)
 }
 
 // ============================================================================
@@ -268,8 +273,8 @@ message Stroke {
   optional double width = 2;
   // Dash pattern — exactly one of standard or custom. Unset = solid.
   oneof dashing {
-    StrokePattern pattern = 3;        // SOLID | DASHED | DOTTED | PLUS | MINUS | DELTA
-    string custom_dasharray = 7;      // "5,5", "2,2,5,5", etc.
+    StrokePattern pattern = 3; // SOLID | DASHED | DOTTED | PLUS | MINUS | DELTA
+    string custom_dasharray = 7; // "5,5", "2,2,5,5", etc.
   }
   optional StrokeCap cap = 5;
   optional StrokeJoin join = 6;
@@ -320,11 +325,11 @@ message Fill {
 message Gradient {
   GradientType type = 1;
   repeated GradientStop stops = 2;
-  optional double angle = 3;            // for LINEAR, in degrees
+  optional double angle = 3; // for LINEAR, in degrees
 }
 
 message GradientStop {
-  double offset = 1;                    // 0..1
+  double offset = 1; // 0..1
   Color color = 2;
 }
 
@@ -336,8 +341,8 @@ enum GradientType {
 
 message Glow {
   optional Color color = 1;
-  optional double radius = 2;          // halo size in px
-  optional double intensity = 4;       // 0..1
+  optional double radius = 2; // halo size in px
+  optional double intensity = 4; // 0..1
 }
 
 enum FontWeight {
@@ -374,9 +379,9 @@ enum ArrowheadVariant {
 
 message Decoration {
   string id = 1;
-  DecorationKind kind = 2;                              // BADGE | ICON
+  DecorationKind kind = 2; // BADGE | ICON
 
-  // For BADGE: localizable text content. Same pattern as Node.label, Edge.label,
+  // For BADGE: localizable text content. Same pattern as Element.label, Edge.label,
   // AnnotationEntry.content — one Localization entry per locale, renderer picks
   // based on --locale flag.
   repeated archeglyph.content.v1.Localization badge_text = 3;
@@ -428,9 +433,10 @@ message Color {
 
 enum RefKind {
   REF_KIND_UNSPECIFIED = 0;
-  REF_KIND_NODE = 1;
+  REF_KIND_ELEMENT = 1;
   REF_KIND_EDGE = 2;
-  REF_KIND_GROUP = 3;
+  reserved 3;
+  reserved "REF_KIND_GROUP";
 }
 
 // ============================================================================
@@ -448,7 +454,6 @@ enum RefKind {
 // Typography from above — same vocabulary as nodes.
 
 message AnnotationEntry {
-
   // Text content (localizable).
   repeated archeglyph.content.v1.Localization content = 2;
 
@@ -473,8 +478,8 @@ message AnnotationEntry {
 }
 
 message AnnotationAnchor {
-  string ref_id = 1;                          // node/edge/group id
-  RefKind ref_kind = 2;                       // REF_KIND_NODE | REF_KIND_EDGE | REF_KIND_GROUP
+  string ref_id = 1; // element/edge id
+  RefKind ref_kind = 2; // REF_KIND_ELEMENT | REF_KIND_EDGE
   // Element-local normalized hint for where on the target the callout
   // attaches. Same convention as edge attachment and decoration position:
   // (0, -1) = top, (1, 0) = right, etc. Projected onto the target's actual
@@ -506,7 +511,7 @@ message AnnotationAnchor {
 //
 // SCOPE: StyleEdit is for STYLE FILE mutations only — the AI equivalent of
 // what the WYSIWYG editor can do. It can NOT propose changes to the graph
-// topology (Node/Edge/Group additions/removals/edits) — those would require
+// topology (Element/Edge additions/removals/edits) — those would require
 // a parallel ContentEdit concept (deferred; see §15).
 
 message StyleEdit {
@@ -518,11 +523,12 @@ message StyleEdit {
   // Hash of the stylesheet this edit was authored against (for staleness check).
   optional string base_hash = 3;
 
-  // Per-element changes — four parallel lists, one per element type.
-  repeated NodeStyleChange node_changes = 4;
+  // Per-element changes — one list per element type.
+  reserved 4, 6;
+  reserved "node_changes", "group_changes";
   repeated EdgeStyleChange edge_changes = 5;
-  repeated GroupStyleChange group_changes = 6;
   repeated AnnotationStyleChange annotation_changes = 7;
+  repeated ElementStyleChange element_changes = 17;
 
   // Document-level changes (optional; affect Stylesheet.canvas / theme_ref).
   optional CanvasStyle canvas_after = 8;
@@ -530,8 +536,8 @@ message StyleEdit {
   map<string, string> themes_after = 9;
 
   // Metadata
-  optional string author = 10;            // "ai:claude", "user:alice", "importer:archegraph"
-  optional string description = 11;       // overall rationale ("Color all backend services blue")
+  optional string author = 10; // "ai:claude", "user:alice", "importer:archegraph"
+  optional string description = 11; // overall rationale ("Color all backend services blue")
   uint64 timestamp_ms = 12;
 
   // Lifecycle.
@@ -547,15 +553,15 @@ message StyleEdit {
   optional CommentThread thread = 16;
 }
 
-message NodeStyleChange {
-  string node_id = 1;
-  StyleChangeType change_type = 2;        // ADDED | DELETED | MODIFIED
+message ElementStyleChange {
+  string element_id = 1;
+  StyleChangeType change_type = 2; // ADDED | DELETED | MODIFIED
   // Populated for ADDED/MODIFIED; partial fields supported, merged over the
   // existing entry. See "HOW `after` IS APPLIED" in style.proto §10.
-  optional NodeStyleEntry after = 3;
-  repeated string unset_paths = 4;        // explicit field-clearing (e.g., "shape.stroke", "typography.color")
-  repeated StyleChangeKind kinds = 5;     // categorical tags
-  optional string description = 6;        // per-element rationale
+  optional ElementStyleEntry after = 3;
+  repeated string unset_paths = 4; // explicit field-clearing (e.g., "shape.stroke", "typography.color")
+  repeated StyleChangeKind kinds = 5; // categorical tags
+  optional string description = 6; // per-element rationale
 }
 
 message EdgeStyleChange {
@@ -564,17 +570,6 @@ message EdgeStyleChange {
   // Partial fields supported, merged over the existing entry. See "HOW
   // `after` IS APPLIED" in style.proto §10.
   optional EdgeStyleEntry after = 3;
-  repeated string unset_paths = 4;
-  repeated StyleChangeKind kinds = 5;
-  optional string description = 6;
-}
-
-message GroupStyleChange {
-  string group_id = 1;
-  StyleChangeType change_type = 2;
-  // Partial fields supported, merged over the existing entry. See "HOW
-  // `after` IS APPLIED" in style.proto §10.
-  optional GroupStyleEntry after = 3;
   repeated string unset_paths = 4;
   repeated StyleChangeKind kinds = 5;
   optional string description = 6;
@@ -593,28 +588,28 @@ message AnnotationStyleChange {
 
 enum StyleChangeType {
   STYLE_CHANGE_TYPE_UNSPECIFIED = 0;
-  STYLE_CHANGE_TYPE_ADDED = 1;          // new entry/annotation appearing
-  STYLE_CHANGE_TYPE_DELETED = 2;        // entry/annotation removed
-  STYLE_CHANGE_TYPE_MODIFIED = 3;       // existing entry/annotation changed
+  STYLE_CHANGE_TYPE_ADDED = 1; // new entry/annotation appearing
+  STYLE_CHANGE_TYPE_DELETED = 2; // entry/annotation removed
+  STYLE_CHANGE_TYPE_MODIFIED = 3; // existing entry/annotation changed
 }
 
 enum StyleChangeKind {
   STYLE_CHANGE_KIND_UNSPECIFIED = 0;
-  STYLE_CHANGE_KIND_LAYOUT = 1;         // position, size, rotation, routing, collapse
-  STYLE_CHANGE_KIND_SHAPE = 2;          // Glyph2D changed (shape, stroke, fill, glow, decorations)
-  STYLE_CHANGE_KIND_CONNECTION = 3;     // Glyph1D changed (edges)
-  STYLE_CHANGE_KIND_TYPOGRAPHY = 4;     // Typography changed
-  STYLE_CHANGE_KIND_CALLOUT = 5;        // annotation callout styling
-  STYLE_CHANGE_KIND_COMPONENT = 6;      // theme component binding
-  STYLE_CHANGE_KIND_ANCHOR = 7;         // annotation anchor target
-  STYLE_CHANGE_KIND_CONTENT = 8;        // annotation text content
+  STYLE_CHANGE_KIND_LAYOUT = 1; // position, size, rotation, routing, collapse
+  STYLE_CHANGE_KIND_SHAPE = 2; // Glyph2D changed (shape, stroke, fill, glow, decorations)
+  STYLE_CHANGE_KIND_CONNECTION = 3; // Glyph1D changed (edges)
+  STYLE_CHANGE_KIND_TYPOGRAPHY = 4; // Typography changed
+  STYLE_CHANGE_KIND_CALLOUT = 5; // annotation callout styling
+  STYLE_CHANGE_KIND_COMPONENT = 6; // theme component binding
+  STYLE_CHANGE_KIND_ANCHOR = 7; // annotation anchor target
+  STYLE_CHANGE_KIND_CONTENT = 8; // annotation text content
 }
 
 enum StyleEditState {
   STYLE_EDIT_STATE_UNSPECIFIED = 0;
-  STYLE_EDIT_STATE_PENDING = 1;         // awaiting review (stored in Stylesheet.pending_edits)
-  STYLE_EDIT_STATE_APPLIED = 2;         // committed — was either direct or accepted from review
-  STYLE_EDIT_STATE_REJECTED = 3;        // was proposed, user rejected
+  STYLE_EDIT_STATE_PENDING = 1; // awaiting review (stored in Stylesheet.pending_edits)
+  STYLE_EDIT_STATE_APPLIED = 2; // committed — was either direct or accepted from review
+  STYLE_EDIT_STATE_REJECTED = 3; // was proposed, user rejected
 }
 
 // ============================================================================

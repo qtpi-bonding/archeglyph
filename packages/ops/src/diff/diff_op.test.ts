@@ -29,12 +29,12 @@ describe('diff op', () => {
     expect(diffOp.exitCode?.({ changed: false } as never)).toBe(0);
   });
 
-  test('it counts every change type across all three entity kinds', async () => {
+  test('it counts every change type across elements and edges', async () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
 
-    expect(out.nodes).toEqual({ added: 5, deleted: 5, modified: 0 });
+    // Five nodes and one group on each side, now all elements.
+    expect(out.elements).toEqual({ added: 6, deleted: 6, modified: 0 });
     expect(out.edges).toEqual({ added: 5, deleted: 5, modified: 0 });
-    expect(out.groups).toEqual({ added: 1, deleted: 1, modified: 0 });
     expect(out.changed).toBe(true);
   });
 
@@ -56,40 +56,44 @@ describe('diff op', () => {
 
     expect(out.outPath).toBe(target);
     const delta = fromJson(DeltaSchema, await readFile(target, 'utf8'));
-    expect(delta.groupDeltas.map((d): string => d.groupId)).toEqual(['hosted', 'ours']);
+    expect(
+      delta.elementDeltas
+        .filter((d) => d.elementId === 'hosted' || d.elementId === 'ours')
+        .map((d): string => d.elementId),
+    ).toEqual(['hosted', 'ours']);
     expect(delta.baseRef).toBe(BEFORE);
   });
 
   test('without --out nothing is written and the summary still reports', async () => {
     const out = await diffOp.execute({ base: BEFORE, target: AFTER }, ctx);
     expect(out.outPath).toBeUndefined();
-    expect(diffOp.format?.(out)).toContain('groups: +1 -1 ~0');
+    expect(diffOp.format?.(out)).toContain('elements: +6 -6 ~0');
   });
 
   test('a node whose label changes reports as modified', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'archeglyph-diff-node-'));
     const edited = join(dir, 'relabelled.diag.json');
     const source = JSON.parse(await readFile(BEFORE, 'utf8')) as {
-      graph: { nodes: Record<string, { label: { locale: string; source: string }[] }> };
+      graph: { elements: Record<string, { label: { locale: string; source: string }[] }> };
     };
-    source.graph.nodes['app'].label = [{ locale: 'en', source: 'Django + Alpine' }];
+    source.graph.elements['app'].label = [{ locale: 'en', source: 'Django + Alpine' }];
     await writeFile(edited, JSON.stringify(source), 'utf8');
 
     const out = await diffOp.execute({ base: BEFORE, target: edited }, ctx);
-    expect(out.nodes).toEqual({ added: 0, deleted: 0, modified: 1 });
+    expect(out.elements).toEqual({ added: 0, deleted: 0, modified: 1 });
   });
 
   test('a group whose label changes reports as modified', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'archeglyph-diff-group-'));
     const edited = join(dir, 'relabelled.diag.json');
     const source = JSON.parse(await readFile(BEFORE, 'utf8')) as {
-      graph: { groups: Record<string, { label: { locale: string; source: string }[] }> };
+      graph: { elements: Record<string, { label: { locale: string; source: string }[] }> };
     };
-    source.graph.groups['hosted'].label = [{ locale: 'en', source: 'Rented servers' }];
+    source.graph.elements['hosted'].label = [{ locale: 'en', source: 'Rented servers' }];
     await writeFile(edited, JSON.stringify(source), 'utf8');
 
     const out = await diffOp.execute({ base: BEFORE, target: edited }, ctx);
-    expect(out.groups).toEqual({ added: 0, deleted: 0, modified: 1 });
+    expect(out.elements).toEqual({ added: 0, deleted: 0, modified: 1 });
   });
 
   test('a bad path fails at the load stage rather than throwing raw', async () => {

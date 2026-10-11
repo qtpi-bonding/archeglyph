@@ -1,6 +1,7 @@
 {
-  "schemaVersion": 1,
-  "nodes": {
+  "schemaVersion": 2,
+  "edges": {},
+  "elements": {
     "caddy": {
       "layout": {
         "position": {
@@ -48,12 +49,9 @@
           "y": 130
         }
       }
-    }
-  },
-  "edges": {},
-  "groups": {
+    },
     "ours": {
-      "layout": {
+      "boxLayout": {
         "position": {
           "x": 560,
           "y": 16

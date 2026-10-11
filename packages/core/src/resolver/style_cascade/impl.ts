@@ -23,8 +23,9 @@ import {
   Glyph1DSchema,
   Glyph2D,
   Glyph2DSchema,
-  GroupStyleEntry,
-  NodeStyleEntry,
+  BoxLayoutSchema,
+  ElementLayout,
+  ElementStyleEntry,
   Stroke,
   StrokeSchema,
   Stylesheet,
@@ -33,6 +34,7 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { AnnotationComponent, EdgeComponent, NodeComponent, Theme } from '@archeglyph/proto/gen/theme_pb';
 import { ResolveError } from '../resolve_error';
+import { deriveComponent } from '../seed_bindings/derive';
 import { ResolvedAnnotation } from '../resolved_annotation';
 import { ResolvedDiagram } from '../resolved_diagram';
 import { ResolvedEdge } from '../resolved_edge';
@@ -177,7 +179,7 @@ export class StyleCascadeImpl implements StyleCascade {
     const sortedNodes: FilteredNode[] = Object.values(filtered.nodes);
     sortedNodes.sort((a: FilteredNode, b: FilteredNode): number => compareIds(a.id, b.id));
     for (const node of sortedNodes) {
-      const entry: NodeStyleEntry | undefined = stylesheet?.nodes[node.id];
+      const entry: ElementStyleEntry | undefined = stylesheet?.elements[node.id];
       const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultNodeComponent);
       let themeComponent: NodeComponent | undefined;
       if (componentName !== undefined) {
@@ -208,7 +210,21 @@ export class StyleCascadeImpl implements StyleCascade {
     sortedEdges.sort((a: FilteredEdge, b: FilteredEdge): number => compareIds(a.id, b.id));
     for (const edge of sortedEdges) {
       const entry: EdgeStyleEntry | undefined = stylesheet?.edges[edge.id];
-      const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultEdgeComponent);
+      const defaultTheme: Theme | undefined = themes?.get('default');
+      // A bundle is derived when edges merge, so it has no entry and nothing
+      // seeded a component for it; take the one its kind names, as seeding does
+      // for an authored edge.
+      const bundleComponent: string | undefined = entry === undefined && edge.id.startsWith('bundle:')
+        ? deriveComponent(
+          edge.tags.get('kind'),
+          defaultTheme?.edgeComponents.map((component: EdgeComponent): string => component.name) ?? [],
+          defaultTheme?.defaultEdgeComponent,
+        )
+        : undefined;
+      const componentName: string | undefined = componentNameFor(
+        entry?.component ?? bundleComponent,
+        defaultTheme?.defaultEdgeComponent,
+      );
       let themeComponent: EdgeComponent | undefined;
       if (componentName !== undefined) {
         const looked = findComponent(themes, componentName, pickEdge);
@@ -238,28 +254,41 @@ export class StyleCascadeImpl implements StyleCascade {
     const sortedGroups: FilteredGroup[] = Object.values(filtered.groups);
     sortedGroups.sort((a: FilteredGroup, b: FilteredGroup): number => compareIds(a.id, b.id));
     for (const group of sortedGroups) {
-      const entry: GroupStyleEntry | undefined = stylesheet?.groups[group.id];
-      const componentName: string | undefined = componentNameFor(entry?.component, themes?.get('default')?.defaultGroupComponent);
+      const entry: ElementStyleEntry | undefined = stylesheet?.elements[group.id];
+      // A closed container is drawn as a block: it takes the block look and
+      // geometry of its element entry, exactly as a leaf does. An open one is
+      // drawn as a box and takes the box look. The two never share fields, so
+      // resizing the box does not resize the closed block.
+      const asBlock: boolean = group.isSuperNode;
+      const componentName: string | undefined = asBlock
+        ? componentNameFor(entry?.component, themes?.get('default')?.defaultNodeComponent)
+        : componentNameFor(entry?.boxComponent, themes?.get('default')?.defaultGroupComponent);
       let themeComponent: NodeComponent | undefined;
       if (componentName !== undefined) {
-        const looked = findComponent(themes, componentName, pickGroup);
+        const looked = findComponent(themes, componentName, asBlock ? pickNode : pickGroup);
         if ('error' in looked) {
           return Err(init(new ResolveError(), { message: `group ${group.id}: ${looked.error}` }));
         }
         themeComponent = looked.found;
       }
+      const glyph: Glyph2D | undefined = asBlock ? entry?.shape : entry?.box;
       const shape: Glyph2D = create(Glyph2DSchema);
       if (themeComponent?.shape !== undefined) { mergeGlyph2D(shape, themeComponent.shape); }
-      if (entry?.shape !== undefined) { mergeGlyph2D(shape, entry.shape); }
+      if (glyph !== undefined) { mergeGlyph2D(shape, glyph); }
       const typography: Typography = create(TypographySchema);
       if (themeComponent?.typography !== undefined) { mergeTypography(typography, themeComponent.typography); }
       if (entry?.typography !== undefined) { mergeTypography(typography, entry.typography); }
+      const blockLayout: ElementLayout | undefined = asBlock ? entry?.layout : undefined;
       const resolved: ResolvedGroup = init(new ResolvedGroup(), {
         id: group.id,
         parentGroup: group.parentGroup,
+        viewRole: group.viewRole,
         shape,
         typography,
-        layout: entry?.layout,
+        layout: asBlock && blockLayout !== undefined
+          ? create(BoxLayoutSchema, { position: blockLayout.position, size: blockLayout.size })
+          : asBlock ? undefined : entry?.boxLayout,
+        rotation: blockLayout?.rotation,
         label: group.label,
         isSuperNode: group.isSuperNode,
         hiddenDescendantCount: group.hiddenDescendantCount,

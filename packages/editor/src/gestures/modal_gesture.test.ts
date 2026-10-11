@@ -7,8 +7,8 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  ElementLayoutSchema,
+  ElementStyleEntrySchema,
   Stylesheet,
   StylesheetSchema,
   Vec2Schema,
@@ -24,6 +24,7 @@ import { moveCommit, type MoveSession } from './drag_machines';
 import { beginModalGesture } from '../ui_state/modal_gesture';
 import { modalKeyDown } from '../ui_state/modal_step';
 import { modalDelta } from './modal_aim';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 
@@ -40,10 +41,10 @@ function geometryFrom(nodes: LaidOutNode[]): SceneGeometry {
 
 function sheet(): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {
-      n1: create(NodeStyleEntrySchema, {
-        layout: create(NodeLayoutSchema, { position: v(10, 20), size: v(100, 50) }),
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      n1: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, { position: v(10, 20), size: v(100, 50) }),
         component: 'glyph',
       }),
     },
@@ -105,7 +106,7 @@ describe('a modal grab is the same gesture as a drag', () => {
       modalDelta(gesture),
     );
     const after = applyStyleEditToStylesheet(sheet(), edit!);
-    expect(after.nodes.n1?.layout?.position).toEqual(v(10, 60));
+    expect(after.elements.n1?.layout?.position).toEqual(v(10, 60));
   });
 
   test('Enter with no digits typed commits nothing', () => {

@@ -13,8 +13,8 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  ElementLayoutSchema,
+  ElementStyleEntrySchema,
   Stylesheet,
   StylesheetSchema,
   Vec2Schema,
@@ -25,6 +25,7 @@ import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
 import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
+import { pinAllEdit } from '../state/edits/layout_command';
 import { buildSceneGeometry, type SceneGeometry } from '../scene/scene';
 import { handleAtPoint } from '../scene/hit_test';
 import type { ElementRef } from '../ui_state/ui_state';
@@ -37,6 +38,7 @@ import {
   type ResizeSession,
 } from './drag_machines';
 import { init } from '@archeglyph/proto/util/init';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -83,14 +85,14 @@ const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 /** n1 carries a size and a component binding a careless builder could drop. */
 function sheet(): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {
-      n1: create(NodeStyleEntrySchema, {
-        layout: create(NodeLayoutSchema, { position: v(10, 20), size: v(100, 50) }),
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      n1: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, { position: v(10, 20), size: v(100, 50) }),
         component: 'glyph',
       }),
-      n2: create(NodeStyleEntrySchema, {
-        layout: create(NodeLayoutSchema, { position: v(300, 20), size: v(100, 50) }),
+      n2: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, { position: v(300, 20), size: v(100, 50) }),
       }),
     },
   });
@@ -126,8 +128,8 @@ describe('dragging a handle resizes the element under it', () => {
     expect(edit).toBeDefined();
 
     const after = applyStyleEditToStylesheet(before, edit!);
-    expect(after.nodes.n1.layout?.size).toMatchObject({ x: 130, y: 70 });
-    expect(after.nodes.n1.layout?.position).toMatchObject({ x: 10, y: 20 });
+    expect(after.elements.n1.layout?.size).toMatchObject({ x: 130, y: 70 });
+    expect(after.elements.n1.layout?.position).toMatchObject({ x: 10, y: 20 });
   });
 
   test('nothing but the resized element is written', () => {
@@ -140,11 +142,11 @@ describe('dragging a handle resizes the element under it', () => {
       resizeCommit(session, geometry, before, vec2(140, 90), false)!,
     );
 
-    expect(after.nodes.n2.layout?.position).toMatchObject({ x: 300, y: 20 });
-    expect(after.nodes.n2.layout?.size).toMatchObject({ x: 100, y: 50 });
+    expect(after.elements.n2.layout?.position).toMatchObject({ x: 300, y: 20 });
+    expect(after.elements.n2.layout?.size).toMatchObject({ x: 100, y: 50 });
     // A StyleChange carries a whole entry, so the binding is the thing most
     // easily lost on the way through a builder.
-    expect(after.nodes.n1.component).toBe('glyph');
+    expect(after.elements.n1.component).toBe('glyph');
   });
 
   test('a north-west drag moves the origin and keeps the opposite corner fixed', () => {
@@ -157,8 +159,8 @@ describe('dragging a handle resizes the element under it', () => {
       resizeCommit(session, geometry, before, vec2(30, 40), false)!,
     );
 
-    expect(after.nodes.n1.layout?.position).toMatchObject({ x: 30, y: 40 });
-    expect(after.nodes.n1.layout?.size).toMatchObject({ x: 80, y: 30 });
+    expect(after.elements.n1.layout?.position).toMatchObject({ x: 30, y: 40 });
+    expect(after.elements.n1.layout?.size).toMatchObject({ x: 80, y: 30 });
   });
 
   test('an edge handle resizes one axis only', () => {
@@ -171,7 +173,7 @@ describe('dragging a handle resizes the element under it', () => {
       resizeCommit(session, geometry, before, vec2(160, 999), false)!,
     );
 
-    expect(after.nodes.n1.layout?.size).toMatchObject({ x: 150, y: 50 });
+    expect(after.elements.n1.layout?.size).toMatchObject({ x: 150, y: 50 });
   });
 
   test('shift keeps the aspect ratio', () => {
@@ -186,7 +188,7 @@ describe('dragging a handle resizes the element under it', () => {
       resizeCommit(session, geometry, before, vec2(210, 70), true)!,
     );
 
-    const size = after.nodes.n1.layout!.size!;
+    const size = after.elements.n1.layout!.size!;
     expect(size.x / size.y).toBeCloseTo(2, 5);
   });
 
@@ -213,16 +215,16 @@ describe('dragging a handle resizes the element under it', () => {
     const groupSelection: Array<ElementRef> = [{ id: 'g1', kind: 'group' }];
     const session: ResizeSession = { ref: groupSelection[0], handle: 'se', origin: vec2(200, 200) };
 
-    const before = create(StylesheetSchema, { schemaVersion: 1 });
+    const before = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const after = applyStyleEditToStylesheet(
       before,
       resizeCommit(session, geometry, before, vec2(250, 250), false)!,
     );
 
-    expect(after.groups.g1.layout?.size).toMatchObject({ x: 250, y: 250 });
+    expect(after.elements.g1.boxLayout?.size).toMatchObject({ x: 250, y: 250 });
     // The child is pinned by the same edit (pin-on-touch materializes the
     // whole layout), but pinned exactly where it already was.
-    expect(after.nodes.c1.layout?.position).toMatchObject({ x: 20, y: 20 });
+    expect(after.elements.c1.layout?.position).toMatchObject({ x: 20, y: 20 });
   });
 });
 
@@ -237,14 +239,14 @@ describe('pin-on-touch', () => {
     const geometry = geometryFrom({ nodes: [dragged, bystander] });
     const session: MoveSession = { refs: [{ id: 'n1', kind: 'node' }], origin: vec2(0, 0) };
 
-    const before = create(StylesheetSchema, { schemaVersion: 1 });
+    const before = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const after = applyStyleEditToStylesheet(
       before,
       moveCommit(session, geometry, before, vec2(15, 5))!,
     );
 
-    expect(after.nodes.n1.layout?.position).toMatchObject({ x: 25, y: 25 });
-    expect(after.nodes.n2.layout?.position).toMatchObject({ x: 300, y: 400 });
+    expect(after.elements.n1.layout?.position).toMatchObject({ x: 25, y: 25 });
+    expect(after.elements.n2.layout?.position).toMatchObject({ x: 300, y: 400 });
   });
 
   test('a later move does not re-pin what is already pinned', () => {
@@ -256,7 +258,7 @@ describe('pin-on-touch', () => {
     // sheet() has explicit positions for both.
     const edit = moveCommit(session, geometry, sheet(), vec2(5, 0))!;
 
-    expect(edit.nodeChanges.map((change) => change.nodeId)).toEqual(['n1']);
+    expect(edit.elementChanges.map((change) => change.elementId)).toEqual(['n1']);
   });
 });
 
@@ -309,7 +311,7 @@ describe('element-space machines take diagram coordinates', () => {
       moveCommit(session, geometry, sheet(), vec2(90, 65))!,
     );
 
-    expect(after.nodes.n1.layout?.position).toMatchObject({ x: 40, y: 40 });
+    expect(after.elements.n1.layout?.position).toMatchObject({ x: 40, y: 40 });
   });
 
   test('a resize commits exactly the delta it was given', () => {
@@ -321,6 +323,67 @@ describe('element-space machines take diagram coordinates', () => {
       resizeCommit(session, geometry, sheet(), vec2(140, 90), false)!,
     );
 
-    expect(after.nodes.n1.layout?.size).toMatchObject({ x: 130, y: 70 });
+    expect(after.elements.n1.layout?.size).toMatchObject({ x: 130, y: 70 });
+  });
+});
+
+describe('a closed container is moved and resized through its block form', () => {
+  // The scene lists a closed container among the groups, but the renderer
+  // draws it from the entry's layout, so a gesture on it that wrote boxLayout
+  // would change nothing the user can see.
+  const closed = (): LaidOutGroup => init(new LaidOutGroup(), {
+    id: 'P',
+    position: vec2(100, 100),
+    size: vec2(120, 60),
+    isSuperNode: true,
+    hiddenDescendantCount: 2,
+  });
+  const unpinned = (): Stylesheet => create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
+
+  test('moving writes layout.position, not boxLayout', () => {
+    const geometry = geometryFrom({ groups: [closed()] });
+    const session: MoveSession = { refs: [{ id: 'P', kind: 'group' }], origin: vec2(0, 0) };
+
+    const edit = moveCommit(session, geometry, unpinned(), vec2(15, 5))!;
+    const entry = applyStyleEditToStylesheet(unpinned(), edit).elements['P'];
+
+    expect(entry.layout?.position).toMatchObject({ x: 115, y: 105 });
+    expect(entry.boxLayout).toBeUndefined();
+  });
+
+  test('resizing writes layout.size, not boxLayout', () => {
+    const geometry = geometryFrom({ groups: [closed()] });
+    const session: ResizeSession = { ref: { id: 'P', kind: 'group' }, handle: 'se', origin: vec2(0, 0) };
+
+    const edit = resizeCommit(session, geometry, unpinned(), vec2(30, 10), false)!;
+    const entry = applyStyleEditToStylesheet(unpinned(), edit).elements['P'];
+
+    expect(entry.layout?.size).toMatchObject({ x: 150, y: 70 });
+    expect(entry.boxLayout).toBeUndefined();
+  });
+
+  test('pinning on touch gives a closed bystander a block position, an open one a box position', () => {
+    const open = group('Q', vec2(400, 0), vec2(200, 100));
+    const geometry = geometryFrom({ nodes: [node('n1', vec2(0, 0), vec2(10, 10))], groups: [closed(), open] });
+    const session: MoveSession = { refs: [{ id: 'n1', kind: 'node' }], origin: vec2(0, 0) };
+
+    const after = applyStyleEditToStylesheet(
+      unpinned(),
+      moveCommit(session, geometry, unpinned(), vec2(5, 5))!,
+    );
+
+    expect(after.elements['P'].layout?.position).toMatchObject({ x: 100, y: 100 });
+    expect(after.elements['P'].boxLayout).toBeUndefined();
+    expect(after.elements['Q'].boxLayout?.position).toMatchObject({ x: 400, y: 0 });
+    expect(after.elements['Q'].layout).toBeUndefined();
+  });
+
+  test('pin-all pins a closed container through its block form', () => {
+    const geometry = geometryFrom({ groups: [closed()] });
+
+    const after = applyStyleEditToStylesheet(unpinned(), pinAllEdit(unpinned(), geometry.diagram));
+
+    expect(after.elements['P'].layout?.position).toMatchObject({ x: 100, y: 100 });
+    expect(after.elements['P'].boxLayout).toBeUndefined();
   });
 });

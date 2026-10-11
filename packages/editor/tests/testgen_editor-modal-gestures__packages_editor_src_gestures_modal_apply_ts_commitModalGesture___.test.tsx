@@ -28,7 +28,7 @@ describe('testgen_gestures__commitModalGesture', () => {
         save: (): void => {},
         beginTextEdit: (_ref: unknown): void => {},
         state: {
-          stylesheet: (): unknown => ({ schemaVersion: 1, nodes: {}, groups: {}, edges: {}, annotations: {} }),
+          stylesheet: (): unknown => ({ schemaVersion: 2, elements: {}, edges: {}, annotations: {} }),
           applyStyleEdit: (...args: Array<unknown>): void => { calls.push(args); },
         },
       };

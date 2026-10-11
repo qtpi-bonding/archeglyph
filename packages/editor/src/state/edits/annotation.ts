@@ -21,11 +21,11 @@ import { ElementRef } from '../../ui_state/ui_state';
 export function anchorForElement(ref: ElementRef): AnnotationAnchor | undefined {
   switch (ref.kind) {
     case 'node':
-      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.NODE });
+      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.ELEMENT });
     case 'edge':
       return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.EDGE });
     case 'group':
-      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.GROUP });
+      return create(AnnotationAnchorSchema, { refId: ref.id, refKind: RefKind.ELEMENT });
     case 'annotation':
       return undefined;
   }

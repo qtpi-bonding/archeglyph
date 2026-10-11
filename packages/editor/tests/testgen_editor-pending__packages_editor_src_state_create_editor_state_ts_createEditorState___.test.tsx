@@ -6,8 +6,9 @@ import * as fc from 'fast-check';
 
 import { create } from '@bufbuild/protobuf';
 import { createEditorState } from '../src/state/create_editor_state';
-import { Diagram, DiagramSchema, GraphSchema, NodeSchema } from '../../proto/src/gen/content_pb';
+import { Diagram, DiagramSchema, ElementSchema, GraphSchema } from '../../proto/src/gen/content_pb';
 import { StyleEdit, StyleEditSchema, Stylesheet, StylesheetSchema } from '../../proto/src/gen/style_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 describe('testgen_state__createEditorState', () => {
     // REMOVED BY HAND: seven cases asserted `"acceptPending" in state` is
@@ -16,7 +17,7 @@ describe('testgen_state__createEditorState', () => {
     // methods did not exist yet and pinned their absence -- the opposite of
     // the spec. src/state/pending_review.test.ts covers the real behaviour.
 
-    const makeChangedEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: 1, id, nodeChanges: [{ nodeId: id, changeType: 1 }], timestampMs: 0n, state: 0 });
+    const makeChangedEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: STYLE_SCHEMA_VERSION, id, elementChanges: [{ elementId: id, changeType: 1 }], timestampMs: 0n, state: 0 });
 
     // HAND-REPAIRED: the diagram now carries the node each edit targets.
     // applyStyleEdit drops changes against ids the graph does not contain,
@@ -26,15 +27,15 @@ describe('testgen_state__createEditorState', () => {
     const holdable = (): fc.Arbitrary<string> => fc.string().filter((id) => id !== '__proto__');
 
     const makeDiagram = (nodeId?: string): Diagram => create(DiagramSchema, {
-        schemaVersion: 1, id: "diagram",
+        schemaVersion: CONTENT_SCHEMA_VERSION, id: "diagram",
         graph: create(GraphSchema, nodeId === undefined ? {} : {
-            nodes: { [nodeId]: create(NodeSchema, {}) },
+            elements: { [nodeId]: create(ElementSchema, {}) },
         }),
     });
 
-    const makeEmptyEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: 1, id, timestampMs: 0n, state: 0 });
+    const makeEmptyEdit = (id: string): StyleEdit => create(StyleEditSchema, { schemaVersion: STYLE_SCHEMA_VERSION, id, timestampMs: 0n, state: 0 });
 
-    const makeStylesheet = (pendingEdits: StyleEdit[]): Stylesheet => create(StylesheetSchema, { schemaVersion: 1, pendingEdits });
+    const makeStylesheet = (pendingEdits: StyleEdit[]): Stylesheet => create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, pendingEdits });
 
     // WHEN: The function is called with a diagram and stylesheet, creating state with those values, empty undo/redo logs, clean dirty state, and version zero.
     // THEN: It returns state exposing the supplied diagram and stylesheet with empty undo and redo logs, clean dirty state, and version zero.

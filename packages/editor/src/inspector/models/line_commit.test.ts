@@ -29,7 +29,7 @@ describe('commitLine', () => {
   describe('edge strokeColor', () => {
     it('returns undefined when model kind is not edge or annotation', () => {
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
-      const stylesheet = create(StylesheetSchema, { nodes: {}, edges: {}, groups: {}, annotations: {} });
+      const stylesheet = create(StylesheetSchema, { elements: {}, edges: {}, annotations: {} });
 
       const result = commitLine(model, stylesheet, 'strokeColor', '#FF0000');
 
@@ -46,8 +46,7 @@ describe('commitLine', () => {
             }),
           }),
         },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -64,8 +63,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'edge', ids: ['e1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         edges: { e1: create(EdgeStyleEntrySchema, {}) },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -86,8 +84,7 @@ describe('commitLine', () => {
             }),
           }),
         },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -101,8 +98,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'edge', ids: ['e1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         edges: { e1: create(EdgeStyleEntrySchema, {}) },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -123,8 +119,7 @@ describe('commitLine', () => {
             }),
           }),
         },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -139,8 +134,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'edge', ids: ['e1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         edges: { e1: create(EdgeStyleEntrySchema, {}) },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -165,8 +159,7 @@ describe('commitLine', () => {
             }),
           }),
         },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -183,8 +176,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'edge', ids: ['e1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         edges: { e1: create(EdgeStyleEntrySchema, {}) },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -206,8 +198,7 @@ describe('commitLine', () => {
             connection: create(Glyph1DSchema, { stroke: create(StrokeSchema, {}) }),
           }),
         },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 
@@ -225,9 +216,8 @@ describe('commitLine', () => {
         annotations: {
           a1: create(AnnotationEntrySchema, { content: [] }),
         },
-        nodes: {},
+        elements: {},
         edges: {},
-        groups: {},
       });
 
       const result = commitLine(model, stylesheet, 'strokeColor', '#0000FF');
@@ -242,9 +232,8 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'annotation', ids: ['a1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         annotations: {},
-        nodes: {},
+        elements: {},
         edges: {},
-        groups: {},
       });
 
       const result = commitLine(model, stylesheet, 'strokeColor', '#0000FF');
@@ -258,8 +247,7 @@ describe('commitLine', () => {
       const model: InspectorModel = { kind: 'edge', ids: ['e1'], sections: [] };
       const stylesheet = create(StylesheetSchema, {
         edges: { e1: create(EdgeStyleEntrySchema, {}) },
-        nodes: {},
-        groups: {},
+        elements: {},
         annotations: {},
       });
 

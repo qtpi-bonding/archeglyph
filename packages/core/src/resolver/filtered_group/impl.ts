@@ -7,8 +7,10 @@ import { Localization } from '@archeglyph/proto/gen/content_pb';
 export class FilteredGroup {
   id!: string;
   parentGroup?: string;
+  viewRole: 'leaf' | 'box' | 'block' = 'box';
   tags!: Map<string, string>;
   label: Localization[] = [];
   isSuperNode!: boolean;
   hiddenDescendantCount!: number;
+  internalEdgeCount: number = 0;
 }

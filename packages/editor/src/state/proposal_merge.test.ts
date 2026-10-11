@@ -5,12 +5,13 @@ import { create } from '@bufbuild/protobuf';
 import {
   AnnotationAnchorSchema, AnnotationEntrySchema, ArrowheadsSchema, ArrowheadVariant,
   ColorSchema, EdgeStyleEntrySchema, FillSchema, Glyph1DSchema, Glyph2DSchema,
-  GroupLayoutSchema, GroupStyleEntrySchema, NodeLayoutSchema, NodeStyleEntrySchema,
+  BoxLayoutSchema, ElementLayoutSchema, ElementStyleEntrySchema,
   RefKind, ShapeType, StrokeSchema, StyleChangeType, StyleEditSchema, StylesheetSchema,
   TypographySchema, Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { fromBinary, toBinary } from '@bufbuild/protobuf';
-import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { applyStyleEditToStylesheet } from './apply_style_edit';
 import { createEditorState } from './create_editor_state';
 
@@ -23,52 +24,52 @@ type Sheet = ReturnType<typeof create<typeof StylesheetSchema>>;
 
 const nodeEdit = (after: unknown, unsetPaths: string[] = []) => create(StyleEditSchema, {
   id: 'e',
-  nodeChanges: [{ nodeId: 'n', changeType: StyleChangeType.MODIFIED, after, unsetPaths } as never],
+  elementChanges: [{ elementId: 'n', changeType: StyleChangeType.MODIFIED, after, unsetPaths } as never],
 });
 
 const pinned: Sheet = create(StylesheetSchema, {
-  nodes: {
-    n: create(NodeStyleEntrySchema, {
-      layout: create(NodeLayoutSchema, { position: vec(190, 130), size: vec(120, 40) }),
+  elements: {
+    n: create(ElementStyleEntrySchema, {
+      layout: create(ElementLayoutSchema, { position: vec(190, 130), size: vec(120, 40) }),
       shape: filled('#111111'),
     }),
   },
 });
 
 const strokeOf = (sheet: Sheet): string | undefined => {
-  const paint = sheet.nodes['n']?.shape?.stroke?.paint;
+  const paint = sheet.elements['n']?.shape?.stroke?.paint;
   return paint?.case === 'color' ? paint.value.value : undefined;
 };
 const fillOf = (sheet: Sheet): string | undefined => {
-  const paint = sheet.nodes['n']?.shape?.fill?.paint;
+  const paint = sheet.elements['n']?.shape?.fill?.paint;
   return paint?.case === 'color' ? paint.value.value : undefined;
 };
 
 describe('a proposal changes what it names and nothing else', () => {
   test('a shape-only proposal leaves the layout alone', () => {
-    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(NodeStyleEntrySchema, { shape: stroked('#F59E0B') })));
+    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(ElementStyleEntrySchema, { shape: stroked('#F59E0B') })));
 
-    expect(applied.nodes['n']?.layout?.position).toEqual(vec(190, 130));
-    expect(applied.nodes['n']?.layout?.size).toEqual(vec(120, 40));
+    expect(applied.elements['n']?.layout?.position).toEqual(vec(190, 130));
+    expect(applied.elements['n']?.layout?.size).toEqual(vec(120, 40));
     expect(strokeOf(applied)).toBe('#F59E0B');
   });
 
   test('a proposal naming one field of a nested message keeps the rest of it', () => {
-    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(NodeStyleEntrySchema, { shape: stroked('#F59E0B') })));
+    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(ElementStyleEntrySchema, { shape: stroked('#F59E0B') })));
     expect(fillOf(applied)).toBe('#111111');
 
     const moved = applyStyleEditToStylesheet(
       pinned,
-      nodeEdit(create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec(190, 300) }) })),
+      nodeEdit(create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec(190, 300) }) })),
     );
-    expect(moved.nodes['n']?.layout?.size).toEqual(vec(120, 40));
+    expect(moved.elements['n']?.layout?.size).toEqual(vec(120, 40));
   });
 
   // An unset oneof is `{ case: undefined }`: one key, printing as `{}`.
   test('a shape patch that names no shape kind keeps the one already there', () => {
     const sheet = create(StylesheetSchema, {
-      nodes: {
-        n: create(NodeStyleEntrySchema, {
+      elements: {
+        n: create(ElementStyleEntrySchema, {
           shape: create(Glyph2DSchema, {
             shapeKind: { case: 'standard', value: ShapeType.SHAPE_HEXAGON },
             fill: create(FillSchema, { paint: colour('#111111') }),
@@ -79,16 +80,16 @@ describe('a proposal changes what it names and nothing else', () => {
 
     const applied = applyStyleEditToStylesheet(
       sheet,
-      nodeEdit(create(NodeStyleEntrySchema, { shape: stroked('#F59E0B') })),
+      nodeEdit(create(ElementStyleEntrySchema, { shape: stroked('#F59E0B') })),
     );
 
-    expect(applied.nodes['n']?.shape?.shapeKind).toEqual({ case: 'standard', value: ShapeType.SHAPE_HEXAGON });
+    expect(applied.elements['n']?.shape?.shapeKind).toEqual({ case: 'standard', value: ShapeType.SHAPE_HEXAGON });
     expect(strokeOf(applied)).toBe('#F59E0B');
   });
 
   test('two proposals on one element both survive, in either order', () => {
-    const tint = nodeEdit(create(NodeStyleEntrySchema, { shape: stroked('#F59E0B') }));
-    const move = nodeEdit(create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec(190, 300) }) }));
+    const tint = nodeEdit(create(ElementStyleEntrySchema, { shape: stroked('#F59E0B') }));
+    const move = nodeEdit(create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec(190, 300) }) }));
 
     for (const applied of [
       applyStyleEditToStylesheet(applyStyleEditToStylesheet(pinned, tint), move),
@@ -96,14 +97,14 @@ describe('a proposal changes what it names and nothing else', () => {
     ]) {
       expect(strokeOf(applied)).toBe('#F59E0B');
       expect(fillOf(applied)).toBe('#111111');
-      expect(applied.nodes['n']?.layout?.position).toEqual(vec(190, 300));
+      expect(applied.elements['n']?.layout?.position).toEqual(vec(190, 300));
     }
   });
 
   test('applying a proposal does not mutate the sheet it came from', () => {
-    applyStyleEditToStylesheet(pinned, nodeEdit(create(NodeStyleEntrySchema, { shape: stroked('#F59E0B') })));
+    applyStyleEditToStylesheet(pinned, nodeEdit(create(ElementStyleEntrySchema, { shape: stroked('#F59E0B') })));
     expect(strokeOf(pinned)).toBeUndefined();
-    expect(pinned.nodes['n']?.layout?.position).toEqual(vec(190, 130));
+    expect(pinned.elements['n']?.layout?.position).toEqual(vec(190, 130));
   });
 
   // `create(AnnotationEntrySchema, {})` materialises `tags: {}`.
@@ -126,14 +127,14 @@ describe('a proposal changes what it names and nothing else', () => {
 
   test('groups and edges merge the same way nodes do', () => {
     const sheet = create(StylesheetSchema, {
-      groups: { g: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { position: vec(1, 2), padding: 8 }) }) },
+      elements: { g: create(ElementStyleEntrySchema, { boxLayout: create(BoxLayoutSchema, { position: vec(1, 2), padding: 8 }) }) },
       edges: { e: create(EdgeStyleEntrySchema, { component: 'keep' }) },
     });
     const edit = create(StyleEditSchema, {
       id: 'e',
-      groupChanges: [{
-        groupId: 'g', changeType: StyleChangeType.MODIFIED, unsetPaths: [],
-        after: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { position: vec(9, 9) }) }),
+      elementChanges: [{
+        elementId: 'g', changeType: StyleChangeType.MODIFIED, unsetPaths: [],
+        after: create(ElementStyleEntrySchema, { boxLayout: create(BoxLayoutSchema, { position: vec(9, 9) }) }),
       } as never],
       edgeChanges: [{
         edgeId: 'e', changeType: StyleChangeType.MODIFIED, unsetPaths: [],
@@ -142,25 +143,25 @@ describe('a proposal changes what it names and nothing else', () => {
     });
 
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['g']?.layout?.padding).toBe(8);
-    expect(applied.groups['g']?.layout?.position).toEqual(vec(9, 9));
+    expect(applied.elements['g']?.boxLayout?.padding).toBe(8);
+    expect(applied.elements['g']?.boxLayout?.position).toEqual(vec(9, 9));
     expect(applied.edges['e']?.component).toBe('keep');
   });
 });
 
 describe('a proposal clears a field by naming its path', () => {
   test('a nested field goes, and its siblings stay', () => {
-    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(NodeStyleEntrySchema, {}), ['layout.position']));
+    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(ElementStyleEntrySchema, {}), ['layout.position']));
 
-    expect(applied.nodes['n']?.layout?.position).toBeUndefined();
-    expect(applied.nodes['n']?.layout?.size).toEqual(vec(120, 40));
+    expect(applied.elements['n']?.layout?.position).toBeUndefined();
+    expect(applied.elements['n']?.layout?.size).toEqual(vec(120, 40));
   });
 
   test('a top-level field goes, and the rest of the entry stays', () => {
-    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(NodeStyleEntrySchema, {}), ['shape']));
+    const applied = applyStyleEditToStylesheet(pinned, nodeEdit(create(ElementStyleEntrySchema, {}), ['shape']));
 
-    expect(applied.nodes['n']?.shape).toBeUndefined();
-    expect(applied.nodes['n']?.layout?.position).toEqual(vec(190, 130));
+    expect(applied.elements['n']?.shape).toBeUndefined();
+    expect(applied.elements['n']?.layout?.position).toEqual(vec(190, 130));
   });
 
   // `content: undefined` is not a valid message.
@@ -182,8 +183,8 @@ describe('a proposal clears a field by naming its path', () => {
   // A cleared oneof keeps an empty wrapper, or the message no longer serialises.
   test('clearing a oneof leaf keeps its siblings and still round-trips', () => {
     const sheet = create(StylesheetSchema, {
-      nodes: {
-        n: create(NodeStyleEntrySchema, {
+      elements: {
+        n: create(ElementStyleEntrySchema, {
           shape: create(Glyph2DSchema, {
             stroke: create(StrokeSchema, { paint: colour('#F59E0B'), width: 2 }),
           }),
@@ -193,21 +194,21 @@ describe('a proposal clears a field by naming its path', () => {
 
     const applied = applyStyleEditToStylesheet(
       sheet,
-      nodeEdit(create(NodeStyleEntrySchema, {}), ['shape.stroke.paint']),
+      nodeEdit(create(ElementStyleEntrySchema, {}), ['shape.stroke.paint']),
     );
 
-    expect(applied.nodes['n']?.shape?.stroke?.paint?.case).toBeUndefined();
-    expect(applied.nodes['n']?.shape?.stroke?.width).toBe(2);
+    expect(applied.elements['n']?.shape?.stroke?.paint?.case).toBeUndefined();
+    expect(applied.elements['n']?.shape?.stroke?.width).toBe(2);
 
     const round = fromBinary(StylesheetSchema, toBinary(StylesheetSchema, applied));
-    expect(round.nodes['n']?.shape?.stroke?.width).toBe(2);
-    expect(round.nodes['n']?.shape?.stroke?.paint?.case).toBeUndefined();
+    expect(round.elements['n']?.shape?.stroke?.width).toBe(2);
+    expect(round.elements['n']?.shape?.stroke?.paint?.case).toBeUndefined();
   });
 
   test('a cleared typography field goes, and the rest of the typography stays', () => {
     const sheet = create(StylesheetSchema, {
-      nodes: {
-        n: create(NodeStyleEntrySchema, {
+      elements: {
+        n: create(ElementStyleEntrySchema, {
           typography: create(TypographySchema, { size: 18, font: 'Inter', color: create(ColorSchema, { value: '#fff' }) }),
         }),
       },
@@ -216,29 +217,29 @@ describe('a proposal clears a field by naming its path', () => {
     const applied = applyStyleEditToStylesheet(
       sheet,
       nodeEdit(
-        create(NodeStyleEntrySchema, { typography: create(TypographySchema, { font: 'Inter', color: create(ColorSchema, { value: '#fff' }) }) }),
+        create(ElementStyleEntrySchema, { typography: create(TypographySchema, { font: 'Inter', color: create(ColorSchema, { value: '#fff' }) }) }),
         ['typography.size'],
       ),
     );
 
-    expect(applied.nodes['n']?.typography?.size).toBeUndefined();
-    expect(applied.nodes['n']?.typography?.font).toBe('Inter');
+    expect(applied.elements['n']?.typography?.size).toBeUndefined();
+    expect(applied.elements['n']?.typography?.font).toBe('Inter');
   });
 
   test('a path naming nothing is harmless, entry or field', () => {
     const applied = applyStyleEditToStylesheet(
       pinned,
-      nodeEdit(create(NodeStyleEntrySchema, {}), ['typography.color', 'nope.nothing.here', '', 'layout.']),
+      nodeEdit(create(ElementStyleEntrySchema, {}), ['typography.color', 'nope.nothing.here', '', 'layout.']),
     );
 
-    expect(applied.nodes['n']?.layout?.position).toEqual(vec(190, 130));
+    expect(applied.elements['n']?.layout?.position).toEqual(vec(190, 130));
   });
 
   test('a path against an element with no entry writes nothing', () => {
     const empty = create(StylesheetSchema, {});
     const applied = applyStyleEditToStylesheet(empty, nodeEdit(undefined, ['layout.position']));
 
-    expect(applied.nodes['n']).toBeUndefined();
+    expect(applied.elements['n']).toBeUndefined();
   });
 });
 
@@ -246,23 +247,23 @@ describe('a proposal clears a field by naming its path', () => {
 // merge leaves the sheet it read unmutated.
 describe('a clear can be undone', () => {
   const diagram = create(DiagramSchema, {
-    schemaVersion: 1,
-    graph: create(GraphSchema, { nodes: { n: create(NodeSchema, {}) } }),
+    schemaVersion: CONTENT_SCHEMA_VERSION,
+    graph: create(GraphSchema, { elements: { n: create(ElementSchema, {}) } }),
   });
 
   test('undo brings back a field a proposal cleared, and redo takes it away again', () => {
     const state = createEditorState(diagram, pinned);
 
-    state.applyStyleEdit(nodeEdit(create(NodeStyleEntrySchema, {}), ['layout.position']));
-    expect(state.stylesheet().nodes['n']?.layout?.position).toBeUndefined();
+    state.applyStyleEdit(nodeEdit(create(ElementStyleEntrySchema, {}), ['layout.position']));
+    expect(state.stylesheet().elements['n']?.layout?.position).toBeUndefined();
 
     state.undo();
-    expect(state.stylesheet().nodes['n']?.layout?.position).toEqual(vec(190, 130));
-    expect(state.stylesheet().nodes['n']?.layout?.size).toEqual(vec(120, 40));
+    expect(state.stylesheet().elements['n']?.layout?.position).toEqual(vec(190, 130));
+    expect(state.stylesheet().elements['n']?.layout?.size).toEqual(vec(120, 40));
 
     state.redo();
-    expect(state.stylesheet().nodes['n']?.layout?.position).toBeUndefined();
-    expect(state.stylesheet().nodes['n']?.layout?.size).toEqual(vec(120, 40));
+    expect(state.stylesheet().elements['n']?.layout?.position).toBeUndefined();
+    expect(state.stylesheet().elements['n']?.layout?.size).toEqual(vec(120, 40));
   });
 });
 
@@ -281,7 +282,7 @@ describe('value objects replace whole', () => {
       annotations: {
         a: create(AnnotationEntrySchema, {
           anchor: create(AnnotationAnchorSchema, {
-            refId: 'n1', refKind: RefKind.NODE, anchorPosition: vec(0, -1),
+            refId: 'n1', refKind: RefKind.ELEMENT, anchorPosition: vec(0, -1),
           }),
           typography: create(TypographySchema, { size: 14 }),
         }),
@@ -289,7 +290,7 @@ describe('value objects replace whole', () => {
     });
 
     const applied = applyStyleEditToStylesheet(sheet, annotationEdit(create(AnnotationEntrySchema, {
-      anchor: create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.NODE }),
+      anchor: create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.ELEMENT }),
     })));
 
     expect(applied.annotations['a']?.anchor?.refId).toBe('n2');

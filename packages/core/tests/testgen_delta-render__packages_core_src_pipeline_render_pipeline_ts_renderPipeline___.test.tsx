@@ -11,8 +11,8 @@ import { LaidOutDiagram } from '../src/layout/laid_out_diagram';
 import { LayoutRequest } from '../src/layout/layout_request';
 import { LayoutError } from '../src/layout/layout_error';
 import {
-  DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-  DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
+  DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+  DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
 } from '@archeglyph/proto/gen/content_pb';
 import {
   StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,
@@ -21,6 +21,7 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 import { TokensSchema, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import * as fc from 'fast-check';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 import { LayoutEngine } from '../src/layout/layout_engine/impl';
 import { renderPipeline } from '../src/pipeline/render_pipeline';
@@ -43,7 +44,7 @@ describe('testgen_pipeline__renderPipeline', () => {
     }
 
     function emptyStylesheet(): Stylesheet {
-      return create(StylesheetSchema, { schemaVersion: 1 });
+      return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     }
 
     // WHEN: The optional fifth parameter delta is undefined; the function uses the unchanged path, calling layoutPipeline with the original diagram and stylesheet and then rendering the layout result.
@@ -105,7 +106,7 @@ describe('testgen_pipeline__renderPipeline', () => {
 
     test('layout_error', async () => {
         await fc.assert(
-            fc.asyncProperty(fc.boolean().map((hasDelta: boolean) => hasDelta ? create(DeltaSchema, { schemaVersion: 1 }) : undefined), async (value) => {
+            fc.asyncProperty(fc.boolean().map((hasDelta: boolean) => hasDelta ? create(DeltaSchema, { schemaVersion: CONTENT_SCHEMA_VERSION }) : undefined), async (value) => {
         const diagram: Diagram = emptyDiagram();
         const layoutEngine: LayoutEngine = {
           async layout(_request: LayoutRequest): Promise<Result<LaidOutDiagram, LayoutError>> {

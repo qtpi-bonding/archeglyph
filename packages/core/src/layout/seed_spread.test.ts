@@ -3,7 +3,7 @@
 import { describe, expect, test } from 'bun:test';
 import ELK from 'elkjs';
 import { create } from '@bufbuild/protobuf';
-import { NodeLayoutSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayoutSchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
 import { ResolvedEdge } from '../resolver/resolved_edge';
@@ -14,7 +14,7 @@ const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
 
 const node = (id: string, at?: { x: number; y: number }) => init(new ResolvedNode(), {
   id, shape: {} as never, typography: {} as never, label: [],
-  ...(at === undefined ? {} : { layout: create(NodeLayoutSchema, { position: vec(at.x, at.y), size: vec(120, 40) }) }),
+  ...(at === undefined ? {} : { layout: create(ElementLayoutSchema, { position: vec(at.x, at.y), size: vec(120, 40) }) }),
 });
 
 const edge = (id: string, source: string, target: string) =>

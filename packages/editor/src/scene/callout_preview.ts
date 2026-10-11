@@ -6,6 +6,7 @@ import { resolveAttachPoint } from '@archeglyph/core/layout/edge_router';
 import { RefKind } from '@archeglyph/proto/gen/style_pb';
 import type { PreviewEdge } from './preview';
 import type { ElementBounds, SceneGeometry } from './scene';
+import { anchorTargetRef } from './anchor_target';
 import { elementKey } from './element_key';
 
 export function calloutPreviews(geometry: SceneGeometry, moved: Array<ElementBounds>): Array<PreviewEdge> {
@@ -21,17 +22,13 @@ export function calloutPreviews(geometry: SceneGeometry, moved: Array<ElementBou
       continue;
     }
 
-    const targetKind = anchor.refKind === RefKind.NODE
-      ? 'node'
-      : anchor.refKind === RefKind.GROUP
-        ? 'group'
-        : undefined;
-    if (targetKind === undefined) {
+    const targetRef = anchorTargetRef(geometry, anchor.refKind, anchor.refId);
+    if (targetRef === undefined) {
       continue;
     }
 
     const annotationEntry = geometry.byKey[elementKey({ kind: 'annotation', id: annotation.id })];
-    const targetEntry = geometry.byKey[elementKey({ kind: targetKind, id: anchor.refId })];
+    const targetEntry = geometry.byKey[elementKey(targetRef)];
     if (annotationEntry === undefined || targetEntry === undefined) {
       continue;
     }

@@ -21,13 +21,14 @@ import {
   Glyph1DSchema,
   Glyph2DSchema,
   type Glyph2D,
-  NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
   ShapeType,
   StrokeSchema,
   StylesheetSchema,
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
+import { LaidOutGroup } from '@archeglyph/core/layout/laid_out_group';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
 import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 
@@ -39,6 +40,8 @@ import { shapeModel } from './models/shape_model';
 import { commitShape } from './models/shape_commit';
 import { ARROWHEAD_TABLE, PATTERN_TABLE } from './models/line_names';
 import { init } from '@archeglyph/proto/util/init';
+import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const namesOf = (table: ReadonlyArray<{ name: string }>): string[] =>
   table.map((entry) => entry.name);
@@ -71,22 +74,22 @@ const refs = (kind: ElementRef['kind'], ...ids: string[]): Array<ElementRef> =>
 describe('commitShape', () => {
   test('changing fill on three selected nodes is ONE edit', () => {
     const model = inspectorModel(refs('node', 'a', 'b', 'c'))!;
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
 
     const edit = commitShape(model, sheet, 'fill', '#ff0000');
 
     expect(edit).toBeDefined();
-    expect(edit!.nodeChanges).toHaveLength(3);
-    expect(edit!.nodeChanges.map((c) => c.nodeId).sort()).toEqual(['a', 'b', 'c']);
+    expect(edit!.elementChanges).toHaveLength(3);
+    expect(edit!.elementChanges.map((c) => c.elementId).sort()).toEqual(['a', 'b', 'c']);
   });
 
   test('changing one Glyph2D field preserves the rest of the message', () => {
     // The builders take a WHOLE Glyph2D. Sending a fresh one silently clears
     // stroke, fill, glow and decorations at once.
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
-        n1: create(NodeStyleEntrySchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        n1: create(ElementStyleEntrySchema, {
           shape: create(Glyph2DSchema, {
             shapeKind: { case: 'standard', value: ShapeType.SHAPE_HEXAGON },
             cornerRadius: 4,
@@ -97,7 +100,7 @@ describe('commitShape', () => {
     });
     const model = inspectorModel(refs('node', 'n1'))!;
 
-    const after = commitShape(model, sheet, 'fill', '#ff0000')!.nodeChanges[0].after!;
+    const after = commitShape(model, sheet, 'fill', '#ff0000')!.elementChanges[0].after!;
 
     expect(after.shape?.shapeKind.value).toBe(ShapeType.SHAPE_HEXAGON);
     expect(after.shape?.cornerRadius).toBe(4);
@@ -108,18 +111,18 @@ describe('commitShape', () => {
     // The table is the single source for both directions, so this is the
     // property that makes reject-unknown-name meaningful.
     for (const entry of SHAPE_TABLE) {
-      const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+      const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
       const model = inspectorModel(refs('node', 'n1'))!;
-      const after = commitShape(model, sheet, 'shape', entry.name)!.nodeChanges[0].after!;
+      const after = commitShape(model, sheet, 'shape', entry.name)!.elementChanges[0].after!;
       expect(after.shape?.shapeKind.value).toBe(entry.value);
     }
   });
 
   test('a shape name round-trips to its enum value', () => {
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = inspectorModel(refs('node', 'n1'))!;
 
-    const after = commitShape(model, sheet, 'shape', 'rect')!.nodeChanges[0].after!;
+    const after = commitShape(model, sheet, 'shape', 'rect')!.elementChanges[0].after!;
 
     expect(after.shape?.shapeKind.case).toBe('standard');
     expect(after.shape?.shapeKind.value).toBe(ShapeType.SHAPE_RECT);
@@ -128,7 +131,7 @@ describe('commitShape', () => {
   test('an unrecognised shape name commits nothing rather than resetting the shape', () => {
     // Writing SHAPE_UNSPECIFIED would look like a successful edit and
     // silently clear the shape.
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = inspectorModel(refs('node', 'n1'))!;
 
     expect(commitShape(model, sheet, 'shape', 'trapezoid')).toBeUndefined();
@@ -136,9 +139,9 @@ describe('commitShape', () => {
 
   test('committing the value already set writes nothing', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
-        n1: create(NodeStyleEntrySchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        n1: create(ElementStyleEntrySchema, {
           shape: create(Glyph2DSchema, { cornerRadius: 8 }),
         }),
       },
@@ -159,7 +162,7 @@ describe('shapeModel', () => {
     const model = shapeModel(
       inspectorModel(refs('node', 'n1'))!,
       geometryFrom([laidOut]),
-      create(StylesheetSchema, { schemaVersion: 1 }),
+      create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
     );
 
     expect(model.shape.override).toBeUndefined();
@@ -173,7 +176,7 @@ describe('shapeModel', () => {
     const model = shapeModel(
       inspectorModel(refs('node', 'n1'))!,
       geometryFrom([laidOut]),
-      create(StylesheetSchema, { schemaVersion: 1 }),
+      create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
     );
 
     expect(model.fill.effective).toBe('#123456');
@@ -186,7 +189,7 @@ describe('shapeModel', () => {
     const model = shapeModel(
       inspectorModel(refs('node', 'n1'))!,
       geometryFrom([laidOut]),
-      create(StylesheetSchema, { schemaVersion: 1 }),
+      create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
     );
 
     expect(model.fill.effective).toBeUndefined();
@@ -212,5 +215,98 @@ describe('enum name tables', () => {
     expect(names).toContain('none');
     expect(names).toContain('filled');
     expect(names.some((n) => n.startsWith('arrowhead'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A closed container is drawn from the entry's `shape`; an open one from its
+// `box`. A colour set in one form must not appear in, or vanish from, the other.
+// ---------------------------------------------------------------------------
+
+function container(id: string, closed: boolean, shape?: Glyph2D): LaidOutGroup {
+  return init(new LaidOutGroup(), {
+    id,
+    position: vec(0, 0),
+    size: vec(100, 50),
+    isSuperNode: closed,
+    hiddenDescendantCount: closed ? 2 : 0,
+    shape: shape ?? create(Glyph2DSchema, {}),
+  });
+}
+
+function containerGeometry(group: LaidOutGroup): SceneGeometry {
+  return buildSceneGeometry(
+    init(new LaidOutDiagram(), { groups: { [group.id]: group } }),
+    '<svg/>',
+  );
+}
+
+const fillOf = (glyph: Glyph2D | undefined): string | undefined =>
+  glyph?.fill?.paint.case === 'color' ? glyph.fill.paint.value.value : undefined;
+
+describe('shape of a container', () => {
+  test('a colour set on a closed container is written to the block shape', () => {
+    const geometry = containerGeometry(container('P', true));
+    const model = inspectorModel(refs('group', 'P'), geometry)!;
+    const before = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
+
+    const after = applyStyleEditToStylesheet(before, commitShape(model, before, 'fill', '#ff0000')!).elements['P']!;
+
+    expect(fillOf(after.shape)).toBe('#ff0000');
+    expect(after.box).toBeUndefined();
+  });
+
+  test('a colour set on an open container is written to the box', () => {
+    const geometry = containerGeometry(container('P', false));
+    const model = inspectorModel(refs('group', 'P'), geometry)!;
+    const before = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
+
+    const after = applyStyleEditToStylesheet(before, commitShape(model, before, 'fill', '#00ff00')!).elements['P']!;
+
+    expect(fillOf(after.box)).toBe('#00ff00');
+    expect(after.shape).toBeUndefined();
+  });
+
+  test('the closed readout shows the block override, not the box one', () => {
+    const geometry = containerGeometry(container('P', true, create(Glyph2DSchema, {
+      fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#111111' }) } }),
+    })));
+    const sheet = create(StylesheetSchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        P: create(ElementStyleEntrySchema, {
+          shape: create(Glyph2DSchema, {
+            fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#111111' }) } }),
+          }),
+          box: create(Glyph2DSchema, {
+            fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#999999' }) } }),
+          }),
+        }),
+      },
+    });
+
+    const model = shapeModel(inspectorModel(refs('group', 'P'), geometry)!, geometry, sheet);
+
+    expect(model.fill.override).toBe('#111111');
+  });
+
+  test('committing the box colour already set on a closed container still writes the block', () => {
+    // The unchanged-value shortcut must compare against the form being edited.
+    const geometry = containerGeometry(container('P', true));
+    const sheet = create(StylesheetSchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        P: create(ElementStyleEntrySchema, {
+          box: create(Glyph2DSchema, {
+            fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#999999' }) } }),
+          }),
+        }),
+      },
+    });
+    const model = inspectorModel(refs('group', 'P'), geometry)!;
+
+    const edit = commitShape(model, sheet, 'fill', '#999999');
+
+    expect(fillOf(applyStyleEditToStylesheet(sheet, edit!).elements['P']?.shape)).toBe('#999999');
   });
 });

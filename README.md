@@ -205,8 +205,8 @@ theme.theme.json     ──┘
 (optional)
 ```
 
-- **content** — graph topology (nodes, edges, groups, localizable labels, tags)
-- **style** — per-element layout, visual overrides, component bindings, annotations
+- **content** — graph topology (elements that may contain other elements, edges, localizable labels, tags)
+- **style** — per-element layout, render modes, visual overrides, component bindings, annotations
 - **theme** — design system: tokens (colors, fonts, sizes) + named components
 
 All three files are canonical proto3 JSON. The renderer emits a deterministic SVG with an embedded provenance comment.
@@ -226,7 +226,7 @@ All three files are canonical proto3 JSON. The renderer emits a deterministic SV
 
 The styling vocabulary is organized as three orthogonal "glyph" types:
 
-- **Glyph2D** — visual identity of a shape-based element (Node, Group, Annotation): geometry + outline + fill + halo + decorations
+- **Glyph2D** — visual identity of a shape-based element (Element, Annotation): geometry + outline + fill + halo + decorations
 - **Glyph1D** — visual identity of a line-based element (Edge, Annotation callout): stroke + arrowheads + glow
 - **Typography** — visual identity of text: font, color, size, weight, alignment, visibility
 

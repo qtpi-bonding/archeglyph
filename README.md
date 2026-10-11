@@ -148,12 +148,25 @@ names has to already be on the reader's machine, which is why a generic
 family travels further than a specific one.
 
 To skip the manual step, [`.github/workflows/diagrams.yml`](.github/workflows/diagrams.yml)
-does it for you: on a pull request that touches a diagram it re-renders each
-one, and keeps a single comment showing the current picture with a link that
-opens it in the editor, this pull request's review comments included. It also
-says when a committed SVG no longer matches the source it was rendered from,
-which is the same determinism the golden renders check. The convention it follows is
-that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+does it for you. On a pull request that touches a diagram, its stylesheet, a
+theme or the renderer, it re-renders each affected diagram and keeps a single
+comment that shows, for each one:
+
+- what changed, in words — elements and edges added, removed or changed;
+- the **before and after** pictures side by side. Both are the SVGs the
+  repository committed, one at the commit the branch left and one at its head,
+  so nothing is hosted anywhere and each picture stays what the comment
+  described;
+- links that open the diagram in the editor, and compare it with the base
+  there.
+
+A diagram that did not change collapses to one line. The convention it follows
+is that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+
+The check **fails the pull request** when a committed SVG no longer matches the
+source it was rendered from, or has none: the same determinism the golden
+renders check. The comment is posted first and says which one and how to fix
+it.
 
 It comments only on pull requests from the repository itself. A fork's token
 is read-only by design, and the alternative (`pull_request_target`) would hand

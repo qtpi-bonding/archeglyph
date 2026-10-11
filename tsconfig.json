@@ -86,6 +86,9 @@
   "include": [
     "packages/**/*.ts",
     "packages/**/*.tsx",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "scripts/pr_comment.ts",
+    "scripts/pr_comment.test.ts",
+    "scripts/pr_diagrams.ts"
   ]
 }

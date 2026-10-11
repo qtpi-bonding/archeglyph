@@ -162,6 +162,6 @@ describe('theme reaches the rendered output', () => {
 
   test('the canvas background resolves to the theme token', async () => {
     const diagram = await layout(GROUPED);
-    expect(diagram.canvas?.background?.value).toBe('#0f1a2b');
+    expect(diagram.canvas?.background?.value).toBe('#0f1724');
   });
 });

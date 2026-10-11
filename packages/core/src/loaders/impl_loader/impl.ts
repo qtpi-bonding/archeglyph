@@ -10,25 +10,8 @@ import { Theme, ThemeSchema } from '@archeglyph/proto/gen/theme_pb';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
-// A file written for an older schema fails the first time the parser meets a
-// key that no longer exists, which says nothing about the real problem. Read
-// the version first and refuse on that. proto3 JSON allows either spelling of
-// the key, so both are checked. A missing or zero version is left to the
-// parser and the checks after it.
-function rejectOtherSchema(text: string, label: string, expected: number): void {
-  const raw = JSON.parse(text) as { schemaVersion?: unknown; schema_version?: unknown } | null;
-  if (raw === null || typeof raw !== 'object') {
-    return;
-  }
-  const version = raw.schemaVersion ?? raw.schema_version;
-  if (typeof version === 'number' && version !== expected && version !== 0) {
-    throw new Error(`${label} schema_version ${version} is not supported; expected ${expected}`);
-  }
-}
-
 export class LoaderImpl implements Loader {
   async loadDiagram(request: LoadRequest): Promise<Diagram> {
-    rejectOtherSchema(request.text, 'content', CONTENT_SCHEMA_VERSION);
     const diagram = fromJson(DiagramSchema, request.text);
     if (diagram.schemaVersion !== CONTENT_SCHEMA_VERSION) {
       throw new Error(
@@ -38,7 +21,6 @@ export class LoaderImpl implements Loader {
     return diagram;
   }
   async loadStylesheet(request: LoadRequest): Promise<Stylesheet> {
-    rejectOtherSchema(request.text, 'style', STYLE_SCHEMA_VERSION);
     const stylesheet = fromJson(StylesheetSchema, request.text);
     if (stylesheet.schemaVersion !== STYLE_SCHEMA_VERSION) {
       throw new Error(
@@ -57,7 +39,6 @@ export class LoaderImpl implements Loader {
     return stylesheet;
   }
   async loadDelta(request: LoadRequest): Promise<Delta> {
-    rejectOtherSchema(request.text, 'content', CONTENT_SCHEMA_VERSION);
     const delta = fromJson(DeltaSchema, request.text);
     if (delta.schemaVersion !== CONTENT_SCHEMA_VERSION) {
       throw new Error(

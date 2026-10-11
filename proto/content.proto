@@ -47,13 +47,10 @@ message DiagramMetadata {
 // ============================================================================
 
 message Graph {
-  reserved 1, 3;
-  reserved "nodes", "groups";
-
   // Elements keyed by id: the one id namespace for everything that can sit in
   // the diagram. The key is the element's identity; Element carries no id
   // field. Iteration during render: sorted lex by key.
-  map<string, Element> elements = 4;
+  map<string, Element> elements = 1;
 
   // Edges keyed by id. The key is the edge's identity; Edge carries no id field.
   // Convention: "<source>__<target>", optional "__<n>" suffix when multiple.
@@ -134,15 +131,12 @@ message Delta {
   string base_ref = 2;
   string target_ref = 3;
 
-  reserved 4, 6;
-  reserved "node_deltas", "group_deltas";
-
   repeated EdgeDelta edge_deltas = 5;
 
   // Elements are topology, not presentation. A move between parents is one
   // MODIFIED delta carrying both parents; a leaf gaining its first child
   // produces no delta on the element itself.
-  repeated ElementDelta element_deltas = 7;
+  repeated ElementDelta element_deltas = 4;
 }
 
 message ElementDelta {

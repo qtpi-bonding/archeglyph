@@ -2,88 +2,6 @@
   "schemaVersion": 2,
   "baseRef": "examples/stack-managed.diag.json",
   "targetRef": "examples/stack-selfhosted.diag.json",
-  "edgeDeltas": [
-    {
-      "edgeId": "app__auth0",
-      "changeType": "DELETED",
-      "before": {
-        "source": "app",
-        "target": "auth0"
-      }
-    },
-    {
-      "edgeId": "app__keycloak",
-      "changeType": "ADDED",
-      "after": {
-        "source": "app",
-        "target": "keycloak"
-      }
-    },
-    {
-      "edgeId": "app__planetscale",
-      "changeType": "DELETED",
-      "before": {
-        "source": "app",
-        "target": "planetscale"
-      }
-    },
-    {
-      "edgeId": "app__postgres",
-      "changeType": "ADDED",
-      "after": {
-        "source": "app",
-        "target": "postgres"
-      }
-    },
-    {
-      "edgeId": "app__segment",
-      "changeType": "DELETED",
-      "before": {
-        "source": "app",
-        "target": "segment"
-      }
-    },
-    {
-      "edgeId": "app__upstash",
-      "changeType": "DELETED",
-      "before": {
-        "source": "app",
-        "target": "upstash"
-      }
-    },
-    {
-      "edgeId": "app__valkey",
-      "changeType": "ADDED",
-      "after": {
-        "source": "app",
-        "target": "valkey"
-      }
-    },
-    {
-      "edgeId": "caddy__app",
-      "changeType": "ADDED",
-      "after": {
-        "source": "caddy",
-        "target": "app"
-      }
-    },
-    {
-      "edgeId": "heroku__app",
-      "changeType": "DELETED",
-      "before": {
-        "source": "heroku",
-        "target": "app"
-      }
-    },
-    {
-      "edgeId": "postgres__restic",
-      "changeType": "ADDED",
-      "after": {
-        "source": "postgres",
-        "target": "restic"
-      }
-    }
-  ],
   "elementDeltas": [
     {
       "elementId": "auth0",
@@ -236,6 +154,88 @@
           }
         ],
         "parent": "ours"
+      }
+    }
+  ],
+  "edgeDeltas": [
+    {
+      "edgeId": "app__auth0",
+      "changeType": "DELETED",
+      "before": {
+        "source": "app",
+        "target": "auth0"
+      }
+    },
+    {
+      "edgeId": "app__keycloak",
+      "changeType": "ADDED",
+      "after": {
+        "source": "app",
+        "target": "keycloak"
+      }
+    },
+    {
+      "edgeId": "app__planetscale",
+      "changeType": "DELETED",
+      "before": {
+        "source": "app",
+        "target": "planetscale"
+      }
+    },
+    {
+      "edgeId": "app__postgres",
+      "changeType": "ADDED",
+      "after": {
+        "source": "app",
+        "target": "postgres"
+      }
+    },
+    {
+      "edgeId": "app__segment",
+      "changeType": "DELETED",
+      "before": {
+        "source": "app",
+        "target": "segment"
+      }
+    },
+    {
+      "edgeId": "app__upstash",
+      "changeType": "DELETED",
+      "before": {
+        "source": "app",
+        "target": "upstash"
+      }
+    },
+    {
+      "edgeId": "app__valkey",
+      "changeType": "ADDED",
+      "after": {
+        "source": "app",
+        "target": "valkey"
+      }
+    },
+    {
+      "edgeId": "caddy__app",
+      "changeType": "ADDED",
+      "after": {
+        "source": "caddy",
+        "target": "app"
+      }
+    },
+    {
+      "edgeId": "heroku__app",
+      "changeType": "DELETED",
+      "before": {
+        "source": "heroku",
+        "target": "app"
+      }
+    },
+    {
+      "edgeId": "postgres__restic",
+      "changeType": "ADDED",
+      "after": {
+        "source": "postgres",
+        "target": "restic"
       }
     }
   ]

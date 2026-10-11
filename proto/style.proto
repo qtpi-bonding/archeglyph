@@ -28,8 +28,7 @@ message Stylesheet {
 
   // Per-element style entries. Elements (nodes and containers alike) share
   // one map keyed by element id; edges and annotations keep their own.
-  reserved 4, 6;
-  reserved "nodes", "groups";
+  map<string, ElementStyleEntry> elements = 4;
   map<string, EdgeStyleEntry> edges = 5;
   // Annotations — floating text/decoration on the canvas, not part of the
   // graph topology. Authored by the user; not produced by importers.
@@ -45,13 +44,11 @@ message Stylesheet {
   // See §10 below for StyleEdit structure.
   repeated StyleEdit pending_edits = 8;
 
-  map<string, ElementStyleEntry> elements = 9;
-
   // Default depth cut, in ENTITY levels (at least 1). Applies only to elements
   // with no explicit render_mode: an entity is OPEN while its entity children
   // are inside the cut, CLOSED beyond it. Groupings are transparent to depth.
   // Unset = unlimited.
-  optional uint32 open_depth = 10;
+  optional uint32 open_depth = 6;
 }
 
 // Per-document canvas styling. Lives in Stylesheet only. A theme expresses
@@ -435,8 +432,6 @@ enum RefKind {
   REF_KIND_UNSPECIFIED = 0;
   REF_KIND_ELEMENT = 1;
   REF_KIND_EDGE = 2;
-  reserved 3;
-  reserved "REF_KIND_GROUP";
 }
 
 // ============================================================================
@@ -524,11 +519,9 @@ message StyleEdit {
   optional string base_hash = 3;
 
   // Per-element changes — one list per element type.
-  reserved 4, 6;
-  reserved "node_changes", "group_changes";
+  repeated ElementStyleChange element_changes = 4;
   repeated EdgeStyleChange edge_changes = 5;
   repeated AnnotationStyleChange annotation_changes = 7;
-  repeated ElementStyleChange element_changes = 17;
 
   // Document-level changes (optional; affect Stylesheet.canvas / theme_ref).
   optional CanvasStyle canvas_after = 8;

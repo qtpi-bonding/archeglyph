@@ -1,0 +1,207 @@
+id: archeglyph
+verified_at: bdb5a2f
+public:
+  name: archeglyph
+  summary: Renders deterministic SVG diagrams from node-and-edge text files, with a visual editor and
+    PR-reviewable diffs.
+  status: active
+  stage: released
+  stack:
+  - TypeScript
+  - Bun
+  - SolidJS
+  - Protobuf
+  - elkjs
+  homepage: https://qtpi-bonding.github.io/archeglyph/?gh=qtpi-bonding/archeglyph&path=examples/stack-managed.diag.json
+  links:
+  - type: repo
+    url: https://github.com/qtpi-bonding/archeglyph
+  screenshots:
+  - file: thumbnail.png
+    alt: Archeglyph editor with a stack diagram and a sidebar of proposed changes to review
+    fit: contain
+    background: '#0f1626'
+private:
+  started: 2026-05
+  visibility: public
+  license: MPL-2.0
+  ownership: designed and directed; code written with AI assistance
+  build: agentic
+facts:
+- id: deterministic-svg
+  state: working
+  assertion: The same diagram, style, and theme inputs produce byte-identical SVG. Golden tests compare
+    10 renders byte for byte (two example diagrams in light, dark and blueprint, a third in blueprint
+    only, and a diff of the third against the first in each theme), and a render-twice test checks
+    run-to-run stability. A pull-request workflow re-renders each touched diagram and fails if its
+    committed SVG differs. Identity across archeglyph versions and machines is not tested.
+  evidence:
+  - test/golden_render.test.ts
+  - test/goldens
+  - .github/workflows/diagrams.yml
+  - scripts/pr_diagrams.ts
+- id: content-style-split
+  state: working
+  assertion: The text file is the graph, and the editor never modifies it; the editor saves only the style
+    file (it can also post review comments to GitHub and encode the open diagram in a share link). The
+    style file stores node positions and sizes, so it is more than visual styling.
+  evidence:
+  - packages/editor/src/adapters/browser_fs_adapter.ts
+  - packages/editor/src/state/edits/move.ts
+  - proto/style.proto
+- id: pending-edits-review
+  state: foundation
+  assertion: The style schema has a pending_edits field (proposals awaiting review). The editor shows them
+    as a ghost overlay and a panel where each one is accepted or rejected individually. Nothing in
+    archeglyph produces them yet. No CLI op or agent integration writes them and the editor has no
+    production code path that creates one, so they must come from a hand- or externally-written style
+    file.
+  evidence:
+  - proto/style.proto
+  - packages/editor/src/state/create_editor_state.ts
+  - packages/editor/src/pending/pending_panel.tsx
+- id: diff-rendering
+  state: working
+  assertion: archeglyph diff computes a typed change set (a Delta of added, deleted and modified elements
+    and edges) between two diagram versions, and render draws the changes in place, including deleted
+    elements restored into the picture. Added, deleted and modified take green, red and blue in the light
+    and dark themes (hue rotation in blueprint, which declares no diff roles), plus a plus, minus or
+    delta marker as a second channel.
+  evidence:
+  - packages/ops/src/diff/op.ts
+  - proto/content.proto
+  - packages/core/src/diff/diff.ts
+  - packages/core/src/delta/merge_delta.ts
+  - packages/core/src/delta/recolor_shape.ts
+  - packages/core/src/delta/diff_color.ts
+  - test/goldens/diff-light.svg
+- id: pr-diagram-comment
+  state: working
+  assertion: On pull requests that touch a diagram, its stylesheet, a theme, or the core, ops, themes or
+    proto packages, a GitHub workflow re-renders the affected diagrams and posts one comment (same-repository
+    pull requests only), updated in place, that summarizes what changed. Before and after pictures appear
+    side by side only when the base revision committed an SVG for that diagram; otherwise only the
+    after picture is shown.
+  evidence:
+  - .github/workflows/diagrams.yml
+  - scripts/pr_diagrams.ts
+  - scripts/pr_comment.ts
+- id: stale-svg-fails-pr
+  state: working
+  assertion: The pull-request check fails when a touched diagram's committed SVG is missing or no longer
+    matches its source. The comment is posted before the job fails (same-repository pull requests),
+    naming the diagram and giving the render command to regenerate it.
+  evidence:
+  - .github/workflows/diagrams.yml
+  - scripts/pr_diagrams.ts
+  - scripts/pr_comment.ts
+- id: fork-safe-comments
+  state: working
+  assertion: The workflow uses the pull_request trigger, not pull_request_target, so fork pull requests
+    get a read-only token. Comments are posted only for pull requests from the repository itself, but
+    the render and check steps still run on forks.
+  evidence:
+  - .github/workflows/diagrams.yml
+- id: browser-editor-local-files
+  state: partial
+  assertion: The browser editor opens and saves diagram and style files on the user's machine through the
+    File System Access API, falling back to a download where the API is missing. It has no telemetry and
+    makes network requests only on request - loading a diagram from a URL (a GET to the host given) or
+    GitHub comment mode, whose OAuth client id is still a placeholder. Edits to a URL-loaded diagram
+    stay in the page's URL fragment and are not uploaded.
+  evidence:
+  - packages/editor/src/adapters/browser_fs_adapter.ts
+  - packages/editor/src/adapters/github_forge.ts
+  - packages/editor/src/adapters/url_param_adapter.ts
+  - packages/editor/src/shell/select_adapters.ts
+- id: typescript-bun
+  state: working
+  assertion: archeglyph is written in TypeScript. The CLI runs directly under Bun 1.3 or newer, with no
+    build step and no compiled binary; only the browser editor is bundled, with Vite.
+  evidence:
+  - README.md
+  - package.json
+  - packages/cli/bin/archeglyph.ts
+  - packages/editor/vite.config.ts
+- id: solidjs-editor
+  state: working
+  assertion: The visual editor is written in SolidJS.
+  evidence:
+  - packages/editor/package.json
+  - packages/editor/vite.config.ts
+- id: elkjs-layout
+  state: working
+  assertion: Graph layout is computed with elkjs, the JavaScript port of the Eclipse Layout Kernel.
+  evidence:
+  - packages/core/package.json
+  - packages/core/src/layout/layout_adapter/impl.ts
+- id: protobuf-buf
+  state: working
+  assertion: The three file formats (content, style, theme) are defined as protobuf schemas in proto/,
+    managed with buf, and stored on disk as indented proto3 JSON through @bufbuild/protobuf.
+  evidence:
+  - buf.yaml
+  - proto/content.proto
+  - proto/style.proto
+  - proto/theme.proto
+  - packages/proto/src/util/json.ts
+- id: cli-op-registry
+  state: working
+  assertion: The CLI has eight subcommands (render, validate, format, init, bind, watch, diff, open), each
+    an Operation object listed in one registry array that the CLI dispatches from and that the generated
+    command manual is rendered from.
+  evidence:
+  - packages/ops/src/registry.ts
+  - packages/cli/src/main.ts
+  - scripts/manual.ts
+- id: view-selection-open
+  state: working
+  assertion: archeglyph open chooses a view of a diagram by writing it into the stylesheet, not by changing
+    the diagram. You pick one or more element ids and a depth to open them to, optionally limited to
+    elements within N edges (hops) and to edges of given kinds; picks open to that depth and the
+    rest stay closed blocks. With no hops or kind, everything is shown.
+  evidence:
+  - packages/ops/src/open/op.ts
+  - packages/ops/src/open/open_params.ts
+  - proto/style.proto
+- id: element-containers
+  state: working
+  assertion: Nodes and groups share one elements map in the content schema, and an element is a container
+    exactly when another element names it as parent. The stylesheet draws a container as an open box,
+    a closed block, or (for grouping elements only) dissolved into its members.
+  evidence:
+  - proto/content.proto
+  - proto/style.proto
+  - packages/core/src/resolver/containers.test.ts
+- id: bundled-themes
+  state: working
+  assertion: Three themes ship with the tool - light, dark and blueprint - built from named palettes. Light
+    and dark declare the three diff roles; blueprint declares none, so its diff colours are made by
+    rotating hue.
+  evidence:
+  - packages/themes/src/index.ts
+  - packages/core/src/delta/diff_color.ts
+  - test/golden_render.test.ts
+- id: ci-gates
+  state: working
+  assertion: CI on every push to main and every pull request runs, with Bun 1.3.10, a frozen-lockfile
+    install, an SPDX licence-header check, tsc --noEmit, the full test suite, the editor production build,
+    buf lint, a check that the committed generated protobuf TypeScript matches buf generate, and a check
+    that the generated CLI manual is current.
+  evidence:
+  - .github/workflows/ci.yml
+  - scripts/spdx.ts
+  - scripts/manual.ts
+- id: test-strategy
+  state: working
+  assertion: Tests run with bun test --conditions browser and a preload that installs Solid's JSX transform
+    as a Bun plugin. They include golden SVG renders, component tests rendered into happy-dom, a test
+    that runs every editor command against spy contexts, and property-based tests with fast-check.
+    happy-dom implements neither layout nor pointer-events, so a source-level invariants test stands in
+    for them; whole-app behaviour in a real browser is not covered by automated tests.
+  evidence:
+  - package.json
+  - test/solid_preload.ts
+  - test/golden_render.test.ts
+  - packages/editor/src/gestures/command_wiring.test.ts
+  - packages/editor/src/shell/chrome_invariants.test.ts

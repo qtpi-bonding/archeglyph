@@ -8,7 +8,8 @@ import { scenePipeline, PipelineError } from '@archeglyph/core/pipeline';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
-import { injectDiagram } from './diagram_layer';
+import { injectDiagram, markupKey } from './diagram_layer';
+import { touchedKeys } from '../pending/edit_targets';
 import { Component, createEffect, createMemo, createResource, JSX, Show } from 'solid-js';
 import { Result } from '@archeglyph/proto/util/result';
 
@@ -18,6 +19,8 @@ export interface GhostLayerProps {
   stylesheet: Stylesheet;
   themes: ReadonlyMap<string, Theme>;
   layoutEngine: LayoutEngine;
+  /** The proposal the panel has open. Its parts are drawn solid. */
+  selectedId?: string;
 }
 
 type GhostSource = {
@@ -58,11 +61,19 @@ export const GhostLayer: Component<GhostLayerProps> = (props: GhostLayerProps): 
 };
 
 const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): JSX.Element => {
-  const source = createMemo((): GhostSource => ({
-    diagram: props.diagram,
-    stylesheet: applyAllPendingEdits(props.stylesheet),
-    themes: props.themes,
-  }));
+  // With a proposal open, only that one is applied: merging them all piles
+  // one proposal's moves on top of another's, and a swap lands on parts the
+  // reader is trying to compare it with.
+  const source = createMemo((): GhostSource => {
+    const open = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
+    return {
+      diagram: props.diagram,
+      stylesheet: open === undefined
+        ? applyAllPendingEdits(props.stylesheet)
+        : applyStyleEditToStylesheet(props.stylesheet, open),
+      themes: props.themes,
+    };
+  });
 
   const [svg] = createResource<string, GhostSource>(
     source,
@@ -91,7 +102,46 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
     // The renderer's root <svg> would nest a viewport here, rescaling the
     // ghost against its own viewBox so it stops registering with the diagram.
     injectDiagram(host, svg() ?? '');
+    // Read after injecting, and tracking the selection, so a re-render keeps
+    // the emphasis and a new selection needs no re-render.
+    const selected = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
+    if (selected !== undefined) {
+      emphasizeProposal(host, touchedKeys(selected), true);
+    } else {
+      const everything: Set<string> = new Set();
+      for (const edit of props.stylesheet.pendingEdits) {
+        for (const key of touchedKeys(edit)) { everything.add(key); }
+      }
+      emphasizeProposal(host, everything, false);
+    }
   });
 
-  return <g ref={host} opacity="0.3" />;
+  return <g ref={host} data-ghost="true" />;
 };
+
+export const GHOST_OPACITY: string = '0.3';
+
+/**
+ * Draw only the parts in `touched`, solid when a proposal is open and faint
+ * otherwise, and hide every other part. The real diagram already shows the
+ * unchanged parts, and a second copy of one only adds clutter wherever the
+ * ghost's layout has shifted off the real one, such as a group resized to fit
+ * a moved child. The ghost's markup is one flat <g> per element, so each can
+ * take its own opacity; a wrapper's opacity would cap the solid parts at the
+ * faint one.
+ */
+export function emphasizeProposal(host: SVGGElement, touched: ReadonlySet<string>, solid: boolean): void {
+  for (const child of Array.from(host.children)) {
+    if (child.tagName !== 'g') { continue; }
+    const key: string | undefined = markupKey(child);
+    const shown: boolean = key !== undefined && touched.has(key);
+    child.setAttribute('opacity', !shown ? '0' : solid ? '1' : GHOST_OPACITY);
+  }
+}
+
+/** The part of the ghost under a pointer event's target, as a proposal target key. */
+export function ghostPartKey(target: EventTarget | null): string | undefined {
+  if (!(target instanceof Element)) { return undefined; }
+  const part: Element | null = target.closest('[data-ghost] > g');
+  return part === null ? undefined : markupKey(part);
+}

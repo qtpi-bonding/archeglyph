@@ -197,6 +197,13 @@ body {
    from the start with no rules behind them, so a thread rendered as bare
    default HTML on the panel ground: author and timestamp ran together into
    one string and the body sat at the browser's 16px default in a 12px panel. */
+/* The row for the proposal drawn solid on the canvas; the canvas and the panel
+   both show the one selection. */
+.ag-pending-row-selected {
+  background: var(--ag-blue-soft);
+  box-shadow: -4px 0 0 var(--ag-blue);
+}
+
 .ag-pending-row-summary {
   display: flex;
   flex-direction: column;

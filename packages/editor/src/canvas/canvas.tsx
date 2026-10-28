@@ -15,7 +15,8 @@ import { centerBoundsInRect, ContainerRect, fitBoundsToRect, screenToDiagram } f
 import { CANVAS_INSETS } from '../shell/island_frame';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
-import { GhostLayer } from './ghost_layer';
+import { GhostLayer, ghostPartKey } from './ghost_layer';
+import { proposalAfterPress, refForKey, touchedKeys } from '../pending/edit_targets';
 import { OverlayLayer } from './overlay_layer';
 import { routePress, exceedsThreshold, GestureDecision, PressContext } from '../gestures/pointer_router';
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
@@ -54,6 +55,11 @@ export interface CanvasProps {
   themes: ReadonlyMap<string, Theme>;
   ui: UiState;
   state: EditorState;
+  /** The proposal open in the panel; its parts are drawn solid in the ghost. */
+  selectedProposalId?: string;
+  /** Called on every press with the proposal it leaves selected: the one whose
+      faint part was pressed, or undefined for a press anywhere else. */
+  onSelectProposal?: (id: string | undefined) => void;
   /** Called by the shell after a canvas interaction changes the selection. */
   onFocusInspector?: () => void;
   /** Called for the Save command. The canvas owns the keydown listener, so
@@ -147,6 +153,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const screen: Vec2 = pointFromEvent(event);
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
     const hit: ElementRef | undefined = hitAt(event);
+    // The ghost has no geometry to hit, so a press that reaches no real
+    // element is checked against the faint proposal parts underneath; any
+    // other press clears the proposal selection. The gesture carries on
+    // either way, so a drag over the ghost still pans.
+    if (props.onSelectProposal !== undefined) {
+      const key: string | undefined = hit === undefined ? ghostPartKey(event.target) : undefined;
+      const proposal: string | undefined = proposalAfterPress(props.stylesheet, key, props.selectedProposalId);
+      if (proposal !== props.selectedProposalId) { props.onSelectProposal(proposal); }
+    }
     if (event.detail === 2 && hit?.kind === 'annotation') {
       setGesture(undefined);
       props.ui.setSelection([hit]);
@@ -339,6 +354,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
         if (!refs.some((candidate) => elementKey(candidate) === elementKey(ref))) { refs.push(ref); }
       }
     }
+    // The real parts a proposal replaces step back, so its solid ghost reads
+    // as the after beside them.
+    const open = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedProposalId);
+    if (open !== undefined) {
+      for (const key of touchedKeys(open)) {
+        const ref: ElementRef = refForKey(key);
+        if (!refs.some((candidate) => elementKey(candidate) === elementKey(ref))) { refs.push(ref); }
+      }
+    }
     return refs;
   }
 
@@ -473,8 +497,11 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
-          <GhostLayer diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
+          {/* In front, so a proposal is never hidden behind what it changes. Hit-testing
+              reads the scene's geometry, so it does not stand in the way of a click on a
+              real element underneath. */}
+          <GhostLayer selectedId={props.selectedProposalId} diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <Show when={geometry() !== undefined}>
             <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />
           </Show>

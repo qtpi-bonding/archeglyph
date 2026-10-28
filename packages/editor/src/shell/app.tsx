@@ -8,6 +8,7 @@ import { Theme } from '@archeglyph/proto/gen/theme_pb';
 import { getBundledTheme } from '@archeglyph/themes';
 import { applyEditorTheme, DEFAULT_EDITOR_THEME, findEditorTheme, EDITOR_THEMES } from './editor_theme';
 import { readUrlParams, reviewOpen, selectedProposal } from './url_params';
+import { toggledProposal } from '../pending/edit_targets';
 import { selectDiagramSource } from './select_diagram_source';
 import { createDiffState, type DiffState } from '../diff/diff_state';
 import type { Delta, Diagram } from '@archeglyph/proto/gen/content_pb';
@@ -206,12 +207,16 @@ export const App: Component<{}> = (): JSX.Element => {
     }
   }
 
+  // The proposal is gone once decided, and a selection naming it would leave
+  // the canvas and panel both showing nothing selected yet still holding it.
   function pendingAccept(editId: string): void {
     state()?.acceptPending(editId);
+    if (selectedPendingId() === editId) { setSelectedPendingId(undefined); }
   }
 
   function pendingReject(editId: string): void {
     state()?.rejectPending(editId);
+    if (selectedPendingId() === editId) { setSelectedPendingId(undefined); }
   }
 
   function onOpen(): void {
@@ -333,6 +338,8 @@ export const App: Component<{}> = (): JSX.Element => {
             themes={themes}
             ui={ui}
             state={state()!}
+            selectedProposalId={selectedPendingId()}
+            onSelectProposal={setSelectedPendingId}
             onFocusInspector={onFocusInspector}
             onSave={onSave}
             onContextMenu={(point: Vec2): void => { setContextMenuPoint(point); }}
@@ -389,7 +396,7 @@ export const App: Component<{}> = (): JSX.Element => {
               <PendingPanel
                 items={pendingItems(state()!.stylesheet())}
                 selectedId={selectedPendingId()}
-                onSelect={setSelectedPendingId}
+                onSelect={(id: string): void => { setSelectedPendingId(toggledProposal(selectedPendingId(), id)); }}
                 onAccept={pendingAccept}
                 onReject={pendingReject}
                 onReply={(editRef: string, body: string): void => { void onReply(editRef, body); }}

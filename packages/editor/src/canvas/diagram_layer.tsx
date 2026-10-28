@@ -46,9 +46,15 @@ function namespaceOfMarkup(element: Element): Namespace {
   return domId.startsWith('annotation-') ? 'annotation' : 'element';
 }
 
-function isDimmed(element: Element, keys: Set<string>): boolean {
+/** `element:app`, `edge:x__y` or `annotation:note`: what a rendered `<g>` stands for. */
+export function markupKey(element: Element): string | undefined {
   const id: string | null = element.getAttribute('data-element-id');
-  return id !== null && keys.has(`${namespaceOfMarkup(element)}:${id}`);
+  return id === null ? undefined : `${namespaceOfMarkup(element)}:${id}`;
+}
+
+function isDimmed(element: Element, keys: Set<string>): boolean {
+  const key: string | undefined = markupKey(element);
+  return key !== undefined && keys.has(key);
 }
 
 /**

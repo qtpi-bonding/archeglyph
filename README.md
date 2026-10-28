@@ -74,8 +74,17 @@ cd archeglyph
 bun install
 ```
 
-Cloning is the only route today: every workspace package is still `0.0.0`, so
-`bunx archeglyph` has nothing to fetch.
+To use the CLI without cloning, run the committed bundle straight from GitHub.
+It needs only Node 20 or newer, not Bun, and nothing is published to a package
+registry:
+
+```bash
+npx github:qtpi-bonding/archeglyph render --diagram x.diag.json --out x.svg
+```
+
+Pin a commit or tag (`github:qtpi-bonding/archeglyph#<sha>`) in anything you
+want reproducible. The bundle is `bin/archeglyph.js`, rebuilt with
+`bun run build:cli`; CI fails if the committed copy is stale.
 
 Confirm it works by rendering a bundled example:
 

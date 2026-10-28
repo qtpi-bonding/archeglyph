@@ -52,3 +52,6 @@ jobs:
           bun run manual
           git diff --exit-code -- skills/archeglyph-manual \
             || { echo "::error::skills/archeglyph-manual is stale -- run \`bun run manual\`"; exit 1; }
+
+      - name: CLI bundle is current
+        run: bun run build:cli -- --check

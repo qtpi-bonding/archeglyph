@@ -333,6 +333,8 @@ export const App: Component<{}> = (): JSX.Element => {
             themes={themes}
             ui={ui}
             state={state()!}
+            selectedProposalId={selectedPendingId()}
+            onSelectProposal={setSelectedPendingId}
             onFocusInspector={onFocusInspector}
             onSave={onSave}
             onContextMenu={(point: Vec2): void => { setContextMenuPoint(point); }}

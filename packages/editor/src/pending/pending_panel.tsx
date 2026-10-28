@@ -58,6 +58,7 @@ export const PendingPanel: Component<PendingPanelProps> = (
           {(item: PendingItem): JSX.Element => (
             <div
               class="ag-pending-row"
+              classList={{ 'ag-pending-row-selected': props.selectedId === item.id }}
               onClick={(): void => props.onSelect(item.id)}
               style={{
                 padding: '8px 0',

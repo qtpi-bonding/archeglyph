@@ -15,7 +15,8 @@ import { centerBoundsInRect, ContainerRect, fitBoundsToRect, screenToDiagram } f
 import { CANVAS_INSETS } from '../shell/island_frame';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
-import { GhostLayer } from './ghost_layer';
+import { GhostLayer, ghostPartKey } from './ghost_layer';
+import { proposalForKey } from '../pending/edit_targets';
 import { OverlayLayer } from './overlay_layer';
 import { routePress, exceedsThreshold, GestureDecision, PressContext } from '../gestures/pointer_router';
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
@@ -54,6 +55,10 @@ export interface CanvasProps {
   themes: ReadonlyMap<string, Theme>;
   ui: UiState;
   state: EditorState;
+  /** The proposal open in the panel; its parts are drawn solid in the ghost. */
+  selectedProposalId?: string;
+  /** Called when a press lands on a part of the ghost that a proposal changes. */
+  onSelectProposal?: (id: string) => void;
   /** Called by the shell after a canvas interaction changes the selection. */
   onFocusInspector?: () => void;
   /** Called for the Save command. The canvas owns the keydown listener, so
@@ -147,6 +152,16 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const screen: Vec2 = pointFromEvent(event);
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
     const hit: ElementRef | undefined = hitAt(event);
+    // The ghost has no geometry to hit, so a press that reaches no real
+    // element is checked against the faint proposal parts underneath. The
+    // gesture carries on either way, so a drag over the ghost still pans.
+    if (hit === undefined && props.onSelectProposal !== undefined) {
+      const key: string | undefined = ghostPartKey(event.target);
+      const proposal: string | undefined = key === undefined
+        ? undefined
+        : proposalForKey(props.stylesheet, key, props.selectedProposalId);
+      if (proposal !== undefined) { props.onSelectProposal(proposal); }
+    }
     if (event.detail === 2 && hit?.kind === 'annotation') {
       setGesture(undefined);
       props.ui.setSelection([hit]);
@@ -473,7 +488,7 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
-          <GhostLayer diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
+          <GhostLayer selectedId={props.selectedProposalId} diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
           <Show when={geometry() !== undefined}>
             <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />

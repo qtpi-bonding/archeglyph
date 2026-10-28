@@ -11,7 +11,8 @@ import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import ElkConstructor from 'elkjs/lib/elk.bundled.js';
 import type { Diagram } from '@archeglyph/proto/gen/content_pb';
-import type { StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import { create } from '@bufbuild/protobuf';
+import { StyleChangeType, StyleEditSchema, StylesheetSchema, type Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 
@@ -87,7 +88,7 @@ describe('examples/stack-managed carries a review to look at', () => {
     }
   });
 
-  test('together they cover a recolour, a move, and an added annotation', async () => {
+  test('together they cover a recolour, a restyle, and an added annotation', async () => {
     const { diagram, stylesheet } = await open('stack-managed');
     const saved = await svgFor(diagram, stylesheet);
     const recolour = await svgFor(diagram, ghostStylesheet(stylesheet, stylesheet.pendingEdits[0]!));
@@ -97,9 +98,11 @@ describe('examples/stack-managed carries a review to look at', () => {
     expect({ saved: saved.includes(amber), ghost: recolour.includes(amber) }).toEqual({ saved: false, ghost: true });
     expect({ saved: saved.includes('egress'), ghost: annotation.includes('egress') }).toEqual({ saved: false, ghost: true });
 
-    const moved = ghostStylesheet(stylesheet, stylesheet.pendingEdits[1]!).elements['segment']?.layout?.position;
-    expect({ y: moved?.y }).toEqual({ y: 208 });
-    expect(stylesheet.elements['segment']?.layout?.position?.y).toBe(288);
+    // Dashed outline on Segment, and nothing moves: the saved position stands.
+    const restyled = ghostStylesheet(stylesheet, stylesheet.pendingEdits[1]!).elements['segment'];
+    expect(restyled?.shape?.stroke?.dashing.case).toBe('pattern');
+    expect(stylesheet.elements['segment']?.shape?.stroke?.dashing.case).toBeUndefined();
+    expect(restyled?.layout?.position).toEqual(stylesheet.elements['segment']?.layout?.position);
   });
 
   // `app` is pinned, tinted by the recolour, and touched by nothing else.
@@ -111,18 +114,30 @@ describe('examples/stack-managed carries a review to look at', () => {
     expect(ghost.elements['app']?.layout?.position?.y).toBe(130);
   });
 
-  // `upstash` is tinted by the first proposal and moved by the second. Folding
-  // them into one render would draw each with the other's change as well.
+  // A part two proposals touch must be drawn with only that proposal's change;
+  // folding them into one render would give each the other's as well. No
+  // shipped example has such a part, so this builds one: the first proposal
+  // tints `upstash` and a second one moves it.
   test('a part two proposals touch is drawn with only that proposal\'s change', async () => {
     const { stylesheet } = await open('stack-managed');
-    const tint = ghostStylesheet(stylesheet, stylesheet.pendingEdits[0]!).elements['upstash'];
-    const move = ghostStylesheet(stylesheet, stylesheet.pendingEdits[1]!).elements['upstash'];
+    const tintEdit = stylesheet.pendingEdits[0]!;
+    const moveEdit = create(StyleEditSchema, {
+      id: 'move-upstash',
+      elementChanges: [{
+        elementId: 'upstash',
+        changeType: StyleChangeType.MODIFIED,
+        after: { layout: { position: { x: 16, y: 999 } } },
+      }],
+    });
+    const both = create(StylesheetSchema, { ...stylesheet, pendingEdits: [tintEdit, moveEdit] });
     const saved = stylesheet.elements['upstash'];
+    const tint = ghostStylesheet(both, tintEdit).elements['upstash'];
+    const move = ghostStylesheet(both, moveEdit).elements['upstash'];
 
     expect(strokeColour(tint)).toBe('#F59E0B');
     expect(tint?.layout?.position).toEqual(saved?.layout?.position);
 
-    expect(move?.layout?.position?.y).not.toBe(saved?.layout?.position?.y);
+    expect(move?.layout?.position?.y).toBe(999);
     expect(strokeColour(move)).toBe(strokeColour(saved));
   });
 });

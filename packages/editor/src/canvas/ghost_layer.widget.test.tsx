@@ -33,13 +33,13 @@ function opacityOf(host: SVGGElement, selector: string): string | null {
 }
 
 describe('emphasizeProposal', () => {
-  test('draws the parts a proposal touches solid and the rest faint', () => {
+  test('draws the parts a proposal touches solid and hides the rest', () => {
     const host = ghost();
     emphasizeProposal(host, new Set(['annotation:note']));
 
     expect(opacityOf(host, '#annotation-note')).toBe('1');
-    expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
-    expect(opacityOf(host, '#edge-app__cache')).toBe(GHOST_OPACITY);
+    expect(opacityOf(host, '#node-app')).toBe('0');
+    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
     host.remove();
   });
 
@@ -58,7 +58,7 @@ describe('emphasizeProposal', () => {
     const host = ghost();
     emphasizeProposal(host, new Set(['element:note']));
 
-    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
+    expect(opacityOf(host, '#annotation-note')).toBe('0');
     host.remove();
   });
 

@@ -61,11 +61,19 @@ export const GhostLayer: Component<GhostLayerProps> = (props: GhostLayerProps): 
 };
 
 const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): JSX.Element => {
-  const source = createMemo((): GhostSource => ({
-    diagram: props.diagram,
-    stylesheet: applyAllPendingEdits(props.stylesheet),
-    themes: props.themes,
-  }));
+  // With a proposal open, only that one is applied: merging them all piles
+  // one proposal's moves on top of another's, and a swap lands on parts the
+  // reader is trying to compare it with.
+  const source = createMemo((): GhostSource => {
+    const open = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
+    return {
+      diagram: props.diagram,
+      stylesheet: open === undefined
+        ? applyAllPendingEdits(props.stylesheet)
+        : applyStyleEditToStylesheet(props.stylesheet, open),
+      themes: props.themes,
+    };
+  });
 
   const [svg] = createResource<string, GhostSource>(
     source,
@@ -106,16 +114,18 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
 export const GHOST_OPACITY: string = '0.3';
 
 /**
- * Draw the parts a proposal touches solid and everything else faint. The
- * ghost's markup is one flat <g> per element, so each can take its own
- * opacity; a wrapper's opacity would cap the selected parts at the faint one.
+ * With a proposal open, draw the parts it touches solid and hide the rest: the
+ * real diagram already shows those, and a second faint copy of an unchanged
+ * part only adds clutter. With none open, every part is faint. The ghost's
+ * markup is one flat <g> per element, so each can take its own opacity; a
+ * wrapper's opacity would cap the selected parts at the faint one.
  */
 export function emphasizeProposal(host: SVGGElement, touched: ReadonlySet<string> | undefined): void {
   for (const child of Array.from(host.children)) {
     if (child.tagName !== 'g') { continue; }
     const key: string | undefined = markupKey(child);
     const solid: boolean = touched !== undefined && key !== undefined && touched.has(key);
-    child.setAttribute('opacity', solid ? '1' : GHOST_OPACITY);
+    child.setAttribute('opacity', solid ? '1' : touched === undefined ? GHOST_OPACITY : '0');
   }
 }
 

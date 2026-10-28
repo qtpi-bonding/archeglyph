@@ -16,7 +16,7 @@ import { CANVAS_INSETS } from '../shell/island_frame';
 import { cursorFor } from './cursor';
 import { DiagramLayer } from './diagram_layer';
 import { GhostLayer, ghostPartKey } from './ghost_layer';
-import { proposalForKey } from '../pending/edit_targets';
+import { proposalAfterPress, refForKey, touchedKeys } from '../pending/edit_targets';
 import { OverlayLayer } from './overlay_layer';
 import { routePress, exceedsThreshold, GestureDecision, PressContext } from '../gestures/pointer_router';
 import { MoveSession, MarqueeSession, PanSession, ResizeSession, moveCommit, moveUpdate, marqueeCommit, marqueeUpdate, panUpdate, resizeCommit, resizeUpdate } from '../gestures/drag_machines';
@@ -57,8 +57,9 @@ export interface CanvasProps {
   state: EditorState;
   /** The proposal open in the panel; its parts are drawn solid in the ghost. */
   selectedProposalId?: string;
-  /** Called when a press lands on a part of the ghost that a proposal changes. */
-  onSelectProposal?: (id: string) => void;
+  /** Called on every press with the proposal it leaves selected: the one whose
+      faint part was pressed, or undefined for a press anywhere else. */
+  onSelectProposal?: (id: string | undefined) => void;
   /** Called by the shell after a canvas interaction changes the selection. */
   onFocusInspector?: () => void;
   /** Called for the Save command. The canvas owns the keydown listener, so
@@ -153,14 +154,13 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     const diagram: Vec2 = screenToDiagram(props.ui.viewport(), containerRect(), screen);
     const hit: ElementRef | undefined = hitAt(event);
     // The ghost has no geometry to hit, so a press that reaches no real
-    // element is checked against the faint proposal parts underneath. The
-    // gesture carries on either way, so a drag over the ghost still pans.
-    if (hit === undefined && props.onSelectProposal !== undefined) {
-      const key: string | undefined = ghostPartKey(event.target);
-      const proposal: string | undefined = key === undefined
-        ? undefined
-        : proposalForKey(props.stylesheet, key, props.selectedProposalId);
-      if (proposal !== undefined) { props.onSelectProposal(proposal); }
+    // element is checked against the faint proposal parts underneath; any
+    // other press clears the proposal selection. The gesture carries on
+    // either way, so a drag over the ghost still pans.
+    if (props.onSelectProposal !== undefined) {
+      const key: string | undefined = hit === undefined ? ghostPartKey(event.target) : undefined;
+      const proposal: string | undefined = proposalAfterPress(props.stylesheet, key, props.selectedProposalId);
+      if (proposal !== props.selectedProposalId) { props.onSelectProposal(proposal); }
     }
     if (event.detail === 2 && hit?.kind === 'annotation') {
       setGesture(undefined);
@@ -351,6 +351,15 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     if (currentGeometry !== undefined && currentPreview !== undefined) {
       for (const edge of calloutPreviews(currentGeometry, currentPreview.bounds)) {
         const ref: ElementRef = { kind: 'annotation', id: edge.id };
+        if (!refs.some((candidate) => elementKey(candidate) === elementKey(ref))) { refs.push(ref); }
+      }
+    }
+    // The real parts a proposal replaces step back, so its solid ghost reads
+    // as the after beside them.
+    const open = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedProposalId);
+    if (open !== undefined) {
+      for (const key of touchedKeys(open)) {
+        const ref: ElementRef = refForKey(key);
         if (!refs.some((candidate) => elementKey(candidate) === elementKey(ref))) { refs.push(ref); }
       }
     }

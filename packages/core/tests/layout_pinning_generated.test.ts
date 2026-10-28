@@ -839,8 +839,10 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const laid: LaidOutDiagram = (engine as any).layoutFromPins(diagram);
         const laidInner = laid.groups['inner']!;
         const laidOuter = laid.groups['outer']!;
-        expect(laidInner.size.x).toBe(30);
-        expect(laidInner.size.y).toBe(30);
+        // The children's extent (30) plus the one-font-size inset a pinned group
+        // keeps past its far edges, which is the room the ELK path leaves too.
+        expect(laidInner.size.x).toBe(30 + 13);
+        expect(laidInner.size.y).toBe(30 + 13);
         expect(laidOuter.size.x).toBeGreaterThanOrEqual(laidInner.position.x + laidInner.size.x - laidOuter.position.x);
         expect(laidOuter.size.y).toBeGreaterThanOrEqual(laidInner.position.y + laidInner.size.y - laidOuter.position.y);
     });
@@ -1104,8 +1106,9 @@ describe('testgen_layout_engine__layoutFromPins', () => {
         const [, targetBounds] = straightSpy.mock.calls[0];
         expect(targetBounds.minX).toBe(200);
         expect(targetBounds.minY).toBe(200);
-        expect(targetBounds.maxX).toBe(200 + 40);
-        expect(targetBounds.maxY).toBe(200 + 40);
+        // The child's far edge plus the pinned group's one-font-size inset.
+        expect(targetBounds.maxX).toBe(200 + 40 + 13);
+        expect(targetBounds.maxY).toBe(200 + 40 + 13);
         straightSpy.mockRestore();
     });
 

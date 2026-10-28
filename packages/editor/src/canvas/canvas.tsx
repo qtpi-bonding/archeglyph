@@ -497,8 +497,11 @@ export const Canvas: Component<CanvasProps> = (props: CanvasProps): JSX.Element 
     >
       <svg width="100%" height="100%" style={{ display: 'block' }}>
         <g transform={transform()}>
-          <GhostLayer selectedId={props.selectedProposalId} diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <DiagramLayer svg={geometry()?.svg ?? ''} dimmed={dimmedRefs()} />
+          {/* In front, so a proposal is never hidden behind what it changes. Hit-testing
+              reads the scene's geometry, so it does not stand in the way of a click on a
+              real element underneath. */}
+          <GhostLayer selectedId={props.selectedProposalId} diagram={props.diagram} delta={props.delta} stylesheet={props.stylesheet} themes={props.themes} layoutEngine={props.layoutEngine} />
           <Show when={geometry() !== undefined}>
             <OverlayLayer geometry={geometry()!} selection={props.ui.selection()} hover={props.ui.hover()} zoom={props.ui.viewport().zoom} preview={overlayPreview()} anchorLine={anchorLine()} marquee={marquee()} />
           </Show>

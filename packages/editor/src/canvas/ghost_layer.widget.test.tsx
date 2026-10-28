@@ -35,7 +35,7 @@ function opacityOf(host: SVGGElement, selector: string): string | null {
 describe('emphasizeProposal', () => {
   test('draws the parts a proposal touches solid and hides the rest', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note']));
+    emphasizeProposal(host, new Set(['annotation:note']), true);
 
     expect(opacityOf(host, '#annotation-note')).toBe('1');
     expect(opacityOf(host, '#node-app')).toBe('0');
@@ -43,20 +43,19 @@ describe('emphasizeProposal', () => {
     host.remove();
   });
 
-  test('with no proposal selected every part is faint', () => {
+  test('with none open, the parts any proposal touches are faint and the rest hidden', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note']));
-    emphasizeProposal(host, undefined);
+    emphasizeProposal(host, new Set(['annotation:note', 'element:app']), false);
 
-    for (const id of ['#node-app', '#edge-app__cache', '#annotation-note']) {
-      expect(opacityOf(host, id)).toBe(GHOST_OPACITY);
-    }
+    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
+    expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
+    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
     host.remove();
   });
 
   test('an element and an annotation sharing an id are told apart', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:note']));
+    emphasizeProposal(host, new Set(['element:note']), true);
 
     expect(opacityOf(host, '#annotation-note')).toBe('0');
     host.remove();
@@ -64,7 +63,7 @@ describe('emphasizeProposal', () => {
 
   test('the defs are left alone', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:app']));
+    emphasizeProposal(host, new Set(['element:app']), true);
 
     expect(host.querySelector('defs')!.getAttribute('opacity')).toBeNull();
     host.remove();

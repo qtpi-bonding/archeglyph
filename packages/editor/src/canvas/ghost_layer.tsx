@@ -105,7 +105,15 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
     // Read after injecting, and tracking the selection, so a re-render keeps
     // the emphasis and a new selection needs no re-render.
     const selected = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
-    emphasizeProposal(host, selected === undefined ? undefined : touchedKeys(selected));
+    if (selected !== undefined) {
+      emphasizeProposal(host, touchedKeys(selected), true);
+    } else {
+      const everything: Set<string> = new Set();
+      for (const edit of props.stylesheet.pendingEdits) {
+        for (const key of touchedKeys(edit)) { everything.add(key); }
+      }
+      emphasizeProposal(host, everything, false);
+    }
   });
 
   return <g ref={host} data-ghost="true" />;
@@ -114,18 +122,20 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
 export const GHOST_OPACITY: string = '0.3';
 
 /**
- * With a proposal open, draw the parts it touches solid and hide the rest: the
- * real diagram already shows those, and a second faint copy of an unchanged
- * part only adds clutter. With none open, every part is faint. The ghost's
- * markup is one flat <g> per element, so each can take its own opacity; a
- * wrapper's opacity would cap the selected parts at the faint one.
+ * Draw only the parts in `touched`, solid when a proposal is open and faint
+ * otherwise, and hide every other part. The real diagram already shows the
+ * unchanged parts, and a second copy of one only adds clutter wherever the
+ * ghost's layout has shifted off the real one, such as a group resized to fit
+ * a moved child. The ghost's markup is one flat <g> per element, so each can
+ * take its own opacity; a wrapper's opacity would cap the solid parts at the
+ * faint one.
  */
-export function emphasizeProposal(host: SVGGElement, touched: ReadonlySet<string> | undefined): void {
+export function emphasizeProposal(host: SVGGElement, touched: ReadonlySet<string>, solid: boolean): void {
   for (const child of Array.from(host.children)) {
     if (child.tagName !== 'g') { continue; }
     const key: string | undefined = markupKey(child);
-    const solid: boolean = touched !== undefined && key !== undefined && touched.has(key);
-    child.setAttribute('opacity', solid ? '1' : touched === undefined ? GHOST_OPACITY : '0');
+    const shown: boolean = key !== undefined && touched.has(key);
+    child.setAttribute('opacity', !shown ? '0' : solid ? '1' : GHOST_OPACITY);
   }
 }
 

@@ -11,11 +11,11 @@ import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { SvgRendererImpl } from '@archeglyph/core/renderer/svg_renderer';
 import ElkConstructor from 'elkjs/lib/elk.bundled.js';
 import type { Diagram } from '@archeglyph/proto/gen/content_pb';
-import type { Stylesheet } from '@archeglyph/proto/gen/style_pb';
+import type { StyleEdit, Stylesheet } from '@archeglyph/proto/gen/style_pb';
 
 import { seedComponentBindings } from '@archeglyph/core/resolver/seed_bindings';
 
-import { applyAllPendingEdits } from '../canvas/ghost_layer';
+import { ghostStylesheet } from '../canvas/ghost_layer';
 import { pendingItems } from './pending_model';
 
 const examples = join(new URL('.', import.meta.url).pathname, '../../../../examples');
@@ -41,6 +41,11 @@ async function svgFor(diagram: Diagram, stylesheet: Stylesheet, themeName = 'blu
   return svg.value;
 }
 
+function strokeColour(entry: { shape?: { stroke?: { paint: { case?: string; value?: unknown } } } } | undefined): unknown {
+  const paint = entry?.shape?.stroke?.paint;
+  return paint?.case === 'color' ? (paint.value as { value: string }).value : undefined;
+}
+
 describe.each(['pipeline', 'stack-managed', 'stack-selfhosted'])('examples/%s', (name: string) => {
   test.each(BUNDLED_THEME_NAMES)('loads and renders under %s', async (themeName: string) => {
     const { diagram, stylesheet } = await open(name);
@@ -49,9 +54,11 @@ describe.each(['pipeline', 'stack-managed', 'stack-selfhosted'])('examples/%s', 
 
   test('the pending layer renders under every theme too', async () => {
     const { diagram, stylesheet } = await open(name);
-    const ghost = applyAllPendingEdits(stylesheet);
-    for (const themeName of BUNDLED_THEME_NAMES) {
-      expect((await svgFor(diagram, ghost, themeName)).length).toBeGreaterThan(0);
+    for (const edit of stylesheet.pendingEdits) {
+      const ghost = ghostStylesheet(stylesheet, edit);
+      for (const themeName of BUNDLED_THEME_NAMES) {
+        expect((await svgFor(diagram, ghost, themeName)).length).toBeGreaterThan(0);
+      }
     }
   });
 });
@@ -69,25 +76,28 @@ describe('examples/stack-managed carries a review to look at', () => {
     }
   });
 
-  test('the ghost layer differs from the saved one', async () => {
+  test('each proposal renders differently from the saved diagram', async () => {
     // A proposal that folds to the same stylesheet renders an invisible diff.
     const { diagram, stylesheet } = await open('stack-managed');
     const saved = await svgFor(diagram, stylesheet);
-    const ghost = await svgFor(diagram, applyAllPendingEdits(stylesheet));
 
-    expect(ghost).not.toBe(saved);
+    for (const edit of stylesheet.pendingEdits) {
+      expect({ id: edit.id, same: (await svgFor(diagram, ghostStylesheet(stylesheet, edit))) === saved })
+        .toEqual({ id: edit.id, same: false });
+    }
   });
 
-  test('it covers a recolour, a move, and an added annotation', async () => {
+  test('together they cover a recolour, a move, and an added annotation', async () => {
     const { diagram, stylesheet } = await open('stack-managed');
     const saved = await svgFor(diagram, stylesheet);
-    const ghost = await svgFor(diagram, applyAllPendingEdits(stylesheet));
+    const recolour = await svgFor(diagram, ghostStylesheet(stylesheet, stylesheet.pendingEdits[0]!));
+    const annotation = await svgFor(diagram, ghostStylesheet(stylesheet, stylesheet.pendingEdits[2]!));
 
     const amber = '#F59E0B';
-    expect({ saved: saved.includes(amber), ghost: ghost.includes(amber) }).toEqual({ saved: false, ghost: true });
-    expect({ saved: saved.includes('egress'), ghost: ghost.includes('egress') }).toEqual({ saved: false, ghost: true });
+    expect({ saved: saved.includes(amber), ghost: recolour.includes(amber) }).toEqual({ saved: false, ghost: true });
+    expect({ saved: saved.includes('egress'), ghost: annotation.includes('egress') }).toEqual({ saved: false, ghost: true });
 
-    const moved = applyAllPendingEdits(stylesheet).elements['segment']?.layout?.position;
+    const moved = ghostStylesheet(stylesheet, stylesheet.pendingEdits[1]!).elements['segment']?.layout?.position;
     expect({ y: moved?.y }).toEqual({ y: 208 });
     expect(stylesheet.elements['segment']?.layout?.position?.y).toBe(288);
   });
@@ -95,9 +105,24 @@ describe('examples/stack-managed carries a review to look at', () => {
   // `app` is pinned, tinted by the recolour, and touched by nothing else.
   test('a proposal that only recolours does not move what it tints', async () => {
     const { stylesheet } = await open('stack-managed');
-    const ghost = applyAllPendingEdits(stylesheet);
+    const ghost = ghostStylesheet(stylesheet, stylesheet.pendingEdits[0]!);
 
     expect(ghost.elements['app']?.layout?.position).toEqual(stylesheet.elements['app']?.layout?.position);
     expect(ghost.elements['app']?.layout?.position?.y).toBe(130);
+  });
+
+  // `upstash` is tinted by the first proposal and moved by the second. Folding
+  // them into one render would draw each with the other's change as well.
+  test('a part two proposals touch is drawn with only that proposal\'s change', async () => {
+    const { stylesheet } = await open('stack-managed');
+    const tint = ghostStylesheet(stylesheet, stylesheet.pendingEdits[0]!).elements['upstash'];
+    const move = ghostStylesheet(stylesheet, stylesheet.pendingEdits[1]!).elements['upstash'];
+    const saved = stylesheet.elements['upstash'];
+
+    expect(strokeColour(tint)).toBe('#F59E0B');
+    expect(tint?.layout?.position).toEqual(saved?.layout?.position);
+
+    expect(move?.layout?.position?.y).not.toBe(saved?.layout?.position?.y);
+    expect(strokeColour(move)).toBe(strokeColour(saved));
   });
 });

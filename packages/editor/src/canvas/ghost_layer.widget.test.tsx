@@ -32,47 +32,53 @@ function opacityOf(host: SVGGElement, selector: string): string | null {
   return host.querySelector(selector)!.getAttribute('opacity');
 }
 
+function shown(host: SVGGElement, selector: string): boolean {
+  return host.querySelector(selector)!.getAttribute('display') !== 'none';
+}
+
 describe('emphasizeProposal', () => {
-  test('draws the open proposal solid, the others faint, and hides the rest', () => {
+  test('shows the parts a proposal touches and takes the rest out', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note']), new Set(['element:app']));
+    emphasizeProposal(host, new Set(['annotation:note']), true);
 
+    expect(shown(host, '#annotation-note')).toBe(true);
     expect(opacityOf(host, '#annotation-note')).toBe('1');
-    expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
-    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
+    expect(shown(host, '#node-app')).toBe(false);
+    expect(shown(host, '#edge-app__cache')).toBe(false);
     host.remove();
   });
 
-  test('with none open, every part a proposal changes is faint', () => {
+  test('an open proposal is solid and any other is faint', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(), new Set(['annotation:note', 'element:app']));
+    emphasizeProposal(host, new Set(['element:app']), false);
 
-    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
     expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
     host.remove();
   });
 
-  test('a proposal that only another one touches stays on the canvas', () => {
+  test('a part comes back when a later call touches it', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:app']), new Set(['annotation:note']));
+    emphasizeProposal(host, new Set(), true);
+    expect(shown(host, '#node-app')).toBe(false);
 
-    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
+    emphasizeProposal(host, new Set(['element:app']), true);
+    expect(shown(host, '#node-app')).toBe(true);
     host.remove();
   });
 
   test('an element and an annotation sharing an id are told apart', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:note']), new Set());
+    emphasizeProposal(host, new Set(['element:note']), true);
 
-    expect(opacityOf(host, '#annotation-note')).toBe('0');
+    expect(shown(host, '#annotation-note')).toBe(false);
     host.remove();
   });
 
   test('the defs are left alone', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:app']), new Set());
+    emphasizeProposal(host, new Set(['element:app']), true);
 
-    expect(host.querySelector('defs')!.getAttribute('opacity')).toBeNull();
+    expect(host.querySelector('defs')!.getAttribute('display')).toBeNull();
     host.remove();
   });
 });

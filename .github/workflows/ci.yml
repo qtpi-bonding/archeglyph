@@ -15,7 +15,12 @@ jobs:
         with:
           bun-version: 1.3.10
 
+      # The action finds the buf release through the GitHub API. Without a
+      # token that call is rate limited per runner IP, which is shared, so the
+      # job fails at setup on a busy day.
       - uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
 
       # buf.gen.yaml runs `bunx protoc-gen-es`, which resolves the pinned
       # version from node_modules; without it bunx fetches its own.

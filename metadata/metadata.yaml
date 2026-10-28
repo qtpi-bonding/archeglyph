@@ -18,7 +18,7 @@ public:
     url: https://github.com/qtpi-bonding/archeglyph
   screenshots:
   - file: thumbnail.png
-    alt: Archeglyph editor with a stack diagram and a sidebar of proposed changes to review
+    alt: Blueprint-themed stack diagram rendered by archeglyph - Heroku and Django feeding four managed services
     fit: contain
     background: '#0f1626'
 private:

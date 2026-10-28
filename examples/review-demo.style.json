@@ -94,7 +94,7 @@
       "schemaVersion": 2,
       "id": "a1b2c3d4e5f60002",
       "author": "ai:claude",
-      "description": "Swap the cache and analytics so the egress hop is not the longest line",
+      "description": "Mark Segment as optional",
       "timestampMs": "1758420000000",
       "state": "STYLE_EDIT_STATE_PENDING",
       "thread": {
@@ -104,7 +104,7 @@
             "id": "c0000000000000b1",
             "author": "ai:claude",
             "timestampMs": "1758420000000",
-            "body": "`inventory` and `checkout` both point at the orders db, and `payments` sits between them, so the two edges cross. Swapping the lower two rows removes the crossing and leaves every other edge alone."
+            "body": "Segment is analytics. The app runs without it, so a dashed outline says that at a glance."
           }
         ]
       },
@@ -112,32 +112,20 @@
         {
           "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
           "kinds": [
-            "STYLE_CHANGE_KIND_LAYOUT"
+            "STYLE_CHANGE_KIND_SHAPE"
           ],
           "after": {
-            "layout": {
-              "position": {
-                "x": 16,
-                "y": 208
+            "shape": {
+              "stroke": {
+                "color": {
+                  "value": "#8FA3BF"
+                },
+                "width": 1.5,
+                "pattern": "STROKE_PATTERN_DASHED"
               }
             }
           },
           "elementId": "segment"
-        },
-        {
-          "changeType": "STYLE_CHANGE_TYPE_MODIFIED",
-          "kinds": [
-            "STYLE_CHANGE_KIND_LAYOUT"
-          ],
-          "after": {
-            "layout": {
-              "position": {
-                "x": 16,
-                "y": 288
-              }
-            }
-          },
-          "elementId": "upstash"
         }
       ]
     },

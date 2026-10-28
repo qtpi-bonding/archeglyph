@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "stack",
   "title": [
     {
@@ -8,7 +8,29 @@
     }
   ],
   "graph": {
-    "nodes": {
+    "edges": {
+      "heroku__app": {
+        "source": "heroku",
+        "target": "app"
+      },
+      "app__auth0": {
+        "source": "app",
+        "target": "auth0"
+      },
+      "app__planetscale": {
+        "source": "app",
+        "target": "planetscale"
+      },
+      "app__upstash": {
+        "source": "app",
+        "target": "upstash"
+      },
+      "app__segment": {
+        "source": "app",
+        "target": "segment"
+      }
+    },
+    "elements": {
       "app": {
         "label": [
           {
@@ -32,7 +54,7 @@
             "source": "Auth0"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       },
       "planetscale": {
         "label": [
@@ -41,7 +63,7 @@
             "source": "PlanetScale"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       },
       "upstash": {
         "label": [
@@ -50,7 +72,7 @@
             "source": "Upstash Redis"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       },
       "segment": {
         "label": [
@@ -59,39 +81,16 @@
             "source": "Segment"
           }
         ],
-        "parentGroup": "hosted"
-      }
-    },
-    "edges": {
-      "heroku__app": {
-        "source": "heroku",
-        "target": "app"
+        "parent": "hosted"
       },
-      "app__auth0": {
-        "source": "app",
-        "target": "auth0"
-      },
-      "app__planetscale": {
-        "source": "app",
-        "target": "planetscale"
-      },
-      "app__upstash": {
-        "source": "app",
-        "target": "upstash"
-      },
-      "app__segment": {
-        "source": "app",
-        "target": "segment"
-      }
-    },
-    "groups": {
       "hosted": {
         "label": [
           {
             "locale": "en",
             "source": "Managed"
           }
-        ]
+        ],
+        "role": "ELEMENT_ROLE_GROUPING"
       }
     }
   },

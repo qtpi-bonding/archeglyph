@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import { Component, createMemo, JSX } from 'solid-js';
+import { Component, createMemo, JSX, Show } from 'solid-js';
 import { EnumFieldInput } from '../fields/enum_field';
 import { NumberFieldInput } from '../fields/number_field';
 import { InspectorModel } from '../model';
 import { groupModel, GroupModel } from '../models/group_model';
 import {
-  commitGroup, GroupField, LABEL_POSITION_OPTIONS, RENDER_MODE_OPTIONS,
+  commitGroup, GroupField, LABEL_POSITION_OPTIONS, renderModeOptions,
 } from '../models/group_commit';
 import { EditorState } from '../../state/editor_state';
 import { SceneGeometry } from '../../scene/scene';
@@ -35,23 +35,27 @@ export const GroupSection: Component<GroupSectionProps> = (
 
   return (
     <section>
-      <NumberFieldInput
-        label="Padding"
-        field={fields().padding}
-        onCommit={commit('padding')}
-      />
+      <div class="ag-look" style={{ color: 'var(--ag-fg-3)' }}>{fields().look}</div>
       <EnumFieldInput
         label="Render"
         field={fields().renderMode}
-        options={RENDER_MODE_OPTIONS}
+        options={renderModeOptions(props.model)}
         onCommit={commit('renderMode')}
       />
-      <EnumFieldInput
-        label="Label"
-        field={fields().labelPosition}
-        options={LABEL_POSITION_OPTIONS}
-        onCommit={commit('labelPosition')}
-      />
+      {/* Padding and label position shape the open box only. */}
+      <Show when={props.model.block !== true}>
+        <NumberFieldInput
+          label="Padding"
+          field={fields().padding}
+          onCommit={commit('padding')}
+        />
+        <EnumFieldInput
+          label="Label"
+          field={fields().labelPosition}
+          options={LABEL_POSITION_OPTIONS}
+          onCommit={commit('labelPosition')}
+        />
+      </Show>
     </section>
   );
 };

@@ -9,17 +9,18 @@
 
 import { describe, expect, test } from 'bun:test';
 import { StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { buildGitHubUrl, UrlParamAdapter } from './url_param_adapter';
 
 const DIAGRAM = JSON.stringify({
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'd',
-  graph: { nodes: { n1: {} }, edges: {}, groups: {} },
+  graph: { elements: { n1: {} }, edges: {} },
 });
 const STYLE = JSON.stringify({
-  schemaVersion: 1,
-  nodes: { n1: { component: 'glyph' } },
+  schemaVersion: STYLE_SCHEMA_VERSION,
+  elements: { n1: { component: 'glyph' } },
 });
 
 /** Stubs fetch for the duration of one call, recording what was requested. */
@@ -56,7 +57,7 @@ describe('remote load', () => {
     expect(requested).toContain(STYLE_URL);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.value.stylesheet?.nodes.n1?.component).toBe('glyph');
+      expect(result.value.stylesheet?.elements.n1?.component).toBe('glyph');
       expect(result.value.baseHash).not.toBe('');
     }
   });

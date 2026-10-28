@@ -207,6 +207,14 @@ export class LayoutEngineImpl implements LayoutEngine {
         const childExtent = groupSize(child);
         extend(childOrigin.x, childOrigin.y, childExtent.x, childExtent.y);
       }
+      // The ELK path pads a group by one font size on every side; here the
+      // near side is wherever the children were pinned, so only the far edges
+      // are ours to pad. Without it the border sits flush on the widest child.
+      if (width > 0 || height > 0) {
+        const inset = group.typography?.size ?? 13;
+        width += inset;
+        height += inset;
+      }
       // Same rule the ELK path gets via nodeSize.minimum: an override is a
       // MINIMUM, so a group grows on request and still contains its children.
       const room = labelRoom(group.label, group.typography);

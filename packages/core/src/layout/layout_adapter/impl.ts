@@ -341,6 +341,15 @@ export class ElkAdapterImpl implements LayoutAdapter {
       function edgeOrigin(source: string, target: string): Vec2 {
         const a: string[] = ancestry(source);
         const b: string[] = ancestry(target);
+        // An edge between a container and something inside it lives in the
+        // container's own frame, not its parent's: the container is the lowest
+        // common ancestor even though it is not a strict ancestor of itself.
+        if (b.includes(source)) {
+          return containerOrigin[source] ?? vec2(0, 0);
+        }
+        if (a.includes(target)) {
+          return containerOrigin[target] ?? vec2(0, 0);
+        }
         let common: string | undefined;
         for (let i = 0; i < Math.min(a.length, b.length); i++) {
           if (a[i] !== b[i]) { break; }

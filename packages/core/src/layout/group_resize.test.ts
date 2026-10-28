@@ -8,12 +8,13 @@ import type { ELK } from 'elkjs';
 import { createRequire } from 'node:module';
 import { create } from '@bufbuild/protobuf';
 import {
-  GroupLayoutSchema,
-  GroupStyleEntrySchema,
+  BoxLayoutSchema,
+  ElementStyleEntrySchema,
   StylesheetSchema,
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
 import { seedComponentBindings } from '../resolver/seed_bindings';
@@ -29,14 +30,14 @@ const newElk = (): unknown =>
   });
 
 const CONTENT = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'g',
   graph: {
-    nodes: {
-      a: { label: [{ locale: 'en', source: 'a' }], parentGroup: 'box' },
-      b: { label: [{ locale: 'en', source: 'b' }], parentGroup: 'box' },
+    elements: {
+      a: { label: [{ locale: 'en', source: 'a' }], parent: 'box' },
+      b: { label: [{ locale: 'en', source: 'b' }], parent: 'box' },
+      box: { label: [{ locale: 'en', source: 'box' }], role: 'ELEMENT_ROLE_GROUPING' },
     },
-    groups: { box: { label: [{ locale: 'en', source: 'box' }] } },
   },
 };
 
@@ -46,10 +47,10 @@ async function groupSize(
 ): Promise<{ x: number; y: number }> {
   const diagram = fromJson(DiagramSchema, JSON.stringify(CONTENT));
   const sheet = create(StylesheetSchema, {
-    schemaVersion: 1,
-    groups: {
-      box: create(GroupStyleEntrySchema, {
-        layout: create(GroupLayoutSchema, {
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      box: create(ElementStyleEntrySchema, {
+        boxLayout: create(BoxLayoutSchema, {
           ...(size === undefined ? {} : { size: create(Vec2Schema, size) }),
           ...(position === undefined ? {} : { position: create(Vec2Schema, position) }),
         }),

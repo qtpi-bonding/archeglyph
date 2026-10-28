@@ -3,32 +3,37 @@
 import { describe, test, expect } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
+  BoxLayoutSchema,
+  ElementStyleEntrySchema,
   GroupLabelPosition,
-  GroupLayoutSchema,
   GroupRenderMode,
-  GroupStyleEntrySchema,
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 
-import { commitGroup } from './group_commit';
+import { commitGroup, renderModeOptions } from './group_commit';
 import { groupModel } from './group_model';
 import { applyStyleEditToStylesheet } from '../../state/apply_style_edit';
 import type { InspectorModel } from '../model';
 import type { SceneGeometry } from '../../scene/scene';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
-function sheet(groups = {}) {
+function sheet(elements = {}) {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {},
+    schemaVersion: STYLE_SCHEMA_VERSION,
     edges: {},
-    groups,
+    elements,
     annotations: {},
     pendingEdits: [],
   });
 }
 
-function group(layout = {}) {
-  return create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, layout) });
+// renderMode lives on the entry itself, so it is split off the box layout.
+function group(layout: { padding?: number; labelPosition?: GroupLabelPosition; renderMode?: GroupRenderMode } = {}) {
+  const { renderMode, ...boxLayout } = layout;
+  return create(ElementStyleEntrySchema, {
+    boxLayout: create(BoxLayoutSchema, boxLayout),
+    ...(renderMode === undefined ? {} : { renderMode }),
+  });
 }
 
 const model = (ids: Array<string>): InspectorModel => ({
@@ -53,7 +58,7 @@ describe('commitGroup', () => {
 
     // 0 would be a legitimate padding a user could have chosen, so an absent
     // override has to actually be absent.
-    expect(after.groups['g1']?.layout?.padding).toBeUndefined();
+    expect(after.elements['g1']?.boxLayout?.padding).toBeUndefined();
   });
 
   test('a no-op edit returns undefined rather than an empty edit', () => {
@@ -69,7 +74,7 @@ describe('commitGroup', () => {
   });
 
   test('an enum name outside the table is refused, not written as 0', () => {
-    const before = sheet({ g1: group({ renderMode: GroupRenderMode.BOUNDED }) });
+    const before = sheet({ g1: group({ renderMode: GroupRenderMode.OPEN }) });
     // Writing 0 here would read back as Default and look like a successful
     // clear, which is the wrong answer to a bad option list.
     expect(commitGroup(model(['g1']), before, 'renderMode', 'nonsense')).toBeUndefined();
@@ -81,21 +86,21 @@ describe('commitGroup', () => {
     expect(edit).toBeDefined();
 
     const after = applyStyleEditToStylesheet(before, edit!);
-    expect(after.groups['g1']?.layout?.labelPosition)
+    expect(after.elements['g1']?.boxLayout?.labelPosition)
       .toBe(GroupLabelPosition.GROUP_LABEL_BOTTOM_RIGHT);
-    expect(after.groups['g2']?.layout?.labelPosition)
+    expect(after.elements['g2']?.boxLayout?.labelPosition)
       .toBe(GroupLabelPosition.GROUP_LABEL_BOTTOM_RIGHT);
   });
 
   test('editing one field leaves the others on the same group alone', () => {
     const before = sheet({
-      g1: group({ padding: 8, renderMode: GroupRenderMode.CONTRACTED }),
+      g1: group({ padding: 8, renderMode: GroupRenderMode.CLOSED }),
     });
     const edit = commitGroup(model(['g1']), before, 'padding', 20);
     const after = applyStyleEditToStylesheet(before, edit!);
 
-    expect(after.groups['g1']?.layout?.padding).toBe(20);
-    expect(after.groups['g1']?.layout?.renderMode).toBe(GroupRenderMode.CONTRACTED);
+    expect(after.elements['g1']?.boxLayout?.padding).toBe(20);
+    expect(after.elements['g1']?.renderMode).toBe(GroupRenderMode.CLOSED);
   });
 
   test('refuses a non-group selection', () => {
@@ -113,13 +118,13 @@ describe('groupModel', () => {
   });
 
   test('a set enum reads back by name', () => {
-    const sheetWith = sheet({ g1: group({ renderMode: GroupRenderMode.EXPANDED }) });
+    const sheetWith = sheet({ g1: group({ renderMode: GroupRenderMode.DISSOLVED }) });
     const fields = groupModel(
       model(['g1']),
-      geometry({ g1: { layout: { renderMode: GroupRenderMode.EXPANDED } } }),
+      geometry({ g1: { layout: {} } }),
       sheetWith,
     );
-    expect(fields.renderMode.override).toBe('expanded');
+    expect(fields.renderMode.override).toBe('dissolved');
   });
 
   test('two groups disagreeing on a field fold to mixed', () => {
@@ -129,5 +134,46 @@ describe('groupModel', () => {
     });
     const fields = groupModel(model(['g1', 'g2']), geometry({}), sheetWith);
     expect(fields.padding.mixed).toBe(true);
+  });
+});
+
+describe('render mode choices', () => {
+  const grouping: InspectorModel = { ...model(['g1']), groupingsOnly: true };
+  const entity: InspectorModel = { ...model(['g1']), groupingsOnly: false };
+
+  test('DISSOLVED is offered for a grouping', () => {
+    expect(renderModeOptions(grouping)).toEqual(['open', 'dissolved', 'closed']);
+  });
+
+  test('DISSOLVED is not offered for an entity, but OPEN and CLOSED are', () => {
+    expect(renderModeOptions(entity)).toEqual(['open', 'closed']);
+  });
+
+  test('one entity in the selection withdraws DISSOLVED for all of it', () => {
+    expect(renderModeOptions({ ...model(['g1', 'g2']), groupingsOnly: false })).not.toContain('dissolved');
+  });
+
+  test('dissolving an entity is refused rather than written', () => {
+    expect(commitGroup(entity, sheet({ g1: group({}) }), 'renderMode', 'dissolved')).toBeUndefined();
+  });
+
+  test('closing and opening an entity write renderMode on the entry', () => {
+    const before = sheet({ g1: group({}) });
+
+    const closed = applyStyleEditToStylesheet(before, commitGroup(entity, before, 'renderMode', 'closed')!);
+    expect(closed.elements['g1']?.renderMode).toBe(GroupRenderMode.CLOSED);
+
+    const reopened = applyStyleEditToStylesheet(closed, commitGroup(entity, closed, 'renderMode', 'open')!);
+    expect(reopened.elements['g1']?.renderMode).toBe(GroupRenderMode.OPEN);
+  });
+});
+
+describe('which look the group section is editing', () => {
+  test('a closed container reads as the block look, an open one as the box look', () => {
+    const closed: InspectorModel = { ...model(['g1']), block: true };
+    const open: InspectorModel = { ...model(['g1']), block: false };
+
+    expect(groupModel(closed, geometry(), sheet()).look).toBe('Block look');
+    expect(groupModel(open, geometry(), sheet()).look).toBe('Box look');
   });
 });

@@ -14,14 +14,16 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
+  BoxLayoutSchema,
   ColorSchema,
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  ElementLayoutSchema,
+  ElementStyleEntrySchema,
   Stylesheet,
   StylesheetSchema,
   TypographySchema,
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
+import { DiagramSchema, ElementRole, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { LaidOutGroup } from '@archeglyph/core/layout/laid_out_group';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
@@ -34,6 +36,7 @@ import { numberField, textField } from './field_value';
 import { commitLayout, commitTypography, layoutModel, typographyModel } from './sections_model';
 import { init } from '@archeglyph/proto/util/init';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const v = (x: number, y: number) => create(Vec2Schema, { x, y });
 const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
@@ -158,7 +161,7 @@ describe('layoutModel', () => {
   test('an auto-sized node reports its real width as the effective value', () => {
     // The node has no size in the stylesheet. The old inspector showed 0 here.
     const geometry = geometryFrom({ nodes: [node('n1', vec(10, 20), vec(180, 60))] });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = layoutModel(inspectorModel(refs('node', 'n1'))!, geometry, sheet);
 
     expect(model.width.override).toBeUndefined();
@@ -168,8 +171,8 @@ describe('layoutModel', () => {
   test('a written size shows as the override', () => {
     const geometry = geometryFrom({ nodes: [node('n1', vec(10, 20), vec(180, 60))] });
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: { n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { size: v(180, 60) }) }) },
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: { n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { size: v(180, 60) }) }) },
     });
     const model = layoutModel(inspectorModel(refs('node', 'n1'))!, geometry, sheet);
 
@@ -184,7 +187,7 @@ describe('layoutModel', () => {
       groups: [group('g1', vec(100, 100), vec(400, 400))],
       nodes: [node('n1', vec(140, 160), vec(80, 40), 'g1')],
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = layoutModel(inspectorModel(refs('node', 'n1'))!, geometry, sheet);
 
     expect(model.x.effective).toBe(40);
@@ -206,10 +209,10 @@ describe('commitLayout', () => {
   });
 
   function sheetOf(...ids: string[]): Stylesheet {
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     for (const id of ids) {
-      sheet.nodes[id] = create(NodeStyleEntrySchema, {
-        layout: create(NodeLayoutSchema, { position: v(0, 0) }),
+      sheet.elements[id] = create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, { position: v(0, 0) }),
       });
     }
     return sheet;
@@ -220,16 +223,16 @@ describe('commitLayout', () => {
     const edit = commitLayout(model, threeNodes(), sheetOf('a', 'b', 'c'), 'width', 200);
 
     expect(edit).toBeDefined();
-    expect(edit!.nodeChanges).toHaveLength(3);
-    expect(edit!.nodeChanges.map((change) => change.nodeId).sort()).toEqual(['a', 'b', 'c']);
+    expect(edit!.elementChanges).toHaveLength(3);
+    expect(edit!.elementChanges.map((change) => change.elementId).sort()).toEqual(['a', 'b', 'c']);
   });
 
   test('committing the value a field already holds writes nothing', () => {
     // Blur fires whether or not anything was typed.
     const geometry = geometryFrom({ nodes: [node('n1', vec(10, 20), vec(100, 50))] });
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: { n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: v(10, 20) }) }) },
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: { n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: v(10, 20) }) }) },
     });
     const model = inspectorModel(refs('node', 'n1'))!;
 
@@ -241,7 +244,7 @@ describe('commitLayout', () => {
     // auto-layout position to fall back to -- and would hand back a StyleEdit
     // with no changes in it, which still reaches the undo log.
     const geometry = geometryFrom({});
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = inspectorModel(refs('annotation', 'a1'))!;
 
     expect(commitLayout(model, geometry, sheet, 'x', undefined)).toBeUndefined();
@@ -251,17 +254,17 @@ describe('commitLayout', () => {
 describe('commitTypography', () => {
   test('setting a colour on three nodes is one edit', () => {
     const model = inspectorModel(refs('node', 'a', 'b', 'c'))!;
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const edit = commitTypography(model, sheet, 'color', '#ff0000');
 
-    expect(edit!.nodeChanges).toHaveLength(3);
+    expect(edit!.elementChanges).toHaveLength(3);
   });
 
   test('changing one typography field preserves the others', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
-        n1: create(NodeStyleEntrySchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        n1: create(ElementStyleEntrySchema, {
           typography: create(TypographySchema, {
             size: 14,
             font: '$fonts.heading',
@@ -273,7 +276,7 @@ describe('commitTypography', () => {
     const model = inspectorModel(refs('node', 'n1'))!;
     const edit = commitTypography(model, sheet, 'color', '#ff0000');
 
-    const after = applyStyleEditToStylesheet(sheet, edit!).nodes['n1']!;
+    const after = applyStyleEditToStylesheet(sheet, edit!).elements['n1']!;
     expect(after.typography?.color?.value).toBe('#ff0000');
     expect(after.typography?.font).toBe('$fonts.heading');
     expect(after.typography?.size).toBe(14);
@@ -286,9 +289,9 @@ describe('typographyModel', () => {
     laidOut.typography = create(TypographySchema, { color: create(ColorSchema, { value: '#7ab8ff' }) });
     const geometry = geometryFrom({ nodes: [laidOut] });
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
-        n1: create(NodeStyleEntrySchema, {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        n1: create(ElementStyleEntrySchema, {
           typography: create(TypographySchema, { color: create(ColorSchema, { value: '$colors.accent' }) }),
         }),
       },
@@ -297,5 +300,125 @@ describe('typographyModel', () => {
 
     expect(model.color.override).toBe('$colors.accent');
     expect(model.color.effective).toBe('#7ab8ff');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A closed container is a group in the scene but is DRAWN as a block, so the
+// renderer styles it from the entry's block fields (layout / shape) and
+// ignores its box fields. The inspector has to edit the form that is drawn.
+// ---------------------------------------------------------------------------
+
+function closedGroup(id: string, position: Vec2, size: Vec2): LaidOutGroup {
+  return init(new LaidOutGroup(), {
+    id, position, size, isSuperNode: true, hiddenDescendantCount: 2,
+  });
+}
+
+function closedSheet(): Stylesheet {
+  return create(StylesheetSchema, {
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {
+      P: create(ElementStyleEntrySchema, {
+        layout: create(ElementLayoutSchema, { position: vec(5, 6), size: vec(120, 60) }),
+        boxLayout: create(BoxLayoutSchema, { position: vec(99, 98), size: vec(400, 300) }),
+      }),
+    },
+  });
+}
+
+describe('inspectorModel for a closed container', () => {
+  const geometry = geometryFrom({
+    groups: [closedGroup('P', vec(0, 0), vec(120, 60)), group('Q', vec(200, 0), vec(300, 200))],
+  });
+
+  test('a closed container is edited as a block, an open one as a box', () => {
+    expect(inspectorModel(refs('group', 'P'), geometry)?.block).toBe(true);
+    expect(inspectorModel(refs('group', 'Q'), geometry)?.block).toBe(false);
+  });
+
+  test('a selection mixing the two forms has no common inspector', () => {
+    expect(inspectorModel([...refs('group', 'P'), ...refs('group', 'Q')], geometry)).toBeUndefined();
+  });
+
+  test('render-mode choices depend on whether every selected element is a grouping', () => {
+    const diagram = create(DiagramSchema, {
+      graph: create(GraphSchema, {
+        elements: {
+          P: create(ElementSchema, { role: ElementRole.ENTITY }),
+          Q: create(ElementSchema, { role: ElementRole.GROUPING }),
+        },
+      }),
+    });
+
+    expect(inspectorModel(refs('group', 'P'), geometry, diagram)?.groupingsOnly).toBe(false);
+    expect(inspectorModel(refs('group', 'Q'), geometry, diagram)?.groupingsOnly).toBe(true);
+  });
+});
+
+describe('layout of a closed container', () => {
+  const geometry = geometryFrom({
+    groups: [closedGroup('P', vec(0, 0), vec(120, 60))],
+  });
+  const model = (): ReturnType<typeof inspectorModel> => inspectorModel(refs('group', 'P'), geometry);
+
+  test('the readout shows the block layout, not the box layout', () => {
+    const fields = layoutModel(model()!, geometry, closedSheet());
+    expect(fields.x.override).toBe(5);
+    expect(fields.width.override).toBe(120);
+  });
+
+  test('a width edit lands in layout.size and leaves the box alone', () => {
+    const before = closedSheet();
+    const edit = commitLayout(model()!, geometry, before, 'width', 150);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.layout?.size?.x).toBe(150);
+    expect(after.boxLayout?.size?.x).toBe(400);
+  });
+
+  test('an x edit lands in layout.position', () => {
+    const before = closedSheet();
+    const edit = commitLayout(model()!, geometry, before, 'x', 40);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.layout?.position?.x).toBe(40);
+    expect(after.boxLayout?.position?.x).toBe(99);
+  });
+
+  test('clearing x unpins the block and keeps the box pin', () => {
+    const before = closedSheet();
+    const edit = commitLayout(model()!, geometry, before, 'x', undefined);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.layout?.position).toBeUndefined();
+    expect(after.boxLayout?.position?.x).toBe(99);
+  });
+
+  test('clearing the width removes layout.size only', () => {
+    const before = closedSheet();
+    const edit = commitLayout(model()!, geometry, before, 'width', undefined);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.layout?.size).toBeUndefined();
+    expect(after.boxLayout?.size?.x).toBe(400);
+  });
+
+  test('an open box still edits its box layout', () => {
+    const open = geometryFrom({ groups: [group('P', vec(0, 0), vec(300, 200))] });
+    const before = closedSheet();
+    const edit = commitLayout(inspectorModel(refs('group', 'P'), open)!, open, before, 'width', 350);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.boxLayout?.size?.x).toBe(350);
+    expect(after.layout?.size?.x).toBe(120);
+  });
+
+  test('typography is one field for both forms and is written to the entry', () => {
+    const before = closedSheet();
+    const edit = commitTypography(model()!, before, 'size', 18);
+    const after = applyStyleEditToStylesheet(before, edit!).elements['P']!;
+
+    expect(after.typography?.size).toBe(18);
   });
 });

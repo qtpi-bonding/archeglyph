@@ -32,7 +32,7 @@ export const Inspector: Component<InspectorProps> = (
   props: InspectorProps,
 ): JSX.Element => {
   const model = createMemo<InspectorModelOption>(() => (
-    inspectorModel(props.ui.selection())
+    inspectorModel(props.ui.selection(), props.geometry, props.state.diagram())
   ));
   let panel!: HTMLDivElement;
 

@@ -36,7 +36,7 @@ import { describe, expect, spyOn, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
   AnnotationLayoutSchema, CanvasStyleSchema, EdgeLayoutSchema, EdgePathPosition, EdgeRouting,
-  Glyph1DSchema, Glyph2DSchema, GroupLayoutSchema, NodeLayoutSchema,
+  Glyph1DSchema, Glyph2DSchema, BoxLayoutSchema, ElementLayoutSchema,
   TypographySchema, Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import * as edgeRouter from '../src/layout/edge_router';
@@ -65,7 +65,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
         const mockElk = { layout: async (g: any) => { captured.graph = g; return g; } } as any;
         const node = init(new ResolvedNode(), {
           id: 'root_node',
-          layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 3, y: 4 }) }),
+          layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 3, y: 4 }) }),
         });
         const diagram = init(new ResolvedDiagram(), { id: 'd', nodes: byId([node]), edges: {}, groups: {}, annotations: {} });
         const adapter = new ElkAdapterImpl(mockElk);
@@ -84,7 +84,7 @@ describe('layout pinning paths (repaired testgen cases)', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const nodeA = init(new ResolvedNode(), {
           id: 'a', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
+          layout: create(ElementLayoutSchema, { position: vec(0, 0), size: vec(100, 40) }),
         });
         const group = init(new ResolvedGroup(), {
           id: 'g', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
@@ -118,11 +118,11 @@ describe('layout pinning paths (repaired testgen cases)', () => {
         const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
         const pinnedNode = init(new ResolvedNode(), {
           id: 'pinned', shape: {} as any, typography: {} as any,
-          layout: create(NodeLayoutSchema, { position: vec(5, 6), size: vec(80, 30) }),
+          layout: create(ElementLayoutSchema, { position: vec(5, 6), size: vec(80, 30) }),
         });
         const pinnedGroup = init(new ResolvedGroup(), {
           id: 'pinnedGroup', shape: {} as any, typography: {} as any, isSuperNode: false, hiddenDescendantCount: 0,
-          layout: create(GroupLayoutSchema, { position: vec(200, 200), size: vec(150, 150) }),
+          layout: create(BoxLayoutSchema, { position: vec(200, 200), size: vec(150, 150) }),
         });
         const newcomer = init(new ResolvedNode(), { id: 'newcomer', shape: {} as any, typography: {} as any });
         const diagram = init(new ResolvedDiagram(), {

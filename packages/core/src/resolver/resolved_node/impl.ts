@@ -4,7 +4,7 @@
 
 import { Glyph2D } from '@archeglyph/proto/gen/style_pb';
 import { Localization } from '@archeglyph/proto/gen/content_pb';
-import { NodeLayout } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayout } from '@archeglyph/proto/gen/style_pb';
 import { Typography } from '@archeglyph/proto/gen/style_pb';
 
 export class ResolvedNode {
@@ -12,6 +12,6 @@ export class ResolvedNode {
   parentGroup?: string;
   shape!: Glyph2D;
   typography!: Typography;
-  layout?: NodeLayout;
+  layout?: ElementLayout;
   label: Localization[] = [];
 }

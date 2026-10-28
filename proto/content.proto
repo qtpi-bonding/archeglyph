@@ -47,42 +47,55 @@ message DiagramMetadata {
 // ============================================================================
 
 message Graph {
-  // Nodes keyed by id. The key is the node's identity; Node carries no id field.
-  // Iteration during render: sorted lex by key.
-  map<string, Node> nodes = 1;
+  // Elements keyed by id: the one id namespace for everything that can sit in
+  // the diagram. The key is the element's identity; Element carries no id
+  // field. Iteration during render: sorted lex by key.
+  map<string, Element> elements = 1;
 
   // Edges keyed by id. The key is the edge's identity; Edge carries no id field.
   // Convention: "<source>__<target>", optional "__<n>" suffix when multiple.
   // Multiple edges between same (source, target) supported via different ids.
   map<string, Edge> edges = 2;
-
-  // Groups keyed by id. The key is the group's identity; Group carries no id field.
-  // Groups may nest (a group's parent_group references another group).
-  map<string, Group> groups = 3;
 }
 
-message Node {
+enum ElementRole {
+  // Reads as ENTITY, so an element that says nothing is a real thing.
+  ELEMENT_ROLE_UNSPECIFIED = 0;
+  // The source asserts this element takes part in relations (a class, a file,
+  // a method, a component). May be an Edge endpoint. Open or closed, never
+  // DISSOLVED.
+  ELEMENT_ROLE_ENTITY = 1;
+  // Only gathers members ("auth subsystem"). Never an Edge endpoint. The only
+  // role that may be DISSOLVED. A grouping gathers siblings: inserting one must
+  // not change any entity's nearest-entity ancestor relative to the source.
+  ELEMENT_ROLE_GROUPING = 2;
+}
+
+message Element {
   // Display label (one Localization entry per locale).
   // Render picks based on --locale flag, falls back to canonical_locale's entry.
   // If empty, renderer falls back to the map key for display.
   repeated Localization label = 2;
 
-  // Containing group (single physical containment; cross-cutting concerns use tags).
-  // Groups may themselves have a parent_group → nested hierarchy supported.
-  optional string parent_group = 3;
+  // Containing element (single physical containment; cross-cutting concerns
+  // use tags). The parent relation is acyclic. An element is a container
+  // exactly when something names it as parent; that is never stored.
+  optional string parent = 3;
 
   // Free-form, namespaced tags. e.g., "archegraph.symbol", "team": "backend".
-  // Categorization (what was previously the `kind` field) goes here by convention —
-  // common keys: "kind", "type", "layer", "domain". Authors pick what suits their
-  // domain. Importers use namespaced keys (e.g., "archegraph.kind").
+  // Categorization goes here by convention -- common keys: "kind", "type",
+  // "layer", "domain". "kind" selects the theme component.
   map<string, string> tags = 4;
+
+  ElementRole role = 5;
 }
 
 message Edge {
-  // Source node id. Must reference an existing node.
+  // Source element id. Must reference an existing ENTITY element, which may be
+  // a container.
   string source = 2;
 
-  // Target node id.
+  // Target element id. Same rule.
   string target = 3;
 
   // Display label (localizable).
@@ -93,18 +106,6 @@ message Edge {
 
   // Free-form tags. Categorization goes here (e.g., "kind": "depends_on").
   map<string, string> tags = 6;
-}
-
-message Group {
-  // Display label (localizable).
-  repeated Localization label = 2;
-
-  // Parent group id, for nested groups. Empty = top-level group.
-  // Group hierarchy must be acyclic (validation enforces).
-  optional string parent_group = 3;
-
-  // Free-form tags.
-  map<string, string> tags = 4;
 }
 
 // ============================================================================
@@ -130,21 +131,19 @@ message Delta {
   string base_ref = 2;
   string target_ref = 3;
 
-  repeated NodeDelta node_deltas = 4;
   repeated EdgeDelta edge_deltas = 5;
 
-  // Groups are topology, not presentation: they live in Graph alongside nodes
-  // and edges, and only their render_mode (in the STYLE file) is presentational.
-  // Without this, adding or deleting a group produced nothing while re-parenting
-  // a node did -- so a containment change reported half of itself.
-  repeated GroupDelta group_deltas = 6;
+  // Elements are topology, not presentation. A move between parents is one
+  // MODIFIED delta carrying both parents; a leaf gaining its first child
+  // produces no delta on the element itself.
+  repeated ElementDelta element_deltas = 4;
 }
 
-message NodeDelta {
-  string node_id = 1;
+message ElementDelta {
+  string element_id = 1;
   ChangeType change_type = 2;
-  optional Node before = 3;
-  optional Node after = 4;
+  optional Element before = 3;
+  optional Element after = 4;
 
   // Free-text rationale, carried over from archegraph's ViewNodeDelta.description
   // when imported (Path A); blank for archeglyph's own diff() (Path B), which has
@@ -162,27 +161,13 @@ message EdgeDelta {
   optional string description = 5;
 }
 
-message GroupDelta {
-  string group_id = 1;
-  ChangeType change_type = 2;
-
-  // Carries the group's own fields only. Membership is NOT here -- containment
-  // lives per-node on Node.parent_group -- so rendering a DELETED group means
-  // recovering its members from their own NodeDelta.before.parent_group. This
-  // message alone would draw an empty box.
-  optional Group before = 3;
-  optional Group after = 4;
-
-  optional string description = 5;
-}
-
 // ============================================================================
 // 3. LOCALIZATION (one locale's text content)
 // ============================================================================
 
 // One locale's version of a text. Markdown source with KaTeX-style math.
 // Used as `repeated Localization` wherever localizable text is needed
-// (Node/Edge/Group `label`, Diagram `title`, AnnotationEntry `content`).
+// (Element/Edge `label`, Diagram `title`, AnnotationEntry `content`).
 //
 // Document's DiagramMetadata.canonical_locale determines which entry is the
 // fallback when render-time --locale doesn't match any explicit entry.

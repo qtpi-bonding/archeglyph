@@ -9,6 +9,7 @@ import { createRoot, createSignal } from 'solid-js';
 import { createDiffState } from '../src/diff/diff_state';
 import { Diagram } from '../../proto/src/gen/content_pb';
 import { Delta, DiagramSchema } from '../../proto/src/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 describe('testgen_diff__createDiffState', () => {
     const makeDiagram = (id: string): Diagram => create(DiagramSchema, {id});
@@ -38,12 +39,12 @@ describe('testgen_diff__createDiffState', () => {
         const state = createDiffState(() => target, () => value.targetRef);
         state.attach(base, value.baseRef, false);
         const result = state.delta();
-        expect(result?.schemaVersion).toBe(1);
+        expect(result?.schemaVersion).toBe(CONTENT_SCHEMA_VERSION);
         expect(result?.baseRef).toBe(value.baseRef);
         expect(result?.targetRef).toBe(value.targetRef);
-        expect(result?.nodeDeltas).toEqual([]);
+        expect(result?.elementDeltas).toEqual([]);
         expect(result?.edgeDeltas).toEqual([]);
-        expect(result?.groupDeltas).toEqual([]);
+        expect(result?.elementDeltas).toEqual([]);
             })
         );
     });
@@ -80,7 +81,7 @@ describe('testgen_diff__createDiffState', () => {
           expect(state.delta()).toBeUndefined();
           setCurrent(makeDiagram("target"));
           const result = state.delta();
-          expect(result?.schemaVersion).toBe(1);
+          expect(result?.schemaVersion).toBe(CONTENT_SCHEMA_VERSION);
           expect(result?.baseRef).toBe("base-ref");
           expect(result?.targetRef).toBe("target-ref");
           dispose();
@@ -106,9 +107,9 @@ describe('testgen_diff__createDiffState', () => {
         const result = state.delta();
         expect(result?.baseRef).toBe(value.baseRef);
         expect(result?.targetRef).toBe(value.targetRef);
-        expect(result?.nodeDeltas).toEqual([]);
+        expect(result?.elementDeltas).toEqual([]);
         expect(result?.edgeDeltas).toEqual([]);
-        expect(result?.groupDeltas).toEqual([]);
+        expect(result?.elementDeltas).toEqual([]);
             })
         );
     });

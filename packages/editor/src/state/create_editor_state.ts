@@ -42,7 +42,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   const applyStyleEdit = (incoming: StyleEdit, coalesceKey?: string): void => {
     const edit: StyleEdit = editableChanges(incoming, getDiagram());
     if (
-      edit.nodeChanges.length === 0 && edit.groupChanges.length === 0 &&
+      edit.elementChanges.length === 0 &&
       edit.edgeChanges.length === 0 && edit.annotationChanges.length === 0
     ) return;
     const current: Stylesheet = getStylesheet();
@@ -112,7 +112,7 @@ export function createEditorState(diagram: Diagram, stylesheet: Stylesheet): Edi
   };
 
   const emptyEdit = (): StyleEdit => create(StyleEditSchema, {
-    nodeChanges: [], edgeChanges: [], groupChanges: [], annotationChanges: [],
+    elementChanges: [], edgeChanges: [], annotationChanges: [],
   });
 
   const acceptPending = (editId: string): void => {

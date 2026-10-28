@@ -2,10 +2,10 @@
 
 import { describe, test, expect } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, GraphSchema, ElementSchema } from '@archeglyph/proto/gen/content_pb';
 import {
-  NodeStyleChangeSchema,
-  NodeStyleEntrySchema,
+  ElementStyleChangeSchema,
+  ElementStyleEntrySchema,
   StyleChangeType,
   StyleEdit,
   StyleEditSchema,
@@ -13,21 +13,22 @@ import {
   Stylesheet,
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 import { createEditorState } from './create_editor_state';
 
 function proposal(id: string, component: string): StyleEdit {
   return create(StyleEditSchema, {
-    schemaVersion: 1,
+    schemaVersion: STYLE_SCHEMA_VERSION,
     id,
     timestampMs: 0n,
     state: StyleEditState.PENDING,
     description: `set ${component}`,
-    nodeChanges: [
-      create(NodeStyleChangeSchema, {
-        nodeId: 'n1',
+    elementChanges: [
+      create(ElementStyleChangeSchema, {
+        elementId: 'n1',
         changeType: StyleChangeType.MODIFIED,
-        after: create(NodeStyleEntrySchema, { component }),
+        after: create(ElementStyleEntrySchema, { component }),
         unsetPaths: [],
       }),
     ],
@@ -35,14 +36,14 @@ function proposal(id: string, component: string): StyleEdit {
 }
 
 function sheet(pendingEdits: StyleEdit[]): Stylesheet {
-  return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, pendingEdits });
+  return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, pendingEdits });
 }
 
 // n1 is the node every proposal here targets. It has to be IN the diagram:
 // applyStyleEdit and acceptPending both drop changes against absent ids.
 const diagram = create(DiagramSchema, {
-  schemaVersion: 1,
-  graph: create(GraphSchema, { nodes: { n1: create(NodeSchema, {}) } }),
+  schemaVersion: CONTENT_SCHEMA_VERSION,
+  graph: create(GraphSchema, { elements: { n1: create(ElementSchema, {}) } }),
 });
 
 const pendingIds = (s: Stylesheet): Array<string> => s.pendingEdits.map((e) => e.id);
@@ -55,7 +56,7 @@ describe('accepting a proposal is one undo entry, not two', () => {
 
     state.acceptPending('p1');
 
-    expect(state.stylesheet().nodes['n1']?.component).toBe('boxy');
+    expect(state.stylesheet().elements['n1']?.component).toBe('boxy');
     expect(pendingIds(state.stylesheet())).toEqual([]);
   });
 
@@ -65,7 +66,7 @@ describe('accepting a proposal is one undo entry, not two', () => {
 
     state.undo();
 
-    expect(state.stylesheet().nodes['n1']?.component).toBeUndefined();
+    expect(state.stylesheet().elements['n1']?.component).toBeUndefined();
     expect(pendingIds(state.stylesheet())).toEqual(['p1']);
     // If this were two entries, one undo would leave one half applied.
     expect(state.canUndo()).toBe(false);
@@ -81,7 +82,7 @@ describe('accepting a proposal is one undo entry, not two', () => {
 
     state.redo();
 
-    expect(state.stylesheet().nodes['n1']?.component).toBe('boxy');
+    expect(state.stylesheet().elements['n1']?.component).toBe('boxy');
     expect(pendingIds(state.stylesheet())).toEqual([]);
   });
 
@@ -97,7 +98,7 @@ describe('accepting a proposal is one undo entry, not two', () => {
     expect(pendingIds(state.stylesheet())).toEqual(['p1']);
 
     state.redo();
-    expect(state.stylesheet().nodes['n1']?.component).toBe('boxy');
+    expect(state.stylesheet().elements['n1']?.component).toBe('boxy');
     expect(pendingIds(state.stylesheet())).toEqual([]);
   });
 });
@@ -108,7 +109,7 @@ describe('rejecting a proposal', () => {
 
     state.rejectPending('p1');
 
-    expect(state.stylesheet().nodes['n1']?.component).toBeUndefined();
+    expect(state.stylesheet().elements['n1']?.component).toBeUndefined();
     expect(pendingIds(state.stylesheet())).toEqual([]);
   });
 
@@ -119,7 +120,7 @@ describe('rejecting a proposal', () => {
     state.undo();
 
     expect(pendingIds(state.stylesheet())).toEqual(['p1']);
-    expect(state.stylesheet().nodes['n1']?.component).toBeUndefined();
+    expect(state.stylesheet().elements['n1']?.component).toBeUndefined();
   });
 
   test('redo removes it again, rather than doing nothing', () => {

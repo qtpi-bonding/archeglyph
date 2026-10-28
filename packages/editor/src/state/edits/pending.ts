@@ -29,9 +29,10 @@ export function removePendingEdit(stylesheet: Stylesheet, editId: string): Style
     schemaVersion: stylesheet.schemaVersion,
     themes: stylesheet.themes,
     canvas: stylesheet.canvas,
-    nodes: stylesheet.nodes,
+    elements: stylesheet.elements,
     edges: stylesheet.edges,
-    groups: stylesheet.groups,
+    openDepth: stylesheet.openDepth,
+    shownEdgeKinds: stylesheet.shownEdgeKinds,
     annotations: stylesheet.annotations,
     pendingEdits: stylesheet.pendingEdits.filter((edit: StyleEdit) => edit.id !== editId),
   });

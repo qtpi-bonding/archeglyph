@@ -10,26 +10,25 @@ import { renderOp } from '../packages/ops/src/render/op';
 const PROJECT_ROOT: string = resolve(import.meta.dir, '..');
 
 const DIAGRAM = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: 'super-node',
   graph: {
-    nodes: {
+    elements: {
       outside: { label: [{ locale: 'en', source: 'out' }] },
-      a1: { label: [{ locale: 'en', source: 'a1' }], parentGroup: 'g' },
-      a2: { label: [{ locale: 'en', source: 'a2' }], parentGroup: 'g' },
-      a3: { label: [{ locale: 'en', source: 'a3' }], parentGroup: 'g' },
+      a1: { label: [{ locale: 'en', source: 'a1' }], parent: 'g' },
+      a2: { label: [{ locale: 'en', source: 'a2' }], parent: 'g' },
+      a3: { label: [{ locale: 'en', source: 'a3' }], parent: 'g' },
+      g: { label: [{ locale: 'en', source: 'G' }], role: 'ELEMENT_ROLE_GROUPING' },
     },
     edges: { e1: { source: 'a1', target: 'outside' } },
-    groups: { g: { label: [{ locale: 'en', source: 'G' }] } },
   },
   metadata: { generator: 'test', canonicalLocale: 'en' },
 };
 
 const style = (renderMode: string | undefined): unknown => ({
-  schemaVersion: 1,
-  nodes: {},
+  schemaVersion: 2,
   edges: {},
-  groups: renderMode === undefined ? {} : { g: { layout: { renderMode } } },
+  elements: renderMode === undefined ? {} : { g: { renderMode } },
 });
 
 function texts(svg: string): string[] {
@@ -60,7 +59,7 @@ describe('a contracted group says what it stands for', () => {
   };
 
   test('the count of what it hides is on its label', async () => {
-    const svg = await render('contracted', 'GROUP_RENDER_MODE_CONTRACTED');
+    const svg = await render('contracted', 'GROUP_RENDER_MODE_CLOSED');
     expect(texts(svg)).toContain('G +3');
   });
 
@@ -72,7 +71,7 @@ describe('a contracted group says what it stands for', () => {
   });
 
   test('the label centres, since a contracted group has no children to clear', async () => {
-    const svg = await render('centred', 'GROUP_RENDER_MODE_CONTRACTED');
+    const svg = await render('centred', 'GROUP_RENDER_MODE_CLOSED');
     const match = svg.match(/<text x="([\d.]+)"[^>]*text-anchor="([a-z]+)"[^>]*>(?:<tspan[^>]*>)?G \+3/);
     if (match === null) { throw new Error('no super-node label found'); }
     expect(match[2]).toBe('middle');

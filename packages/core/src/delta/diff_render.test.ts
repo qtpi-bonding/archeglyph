@@ -14,6 +14,7 @@ import { renderPipeline } from '../pipeline';
 import { seedComponentBindings } from '../resolver/seed_bindings';
 import { LayoutEngineImpl } from '../layout/layout_engine/impl';
 import { ElkAdapterImpl } from '../layout/layout_adapter/impl';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const require_ = createRequire(import.meta.url);
 
@@ -32,16 +33,16 @@ const DIFF_ADDED = '#2e7d32';
 
 function graph(nodeIds: string[]): unknown {
   return {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'd',
-    graph: { nodes: Object.fromEntries(nodeIds.map((id: string) => [id, {}])) },
+    graph: { elements: Object.fromEntries(nodeIds.map((id: string) => [id, {}])) },
   };
 }
 
 async function renderPlain(json: unknown): Promise<string> {
   const diagram = fromJson(DiagramSchema, JSON.stringify(json));
   const theme = lightTheme();
-  const seeded = seedComponentBindings(diagram, create(StylesheetSchema, { schemaVersion: 1 }), theme);
+  const seeded = seedComponentBindings(diagram, create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }), theme);
   const result = await renderPipeline(
     diagram, seeded, new Map([['default', theme]]),
     new LayoutEngineImpl(new ElkAdapterImpl(newElk() as never)),

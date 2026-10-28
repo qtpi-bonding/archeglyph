@@ -2,14 +2,16 @@
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { create, toJson } from '@bufbuild/protobuf';
-import { DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
+
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 import { UrlParamDiagramSource } from './url_param_diagram_source';
 
 const diagram = create(DiagramSchema, {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'base',
-  graph: create(GraphSchema, { nodes: { a: create(NodeSchema, {}) } }),
+  graph: create(GraphSchema, { elements: { a: create(ElementSchema, {}) } }),
 });
 const diagramJson = JSON.stringify(toJson(DiagramSchema, diagram));
 const realFetch = globalThis.fetch;
@@ -33,7 +35,7 @@ describe('a diff base read from URL params', () => {
   });
 
   test('prefers the inline value over a remote url', async () => {
-    stubFetch('{"schemaVersion":1,"id":"remote"}');
+    stubFetch(`{"schemaVersion":${CONTENT_SCHEMA_VERSION},"id":"remote"}`);
     const source = new UrlParamDiagramSource(btoa(diagramJson), 'https://example.test/x.diag.json');
 
     const result = await source.load();

@@ -4,61 +4,60 @@
 import {
   AnnotationEntrySchema,
   AnnotationLayoutSchema,
-  GroupLayoutSchema,
-  GroupStyleEntrySchema,
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  BoxLayoutSchema,
+  ElementLayoutSchema,
+  ElementStyleEntrySchema,
   StyleEdit,
   Stylesheet,
   Vec2,
 } from '@archeglyph/proto/gen/style_pb';
 import { create } from '@bufbuild/protobuf';
-import { annotationChange, groupChange, nodeChange, styleEdit } from './edit_builder';
+import { annotationChange, elementChange, styleEdit } from './edit_builder';
 import { patchAnnotationEntry, patchGroupEntry, patchNodeEntry } from './entry_patch';
 
 export function resizeGroupEdit(stylesheet: Stylesheet, groupId: string, position: Vec2, size: Vec2): StyleEdit {
-  const existing = stylesheet.groups[groupId];
+  const existing = stylesheet.elements[groupId];
   return styleEdit({
-    groupChanges: [
-      groupChange(groupId, patchGroupEntry(existing, { position, size })),
+    elementChanges: [
+      elementChange(groupId, patchGroupEntry(existing, { position, size })),
     ],
   });
 }
 
 export function clearGroupSizeEdit(stylesheet: Stylesheet, groupId: string): StyleEdit {
-  const existing = stylesheet.groups[groupId];
+  const existing = stylesheet.elements[groupId];
   const after =
     existing === undefined
       ? undefined
-      : create(GroupStyleEntrySchema, {
+      : create(ElementStyleEntrySchema, {
           ...existing,
-          ...(existing.layout === undefined
+          ...(existing.boxLayout === undefined
             ? {}
             : {
-                layout: create(GroupLayoutSchema, {
-                  ...existing.layout,
+                boxLayout: create(BoxLayoutSchema, {
+                  ...existing.boxLayout,
                   size: undefined,
                 }),
               }),
         });
 
   return styleEdit({
-    groupChanges: [groupChange(groupId, after, ['layout.size'])],
+    elementChanges: [elementChange(groupId, after, ['boxLayout.size'])],
     description: 'Clear group size override',
   });
 }
 
 export function clearNodeSizeEdit(stylesheet: Stylesheet, nodeId: string): StyleEdit {
-  const existing = stylesheet.nodes[nodeId];
+  const existing = stylesheet.elements[nodeId];
   const after =
     existing === undefined
       ? undefined
-      : create(NodeStyleEntrySchema, {
+      : create(ElementStyleEntrySchema, {
           ...existing,
           ...(existing.layout === undefined
             ? {}
             : {
-                layout: create(NodeLayoutSchema, {
+                layout: create(ElementLayoutSchema, {
                   ...existing.layout,
                   size: undefined,
                 }),
@@ -66,16 +65,16 @@ export function clearNodeSizeEdit(stylesheet: Stylesheet, nodeId: string): Style
         });
 
   return styleEdit({
-    nodeChanges: [nodeChange(nodeId, after, ['layout.size'])],
+    elementChanges: [elementChange(nodeId, after, ['layout.size'])],
     description: 'Clear node size override',
   });
 }
 
 export function resizeNodeEdit(stylesheet: Stylesheet, nodeId: string, position: Vec2, size: Vec2): StyleEdit {
-  const existing = stylesheet.nodes[nodeId];
+  const existing = stylesheet.elements[nodeId];
   const after = patchNodeEntry(existing, { position, size });
   return styleEdit({
-    nodeChanges: [nodeChange(nodeId, after)],
+    elementChanges: [elementChange(nodeId, after)],
   });
 }
 

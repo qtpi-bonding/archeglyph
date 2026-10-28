@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "stack",
   "title": [
     {
@@ -8,7 +8,29 @@
     }
   ],
   "graph": {
-    "nodes": {
+    "edges": {
+      "caddy__app": {
+        "source": "caddy",
+        "target": "app"
+      },
+      "app__keycloak": {
+        "source": "app",
+        "target": "keycloak"
+      },
+      "app__postgres": {
+        "source": "app",
+        "target": "postgres"
+      },
+      "app__valkey": {
+        "source": "app",
+        "target": "valkey"
+      },
+      "postgres__restic": {
+        "source": "postgres",
+        "target": "restic"
+      }
+    },
+    "elements": {
       "app": {
         "label": [
           {
@@ -32,7 +54,7 @@
             "source": "Keycloak"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       },
       "postgres": {
         "label": [
@@ -41,7 +63,7 @@
             "source": "Postgres"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       },
       "valkey": {
         "label": [
@@ -50,7 +72,7 @@
             "source": "Valkey"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       },
       "restic": {
         "label": [
@@ -59,38 +81,15 @@
             "source": "restic"
           }
         ]
-      }
-    },
-    "edges": {
-      "caddy__app": {
-        "source": "caddy",
-        "target": "app"
       },
-      "app__keycloak": {
-        "source": "app",
-        "target": "keycloak"
-      },
-      "app__postgres": {
-        "source": "app",
-        "target": "postgres"
-      },
-      "app__valkey": {
-        "source": "app",
-        "target": "valkey"
-      },
-      "postgres__restic": {
-        "source": "postgres",
-        "target": "restic"
-      }
-    },
-    "groups": {
       "ours": {
         "label": [
           {
             "locale": "en",
             "source": "Self-hosted"
           }
-        ]
+        ],
+        "role": "ELEMENT_ROLE_GROUPING"
       }
     }
   },

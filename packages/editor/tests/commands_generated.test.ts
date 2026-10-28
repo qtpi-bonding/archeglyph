@@ -16,7 +16,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { CanvasStyleSchema, Glyph2DSchema, GroupLayoutSchema, GroupStyleEntrySchema, NodeLayoutSchema, NodeStyleEntrySchema, Stylesheet, StylesheetSchema, TypographySchema, Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { CanvasStyleSchema, BoxLayoutSchema, Glyph2DSchema, ElementLayoutSchema, ElementStyleEntrySchema, Stylesheet, StylesheetSchema, TypographySchema, Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { StyleEdit } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { SceneGeometry } from '../src/scene/scene';
@@ -29,6 +29,7 @@ import { UiState } from '../src/ui_state/ui_state';
 import { ContainerRect } from '../src/ui_state/viewport_math';
 import { LaidOutGroup } from '@archeglyph/core/layout/laid_out_group';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 
 describe('testgen_gestures__COMMANDS', () => {
@@ -43,7 +44,7 @@ describe('testgen_gestures__COMMANDS', () => {
             return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: Object.fromEntries((parts.nodes ?? []).map((n) => [n.id, n])), edges: {}, groups: {}, annotations: {} } as LaidOutDiagram;
           }
           function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
-            return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
+            return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, edges: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 
           const sheet = emptyStylesheet();
@@ -66,15 +67,15 @@ describe('testgen_gestures__COMMANDS', () => {
 
           expect(edits).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toEqual(vec2(10, 20));
-          expect(applied.nodes['n2'].layout?.position).toEqual(vec2(30, 40));
+          expect(applied.elements['n1'].layout?.position).toEqual(vec2(10, 20));
+          expect(applied.elements['n2'].layout?.position).toEqual(vec2(30, 40));
     });
 
     // WHEN: pin-all fires before the Scene has ever produced a LaidOutDiagram (geometry is absent/undefined) - a timing accident, not a user mistake - and the command must be a no-op rather than an error.
     // THEN: Returns a no-op StyleEdit (no position writes) since there is no geometry to pin.
     test('pin_all_before_first_layout_resolves_is_noop', () => {
         function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
-            return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
+            return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, edges: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 
           const sheet = emptyStylesheet();
@@ -99,7 +100,7 @@ describe('testgen_gestures__COMMANDS', () => {
             return { id: 'd1', canvas: create(CanvasStyleSchema, {}), nodes: {}, edges: {}, groups: {}, annotations: {}, ...overrides } as LaidOutDiagram;
           }
           function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
-            return create(StylesheetSchema, { schemaVersion: 1, nodes: {}, edges: {}, groups: {}, annotations: {}, pendingEdits: [], ...overrides });
+            return create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION, elements: {}, edges: {}, annotations: {}, pendingEdits: [], ...overrides });
           }
 
           const sheet = emptyStylesheet();
@@ -119,8 +120,8 @@ describe('testgen_gestures__COMMANDS', () => {
           runCommand('pin-all' as unknown as CommandId, context);
 
           expect(edits).toHaveLength(1);
-          expect(edits[0].nodeChanges).toHaveLength(0);
-          expect(edits[0].groupChanges).toHaveLength(0);
+          expect(edits[0].elementChanges).toHaveLength(0);
+          expect(edits[0].edgeChanges).toHaveLength(0);
     });
 
     // WHEN: pin-all fires when the stylesheet already has explicit positions (e.g. from a prior pin-all or manual edit) for some nodes; those are overwritten with the current laid-out coordinates rather than left untouched or duplicated.
@@ -135,9 +136,9 @@ describe('testgen_gestures__COMMANDS', () => {
           }
 
           const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: { n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }) },
-            edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: { n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }) },
+            edges: {}, annotations: {}, pendingEdits: [],
           });
           const diagram = laidOutDiagram({ nodes: [laidOutNode({ id: 'n1', position: vec2(100, 200) })] });
           const geometry = { diagram, index: [], byKey: {}, edgePolylines: {}, contentBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 }, svg: '' } as unknown as SceneGeometry;
@@ -155,9 +156,9 @@ describe('testgen_gestures__COMMANDS', () => {
           runCommand('pin-all' as unknown as CommandId, context);
 
           expect(edits).toHaveLength(1);
-          expect(edits[0].nodeChanges).toHaveLength(1);
+          expect(edits[0].elementChanges).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toEqual(vec2(100, 200));
+          expect(applied.elements['n1'].layout?.position).toEqual(vec2(100, 200));
     });
 
     // WHEN: unpin-all fires when the stylesheet contains explicit positions written by multiple different origins at once (some from pin-all, some from drags, some from nudges, some hand-edited directly in the file); all of them are removed regardless of origin.
@@ -166,14 +167,14 @@ describe('testgen_gestures__COMMANDS', () => {
         function vec2(x: number, y: number): Vec2 { return create(Vec2Schema, { x, y }); }
 
           const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: {
-              n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }),
-              n2: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(2, 2) }) }),
-              n3: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(3, 3) }) }),
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: {
+              n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }),
+              n2: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(2, 2) }) }),
+              n3: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(3, 3) }) }),
+              g1: create(ElementStyleEntrySchema, { boxLayout: create(BoxLayoutSchema, { position: vec2(4, 4) }) }),
             },
             edges: {},
-            groups: { g1: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { position: vec2(4, 4) }) }) },
             annotations: {},
             pendingEdits: [],
           });
@@ -192,19 +193,19 @@ describe('testgen_gestures__COMMANDS', () => {
 
           expect(edits).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toBeUndefined();
-          expect(applied.nodes['n2'].layout?.position).toBeUndefined();
-          expect(applied.nodes['n3'].layout?.position).toBeUndefined();
-          expect(applied.groups['g1'].layout?.position).toBeUndefined();
+          expect(applied.elements['n1'].layout?.position).toBeUndefined();
+          expect(applied.elements['n2'].layout?.position).toBeUndefined();
+          expect(applied.elements['n3'].layout?.position).toBeUndefined();
+          expect(applied.elements['g1'].boxLayout?.position).toBeUndefined();
     });
 
     // WHEN: unpin-all fires when the stylesheet already has no explicit positions anywhere (diagram already fully ELK-driven); the command is a no-op producing an edit with nothing to clear.
     // THEN: Returns a no-op StyleEdit, since there are no explicit positions to clear.
     test('unpin_all_with_no_explicit_positions_is_noop_shaped', () => {
         const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: { n1: create(NodeStyleEntrySchema, { component: 'plain' }) },
-            edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: { n1: create(ElementStyleEntrySchema, { component: 'plain' }) },
+            edges: {}, annotations: {}, pendingEdits: [],
           });
 
           const edits: StyleEdit[] = [];
@@ -220,8 +221,8 @@ describe('testgen_gestures__COMMANDS', () => {
           expect(() => runCommand('unpin-all' as unknown as CommandId, context)).not.toThrow();
           expect(edits).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toBeUndefined();
-          expect(applied.nodes['n1'].component).toBe('plain');
+          expect(applied.elements['n1'].layout?.position).toBeUndefined();
+          expect(applied.elements['n1'].component).toBe('plain');
     });
 
     // WHEN: unpin-all fires when the only explicit position present was added by directly hand-editing the stylesheet file (never touched by pin-all, drag, or nudge); it is still removed.
@@ -230,9 +231,9 @@ describe('testgen_gestures__COMMANDS', () => {
         function vec2(x: number, y: number): Vec2 { return create(Vec2Schema, { x, y }); }
 
           const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: { n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(9, 9) }), component: 'hand-edited' }) },
-            edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: { n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(9, 9) }), component: 'hand-edited' }) },
+            edges: {}, annotations: {}, pendingEdits: [],
           });
 
           const edits: StyleEdit[] = [];
@@ -249,8 +250,8 @@ describe('testgen_gestures__COMMANDS', () => {
 
           expect(edits).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toBeUndefined();
-          expect(applied.nodes['n1'].component).toBe('hand-edited');
+          expect(applied.elements['n1'].layout?.position).toBeUndefined();
+          expect(applied.elements['n1'].component).toBe('hand-edited');
     });
 
 
@@ -260,12 +261,12 @@ describe('testgen_gestures__COMMANDS', () => {
         function vec2(x: number, y: number): Vec2 { return create(Vec2Schema, { x, y }); }
 
           const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: {
-              n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(5, 5) }) }),
-              n2: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(6, 6) }) }),
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: {
+              n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(5, 5) }) }),
+              n2: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(6, 6) }) }),
             },
-            edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+            edges: {}, annotations: {}, pendingEdits: [],
           });
 
           const edits: StyleEdit[] = [];
@@ -282,17 +283,17 @@ describe('testgen_gestures__COMMANDS', () => {
 
           expect(edits).toHaveLength(1);
           const applied = applyStyleEditToStylesheet(sheet, edits[0]);
-          expect(applied.nodes['n1'].layout?.position).toBeUndefined();
-          expect(applied.nodes['n2'].layout?.position).toBeUndefined();
+          expect(applied.elements['n1'].layout?.position).toBeUndefined();
+          expect(applied.elements['n2'].layout?.position).toBeUndefined();
     });
 
     // WHEN: auto-layout fires when the stylesheet already has zero explicit positions; the command still runs (as the 're-run ELK' intent distinct from unpin-all's 'stop pinning' intent) and yields the same no-op-shaped edit as unpin-all would.
     // THEN: Returns the same no-op-shaped StyleEdit that unpin-all would produce, since there are no positions to clear but the command still runs as a distinct 're-run ELK' action.
     test('auto_layout_on_already_unpinned_stylesheet_still_runs', () => {
         const sheet = create(StylesheetSchema, {
-            schemaVersion: 1,
-            nodes: { n1: create(NodeStyleEntrySchema, { component: 'already-unpinned' }) },
-            edges: {}, groups: {}, annotations: {}, pendingEdits: [],
+            schemaVersion: STYLE_SCHEMA_VERSION,
+            elements: { n1: create(ElementStyleEntrySchema, { component: 'already-unpinned' }) },
+            edges: {}, annotations: {}, pendingEdits: [],
           });
 
           const edits: StyleEdit[] = [];

@@ -3,24 +3,25 @@
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import { createRoot } from 'solid-js';
-import { ChangeType, DiagramSchema, GraphSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { ChangeType, DiagramSchema, ElementSchema, GraphSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { createDiffState } from './diff_state';
 
 function diagramOf(...ids: string[]) {
   return create(DiagramSchema, {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'd',
     graph: create(GraphSchema, {
-      nodes: Object.fromEntries(ids.map((id) => [id, create(NodeSchema, {})])),
+      elements: Object.fromEntries(ids.map((id) => [id, create(ElementSchema, {})])),
     }),
   });
 }
 
 function changeOf(
-  delta: { nodeDeltas: Array<{ nodeId: string; changeType: ChangeType }> },
+  delta: { elementDeltas: Array<{ elementId: string; changeType: ChangeType }> },
   id: string,
 ): ChangeType | undefined {
-  return delta.nodeDeltas.find((d) => d.nodeId === id)?.changeType;
+  return delta.elementDeltas.find((d) => d.elementId === id)?.changeType;
 }
 
 describe('diff direction', () => {

@@ -20,7 +20,7 @@ import { seedComponentBindings } from './seed_bindings';
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { type Diagram, DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { type Diagram, DiagramSchema, ElementRole } from '@archeglyph/proto/gen/content_pb';
 import {
   AnnotationAnchorSchema,
   AnnotationEntrySchema,
@@ -29,12 +29,10 @@ import {
   Glyph1DSchema,
   Glyph2DSchema,
   GlowSchema,
-  GroupLayoutSchema,
   GroupRenderMode,
-  GroupStyleEntrySchema,
-  type NodeStyleEntry,
-  NodeLayoutSchema,
-  NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
+  type ElementStyleEntry,
+  ElementLayoutSchema,
   NodeVisibility,
   RefKind,
   ShapeType,
@@ -95,9 +93,11 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { label: [], tags: {} }, b: { label: [], tags: {} } },
+        elements: {
+          a: { label: [], tags: {} },
+          b: { label: [], tags: {} },
+        },
         edges: { ab: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} } },
-        groups: {},
       },
     });
     const result = filterImpl.filter(filterReq(diagram, undefined));
@@ -114,7 +114,7 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           a: { label: [], tags: {} },
           b: { label: [], tags: {} },
           c: { label: [], tags: {} },
@@ -123,11 +123,10 @@ describe('visibility_filter', () => {
           ab: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
           bc: { source: 'b', target: 'c', label: [], ordinal: 0, tags: {} },
         },
-        groups: {},
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      nodes: { b: create(NodeStyleEntrySchema, { visibility: NodeVisibility.HIDDEN }) },
+      elements: { b: create(ElementStyleEntrySchema, { visibility: NodeVisibility.HIDDEN }) },
     });
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
@@ -143,13 +142,14 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { label: [], tags: {} } },
+        elements: {
+          a: { label: [], tags: {} },
+        },
         edges: {},
-        groups: {},
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      nodes: { a: create(NodeStyleEntrySchema, { visibility: NodeVisibility.UNSPECIFIED }) },
+      elements: { a: create(ElementStyleEntrySchema, { visibility: NodeVisibility.UNSPECIFIED }) },
     });
     const result = filterImpl.filter(filterReq(diagram, stylesheet));
     expect(result.kind).toBe('ok');
@@ -162,15 +162,17 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { label: [], tags: {}, parentGroup: 'g1' } },
+        elements: {
+          a: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
+        },
         edges: {},
-        groups: { g1: { label: [], tags: {} } }, // top-level, no parent
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.EXPANDED }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.DISSOLVED,
         }),
       },
     });
@@ -189,22 +191,22 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           outside: { label: [], tags: {} },
-          inner1: { label: [], tags: {}, parentGroup: 'g1' },
-          inner2: { label: [], tags: {}, parentGroup: 'g1' },
+          inner1: { label: [], tags: {}, parent: 'g1' },
+          inner2: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
         },
         edges: {
           e1: { source: 'outside', target: 'inner1', label: [], ordinal: 0, tags: {} },
           e2: { source: 'inner1', target: 'inner2', label: [], ordinal: 0, tags: {} },
         },
-        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
       },
     });
@@ -232,24 +234,24 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           outside: { label: [], tags: {} },
-          inner1: { label: [], tags: {}, parentGroup: 'g1' },
-          inner2: { label: [], tags: {}, parentGroup: 'g1' },
-          inner3: { label: [], tags: {}, parentGroup: 'g1' },
+          inner1: { label: [], tags: {}, parent: 'g1' },
+          inner2: { label: [], tags: {}, parent: 'g1' },
+          inner3: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
         },
         edges: {
           e1: { source: 'inner1', target: 'outside', label: [], ordinal: 0, tags: {} },
           e2: { source: 'inner2', target: 'outside', label: [], ordinal: 0, tags: {} },
           e3: { source: 'inner3', target: 'outside', label: [], ordinal: 0, tags: {} },
         },
-        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
       },
     });
@@ -265,28 +267,65 @@ describe('visibility_filter', () => {
     }
   });
 
+  test('bundling splits by label: same pair and kind, different labels, stay two bundles with distinct ids', () => {
+    const diagram = create(DiagramSchema, {
+      id: 'd1',
+      graph: {
+        elements: {
+          outside: { label: [], tags: {} },
+          inner1: { label: [], tags: {}, parent: 'g1' },
+          inner2: { label: [], tags: {}, parent: 'g1' },
+          inner3: { label: [], tags: {}, parent: 'g1' },
+          inner4: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
+        },
+        edges: {
+          e1: { source: 'inner1', target: 'outside', label: [{ locale: 'en', source: 'reads' }], ordinal: 0, tags: { kind: 'calls' } },
+          e2: { source: 'inner2', target: 'outside', label: [{ locale: 'en', source: 'reads' }], ordinal: 0, tags: { kind: 'calls' } },
+          e3: { source: 'inner3', target: 'outside', label: [{ locale: 'en', source: 'writes' }], ordinal: 0, tags: { kind: 'calls' } },
+          e4: { source: 'inner4', target: 'outside', label: [{ locale: 'en', source: 'writes' }], ordinal: 0, tags: { kind: 'calls' } },
+        },
+      },
+    });
+    const stylesheet = create(StylesheetSchema, {
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
+        }),
+      },
+    });
+    const result = filterImpl.filter(filterReq(diagram, stylesheet));
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      const edges = Object.values(result.value.edges);
+      expect(edges).toHaveLength(2);
+      expect(new Set(edges.map((e) => e.id)).size).toBe(2);
+      expect(edges.map((e) => e.label[0]?.source).sort()).toEqual(['reads \u00d72', 'writes \u00d72']);
+    }
+  });
+
   test('bundling splits by kind: two kinds between the same pair stay two edges, each with its own count', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           outside: { label: [], tags: {} },
-          inner1: { label: [], tags: {}, parentGroup: 'g1' },
-          inner2: { label: [], tags: {}, parentGroup: 'g1' },
-          inner3: { label: [], tags: {}, parentGroup: 'g1' },
+          inner1: { label: [], tags: {}, parent: 'g1' },
+          inner2: { label: [], tags: {}, parent: 'g1' },
+          inner3: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
         },
         edges: {
           e1: { source: 'inner1', target: 'outside', label: [], ordinal: 0, tags: { kind: 'calls' } },
           e2: { source: 'inner2', target: 'outside', label: [], ordinal: 0, tags: { kind: 'calls' } },
           e3: { source: 'inner3', target: 'outside', label: [], ordinal: 0, tags: { kind: 'reads' } },
         },
-        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
       },
     });
@@ -305,22 +344,22 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           outside: { label: [], tags: {} },
-          inner1: { label: [], tags: {}, parentGroup: 'g1' },
-          inner2: { label: [], tags: {}, parentGroup: 'g1' },
+          inner1: { label: [], tags: {}, parent: 'g1' },
+          inner2: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
         },
         edges: {
           e1: { source: 'inner1', target: 'outside', label: [{ locale: 'en', source: 'depends_on' }], ordinal: 0, tags: {} },
           e2: { source: 'inner2', target: 'outside', label: [{ locale: 'en', source: 'depends_on' }], ordinal: 0, tags: {} },
         },
-        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
       },
     });
@@ -337,12 +376,14 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { label: [], tags: {} }, b: { label: [], tags: {} } },
+        elements: {
+          a: { label: [], tags: {} },
+          b: { label: [], tags: {} },
+        },
         edges: {
           reads: { source: 'a', target: 'b', label: [], ordinal: 0, tags: {} },
           writes: { source: 'a', target: 'b', label: [], ordinal: 1, tags: {} },
         },
-        groups: {},
       },
     });
     const result = filterImpl.filter(filterReq(diagram, undefined));
@@ -356,20 +397,18 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
-          leaf: { label: [], tags: {}, parentGroup: 'inner' },
+        elements: {
+          leaf: { label: [], tags: {}, parent: 'inner' },
+          outer: { label: [], tags: {} , role: ElementRole.GROUPING },
+          inner: { label: [], tags: {}, parent: 'outer' , role: ElementRole.GROUPING },
         },
         edges: {},
-        groups: {
-          outer: { label: [], tags: {} },
-          inner: { label: [], tags: {}, parentGroup: 'outer' },
-        },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      groups: {
-        inner: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      elements: {
+        inner: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
         // outer left BOUNDED (default) — should stay as a normal group.
       },
@@ -392,9 +431,10 @@ describe('visibility_filter', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: { a: { label: [], tags: {}, parentGroup: 'ghost' } },
+        elements: {
+          a: { label: [], tags: {}, parent: 'ghost' },
+        },
         edges: {},
-        groups: {},
       },
     });
     const result = filterImpl.filter(filterReq(diagram, undefined));
@@ -404,7 +444,7 @@ describe('visibility_filter', () => {
   test('annotations pass through verbatim from the stylesheet regardless of node/group visibility (proto: "No visibility field on AnnotationEntry")', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
-      graph: { nodes: {}, edges: {}, groups: {} },
+      graph: { elements: {}, edges: {} },
     });
     const stylesheet = create(StylesheetSchema, {
       annotations: {
@@ -438,7 +478,7 @@ describe('style_cascade', () => {
   test('per-element override wins over theme component for the SAME field (design.md: "Wins over the bound theme component for the same field")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} } }),
         undefined,
       ),
     );
@@ -446,8 +486,8 @@ describe('style_cascade', () => {
     if (filtered.kind !== 'ok') return;
 
     const stylesheet = create(StylesheetSchema, {
-      nodes: {
-        a: create(NodeStyleEntrySchema, {
+      elements: {
+        a: create(ElementStyleEntrySchema, {
           component: 'themed',
           shape: create(Glyph2DSchema, {
             fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#OVERRIDE' }) } }),
@@ -488,7 +528,7 @@ describe('style_cascade', () => {
   test('element with an unset component starts unstyled, even if the theme happens to define components (design.md: "If component is unset, no theme component applies — the element starts unstyled")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} } }),
         undefined,
       ),
     );
@@ -525,7 +565,7 @@ describe('style_cascade', () => {
   test('component naming a theme component that does not exist is an error (design.md cascade step 1: component must match a theme component by name)', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} } }),
         undefined,
       ),
     );
@@ -533,7 +573,7 @@ describe('style_cascade', () => {
     if (filtered.kind !== 'ok') return;
 
     const stylesheet = create(StylesheetSchema, {
-      nodes: { a: create(NodeStyleEntrySchema, { component: 'does_not_exist' }) },
+      elements: { a: create(ElementStyleEntrySchema, { component: 'does_not_exist' }) },
     });
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
 
@@ -546,7 +586,7 @@ describe('style_cascade', () => {
   test('absent theme: cascade starts from per-element override layer only, no error (spec: "absent theme -> cascade starts from per-element override layer (or empty)")', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} } }),
         undefined,
       ),
     );
@@ -554,8 +594,8 @@ describe('style_cascade', () => {
     if (filtered.kind !== 'ok') return;
 
     const stylesheet = create(StylesheetSchema, {
-      nodes: {
-        a: create(NodeStyleEntrySchema, {
+      elements: {
+        a: create(ElementStyleEntrySchema, {
           shape: create(Glyph2DSchema, { shapeKind: { case: 'standard', value: ShapeType.SHAPE_ELLIPSE } }),
         }),
       },
@@ -575,7 +615,7 @@ describe('style_cascade', () => {
   test('empty stylesheet and empty theme: element resolves to a defined-but-empty glyph, no crash', () => {
     const filtered = filterImpl.filter(
       filterReq(
-        create(DiagramSchema, { id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} } }),
+        create(DiagramSchema, { id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} } }),
         undefined,
       ),
     );
@@ -596,7 +636,7 @@ describe('style_cascade', () => {
   });
 
   test('annotation without an anchor gets no callout, even if the stylesheet entry sets one (resolved_annotation spec: "Callout glyph is only populated when the annotation is anchored ... free annotations get a default-constructed callout that the renderer treats as no callout")', () => {
-    const diagram = create(DiagramSchema, { id: 'd1', graph: { nodes: {}, edges: {}, groups: {} } });
+    const diagram = create(DiagramSchema, { id: 'd1', graph: { elements: {}, edges: {} } });
     const stylesheet = create(StylesheetSchema, {
       annotations: {
         note1: create(AnnotationEntrySchema, {
@@ -626,13 +666,13 @@ describe('style_cascade', () => {
   test('annotation WITH an anchor gets its callout cascaded from the stylesheet override', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
-      graph: { nodes: { target: { label: [], tags: {} } }, edges: {}, groups: {} },
+      graph: { elements: { target: { label: [], tags: {} } }, edges: {} },
     });
     const stylesheet = create(StylesheetSchema, {
       annotations: {
         note1: create(AnnotationEntrySchema, {
           content: [],
-          anchor: create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.NODE }),
+          anchor: create(AnnotationAnchorSchema, { refId: 'target', refKind: RefKind.ELEMENT }),
           callout: create(Glyph1DSchema, { stroke: create(StrokeSchema, { width: 3 }) }),
         }),
       },
@@ -667,12 +707,12 @@ describe('style_cascade', () => {
 // Helper: run filter -> cascade to get a real ResolvedDiagram to feed into
 // TokenResolver, so token tests exercise the actual glyph shapes the cascade
 // produces rather than hand-built stand-ins.
-function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
+function cascadeOneNode(nodeEntry: ElementStyleEntry | undefined, theme: Theme) {
   const diagram = create(DiagramSchema, {
     id: 'd1',
-    graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+    graph: { elements: { a: { label: [], tags: {} } }, edges: {} },
   });
-  const stylesheet = nodeEntry !== undefined ? create(StylesheetSchema, { nodes: { a: nodeEntry } }) : undefined;
+  const stylesheet = nodeEntry !== undefined ? create(StylesheetSchema, { elements: { a: nodeEntry } }) : undefined;
   const filtered = filterImpl.filter(filterReq(diagram, stylesheet));
   if (filtered.kind !== 'ok') throw new Error('filter failed in test helper');
   const cascaded = cascadeImpl.cascade(
@@ -684,7 +724,7 @@ function cascadeOneNode(nodeEntry: NodeStyleEntry | undefined, theme: Theme) {
 
 describe('token_resolver', () => {
   function resolveFill(fillRef: string, theme: Theme) {
-    const nodeEntry = create(NodeStyleEntrySchema, {
+    const nodeEntry = create(ElementStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
         fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: fillRef }) } }),
       }),
@@ -754,7 +794,7 @@ describe('token_resolver', () => {
   // Every bad reference in a document is reported, not just the first.
   test('the error lists every unresolved reference, deduplicated and sorted', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
-    const nodeEntry = create(NodeStyleEntrySchema, {
+    const nodeEntry = create(ElementStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
         fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.zzz' }) } }),
         stroke: create(StrokeSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.aaa' }) } }),
@@ -793,7 +833,7 @@ describe('token_resolver', () => {
         fonts: { heading: create(FontSpecSchema, { family: 'Georgia' }) },
       }),
     });
-    const nodeEntry = create(NodeStyleEntrySchema, {
+    const nodeEntry = create(ElementStyleEntrySchema, {
       typography: create(TypographySchema, { font: '$fonts.heading' }),
     });
     const resolved = cascadeOneNode(nodeEntry, theme);
@@ -810,7 +850,7 @@ describe('token_resolver', () => {
 
   test('absent tokens table: refs left as-is for renderer fallback (spec: "Absent tokens -> any $token refs are left as-is for renderer fallback to handle")', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, {}) });
-    const nodeEntry = create(NodeStyleEntrySchema, {
+    const nodeEntry = create(ElementStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
         fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_fill' }) } }),
       }),
@@ -828,7 +868,7 @@ describe('token_resolver', () => {
 
   test('a literal color value (not a token ref) passes through unchanged', () => {
     const theme = create(ThemeSchema, { name: 't', tokens: create(TokensSchema, { roles: { node_fill: '#123456' } }) });
-    const nodeEntry = create(NodeStyleEntrySchema, {
+    const nodeEntry = create(ElementStyleEntrySchema, {
       shape: create(Glyph2DSchema, {
         fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '#3B82F6' }) } }),
       }),
@@ -856,30 +896,28 @@ describe('resolvePipeline end-to-end', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
       graph: {
-        nodes: {
+        elements: {
           visible: { label: [], tags: {} },
           hidden: { label: [], tags: {} },
-          contained: { label: [], tags: {}, parentGroup: 'g1' },
+          contained: { label: [], tags: {}, parent: 'g1' },
+          g1: { label: [], tags: {} , role: ElementRole.GROUPING },
         },
         edges: {
           toHidden: { source: 'visible', target: 'hidden', label: [], ordinal: 0, tags: {} },
           toGroup: { source: 'visible', target: 'contained', label: [], ordinal: 0, tags: {} },
         },
-        groups: { g1: { label: [], tags: {} } },
       },
     });
     const stylesheet = create(StylesheetSchema, {
-      nodes: {
-        hidden: create(NodeStyleEntrySchema, { visibility: NodeVisibility.HIDDEN }),
-        visible: create(NodeStyleEntrySchema, {
+      elements: {
+        hidden: create(ElementStyleEntrySchema, { visibility: NodeVisibility.HIDDEN }),
+        visible: create(ElementStyleEntrySchema, {
           component: 'box',
           shape: create(Glyph2DSchema, {
             fill: create(FillSchema, { paint: { case: 'color', value: create(ColorSchema, { value: '$roles.node_fill' }) } }),
           }),
         }),
-      },
-      groups: {
-        g1: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }) }),
+        g1: create(ElementStyleEntrySchema, { renderMode: GroupRenderMode.CLOSED }),
       },
     });
     const theme = create(ThemeSchema, {
@@ -918,10 +956,10 @@ describe('resolvePipeline end-to-end', () => {
   test('empty theme + stylesheet with only layout hints: resolves without error, layout hints pass through verbatim', () => {
     const diagram = create(DiagramSchema, {
       id: 'd1',
-      graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+      graph: { elements: { a: { label: [], tags: {} } }, edges: {} },
     });
     const stylesheet = create(StylesheetSchema, {
-      nodes: { a: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { rotation: 45 }) }) },
+      elements: { a: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { rotation: 45 }) }) },
     });
     const theme = create(ThemeSchema, { name: 'empty', tokens: create(TokensSchema, {}) });
 
@@ -942,12 +980,14 @@ describe('resolvePipeline end-to-end', () => {
 // ---------------------------------------------------------------------------
 describe('seedComponentBindings', () => {
   const graphOf = () => create(DiagramSchema, {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: 'd',
     graph: {
-      nodes: { n1: {} },
+      elements: {
+        n1: {},
+        g1: { role: ElementRole.GROUPING },
+      },
       edges: {},
-      groups: { g1: {} },
     },
   });
 
@@ -956,11 +996,11 @@ describe('seedComponentBindings', () => {
   test('leaves the component unset when the theme default is what applies', () => {
     const seeded = seedComponentBindings(
       graphOf(),
-      create(StylesheetSchema, { schemaVersion: 1 }),
+      create(StylesheetSchema, { schemaVersion: 2 }),
       blueprintTheme(),
     );
-    expect(seeded.nodes.n1?.component ?? '').toBe('');
-    expect(seeded.groups.g1?.component ?? '').toBe('');
+    expect(seeded.elements.n1?.component ?? '').toBe('');
+    expect(seeded.elements.g1?.component ?? '').toBe('');
   });
 
   test('a diagram with no stylesheet still resolves to the theme default', () => {
@@ -973,18 +1013,18 @@ describe('seedComponentBindings', () => {
 
   test('never overwrites a binding the user already chose', () => {
     const authored = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: { n1: create(NodeStyleEntrySchema, { component: 'mine' }) },
+      schemaVersion: 2,
+      elements: { n1: create(ElementStyleEntrySchema, { component: 'mine' }) },
     });
-    expect(seedComponentBindings(graphOf(), authored, blueprintTheme()).nodes.n1?.component)
+    expect(seedComponentBindings(graphOf(), authored, blueprintTheme()).elements.n1?.component)
       .toBe('mine');
   });
 
   test('is idempotent', () => {
-    const once = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 1 }), blueprintTheme());
+    const once = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 2 }), blueprintTheme());
     const twice = seedComponentBindings(graphOf(), once, blueprintTheme());
-    expect(twice.nodes.n1?.component).toBe(once.nodes.n1?.component);
-    expect(Object.keys(twice.nodes)).toEqual(Object.keys(once.nodes));
+    expect(twice.elements.n1?.component).toBe(once.elements.n1?.component);
+    expect(Object.keys(twice.elements)).toEqual(Object.keys(once.elements));
   });
 
   test('a theme that declares no default seeds nothing', () => {
@@ -992,12 +1032,12 @@ describe('seedComponentBindings', () => {
     // component called glyph for a specific purpose without it capturing every
     // unbound element -- which is exactly what the old hardcoded default did.
     const noDefault = create(ThemeSchema, {
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'no-default',
       nodeComponents: [create(NodeComponentSchema, { name: 'glyph' })],
     });
-    const seeded = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 1 }), noDefault);
-    expect(seeded.nodes.n1?.component).toBeUndefined();
+    const seeded = seedComponentBindings(graphOf(), create(StylesheetSchema, { schemaVersion: 2 }), noDefault);
+    expect(seeded.elements.n1?.component).toBeUndefined();
   });
 });
 
@@ -1014,11 +1054,11 @@ describe('qualified component names', () => {
   });
 
   const diagram = create(DiagramSchema, {
-    id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+    id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} },
   });
   const sheetWith = (component: string) => create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: { a: create(NodeStyleEntrySchema, { component }) },
+    schemaVersion: 2,
+    elements: { a: create(ElementStyleEntrySchema, { component }) },
   });
   const strokeOf = (r: Result<ResolvedDiagram, PipelineError>): string | undefined => {
     if (r.kind !== 'ok') return undefined;
@@ -1096,7 +1136,7 @@ describe('unset component falls back to the theme default', () => {
     ],
   });
   const diagram = create(DiagramSchema, {
-    id: 'd1', graph: { nodes: { a: { label: [], tags: {} } }, edges: {}, groups: {} },
+    id: 'd1', graph: { elements: { a: { label: [], tags: {} } }, edges: {} },
   });
   const strokeOf = (r: Result<ResolvedDiagram, PipelineError>): string | undefined => {
     if (r.kind !== 'ok') return undefined;
@@ -1111,16 +1151,16 @@ describe('unset component falls back to the theme default', () => {
 
   test('an entry with no component resolves to the theme default component', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: { a: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { rotation: 10 }) }) },
+      schemaVersion: 2,
+      elements: { a: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { rotation: 10 }) }) },
     });
     expect(strokeOf(resolvePipeline(diagram, sheet, only(theme)))).toBe('#111111');
   });
 
   test('a named component still wins over the default', () => {
     const sheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: { a: create(NodeStyleEntrySchema, { component: 'other' }) },
+      schemaVersion: 2,
+      elements: { a: create(ElementStyleEntrySchema, { component: 'other' }) },
     });
     expect(strokeOf(resolvePipeline(diagram, sheet, only(theme)))).toBe('#222222');
   });

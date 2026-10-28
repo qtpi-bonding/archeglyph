@@ -20,7 +20,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { CanvasStyleSchema, Glyph2DSchema, GroupLayoutSchema, GroupStyleEntrySchema, NodeLayoutSchema, NodeStyleEntrySchema, Stylesheet, StylesheetSchema, TypographySchema, Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { CanvasStyleSchema, BoxLayoutSchema, Glyph2DSchema, ElementLayoutSchema, ElementStyleEntrySchema, Stylesheet, StylesheetSchema, TypographySchema, Vec2, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { StyleEdit } from '@archeglyph/proto/gen/style_pb';
 import { LaidOutDiagram } from '@archeglyph/core/layout/laid_out_diagram';
 import { SceneGeometry } from '../src/scene/scene';
@@ -33,6 +33,7 @@ import { UiState } from '../src/ui_state/ui_state';
 import { ContainerRect } from '../src/ui_state/viewport_math';
 import { LaidOutGroup } from '@archeglyph/core/layout/laid_out_group';
 import { LaidOutNode } from '@archeglyph/core/layout/laid_out_node';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 
 describe('auto-layout and unpin-all produce the same edit (repaired testgen case)', () => {
@@ -42,13 +43,13 @@ describe('auto-layout and unpin-all produce the same edit (repaired testgen case
         function vec2(x: number, y: number): Vec2 { return create(Vec2Schema, { x, y }); }
           function makeSheet(): Stylesheet {
             return create(StylesheetSchema, {
-              schemaVersion: 1,
-              nodes: {
-                n1: create(NodeStyleEntrySchema, { layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }),
-                n2: create(NodeStyleEntrySchema, { component: 'no-position' }),
+              schemaVersion: STYLE_SCHEMA_VERSION,
+              elements: {
+                n1: create(ElementStyleEntrySchema, { layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }),
+                n2: create(ElementStyleEntrySchema, { component: 'no-position' }),
+                g1: create(ElementStyleEntrySchema, { boxLayout: create(BoxLayoutSchema, { position: vec2(2, 2) }) }),
               },
               edges: {},
-              groups: { g1: create(GroupStyleEntrySchema, { layout: create(GroupLayoutSchema, { position: vec2(2, 2) }) }) },
               annotations: {},
               pendingEdits: [],
             });

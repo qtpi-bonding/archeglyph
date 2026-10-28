@@ -12,9 +12,8 @@ describe('testgen_pending__pendingItems', () => {
       state,
       description: "A change",
       author: "author",
-      nodeChanges: [],
+      elementChanges: [],
       edgeChanges: [],
-      groupChanges: [],
       annotationChanges: [],
       thread: { comments },
     });

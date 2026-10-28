@@ -11,9 +11,9 @@ import {
 // would put two rows in the select that mean the same thing.
 
 export const RENDER_MODE_TABLE: ReadonlyArray<{ name: string; value: GroupRenderMode }> = [
-  { name: 'bounded', value: GroupRenderMode.BOUNDED },
-  { name: 'expanded', value: GroupRenderMode.EXPANDED },
-  { name: 'contracted', value: GroupRenderMode.CONTRACTED },
+  { name: 'open', value: GroupRenderMode.OPEN },
+  { name: 'dissolved', value: GroupRenderMode.DISSOLVED },
+  { name: 'closed', value: GroupRenderMode.CLOSED },
 ];
 
 export const LABEL_POSITION_TABLE: ReadonlyArray<{ name: string; value: GroupLabelPosition }> = [

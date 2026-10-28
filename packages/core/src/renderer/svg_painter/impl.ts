@@ -169,7 +169,7 @@ function polygonPoints(n: number, cx: number, cy: number, rx: number, ry: number
   return pts;
 }
 
-function escapeXml(text: string): string {
+export function escapeXml(text: string): string {
   const chars: string[] = text.split('');
   const escaped: string[] = chars.map((ch: string): string => {
     if (ch === '&') { return '&amp;'; }

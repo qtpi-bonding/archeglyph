@@ -5,12 +5,12 @@ import { Diagram } from '@archeglyph/proto/gen/content_pb';
 import {
   AnnotationEntrySchema,
   EdgeStyleEntrySchema,
-  GroupStyleEntrySchema,
-  NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
   Stylesheet,
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import { Theme } from '@archeglyph/proto/gen/theme_pb';
+import { childrenIndex, isGroupLike } from '../element_form';
 import { deriveComponent } from './derive';
 
 /**
@@ -49,20 +49,23 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
   }
 
   const graph = diagram.graph;
-  const nodes = { ...stylesheet.nodes };
+  const elements = { ...stylesheet.elements };
   const edges = { ...stylesheet.edges };
-  const groups = { ...stylesheet.groups };
   const annotations = { ...stylesheet.annotations };
 
   if (graph !== undefined) {
+    const children = childrenIndex(graph.elements);
     const nodeNames = theme.nodeComponents.map((component) => component.name);
     const nodeDefault = theme.defaultNodeComponent;
     if (nodeDefault !== undefined && nodeDefault !== '') {
-      for (const id of Object.keys(graph.nodes)) {
-        const existing = nodes[id];
-        const derived = deriveComponent(graph.nodes[id].tags['kind'], nodeNames, nodeDefault);
+      // Every element gets the node look for its kind: a container that is
+      // closed is drawn as a block, and a closed `struct` should look like a
+      // `struct`.
+      for (const id of Object.keys(graph.elements)) {
+        const existing = elements[id];
+        const derived = deriveComponent(graph.elements[id].tags['kind'], nodeNames, nodeDefault);
         if (derived !== undefined && derived !== nodeDefault && isUnset(existing?.component)) {
-          nodes[id] = create(NodeStyleEntrySchema, { ...existing, component: derived });
+          elements[id] = create(ElementStyleEntrySchema, { ...existing, component: derived });
         }
       }
     }
@@ -82,11 +85,14 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
     const groupNames = theme.groupComponents.map((component) => component.name);
     const groupDefault = theme.defaultGroupComponent;
     if (groupDefault !== undefined && groupDefault !== '') {
-      for (const id of Object.keys(graph.groups)) {
-        const existing = groups[id];
-        const derived = deriveComponent(graph.groups[id].tags['kind'], groupNames, groupDefault);
-        if (derived !== undefined && derived !== groupDefault && isUnset(existing?.component)) {
-          groups[id] = create(GroupStyleEntrySchema, { ...existing, component: derived });
+      for (const id of Object.keys(graph.elements)) {
+        if (!isGroupLike(graph.elements, children, id)) {
+          continue;
+        }
+        const existing = elements[id];
+        const derived = deriveComponent(graph.elements[id].tags['kind'], groupNames, groupDefault);
+        if (derived !== undefined && derived !== groupDefault && isUnset(existing?.boxComponent)) {
+          elements[id] = create(ElementStyleEntrySchema, { ...existing, boxComponent: derived });
         }
       }
     }
@@ -104,5 +110,5 @@ export function seedComponentBindings(diagram: Diagram, stylesheet: Stylesheet, 
     }
   }
 
-  return create(StylesheetSchema, { ...stylesheet, nodes, edges, groups, annotations });
+  return create(StylesheetSchema, { ...stylesheet, elements, edges, annotations });
 }

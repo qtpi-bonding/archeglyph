@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { NodeLayoutSchema, GroupLayoutSchema, Vec2Schema, type Vec2 } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayoutSchema, BoxLayoutSchema, Vec2Schema, type Vec2 } from '@archeglyph/proto/gen/style_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
 import { ResolvedGroup } from '../resolver/resolved_group';
@@ -22,7 +22,7 @@ describe('seedNewcomers', () => {
     id: 'd',
     groups: byId([init(new ResolvedGroup(), {
       id: 'g',
-      layout: create(GroupLayoutSchema, { position: create(Vec2Schema, { x: 100, y: 50 }) }),
+      layout: create(BoxLayoutSchema, { position: create(Vec2Schema, { x: 100, y: 50 }) }),
     })]),
     nodes: byId([init(new ResolvedNode(), { id: 'inside', parentGroup: 'g' })]),
     edges: byId([]),

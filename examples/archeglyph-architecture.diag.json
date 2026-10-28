@@ -1,99 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "archeglyph-architecture",
   "title": [
     {
       "locale": "en",
-      "source": "archeglyph — package architecture (Dependency)"
+      "source": "archeglyph \u2014 package architecture (Dependency)"
     }
   ],
   "graph": {
-    "nodes": {
-      "cli": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "cli"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "17",
-          "archegraph.kind": "Package"
-        }
-      },
-      "core": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "core"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "1075",
-          "archegraph.kind": "Package"
-        }
-      },
-      "editor": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "editor"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "2475",
-          "archegraph.kind": "Package"
-        }
-      },
-      "importer-archegraph": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "importer-archegraph"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "8",
-          "archegraph.kind": "Package"
-        }
-      },
-      "ops": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "ops"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "268",
-          "archegraph.kind": "Package"
-        }
-      },
-      "proto": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "proto"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "424",
-          "archegraph.kind": "Package"
-        }
-      },
-      "themes": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "themes"
-          }
-        ],
-        "tags": {
-          "archeglyph.symbols": "42",
-          "archegraph.kind": "Package"
-        }
-      }
-    },
     "edges": {
       "cli__ops": {
         "source": "cli",
@@ -236,6 +150,92 @@
         "tags": {
           "kind": "Dependency",
           "archeglyph.references": "62"
+        }
+      }
+    },
+    "elements": {
+      "cli": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "cli"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "17",
+          "archegraph.kind": "Package"
+        }
+      },
+      "core": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "core"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "1075",
+          "archegraph.kind": "Package"
+        }
+      },
+      "editor": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "editor"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "2475",
+          "archegraph.kind": "Package"
+        }
+      },
+      "importer-archegraph": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "importer-archegraph"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "8",
+          "archegraph.kind": "Package"
+        }
+      },
+      "ops": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "ops"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "268",
+          "archegraph.kind": "Package"
+        }
+      },
+      "proto": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "proto"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "424",
+          "archegraph.kind": "Package"
+        }
+      },
+      "themes": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "themes"
+          }
+        ],
+        "tags": {
+          "archeglyph.symbols": "42",
+          "archegraph.kind": "Package"
         }
       }
     }

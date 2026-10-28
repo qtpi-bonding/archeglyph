@@ -87,9 +87,9 @@ describe('examples/stack-managed carries a review to look at', () => {
     expect({ saved: saved.includes(amber), ghost: ghost.includes(amber) }).toEqual({ saved: false, ghost: true });
     expect({ saved: saved.includes('egress'), ghost: ghost.includes('egress') }).toEqual({ saved: false, ghost: true });
 
-    const moved = applyAllPendingEdits(stylesheet).nodes['segment']?.layout?.position;
+    const moved = applyAllPendingEdits(stylesheet).elements['segment']?.layout?.position;
     expect({ y: moved?.y }).toEqual({ y: 208 });
-    expect(stylesheet.nodes['segment']?.layout?.position?.y).toBe(288);
+    expect(stylesheet.elements['segment']?.layout?.position?.y).toBe(288);
   });
 
   // `app` is pinned, tinted by the recolour, and touched by nothing else.
@@ -97,7 +97,7 @@ describe('examples/stack-managed carries a review to look at', () => {
     const { stylesheet } = await open('stack-managed');
     const ghost = applyAllPendingEdits(stylesheet);
 
-    expect(ghost.nodes['app']?.layout?.position).toEqual(stylesheet.nodes['app']?.layout?.position);
-    expect(ghost.nodes['app']?.layout?.position?.y).toBe(130);
+    expect(ghost.elements['app']?.layout?.position).toEqual(stylesheet.elements['app']?.layout?.position);
+    expect(ghost.elements['app']?.layout?.position?.y).toBe(130);
   });
 });

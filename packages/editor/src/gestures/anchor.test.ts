@@ -33,6 +33,7 @@ import { ElkAdapterImpl } from '@archeglyph/core/layout/layout_adapter';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import { anchorCommit } from './anchor_machine';
 import type { ElementRef } from '../ui_state/ui_state';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 const require_ = createRequire(import.meta.url);
 const newElk = (): unknown =>
@@ -42,14 +43,14 @@ const newElk = (): unknown =>
   });
 
 const CONTENT = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'anchored',
-  graph: { nodes: { target: { label: [{ locale: 'en', source: 'target' }] } } },
+  graph: { elements: { target: { label: [{ locale: 'en', source: 'target' }] } } },
 };
 
 function baseStylesheet(): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
+    schemaVersion: STYLE_SCHEMA_VERSION,
     annotations: {
       note: create(AnnotationEntrySchema, {
         content: [create(LocalizationSchema, { source: 'note' })],

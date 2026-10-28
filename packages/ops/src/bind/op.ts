@@ -6,10 +6,11 @@ import { create } from '@bufbuild/protobuf';
 import { loadDiagram, loadStylesheet } from '@archeglyph/core/loaders';
 import {
   StylesheetSchema,
-  NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
   EdgeStyleEntrySchema,
-  GroupStyleEntrySchema,
 } from '@archeglyph/proto/gen/style_pb';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
+import { childrenIndex, isGroupLike } from '@archeglyph/core/resolver/element_form';
 import { toJson } from '@archeglyph/proto/util/json';
 import type { Operation, OpContext } from '../op';
 import { type BindParams, bindParamsSchema } from './bind_params';
@@ -59,7 +60,7 @@ export const bindOp: Operation<BindParams, BindOutput> = {
       }
       stylesheet = styleResult.value;
     } else {
-      stylesheet = create(StylesheetSchema, { schemaVersion: 1 });
+      stylesheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     }
 
     let predicate;
@@ -72,12 +73,19 @@ export const bindOp: Operation<BindParams, BindOutput> = {
     const graph = diagram.graph;
     let matched = 0;
 
+    // An element is bound as a "node" or a "group" by how it is drawn: a group
+    // has children or is a grouping; everything else is a node. A node's
+    // component binds its block look, a group's its box look.
+    const elements = graph?.elements ?? {};
+    const children = childrenIndex(elements);
+
     if (params.elementType === 'node') {
-      for (const [id, node] of Object.entries(graph?.nodes ?? {})) {
-        if (predicate({ id, tags: node.tags, parent_group: node.parentGroup })) {
-          const entry = stylesheet.nodes[id] ?? create(NodeStyleEntrySchema, {});
+      for (const [id, element] of Object.entries(elements)) {
+        if (!isGroupLike(elements, children, id) &&
+            predicate({ id, tags: element.tags, parent_group: element.parent })) {
+          const entry = stylesheet.elements[id] ?? create(ElementStyleEntrySchema, {});
           entry.component = params.component;
-          stylesheet.nodes[id] = entry;
+          stylesheet.elements[id] = entry;
           matched++;
         }
       }
@@ -91,11 +99,12 @@ export const bindOp: Operation<BindParams, BindOutput> = {
         }
       }
     } else {
-      for (const [id, group] of Object.entries(graph?.groups ?? {})) {
-        if (predicate({ id, tags: group.tags, parent_group: group.parentGroup })) {
-          const entry = stylesheet.groups[id] ?? create(GroupStyleEntrySchema, {});
-          entry.component = params.component;
-          stylesheet.groups[id] = entry;
+      for (const [id, element] of Object.entries(elements)) {
+        if (isGroupLike(elements, children, id) &&
+            predicate({ id, tags: element.tags, parent_group: element.parent })) {
+          const entry = stylesheet.elements[id] ?? create(ElementStyleEntrySchema, {});
+          entry.boxComponent = params.component;
+          stylesheet.elements[id] = entry;
           matched++;
         }
       }

@@ -43,13 +43,13 @@ tests:
         import { render, fireEvent, cleanup } from '@solidjs/testing-library';
         import { createSignal } from 'solid-js';
         import {
-          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
-          Diagram, Delta, Node, Edge, Group, ChangeType,
+          DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+          DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
+          Diagram, Delta, Element, Edge, ChangeType,
         } from '@archeglyph/proto/gen/content_pb';
         import {
-          StylesheetSchema, StyleEditSchema, NodeStyleChangeSchema,
-          EdgeStyleChangeSchema, GroupStyleChangeSchema,
+          StylesheetSchema, StyleEditSchema, ElementStyleChangeSchema,
+          EdgeStyleChangeSchema,
           AnnotationStyleChangeSchema, Vec2Schema,
           Stylesheet, StyleEdit,
         } from '@archeglyph/proto/gen/style_pb';
@@ -58,13 +58,13 @@ tests:
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
         import {
-          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
-          Diagram, Delta, Node, Edge, Group, ChangeType,
+          DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+          DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
+          Diagram, Delta, Element, Edge, ChangeType,
         } from '@archeglyph/proto/gen/content_pb';
         import {
-          StylesheetSchema, StyleEditSchema, NodeStyleChangeSchema,
-          EdgeStyleChangeSchema, GroupStyleChangeSchema,
+          StylesheetSchema, StyleEditSchema, ElementStyleChangeSchema,
+          EdgeStyleChangeSchema,
           AnnotationStyleChangeSchema, Vec2Schema,
           Stylesheet, StyleEdit,
         } from '@archeglyph/proto/gen/style_pb';
@@ -76,9 +76,9 @@ tests:
       import_header_extend: |
         import { create } from '@bufbuild/protobuf';
         import {
-          DiagramSchema, GraphSchema, NodeSchema, EdgeSchema, GroupSchema,
-          DeltaSchema, NodeDeltaSchema, EdgeDeltaSchema, GroupDeltaSchema,
-          Node, Edge, Group, NodeDelta, EdgeDelta, GroupDelta, Localization,
+          DiagramSchema, GraphSchema, ElementSchema, EdgeSchema,
+          DeltaSchema, ElementDeltaSchema, EdgeDeltaSchema,
+          Element, Edge, ElementDelta, EdgeDelta, Localization,
         } from '@archeglyph/proto/gen/content_pb';
         import {
           StylesheetSchema, StrokeSchema, FillSchema, GlowSchema, GradientSchema,

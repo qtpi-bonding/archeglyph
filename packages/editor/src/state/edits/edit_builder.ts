@@ -8,17 +8,15 @@ import {
   EdgeStyleChange,
   EdgeStyleChangeSchema,
   EdgeStyleEntry,
-  GroupStyleChange,
-  GroupStyleChangeSchema,
-  GroupStyleEntry,
-  NodeStyleChange,
-  NodeStyleChangeSchema,
-  NodeStyleEntry,
+  ElementStyleChange,
+  ElementStyleChangeSchema,
+  ElementStyleEntry,
   StyleChangeType,
   StyleEdit,
   StyleEditSchema,
   StyleEditState
 } from '@archeglyph/proto/gen/style_pb';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { create } from '@bufbuild/protobuf';
 
 // `unsetPaths` is how a change clears a field: `after` merges, so a field left
@@ -26,19 +24,6 @@ import { create } from '@bufbuild/protobuf';
 export function edgeChange(edgeId: string, after?: EdgeStyleEntry, unsetPaths: ReadonlyArray<string> = []): EdgeStyleChange {
   return create(EdgeStyleChangeSchema, {
     edgeId,
-    // An absent `after` means "drop this entry", which the schema spells
-    // DELETED -- applyMapChanges only removes on that change type, so a
-    // MODIFIED change with no entry is a silent no-op.
-    changeType: after === undefined ? StyleChangeType.DELETED : StyleChangeType.MODIFIED,
-    ...(after === undefined ? {} : { after }),
-    unsetPaths: [...unsetPaths],
-    kinds: [],
-  });
-}
-
-export function nodeChange(nodeId: string, after?: NodeStyleEntry, unsetPaths: ReadonlyArray<string> = []): NodeStyleChange {
-  return create(NodeStyleChangeSchema, {
-    nodeId,
     // An absent `after` means "drop this entry", which the schema spells
     // DELETED -- applyMapChanges only removes on that change type, so a
     // MODIFIED change with no entry is a silent no-op.
@@ -59,9 +44,9 @@ export function annotationChange(annotationId: string, after?: AnnotationEntry, 
   });
 }
 
-export function groupChange(groupId: string, after?: GroupStyleEntry, unsetPaths: ReadonlyArray<string> = []): GroupStyleChange {
-  return create(GroupStyleChangeSchema, {
-    groupId,
+export function elementChange(elementId: string, after?: ElementStyleEntry, unsetPaths: ReadonlyArray<string> = []): ElementStyleChange {
+  return create(ElementStyleChangeSchema, {
+    elementId,
     // An absent `after` means "drop this entry", which the schema spells
     // DELETED -- applyMapChanges only removes on that change type, so a
     // MODIFIED change with no entry is a silent no-op.
@@ -73,19 +58,17 @@ export function groupChange(groupId: string, after?: GroupStyleEntry, unsetPaths
 }
 
 export interface EditParts {
-  nodeChanges?: Array<NodeStyleChange>;
+  elementChanges?: Array<ElementStyleChange>;
   edgeChanges?: Array<EdgeStyleChange>;
-  groupChanges?: Array<GroupStyleChange>;
   annotationChanges?: Array<AnnotationStyleChange>;
   description?: string;
 }
 
 export function styleEdit(parts: EditParts): StyleEdit {
   return create(StyleEditSchema, {
-    schemaVersion: 1,
-    ...(parts.nodeChanges === undefined ? {} : { nodeChanges: parts.nodeChanges }),
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    ...(parts.elementChanges === undefined ? {} : { elementChanges: parts.elementChanges }),
     ...(parts.edgeChanges === undefined ? {} : { edgeChanges: parts.edgeChanges }),
-    ...(parts.groupChanges === undefined ? {} : { groupChanges: parts.groupChanges }),
     ...(parts.annotationChanges === undefined ? {} : { annotationChanges: parts.annotationChanges }),
     author: 'user:local',
     ...(parts.description === undefined ? {} : { description: parts.description }),

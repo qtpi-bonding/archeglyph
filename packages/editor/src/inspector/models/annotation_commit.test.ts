@@ -15,13 +15,13 @@ import { annotationModel } from './annotation_model';
 import { applyStyleEditToStylesheet } from '../../state/apply_style_edit';
 import type { InspectorModel } from '../model';
 import type { SceneGeometry } from '../../scene/scene';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 function sheet(annotations = {}) {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {},
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {},
     edges: {},
-    groups: {},
     annotations,
     pendingEdits: [],
   });
@@ -67,7 +67,7 @@ describe('commitAnnotationRotation', () => {
 
   test('editing rotation leaves the anchor attached', () => {
     const before = sheet({
-      a1: annotation({ rotation: 10 }, { refId: 'n1', refKind: RefKind.NODE }),
+      a1: annotation({ rotation: 10 }, { refId: 'n1', refKind: RefKind.ELEMENT }),
     });
     const after = applyStyleEditToStylesheet(
       before,
@@ -81,8 +81,8 @@ describe('commitAnnotationRotation', () => {
 describe('commitDetachAnchor', () => {
   test('detaches every anchored annotation in the selection', () => {
     const before = sheet({
-      a1: annotation({}, { refId: 'n1', refKind: RefKind.NODE }),
-      a2: annotation({}, { refId: 'g1', refKind: RefKind.GROUP }),
+      a1: annotation({}, { refId: 'n1', refKind: RefKind.ELEMENT }),
+      a2: annotation({}, { refId: 'g1', refKind: RefKind.ELEMENT }),
     });
     const after = applyStyleEditToStylesheet(before, commitDetachAnchor(model(['a1', 'a2']), before)!);
 
@@ -98,7 +98,7 @@ describe('commitDetachAnchor', () => {
   test('records the clear as an unset path, which is what makes detach apply', () => {
     // An absent optional proto field is not the same as an untouched one.
     // Without unsetPaths the change is a silent no-op.
-    const before = sheet({ a1: annotation({}, { refId: 'n1', refKind: RefKind.NODE }) });
+    const before = sheet({ a1: annotation({}, { refId: 'n1', refKind: RefKind.ELEMENT }) });
     const edit = commitDetachAnchor(model(['a1']), before)!;
     expect(edit.annotationChanges[0]?.unsetPaths).toContain('anchor');
   });
@@ -106,9 +106,9 @@ describe('commitDetachAnchor', () => {
 
 describe('annotationModel', () => {
   test('names the anchor target by kind and id', () => {
-    const before = sheet({ a1: annotation({}, { refId: 'auth', refKind: RefKind.NODE }) });
+    const before = sheet({ a1: annotation({}, { refId: 'auth', refKind: RefKind.ELEMENT }) });
     const fields = annotationModel(model(['a1']), geometry(), before);
-    expect(fields.anchorLabel).toBe('node auth');
+    expect(fields.anchorLabel).toBe('element auth');
     expect(fields.anchored).toBe(true);
   });
 
@@ -120,8 +120,8 @@ describe('annotationModel', () => {
 
   test('two annotations pointing at different things have no single honest label', () => {
     const before = sheet({
-      a1: annotation({}, { refId: 'n1', refKind: RefKind.NODE }),
-      a2: annotation({}, { refId: 'n2', refKind: RefKind.NODE }),
+      a1: annotation({}, { refId: 'n1', refKind: RefKind.ELEMENT }),
+      a2: annotation({}, { refId: 'n2', refKind: RefKind.ELEMENT }),
     });
     const fields = annotationModel(model(['a1', 'a2']), geometry(), before);
     expect(fields.anchorLabel).toBeUndefined();

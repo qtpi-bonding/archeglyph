@@ -15,6 +15,7 @@ import { seedComponentBindings } from '../resolver/seed_bindings';
 import { PipelineError } from './pipeline_error';
 import { resolvePipeline } from './resolve_pipeline';
 import { init } from '@archeglyph/proto/util/init';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 // Everything a scene needs before it is drawn. Shared so the SVG renderer and
 // the editor canvas lay out the same diagram from the same delta.
@@ -29,7 +30,7 @@ export async function scenePipeline(diagram: Diagram, stylesheet: Stylesheet | u
     target = overlay.diagram;
     sheet = seedComponentBindings(
       overlay.diagram,
-      stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }),
+      stylesheet ?? create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
       themes.get('default'),
     );
   }

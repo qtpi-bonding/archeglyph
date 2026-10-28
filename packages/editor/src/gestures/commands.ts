@@ -13,6 +13,7 @@ import { clearSelection } from '../ui_state/selection_ops';
 import { nextInDocumentOrder, prevInDocumentOrder } from '../ui_state/navigation';
 import { addAnnotationEdit, deleteAnnotationEdit, duplicateAnnotationEdit } from '../state/edits/annotation';
 import { NEW_ANNOTATION_SIZE, NEW_ANNOTATION_TEXT, newAnnotationId } from '../state/edits/annotation_defaults';
+import { editKindOf } from '../scene/drawn_as';
 import { elementKey } from '../scene/element_key';
 import { ElementMove, moveElementsEdit } from '../state/edits/move';
 import { setNodesHiddenEdit } from '../state/edits/visibility';
@@ -154,7 +155,7 @@ function runNudge(context: CommandContext, dx: number, dy: number): void {
   //
   // A nudge is a move, and a move pins on touch (D1/D8) -- so an element that
   // ELK is still placing must be nudgeable, and nudging it is what writes its
-  // first explicit position. Reading `stylesheet.nodes[id].layout.position`
+  // first explicit position. Reading `stylesheet.elements[id].layout.position`
   // would mean only already-pinned elements could be nudged at all, which is
   // exactly backwards: the unpinned ones are the common case.
   //
@@ -178,7 +179,7 @@ function runNudge(context: CommandContext, dx: number, dy: number): void {
       ? undefined
       : geometry.byKey[elementKey({ kind: 'group', id: entry.parentGroup })];
     moves.push({
-      kind: ref.kind,
+      kind: editKindOf(geometry, ref.kind, ref.id),
       id: ref.id,
       position: create(Vec2Schema, {
         x: entry.bounds.minX + dx - (parent?.bounds.minX ?? 0),
@@ -234,7 +235,11 @@ function runUnpinAll(context: CommandContext): void {
 
 function runResetSize(context: CommandContext): void {
   for (const ref of selectedElements(context)) {
-    if (ref.kind !== 'node') {
+    // A closed container is a group drawn as a block, so it resets like a node.
+    const block = ref.kind === 'node'
+      || (ref.kind === 'group' && context.geometry !== undefined
+        && editKindOf(context.geometry, ref.kind, ref.id) === 'node');
+    if (!block) {
       continue;
     }
     // Coalesce the per-node edits so resetting a selection is one undoable

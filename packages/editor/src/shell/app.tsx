@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import { batch, Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from 'solid-js';
+import { batch, Component, createEffect, createSignal, JSX, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { create } from '@bufbuild/protobuf';
 import { Stylesheet, StylesheetSchema } from '@archeglyph/proto/gen/style_pb';
 import { Vec2 } from '@archeglyph/core/geometry/vec2';
@@ -46,7 +46,8 @@ import { HelpSheet } from './help_sheet';
 import { commandPaletteItems, elementPaletteItems } from './palette_items';
 import { PaletteAction } from './palette_item';
 import { centerBoundsInRect } from '../ui_state/viewport_math';
-import { elementKey } from '../scene/element_key';
+import { elementKey, refsEqual } from '../scene/element_key';
+import { representativeSelection } from '../scene/representative_selection';
 import { ContextMenu } from './context_menu';
 import { contextMenuItems } from './menu_items';
 import { PendingBanner } from '../pending/pending_banner';
@@ -289,6 +290,22 @@ export const App: Component<{}> = (): JSX.Element => {
     const gesture = ui.modalGesture();
     return gesture === undefined ? flash() : gestureTokens(gesture);
   };
+
+  // A re-layout can absorb a selected element into a closed container. The
+  // selection then moves to the container that stands for it, rather than
+  // pointing at geometry that is no longer in the scene.
+  createEffect((): void => {
+    const geometry = scene()?.geometry();
+    const diagram = state()?.diagram();
+    if (geometry === undefined || diagram === undefined) {
+      return;
+    }
+    const current = untrack(ui.selection);
+    const next = representativeSelection(current, geometry, diagram);
+    if (next.length !== current.length || next.some((ref, i) => !refsEqual(ref, current[i]))) {
+      ui.setSelection(next);
+    }
+  });
 
   let lastSceneError: SceneError | undefined;
   createEffect((): void => {

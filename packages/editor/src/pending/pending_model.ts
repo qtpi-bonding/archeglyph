@@ -11,9 +11,8 @@ export function pendingItems(stylesheet: Stylesheet): Array<PendingItem> {
       ? edit.description
       : 'Untitled change',
     author: edit.author !== undefined ? edit.author : 'unknown',
-    changeCount: edit.nodeChanges.length
+    changeCount: edit.elementChanges.length
       + edit.edgeChanges.length
-      + edit.groupChanges.length
       + edit.annotationChanges.length,
     comments: edit.thread !== undefined ? edit.thread.comments : [],
   }));

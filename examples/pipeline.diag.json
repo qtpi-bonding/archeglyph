@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "pipeline",
   "title": [
     {
@@ -8,7 +8,33 @@
     }
   ],
   "graph": {
-    "nodes": {
+    "edges": {
+      "diagram__load": {
+        "source": "diagram",
+        "target": "load"
+      },
+      "stylesheet__load": {
+        "source": "stylesheet",
+        "target": "load"
+      },
+      "load__resolve": {
+        "source": "load",
+        "target": "resolve"
+      },
+      "resolve__layout": {
+        "source": "resolve",
+        "target": "layout"
+      },
+      "layout__render": {
+        "source": "layout",
+        "target": "render"
+      },
+      "render__svg": {
+        "source": "render",
+        "target": "svg"
+      }
+    },
+    "elements": {
       "load": {
         "label": [
           {
@@ -16,10 +42,10 @@
             "source": "load"
           }
         ],
-        "parentGroup": "core",
         "tags": {
           "kind": "stage"
-        }
+        },
+        "parent": "core"
       },
       "resolve": {
         "label": [
@@ -28,10 +54,10 @@
             "source": "resolve"
           }
         ],
-        "parentGroup": "core",
         "tags": {
           "kind": "stage"
-        }
+        },
+        "parent": "core"
       },
       "layout": {
         "label": [
@@ -40,10 +66,10 @@
             "source": "layout"
           }
         ],
-        "parentGroup": "core",
         "tags": {
           "kind": "stage"
-        }
+        },
+        "parent": "core"
       },
       "render": {
         "label": [
@@ -52,10 +78,10 @@
             "source": "render"
           }
         ],
-        "parentGroup": "core",
         "tags": {
           "kind": "stage"
-        }
+        },
+        "parent": "core"
       },
       "diagram": {
         "label": [
@@ -89,42 +115,15 @@
         "tags": {
           "kind": "file"
         }
-      }
-    },
-    "edges": {
-      "diagram__load": {
-        "source": "diagram",
-        "target": "load"
       },
-      "stylesheet__load": {
-        "source": "stylesheet",
-        "target": "load"
-      },
-      "load__resolve": {
-        "source": "load",
-        "target": "resolve"
-      },
-      "resolve__layout": {
-        "source": "resolve",
-        "target": "layout"
-      },
-      "layout__render": {
-        "source": "layout",
-        "target": "render"
-      },
-      "render__svg": {
-        "source": "render",
-        "target": "svg"
-      }
-    },
-    "groups": {
       "core": {
         "label": [
           {
             "locale": "en",
             "source": "@archeglyph/core"
           }
-        ]
+        ],
+        "role": "ELEMENT_ROLE_GROUPING"
       }
     }
   },

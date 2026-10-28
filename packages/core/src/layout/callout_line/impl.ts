@@ -18,14 +18,14 @@ export function calloutSections(diagram: LaidOutDiagram, annotation: LaidOutAnno
   }
 
   let targetBounds: Bounds | undefined;
-  if (anchor.refKind === RefKind.NODE) {
+  if (anchor.refKind === RefKind.ELEMENT) {
+    // An element is laid out either as a node (a leaf) or as a group (a box or
+    // a super-node); the id is unique across both.
     const node = diagram.nodes[anchor.refId];
+    const group = diagram.groups[anchor.refId];
     if (node !== undefined) {
       targetBounds = boundsFromRect(node.position, node.size);
-    }
-  } else if (anchor.refKind === RefKind.GROUP) {
-    const group = diagram.groups[anchor.refId];
-    if (group !== undefined) {
+    } else if (group !== undefined) {
       targetBounds = boundsFromRect(group.position, group.size);
     }
   } else if (anchor.refKind === RefKind.EDGE) {

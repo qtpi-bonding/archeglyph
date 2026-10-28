@@ -8,9 +8,10 @@ import {
   EdgeSchema,
   GraphSchema,
   LocalizationSchema,
-  NodeSchema,
+  ElementSchema,
   type Diagram,
 } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { diff } from '../diff/diff';
 import { mergeDelta } from './merge_delta';
 
@@ -18,11 +19,11 @@ const label = (text: string) => [create(LocalizationSchema, { locale: 'en', sour
 
 function graph(nodes: Record<string, string>, edges: Record<string, [string, string]> = {}): Diagram {
   return create(DiagramSchema, {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'd',
     graph: create(GraphSchema, {
-      nodes: Object.fromEntries(
-        Object.entries(nodes).map(([id, text]) => [id, create(NodeSchema, { label: label(text) })]),
+      elements: Object.fromEntries(
+        Object.entries(nodes).map(([id, text]) => [id, create(ElementSchema, { label: label(text) })]),
       ),
       edges: Object.fromEntries(
         Object.entries(edges).map(([id, [source, target]]) => [id, create(EdgeSchema, { source, target })]),
@@ -31,7 +32,7 @@ function graph(nodes: Record<string, string>, edges: Record<string, [string, str
   });
 }
 
-const ids = (d: Diagram): string[] => Object.keys(d.graph?.nodes ?? {}).sort();
+const ids = (d: Diagram): string[] => Object.keys(d.graph?.elements ?? {}).sort();
 
 describe('a node added between base and target', () => {
   const base = graph({ a: 'A' });
@@ -39,7 +40,7 @@ describe('a node added between base and target', () => {
   const delta = diff(base, target);
 
   test('the delta calls it ADDED', () => {
-    expect(delta.nodeDeltas.map((d) => [d.nodeId, d.changeType])).toEqual([['b', ChangeType.ADDED]]);
+    expect(delta.elementDeltas.map((d) => [d.elementId, d.changeType])).toEqual([['b', ChangeType.ADDED]]);
   });
 
   test('the union holds it, merged onto the target', () => {
@@ -61,7 +62,7 @@ describe('a node removed between base and target', () => {
   const delta = diff(base, target);
 
   test('the delta calls it DELETED', () => {
-    expect(delta.nodeDeltas.map((d) => [d.nodeId, d.changeType])).toEqual([['b', ChangeType.DELETED]]);
+    expect(delta.elementDeltas.map((d) => [d.elementId, d.changeType])).toEqual([['b', ChangeType.DELETED]]);
   });
 
   test('the union holds it, merged onto the target', () => {
@@ -83,7 +84,7 @@ describe('a node modified between base and target', () => {
   const delta = diff(base, target);
 
   test('the delta calls it MODIFIED', () => {
-    expect(delta.nodeDeltas.map((d) => [d.nodeId, d.changeType])).toEqual([['a', ChangeType.MODIFIED]]);
+    expect(delta.elementDeltas.map((d) => [d.elementId, d.changeType])).toEqual([['a', ChangeType.MODIFIED]]);
   });
 
   test('it is marked MODIFIED from either side', () => {

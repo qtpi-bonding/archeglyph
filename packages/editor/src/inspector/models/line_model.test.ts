@@ -25,6 +25,7 @@ import { inspectorModel } from '../model';
 import { lineModel } from './line_model';
 import { ARROWHEAD_TABLE, PATTERN_TABLE } from './line_names';
 import { init } from '@archeglyph/proto/util/init';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 function edge(id: string): LaidOutEdge {
   return init(new LaidOutEdge(), {
@@ -78,7 +79,7 @@ describe('lineModel', () => {
         width: 2,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -104,7 +105,7 @@ describe('lineModel', () => {
       }),
     });
 
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -123,7 +124,7 @@ describe('lineModel', () => {
         end: ArrowheadVariant.ARROWHEAD_FILLED,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -142,7 +143,7 @@ describe('lineModel', () => {
         width: 1.5,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('annotation', 'a1'))!,
       geometryFrom([], [laidOut]),
@@ -155,7 +156,7 @@ describe('lineModel', () => {
 
   test('annotation without callout reads as undefined', () => {
     const laidOut = annotation('a1');
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('annotation', 'a1'))!,
       geometryFrom([], [laidOut]),
@@ -177,7 +178,7 @@ describe('lineModel', () => {
         width: 2,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -195,7 +196,7 @@ describe('lineModel', () => {
         dashing: { case: 'customDasharray', value: '5,5' },
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -208,7 +209,7 @@ describe('lineModel', () => {
   test('unset stroke reads as all undefined', () => {
     const laidOut = edge('e1');
     laidOut.connection = create(Glyph1DSchema, {});
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -228,7 +229,7 @@ describe('lineModel', () => {
         end: ArrowheadVariant.ARROWHEAD_NONE,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1'))!,
       geometryFrom([laidOut], []),
@@ -254,7 +255,7 @@ describe('lineModel', () => {
         width: 2,
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1', 'e2'))!,
       geometryFrom([e1, e2], []),
@@ -279,7 +280,7 @@ describe('lineModel', () => {
         paint: { case: 'color', value: create(ColorSchema, { value: '#0000ff' }) },
       }),
     });
-    const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+    const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
     const model = lineModel(
       inspectorModel(refs('edge', 'e1', 'e2'))!,
       geometryFrom([e1, e2], []),

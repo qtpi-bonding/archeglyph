@@ -15,9 +15,9 @@
 import { describe, test, expect } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
 import {
-  NodeStyleChangeSchema,
-  NodeStyleEntry,
-  NodeStyleEntrySchema,
+  ElementStyleChangeSchema,
+  ElementStyleEntry,
+  ElementStyleEntrySchema,
   StyleChangeType,
   StyleEdit,
   StyleEditSchema,
@@ -55,6 +55,7 @@ import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { captureSnapshot, pushUndoEntry, restoreFromSnapshot, type UndoEntry } from '../state/undo_log';
 import { applyStyleEditToStylesheet } from '../state/apply_style_edit';
 import { init } from '@archeglyph/proto/util/init';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -375,27 +376,27 @@ describe('handlePositions / hitTestHandle', () => {
 // undo_log.ts
 // ---------------------------------------------------------------------------
 
-function stylesheet(nodes: { [id: string]: NodeStyleEntry }, pendingEdits: StyleEdit[] = []): Stylesheet {
+function stylesheet(elements: { [id: string]: ElementStyleEntry }, pendingEdits: StyleEdit[] = []): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes,
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements,
     pendingEdits,
   });
 }
 
-function nodeEntry(x: number, y: number): NodeStyleEntry {
-  return create(NodeStyleEntrySchema, { component: `pos-${x},${y}` });
+function nodeEntry(x: number, y: number): ElementStyleEntry {
+  return create(ElementStyleEntrySchema, { component: `pos-${x},${y}` });
 }
 
 function moveEdit(id: string, nodeId: string, x: number, y: number): StyleEdit {
   return create(StyleEditSchema, {
-    schemaVersion: 1,
+    schemaVersion: STYLE_SCHEMA_VERSION,
     id,
     timestampMs: 0n,
     state: StyleEditState.APPLIED,
-    nodeChanges: [
-      create(NodeStyleChangeSchema, {
-        nodeId,
+    elementChanges: [
+      create(ElementStyleChangeSchema, {
+        elementId: nodeId,
         changeType: StyleChangeType.MODIFIED,
         after: nodeEntry(x, y),
       }),
@@ -445,14 +446,14 @@ describe('undo_log: captureSnapshot / restoreFromSnapshot round trip', () => {
 
     const before = captureSnapshot(original, edit);
     const applied = applyStyleEditToStylesheet(original, edit);
-    expect(applied.nodes.n1.component).toBe('pos-5,6');
+    expect(applied.elements.n1.component).toBe('pos-5,6');
 
     const undone = restoreFromSnapshot(applied, before);
-    expect(undone.nodes.n1.component).toBe('pos-1,2');
+    expect(undone.elements.n1.component).toBe('pos-1,2');
 
     // "redo" = re-apply the same edit.
     const redone = applyStyleEditToStylesheet(undone, edit);
-    expect(redone.nodes.n1.component).toBe(applied.nodes.n1.component);
+    expect(redone.elements.n1.component).toBe(applied.elements.n1.component);
   });
 
   test('undo of an ADDED entry removes it entirely (no id left over)', () => {
@@ -460,13 +461,13 @@ describe('undo_log: captureSnapshot / restoreFromSnapshot round trip', () => {
     const edit = moveEdit('e1', 'new-node', 1, 1);
     // changeType is MODIFIED in moveEdit helper; use ADDED explicitly here.
     const addEdit = create(StyleEditSchema, {
-      schemaVersion: 1,
+      schemaVersion: STYLE_SCHEMA_VERSION,
       id: 'e2',
       timestampMs: 0n,
       state: StyleEditState.APPLIED,
-      nodeChanges: [
-        create(NodeStyleChangeSchema, {
-          nodeId: 'new-node',
+      elementChanges: [
+        create(ElementStyleChangeSchema, {
+          elementId: 'new-node',
           changeType: StyleChangeType.ADDED,
           after: nodeEntry(9, 9),
         }),
@@ -474,10 +475,10 @@ describe('undo_log: captureSnapshot / restoreFromSnapshot round trip', () => {
     });
     const before = captureSnapshot(original, addEdit);
     const applied = applyStyleEditToStylesheet(original, addEdit);
-    expect(applied.nodes['new-node']).toBeDefined();
+    expect(applied.elements['new-node']).toBeDefined();
 
     const undone = restoreFromSnapshot(applied, before);
-    expect(undone.nodes['new-node']).toBeUndefined();
+    expect(undone.elements['new-node']).toBeUndefined();
   });
 });
 
@@ -486,7 +487,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snapA = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
+    const snapA = { elements: new Map(), edges: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
     const snapB = { ...snapA };
 
     const entryA: UndoEntry = { beforeSnapshot: snapA, edit: editA, tsMs: 1000, coalesceKey: 'inspector:n1:x' };
@@ -507,7 +508,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n2', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
+    const snap = { elements: new Map(), edges: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000, coalesceKey: 'inspector:n1:x' };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1200, coalesceKey: 'inspector:n2:y' };
@@ -521,7 +522,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
+    const snap = { elements: new Map(), edges: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000 };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1010 };
@@ -535,7 +536,7 @@ describe('undo_log: pushUndoEntry coalescing', () => {
     const log: UndoEntry[] = [];
     const editA = moveEdit('a', 'n1', 1, 1);
     const editB = moveEdit('b', 'n1', 2, 2);
-    const snap = { nodes: new Map(), edges: new Map(), groups: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
+    const snap = { elements: new Map(), edges: new Map(), annotations: new Map(), canvasTouched: false, canvasBefore: null, themesTouched: false, themesBefore: null, pendingEditsBefore: [] };
 
     const entryA: UndoEntry = { beforeSnapshot: snap, edit: editA, tsMs: 1000, coalesceKey: 'k' };
     const entryB: UndoEntry = { beforeSnapshot: snap, edit: editB, tsMs: 1600, coalesceKey: 'k' };
@@ -550,15 +551,15 @@ describe('undo/redo harness composed from undo_log.ts + apply_style_edit.ts prim
   test('undo then redo (re-apply of the popped entry) returns the stylesheet to its post-edit state', () => {
     const h = makeHarness(stylesheet({ n1: nodeEntry(0, 0) }));
     h.apply(moveEdit('e1', 'n1', 1, 1), 1000);
-    expect(h.current().nodes.n1.component).toBe('pos-1,1');
+    expect(h.current().elements.n1.component).toBe('pos-1,1');
 
     h.undo();
-    expect(h.current().nodes.n1.component).toBe('pos-0,0'); // back to pre-edit value
+    expect(h.current().elements.n1.component).toBe('pos-0,0'); // back to pre-edit value
 
     // redo = re-apply the entry popped onto the redo stack
     const redoEntry = h.redoLog()[h.redoLog().length - 1];
     const redone = applyStyleEditToStylesheet(h.current(), redoEntry.edit);
-    expect(redone.nodes.n1.component).toBe('pos-1,1');
+    expect(redone.elements.n1.component).toBe('pos-1,1');
   });
 
   test('a new edit after an undo discards the redo stack', () => {
@@ -576,7 +577,7 @@ describe('undo/redo harness composed from undo_log.ts + apply_style_edit.ts prim
     expect(h.undoLog()).toHaveLength(0);
     h.undo();
     expect(h.undoLog()).toHaveLength(0);
-    expect(h.current().nodes.n1.component).toBe('pos-0,0');
+    expect(h.current().elements.n1.component).toBe('pos-0,0');
   });
 
   test('the dirty flag is set on apply, and per the spec (create_editor_state.ts doc: '
@@ -592,7 +593,7 @@ describe('undo/redo harness composed from undo_log.ts + apply_style_edit.ts prim
     // the spec's undo path clears it. (This harness mirrors
     // create_editor_state.ts's markChanged() call in `undo`, which is
     // unconditional.)
-    expect(h.current().nodes.n1.component).toBe(nodeEntry(0, 0).component);
+    expect(h.current().elements.n1.component).toBe(nodeEntry(0, 0).component);
     expect(h.dirty()).toBe(true);
   });
 });
@@ -911,5 +912,28 @@ describe('previewResize', () => {
 
     expect(geometry.byKey['node:n1'].bounds).toEqual(snapshotBounds);
     expect(preview.bounds[0].bounds).not.toBe(originalBounds);
+  });
+});
+
+describe('hitTestPoint -- a closed container is hit as the block it is drawn as', () => {
+  // A closed container sits among the scene's groups but is drawn like a
+  // node, with nothing visible inside it. Groups are tested last so their
+  // children stay selectable; a block has no visible children, so it has to
+  // rank with the nodes, ahead of an edge routed across it.
+  test('a closed container wins over an edge crossing it', () => {
+    const closed = group('P', vec2(0, 0), vec2(100, 100));
+    closed.isSuperNode = true;
+    const e1 = edge('e1', 'other-a', 'other-b', [vec2(0, 50), vec2(300, 50)]);
+    const geometry = geometryFrom(diagram({ groups: [closed], edges: [e1] }));
+
+    expect(hitTestPoint(geometry, vec2(50, 50), 5)).toEqual({ kind: 'group', id: 'P' });
+  });
+
+  test('an open container still loses to an edge crossing it', () => {
+    const open = group('P', vec2(0, 0), vec2(100, 100));
+    const e1 = edge('e1', 'other-a', 'other-b', [vec2(0, 50), vec2(300, 50)]);
+    const geometry = geometryFrom(diagram({ groups: [open], edges: [e1] }));
+
+    expect(hitTestPoint(geometry, vec2(50, 50), 5)).toEqual({ kind: 'edge', id: 'e1' });
   });
 });

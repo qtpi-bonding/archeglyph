@@ -3,7 +3,8 @@
 import { access, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { create } from '@bufbuild/protobuf';
-import { DiagramSchema, EdgeSchema, GraphSchema, LocalizationSchema, NodeSchema } from '@archeglyph/proto/gen/content_pb';
+import { DiagramSchema, EdgeSchema, GraphSchema, LocalizationSchema, ElementSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { toJson } from '@archeglyph/proto/util/json';
 import type { Operation, OpContext } from '../op';
 import type { InitParams } from './init_params';
@@ -34,13 +35,13 @@ export const initOp: Operation<InitParams, InitOutput> = {
 
     const en = (source: string) => [create(LocalizationSchema, { locale: 'en', source })];
     const msg = create(DiagramSchema, {
-      schemaVersion: 1,
+      schemaVersion: CONTENT_SCHEMA_VERSION,
       id: params.name,
       title: en(params.name),
       graph: create(GraphSchema, {
-        nodes: {
-          first: create(NodeSchema, { label: en('first') }),
-          second: create(NodeSchema, { label: en('second') }),
+        elements: {
+          first: create(ElementSchema, { label: en('first') }),
+          second: create(ElementSchema, { label: en('second') }),
         },
         edges: {
           first__second: create(EdgeSchema, { source: 'first', target: 'second' }),

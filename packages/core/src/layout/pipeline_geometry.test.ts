@@ -23,16 +23,16 @@ import {
   ArrowheadsSchema,
   ColorSchema,
   EdgeStyleEntrySchema,
+  ElementStyleEntrySchema,
   Glyph1DSchema,
-  GroupLayoutSchema,
   GroupRenderMode,
-  GroupStyleEntrySchema,
   StrokeSchema,
   type Stylesheet,
   StylesheetSchema,
 } from '@archeglyph/proto/gen/style_pb';
 import type { Vec2 } from '@archeglyph/core/geometry/vec2';
 import { DiagramSchema } from '@archeglyph/proto/gen/content_pb';
+import { CONTENT_SCHEMA_VERSION, STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { fromJson } from '@archeglyph/proto/util/json';
 import { blueprintTheme } from '@archeglyph/themes';
 import { seedComponentBindings } from '../resolver/seed_bindings';
@@ -61,7 +61,7 @@ async function layout(json: unknown, stylesheet?: Stylesheet): Promise<LaidOutDi
   const theme = blueprintTheme();
   const seeded = seedComponentBindings(
     diagram,
-    stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }),
+    stylesheet ?? create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }),
     theme,
   );
   const result = await layoutPipeline(
@@ -127,29 +127,31 @@ function polyline(diagram: LaidOutDiagram, edgeId: string): Vec2[] {
 // ---------------------------------------------------------------------------
 
 /** Two levels of nesting: outer > mid > inner, plus a top-level node, and
- * edges at every depth combination. design.md §4.2.x: "NodeLayout.position
- * semantics: relative to parent ... GroupLayout.position semantics: same",
+ * edges at every depth combination. design.md §4.2.x: "ElementLayout.position
+ * semantics: relative to parent ... BoxLayout.position semantics: same",
  * and laid_out_node.spec.textproto / layout_engine.spec.textproto document
  * that after layoutPipeline these become canvas-absolute. If two-level
  * nesting behaves like one-level nesting, an innermost node's absolute
  * position must still land inside both its immediate parent's box AND its
  * grandparent's box. */
 const DEEP_NESTING = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'deep-nesting',
   graph: {
-    nodes: {
+    elements: {
       top: { label: [{ locale: 'en', source: 'top' }] },
-      mid_node: { label: [{ locale: 'en', source: 'mid' }], parentGroup: 'outer' },
-      deep: { label: [{ locale: 'en', source: 'deep' }], parentGroup: 'inner' },
+      mid_node: { label: [{ locale: 'en', source: 'mid' }], parent: 'outer' },
+      deep: { label: [{ locale: 'en', source: 'deep' }], parent: 'inner' },
+      outer: { label: [{ locale: 'en', source: 'outer' }], role: 'ELEMENT_ROLE_GROUPING' },
+      inner: {
+        label: [{ locale: 'en', source: 'inner' }],
+        parent: 'outer',
+        role: 'ELEMENT_ROLE_GROUPING',
+      },
     },
     edges: {
       top_to_deep: { source: 'top', target: 'deep' },
       mid_to_deep: { source: 'mid_node', target: 'deep' },
-    },
-    groups: {
-      outer: { label: [{ locale: 'en', source: 'outer' }] },
-      inner: { label: [{ locale: 'en', source: 'inner' }], parentGroup: 'outer' },
     },
   },
   metadata: { canonicalLocale: 'en' },
@@ -158,17 +160,16 @@ const DEEP_NESTING = {
 /** A small diagram with an edge that should carry an arrowhead marker. */
 function diagramWithArrowhead() {
   return {
-    schemaVersion: 1,
+    schemaVersion: CONTENT_SCHEMA_VERSION,
     id: 'arrowed',
     graph: {
-      nodes: {
+      elements: {
         a: { label: [{ locale: 'en', source: 'a' }] },
         b: { label: [{ locale: 'en', source: 'b' }] },
       },
       edges: {
         a_b: { source: 'a', target: 'b' },
       },
-      groups: {},
     },
     metadata: { canonicalLocale: 'en' },
   };
@@ -176,7 +177,7 @@ function diagramWithArrowhead() {
 
 function stylesheetWithArrowhead() {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
+    schemaVersion: STYLE_SCHEMA_VERSION,
     edges: {
       a_b: create(EdgeStyleEntrySchema, {
         connection: create(Glyph1DSchema, {
@@ -189,33 +190,30 @@ function stylesheetWithArrowhead() {
 }
 
 const SIMPLE_UNSTYLED = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'unstyled',
   graph: {
-    nodes: {
+    elements: {
       lonely: { label: [{ locale: 'en', source: 'lonely' }] },
     },
     edges: {},
-    groups: {},
   },
   metadata: { canonicalLocale: 'en' },
 };
 
 const MANY_ELEMENTS = {
-  schemaVersion: 1,
+  schemaVersion: CONTENT_SCHEMA_VERSION,
   id: 'many',
   graph: {
-    nodes: {
-      n1: { label: [{ locale: 'en', source: 'n1' }], parentGroup: 'g1' },
-      n2: { label: [{ locale: 'en', source: 'n2' }], parentGroup: 'g1' },
+    elements: {
+      n1: { label: [{ locale: 'en', source: 'n1' }], parent: 'g1' },
+      n2: { label: [{ locale: 'en', source: 'n2' }], parent: 'g1' },
       n3: { label: [{ locale: 'en', source: 'n3' }] },
+      g1: { label: [{ locale: 'en', source: 'g1' }], role: 'ELEMENT_ROLE_GROUPING' },
     },
     edges: {
       e1: { source: 'n1', target: 'n2' },
       e2: { source: 'n2', target: 'n3' },
-    },
-    groups: {
-      g1: { label: [{ locale: 'en', source: 'g1' }] },
     },
   },
   metadata: { canonicalLocale: 'en' },
@@ -298,8 +296,8 @@ describe('nested group frames (design.md §4.2.x, laid_out_node/laid_out_group s
     expect(touches(diagram, points[points.length - 1], 'deep')).toBe(true);
   });
 
-  test('GroupLayout.size left unset auto-fits: the group bbox contains all its direct children with positive padding', async () => {
-    // design.md L993: "GroupLayout.size is optional. Absent = auto-fit
+  test('BoxLayout.size left unset auto-fits: the group bbox contains all its direct children with positive padding', async () => {
+    // design.md L993: "BoxLayout.size is optional. Absent = auto-fit
     // (renderer computes bounding box of children + padding)."
     const diagram = await layout(DEEP_NESTING);
     const outer = diagram.groups['outer']!;
@@ -398,7 +396,7 @@ describe('determinism (design.md L43: "Same inputs → same SVG, byte-for-byte")
 
 describe('readability and graceful defaults', () => {
   test('a node with no stylesheet entry at all still renders a shape and a label', async () => {
-    // "no explicit styling" per NodeStyleEntry — the resolver cascade section
+    // "no explicit styling" per ElementStyleEntry — the resolver cascade section
     // of design.md: absent component => "the element starts unstyled" but the
     // renderer must still emit *something* (renderer code defaults per
     // svg_painter.spec.textproto's shapePath: unset shape_kind -> SHAPE_RECT).
@@ -478,7 +476,7 @@ describe('edge markup (svg_renderer.spec.textproto step 4)', () => {
     // so an edge with an unset style entry is NOT a valid probe for "no
     // arrowheads" — it must explicitly override both ends to NONE.
     const stylesheet = create(StylesheetSchema, {
-      schemaVersion: 1,
+      schemaVersion: STYLE_SCHEMA_VERSION,
       edges: {
         e1: create(EdgeStyleEntrySchema, {
           connection: create(Glyph1DSchema, {
@@ -504,10 +502,10 @@ describe('edge markup (svg_renderer.spec.textproto step 4)', () => {
 describe('group render modes', () => {
   test('a CONTRACTED group becomes a super-node and hides its children', async () => {
     const stylesheet = create(StylesheetSchema, {
-      schemaVersion: 1,
-      groups: {
-        g1: create(GroupStyleEntrySchema, {
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.CONTRACTED }),
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
+        g1: create(ElementStyleEntrySchema, {
+          renderMode: GroupRenderMode.CLOSED,
         }),
       },
     });

@@ -18,9 +18,9 @@ message Theme {
   // Named components per element type. Each component is referenced by
   // `name` from style entries' `component` field. No match expressions —
   // binding is always explicit, produced by external tools or hand-authoring.
-  repeated NodeComponent       node_components = 6;
-  repeated EdgeComponent       edge_components = 7;
-  repeated NodeComponent       group_components = 8;       // groups use NodeComponent
+  repeated NodeComponent node_components = 6;
+  repeated EdgeComponent edge_components = 7;
+  repeated NodeComponent group_components = 8; // groups use NodeComponent
   repeated AnnotationComponent annotation_components = 9;
 
   // The component each element type falls back to when its style entry names
@@ -33,9 +33,9 @@ message Theme {
   // hardcoded the name "glyph", which meant no theme could define a component
   // called "glyph" without it silently capturing every unbound element.
   // The bundled themes set these to "glyph"; the name is now ordinary.
-  optional string default_node_component       = 10;
-  optional string default_edge_component       = 11;
-  optional string default_group_component      = 12;
+  optional string default_node_component = 10;
+  optional string default_edge_component = 11;
+  optional string default_group_component = 12;
   optional string default_annotation_component = 13;
 
   // No canvas field on Theme. Canvas is per-document data, lives in Stylesheet.

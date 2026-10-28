@@ -22,8 +22,12 @@ import { styleEdit } from '../state/edits/edit_builder';
 
 export function layoutModel(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet): LayoutModel {
   const override = (id: string): { position?: { x: number; y: number }; size?: { x: number; y: number } } | undefined => {
-    if (model.kind === 'node') return stylesheet.nodes[id]?.layout;
-    if (model.kind === 'group') return stylesheet.groups[id]?.layout;
+    if (model.kind === 'node') return stylesheet.elements[id]?.layout;
+    if (model.kind === 'group') {
+      // A closed container is drawn from the block layout, an open one from
+      // the box layout.
+      return model.block === true ? stylesheet.elements[id]?.layout : stylesheet.elements[id]?.boxLayout;
+    }
     if (model.kind === 'annotation') return stylesheet.annotations[id]?.layout;
     return undefined;
   };
@@ -55,9 +59,9 @@ export function commitTypography(model: InspectorModel, stylesheet: Stylesheet, 
   }
 
   const typographyOf = (id: string): Typography | undefined => {
-    if (model.kind === 'node') return stylesheet.nodes[id]?.typography;
+    if (model.kind === 'node') return stylesheet.elements[id]?.typography;
     if (model.kind === 'edge') return stylesheet.edges[id]?.typography;
-    if (model.kind === 'group') return stylesheet.groups[id]?.typography;
+    if (model.kind === 'group') return stylesheet.elements[id]?.typography;
     return stylesheet.annotations[id]?.typography;
   };
   const valueOf = (id: string): string | number | undefined => {
@@ -105,22 +109,25 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
   // model.kind is narrowed by the edge guard above, but TypeScript discards
   // that narrowing at the first closure below. Capture it once.
   const kind: 'node' | 'group' | 'annotation' = model.kind;
+  // `kind` finds the element in the scene. The edit goes to the form the
+  // element is drawn in, and a closed container is a group drawn as a block.
+  const form: 'node' | 'group' | 'annotation' = kind === 'group' && model.block === true ? 'node' : kind;
 
   const isSize = field === 'width' || field === 'height';
   const overrideValue = (id: string): number | undefined => {
-    const entry = kind === 'node'
-      ? stylesheet.nodes[id]
-      : kind === 'group'
-        ? stylesheet.groups[id]
-        : stylesheet.annotations[id];
-    if (entry?.layout === undefined) {
+    const layout = form === 'node'
+      ? stylesheet.elements[id]?.layout
+      : form === 'group'
+        ? stylesheet.elements[id]?.boxLayout
+        : stylesheet.annotations[id]?.layout;
+    if (layout === undefined) {
       return undefined;
     }
     if (field === 'x' || field === 'y') {
-      const position = entry.layout.position;
+      const position = layout.position;
       return position === undefined ? undefined : field === 'x' ? position.x : position.y;
     }
-    const size = entry.layout.size;
+    const size = layout.size;
     return size === undefined ? undefined : field === 'width' ? size.x : size.y;
   };
 
@@ -129,7 +136,7 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
   }
 
   const refs: Array<ElementMove> = model.ids.map((id) => ({
-    kind: kind,
+    kind: form,
     id,
     // unpinElementsEdit only uses kind and id; the position is part of the
     // shared move reference type and is deliberately ignored for unpinning.
@@ -141,13 +148,12 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
 
   if (isSize && value === undefined) {
     const edits = model.ids.map((id) => {
-      if (kind === 'node') return clearNodeSizeEdit(stylesheet, id);
-      if (kind === 'group') return clearGroupSizeEdit(stylesheet, id);
+      if (form === 'node') return clearNodeSizeEdit(stylesheet, id);
+      if (form === 'group') return clearGroupSizeEdit(stylesheet, id);
       return clearAnnotationSizeEdit(stylesheet, id);
     });
     return styleEdit({
-      nodeChanges: edits.flatMap((edit) => edit.nodeChanges),
-      groupChanges: edits.flatMap((edit) => edit.groupChanges),
+      elementChanges: edits.flatMap((edit) => edit.elementChanges),
       annotationChanges: edits.flatMap((edit) => edit.annotationChanges),
       description: 'Clear selected size override',
     });
@@ -168,7 +174,7 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
     });
     if (!isSize) {
       return moveElementsEdit(stylesheet, [{
-        kind: kind,
+        kind: form,
         id,
         position: create(Vec2Schema, {
           x: field === 'x' ? value ?? position.x : position.x,
@@ -180,8 +186,8 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
       x: field === 'width' ? value as number : bounds.maxX - bounds.minX,
       y: field === 'height' ? value as number : bounds.maxY - bounds.minY,
     });
-    if (kind === 'node') return resizeNodeEdit(stylesheet, id, position, size);
-    if (kind === 'group') return resizeGroupEdit(stylesheet, id, position, size);
+    if (form === 'node') return resizeNodeEdit(stylesheet, id, position, size);
+    if (form === 'group') return resizeGroupEdit(stylesheet, id, position, size);
     return resizeAnnotationEdit(stylesheet, id, position, size);
   }).filter((edit): edit is StyleEdit => edit !== undefined);
 
@@ -189,8 +195,7 @@ export function commitLayout(model: InspectorModel, geometry: SceneGeometry, sty
     return undefined;
   }
   return styleEdit({
-    nodeChanges: edits.flatMap((edit) => edit.nodeChanges),
-    groupChanges: edits.flatMap((edit) => edit.groupChanges),
+    elementChanges: edits.flatMap((edit) => edit.elementChanges),
     annotationChanges: edits.flatMap((edit) => edit.annotationChanges),
     description: 'Edit selected layout',
   });
@@ -209,9 +214,9 @@ export interface LayoutModel {
 export function typographyModel(model: InspectorModel, geometry: SceneGeometry, stylesheet: Stylesheet): TypographyModel {
   const overrideTypography = (id: string): Typography | undefined => {
     switch (model.kind) {
-      case 'node': return stylesheet.nodes[id]?.typography;
+      case 'node': return stylesheet.elements[id]?.typography;
       case 'edge': return stylesheet.edges[id]?.typography;
-      case 'group': return stylesheet.groups[id]?.typography;
+      case 'group': return stylesheet.elements[id]?.typography;
       case 'annotation': return stylesheet.annotations[id]?.typography;
     }
   };

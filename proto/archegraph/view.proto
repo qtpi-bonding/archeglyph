@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
-// Vendored from archegraph @ crates/core/proto/view.proto (commit 42b66e2)
-// Stripped: buf/validate annotations, node_data.proto import, proto_data field.
+// Vendored from archegraph @ crates/core/proto/view.proto (commit 2e755494)
+// Stripped: buf/validate annotations.
 // Keep in sync with upstream when upgrading archegraph.
 
 syntax = "proto3";
@@ -8,60 +8,141 @@ package archegraph.view;
 
 import "archegraph/common.proto";
 
+// ============================================================================
+// THE VIEWPORT (Layer 1: The Surface)
+// ============================================================================
+
 message Archeview {
   uint32 schema_version = 1;
   map<string, ViewNode> nodes = 2;
   map<string, ViewEdge> edges = 3;
   ViewMetadata metadata = 4;
+
+  // Field 5 was `map<uint32, archegraph.common.Community> communities` — the
+  // catalog moved into GraphMetrics.communities so private (Archegraph) and
+  // public (Archeview) carry it the same way via the shared metrics container.
   reserved 5;
   reserved "communities";
+
+  // Graph-level derived signals (communities, future modularity/density).
+  // Same message as Archegraph.metrics — computed once on private, projected through.
   archegraph.common.GraphMetrics metrics = 6;
 }
 
 message ViewMetadata {
   string project_name = 1;
   int64 timestamp = 2;
-  string aperture_root = 3;
-  uint32 node_count = 4;
+  string aperture_root = 3; // The symbol at the center of this neighborhood
+  uint32 node_count = 4; // Total nodes in the whole view graph (build_view writes nodes.len())
+
+  // Graph provenance, copied from GraphMetadata. build_view fills
+  // version, extractor_version and commit_hash; workspace_hash stays unset
+  // (open decision). workspace_hash covers uncommitted edits; commit_hash does not.
+  string version = 5;
+  string extractor_version = 6;
+  string commit_hash = 7;
+  bytes workspace_hash = 8;
 }
+
+// ============================================================================
+// THE VIEW NODE (Logic & Mimicry)
+// ============================================================================
 
 message ViewNode {
   string id = 1;
-  archegraph.common.NodeKind kind = 2;
-  string kind_label = 3;
-  string display_name = 4;
+
+  // 1. Semantic Mimicry (The Dynamic Labels)
+  archegraph.common.NodeKind kind = 2; // The standard CS category (e.g. STRUCT)
+  string kind_label = 3; // The specific language label (e.g. "Trait")
+  string display_name = 4; // The Human name (e.g. "AuthHandler")
+
+  // 2. Behavioral Flags
   bool is_external = 5;
   bool is_synthetic = 6;
   bool is_deprecated = 7;
   bool has_error = 8;
+
+  // 3. Navigation
   reserved 9, 10;
   reserved "file_path", "start_line";
-  string scip_symbol = 11;
+  string scip_symbol = 11; // Full original SCIP symbol (for tool interop, empty for gplan/spec nodes)
+
+  // 4. Optional computed metrics (depth, importance, communities).
+  //    See archegraph.common.NodeMetrics. Same message used on private GraphNode.
   archegraph.common.NodeMetrics metrics = 13;
+
+  // Diff annotation — present only when this node is part of a composed
+  // diff graph (gcontract). Absent (UNSPECIFIED) on plain snapshots (gcode).
   optional archegraph.common.ChangeType change_type = 18;
+
+  // 5. Flex Bag (user/producer string-typed tags)
   map<string, string> tags = 15;
+
+  // 6. Validator-facing fields. Sufficient for OSS validator generation
+  //    (e.g. Zod from buf.validate annotations) without consuming the
+  //    full graph.proto::GraphNode. Both optional — populated only for
+  //    Field nodes whose spec carried label / validation info.
   optional archegraph.common.FieldLabel field_label = 16;
   optional archegraph.common.ValidationContext validation = 17;
+
+  // Source-of-spec location (set by intent mapper from .proto).
   archegraph.common.SourceLocation proto_location = 20;
+
+  // Source-of-implementation location (set by insight extractor from code).
   archegraph.common.SourceLocation implement_location = 21;
+
+  // Stable cross-run lineage. Copied from GraphNode.uuid by projection.rs.
+  // None for spec-only nodes.
   optional string uuid = 22;
-  // field 23 (proto_data / NodeProtoData) omitted — not needed for import mapping.
+
+  reserved 23;
+  reserved "proto_data";
+
+  // Public projection of NodeFlag.IS_TEST. False until an extractor sets the flag.
+  bool is_test = 24;
 }
+
+// Note: NodeKind Moved to common.proto
+
+// ============================================================================
+// THE VIEW EDGE (Relationships)
+// ============================================================================
 
 message ViewEdge {
   string source = 1;
   string target = 2;
-  archegraph.common.EdgeKind kind = 3;
-  string kind_label = 4;
+  archegraph.common.EdgeKind kind = 3; // The standard CS category (e.g. INVOCATION)
+  reserved 4;
+  reserved "kind_label";
+
   bool is_dynamic = 5;
-  archegraph.common.EdgeRole role = 6;
-  uint32 position = 7;
-  bool is_cross_language = 8;
-  string id = 9;
+  archegraph.common.EdgeRole role = 6; // Sub-classification (e.g. EXTENDS, RETURN)
+  uint32 position = 7; // Positional ordering (e.g. parameter index)
+  bool is_cross_language = 8; // Crosses a language boundary (FFI, WASM, IPC, etc.)
+  string id = 9; // The canonical edge key: archegraph_core::edge_key(source, target, kind, role).
+
   map<string, string> tags = 10;
+
+  // Optional computed metrics. See archegraph.common.EdgeMetrics.
+  // Same message used on private GraphEdge.
   archegraph.common.EdgeMetrics metrics = 11;
+
+  // Diff annotation — present only when this edge is part of a composed
+  // diff graph (gcontract). Absent (UNSPECIFIED) on plain snapshots (gcode).
   optional archegraph.common.ChangeType change_type = 12;
+
+  // Every place this edge was observed in code, ordered by
+  // (file_path, start_line, start_column, end_line, end_column,
+  // position_encoding), with no duplicates. Empty for edges with no recorded
+  // SCIP site. Not compared by diff/compare/verify.
+  repeated archegraph.common.SourceLocation occurrences = 13;
 }
+
+// Note: EdgeKind Moved to common.proto
+
+// ============================================================================
+// THE DELTA (Raw change operations)
+// ============================================================================
 
 message ViewGraphDelta {
   uint32 schema_version = 1;
@@ -76,15 +157,27 @@ message ViewNodeDelta {
   archegraph.common.ChangeType change_type = 2;
   optional ViewNode before = 3;
   optional ViewNode after = 4;
+
+  // Spec-author rationale for this change. Populated from `//` comments on
+  // .proto authoring (ADDs) and `#` comments on .textproto authoring
+  // (MODIFIES/DELETEs). Distinct from entity docstrings — this is metadata
+  // of the change operation, not of the resulting entity. Forwarded to the
+  // agent prompt as `{{description}}` when the build runs.
   optional string description = 5;
 }
 
 message ViewEdgeDelta {
+  // Identity: (source, target, edge_kind, edge_role).
   string source = 1;
   string target = 2;
   archegraph.common.EdgeKind edge_kind = 3;
-  archegraph.common.ChangeType change_type = 4;
-  optional ViewEdge before = 5;
-  optional ViewEdge after = 6;
-  optional string description = 7;
+  archegraph.common.EdgeRole edge_role = 4;
+  archegraph.common.ChangeType change_type = 5;
+  optional ViewEdge before = 6;
+  optional ViewEdge after = 7;
+
+  // See ViewNodeDelta.description.
+  optional string description = 8;
 }
+
+// Note: ChangeType Moved to common.proto

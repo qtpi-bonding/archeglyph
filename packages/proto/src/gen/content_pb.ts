@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file content.proto.
  */
 export const file_content: GenFile = /*@__PURE__*/
-  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpQDCgVHcmFwaBI2CgVub2RlcxgBIAMoCzInLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5Ob2Rlc0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkSOAoGZ3JvdXBzGAMgAygLMiguYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkdyb3Vwc0VudHJ5GkkKCk5vZGVzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGU6AjgBGkkKCkVkZ2VzRW50cnkSCwoDa2V5GAEgASgJEioKBXZhbHVlGAIgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2U6AjgBGksKC0dyb3Vwc0VudHJ5EgsKA2tleRgBIAEoCRIrCgV2YWx1ZRgCIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cDoCOAEiyAEKBE5vZGUSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhkKDHBhcmVudF9ncm91cBgDIAEoCUgAiAEBEjMKBHRhZ3MYBCADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuTm9kZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCDwoNX3BhcmVudF9ncm91cCLNAQoERWRnZRIOCgZzb3VyY2UYAiABKAkSDgoGdGFyZ2V0GAMgASgJEjIKBWxhYmVsGAQgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIPCgdvcmRpbmFsGAUgASgNEjMKBHRhZ3MYBiADKAsyJS5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZS5UYWdzRW50cnkaKwoJVGFnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiygEKBUdyb3VwEjIKBWxhYmVsGAIgAygLMiMuYXJjaGVnbHlwaC5jb250ZW50LnYxLkxvY2FsaXphdGlvbhIZCgxwYXJlbnRfZ3JvdXAYAyABKAlIAIgBARI0CgR0YWdzGAQgAygLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIPCg1fcGFyZW50X2dyb3VwIuwBCgVEZWx0YRIWCg5zY2hlbWFfdmVyc2lvbhgBIAEoDRIQCghiYXNlX3JlZhgCIAEoCRISCgp0YXJnZXRfcmVmGAMgASgJEjUKC25vZGVfZGVsdGFzGAQgAygLMiAuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVEZWx0YRI1CgtlZGdlX2RlbHRhcxgFIAMoCzIgLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlRGVsdGESNwoMZ3JvdXBfZGVsdGFzGAYgAygLMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyb3VwRGVsdGEi9gEKCU5vZGVEZWx0YRIPCgdub2RlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLk5vZGVIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5Ob2RlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24i9gEKCUVkZ2VEZWx0YRIPCgdlZGdlX2lkGAEgASgJEjYKC2NoYW5nZV90eXBlGAIgASgOMiEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkNoYW5nZVR5cGUSMAoGYmVmb3JlGAMgASgLMhsuYXJjaGVnbHlwaC5jb250ZW50LnYxLkVkZ2VIAIgBARIvCgVhZnRlchgEIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlSAGIAQESGAoLZGVzY3JpcHRpb24YBSABKAlIAogBAUIJCgdfYmVmb3JlQggKBl9hZnRlckIOCgxfZGVzY3JpcHRpb24i+gEKCkdyb3VwRGVsdGESEAoIZ3JvdXBfaWQYASABKAkSNgoLY2hhbmdlX3R5cGUYAiABKA4yIS5hcmNoZWdseXBoLmNvbnRlbnQudjEuQ2hhbmdlVHlwZRIxCgZiZWZvcmUYAyABKAsyHC5hcmNoZWdseXBoLmNvbnRlbnQudjEuR3JvdXBIAIgBARIwCgVhZnRlchgEIAEoCzIcLmFyY2hlZ2x5cGguY29udGVudC52MS5Hcm91cEgBiAEBEhgKC2Rlc2NyaXB0aW9uGAUgASgJSAKIAQFCCQoHX2JlZm9yZUIICgZfYWZ0ZXJCDgoMX2Rlc2NyaXB0aW9uIi4KDExvY2FsaXphdGlvbhIOCgZsb2NhbGUYASABKAkSDgoGc291cmNlGAIgASgJKl4KCkNoYW5nZVR5cGUSGwoXQ0hBTkdFX1RZUEVfVU5TUEVDSUZJRUQQABINCglVTkNIQU5HRUQQARIJCgVBRERFRBACEgsKB0RFTEVURUQQAxIMCghNT0RJRklFRBAEYgZwcm90bzM");
+  fileDesc("Cg1jb250ZW50LnByb3RvEhVhcmNoZWdseXBoLmNvbnRlbnQudjEiyAEKB0RpYWdyYW0SFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SCgoCaWQYAiABKAkSMgoFdGl0bGUYAyADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEisKBWdyYXBoGAQgASgLMhwuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoEjgKCG1ldGFkYXRhGAUgASgLMiYuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YSKrAgoPRGlhZ3JhbU1ldGFkYXRhEhYKCWdlbmVyYXRvchgBIAEoCUgAiAEBEhcKCmNyZWF0ZWRfYXQYAiABKAlIAYgBARIXCgp1cGRhdGVkX2F0GAMgASgJSAKIAQESHQoQY2Fub25pY2FsX2xvY2FsZRgEIAEoCUgDiAEBEkAKBWV4dHJhGAogAygLMjEuYXJjaGVnbHlwaC5jb250ZW50LnYxLkRpYWdyYW1NZXRhZGF0YS5FeHRyYUVudHJ5GiwKCkV4dHJhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIMCgpfZ2VuZXJhdG9yQg0KC19jcmVhdGVkX2F0Qg0KC191cGRhdGVkX2F0QhMKEV9jYW5vbmljYWxfbG9jYWxlIpkCCgVHcmFwaBI8CghlbGVtZW50cxgBIAMoCzIqLmFyY2hlZ2x5cGguY29udGVudC52MS5HcmFwaC5FbGVtZW50c0VudHJ5EjYKBWVkZ2VzGAIgAygLMicuYXJjaGVnbHlwaC5jb250ZW50LnYxLkdyYXBoLkVkZ2VzRW50cnkaTwoNRWxlbWVudHNFbnRyeRILCgNrZXkYASABKAkSLQoFdmFsdWUYAiABKAsyHi5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWxlbWVudDoCOAEaSQoKRWRnZXNFbnRyeRILCgNrZXkYASABKAkSKgoFdmFsdWUYAiABKAsyGy5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZToCOAEi9AEKB0VsZW1lbnQSMgoFbGFiZWwYAiADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEhMKBnBhcmVudBgDIAEoCUgAiAEBEjYKBHRhZ3MYBCADKAsyKC5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWxlbWVudC5UYWdzRW50cnkSMAoEcm9sZRgFIAEoDjIiLmFyY2hlZ2x5cGguY29udGVudC52MS5FbGVtZW50Um9sZRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIJCgdfcGFyZW50Is0BCgRFZGdlEg4KBnNvdXJjZRgCIAEoCRIOCgZ0YXJnZXQYAyABKAkSMgoFbGFiZWwYBCADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuTG9jYWxpemF0aW9uEg8KB29yZGluYWwYBSABKA0SMwoEdGFncxgGIAMoCzIlLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlLlRhZ3NFbnRyeRorCglUYWdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASK5AQoFRGVsdGESFgoOc2NoZW1hX3ZlcnNpb24YASABKA0SEAoIYmFzZV9yZWYYAiABKAkSEgoKdGFyZ2V0X3JlZhgDIAEoCRI1CgtlZGdlX2RlbHRhcxgFIAMoCzIgLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlRGVsdGESOwoOZWxlbWVudF9kZWx0YXMYBCADKAsyIy5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWxlbWVudERlbHRhIoICCgxFbGVtZW50RGVsdGESEgoKZWxlbWVudF9pZBgBIAEoCRI2CgtjaGFuZ2VfdHlwZRgCIAEoDjIhLmFyY2hlZ2x5cGguY29udGVudC52MS5DaGFuZ2VUeXBlEjMKBmJlZm9yZRgDIAEoCzIeLmFyY2hlZ2x5cGguY29udGVudC52MS5FbGVtZW50SACIAQESMgoFYWZ0ZXIYBCABKAsyHi5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWxlbWVudEgBiAEBEhgKC2Rlc2NyaXB0aW9uGAUgASgJSAKIAQFCCQoHX2JlZm9yZUIICgZfYWZ0ZXJCDgoMX2Rlc2NyaXB0aW9uIvYBCglFZGdlRGVsdGESDwoHZWRnZV9pZBgBIAEoCRI2CgtjaGFuZ2VfdHlwZRgCIAEoDjIhLmFyY2hlZ2x5cGguY29udGVudC52MS5DaGFuZ2VUeXBlEjAKBmJlZm9yZRgDIAEoCzIbLmFyY2hlZ2x5cGguY29udGVudC52MS5FZGdlSACIAQESLwoFYWZ0ZXIYBCABKAsyGy5hcmNoZWdseXBoLmNvbnRlbnQudjEuRWRnZUgBiAEBEhgKC2Rlc2NyaXB0aW9uGAUgASgJSAKIAQFCCQoHX2JlZm9yZUIICgZfYWZ0ZXJCDgoMX2Rlc2NyaXB0aW9uIi4KDExvY2FsaXphdGlvbhIOCgZsb2NhbGUYASABKAkSDgoGc291cmNlGAIgASgJKl8KC0VsZW1lbnRSb2xlEhwKGEVMRU1FTlRfUk9MRV9VTlNQRUNJRklFRBAAEhcKE0VMRU1FTlRfUk9MRV9FTlRJVFkQARIZChVFTEVNRU5UX1JPTEVfR1JPVVBJTkcQAipeCgpDaGFuZ2VUeXBlEhsKF0NIQU5HRV9UWVBFX1VOU1BFQ0lGSUVEEAASDQoJVU5DSEFOR0VEEAESCQoFQURERUQQAhILCgdERUxFVEVEEAMSDAoITU9ESUZJRUQQBGIGcHJvdG8z");
 
 /**
  * Diagram is the file-level artifact: a Graph + presentation envelope metadata.
@@ -115,12 +115,13 @@ export const DiagramMetadataSchema: GenMessage<DiagramMetadata> = /*@__PURE__*/
  */
 export type Graph = Message<"archeglyph.content.v1.Graph"> & {
   /**
-   * Nodes keyed by id. The key is the node's identity; Node carries no id field.
-   * Iteration during render: sorted lex by key.
+   * Elements keyed by id: the one id namespace for everything that can sit in
+   * the diagram. The key is the element's identity; Element carries no id
+   * field. Iteration during render: sorted lex by key.
    *
-   * @generated from field: map<string, archeglyph.content.v1.Node> nodes = 1;
+   * @generated from field: map<string, archeglyph.content.v1.Element> elements = 1;
    */
-  nodes: { [key: string]: Node };
+  elements: { [key: string]: Element };
 
   /**
    * Edges keyed by id. The key is the edge's identity; Edge carries no id field.
@@ -130,14 +131,6 @@ export type Graph = Message<"archeglyph.content.v1.Graph"> & {
    * @generated from field: map<string, archeglyph.content.v1.Edge> edges = 2;
    */
   edges: { [key: string]: Edge };
-
-  /**
-   * Groups keyed by id. The key is the group's identity; Group carries no id field.
-   * Groups may nest (a group's parent_group references another group).
-   *
-   * @generated from field: map<string, archeglyph.content.v1.Group> groups = 3;
-   */
-  groups: { [key: string]: Group };
 };
 
 /**
@@ -148,9 +141,9 @@ export const GraphSchema: GenMessage<Graph> = /*@__PURE__*/
   messageDesc(file_content, 2);
 
 /**
- * @generated from message archeglyph.content.v1.Node
+ * @generated from message archeglyph.content.v1.Element
  */
-export type Node = Message<"archeglyph.content.v1.Node"> & {
+export type Element = Message<"archeglyph.content.v1.Element"> & {
   /**
    * Display label (one Localization entry per locale).
    * Render picks based on --locale flag, falls back to canonical_locale's entry.
@@ -161,29 +154,34 @@ export type Node = Message<"archeglyph.content.v1.Node"> & {
   label: Localization[];
 
   /**
-   * Containing group (single physical containment; cross-cutting concerns use tags).
-   * Groups may themselves have a parent_group → nested hierarchy supported.
+   * Containing element (single physical containment; cross-cutting concerns
+   * use tags). The parent relation is acyclic. An element is a container
+   * exactly when something names it as parent; that is never stored.
    *
-   * @generated from field: optional string parent_group = 3;
+   * @generated from field: optional string parent = 3;
    */
-  parentGroup?: string | undefined;
+  parent?: string | undefined;
 
   /**
    * Free-form, namespaced tags. e.g., "archegraph.symbol", "team": "backend".
-   * Categorization (what was previously the `kind` field) goes here by convention —
-   * common keys: "kind", "type", "layer", "domain". Authors pick what suits their
-   * domain. Importers use namespaced keys (e.g., "archegraph.kind").
+   * Categorization goes here by convention -- common keys: "kind", "type",
+   * "layer", "domain". "kind" selects the theme component.
    *
    * @generated from field: map<string, string> tags = 4;
    */
   tags: { [key: string]: string };
+
+  /**
+   * @generated from field: archeglyph.content.v1.ElementRole role = 5;
+   */
+  role: ElementRole;
 };
 
 /**
- * Describes the message archeglyph.content.v1.Node.
- * Use `create(NodeSchema)` to create a new message.
+ * Describes the message archeglyph.content.v1.Element.
+ * Use `create(ElementSchema)` to create a new message.
  */
-export const NodeSchema: GenMessage<Node> = /*@__PURE__*/
+export const ElementSchema: GenMessage<Element> = /*@__PURE__*/
   messageDesc(file_content, 3);
 
 /**
@@ -191,14 +189,15 @@ export const NodeSchema: GenMessage<Node> = /*@__PURE__*/
  */
 export type Edge = Message<"archeglyph.content.v1.Edge"> & {
   /**
-   * Source node id. Must reference an existing node.
+   * Source element id. Must reference an existing ENTITY element, which may be
+   * a container.
    *
    * @generated from field: string source = 2;
    */
   source: string;
 
   /**
-   * Target node id.
+   * Target element id. Same rule.
    *
    * @generated from field: string target = 3;
    */
@@ -234,40 +233,6 @@ export const EdgeSchema: GenMessage<Edge> = /*@__PURE__*/
   messageDesc(file_content, 4);
 
 /**
- * @generated from message archeglyph.content.v1.Group
- */
-export type Group = Message<"archeglyph.content.v1.Group"> & {
-  /**
-   * Display label (localizable).
-   *
-   * @generated from field: repeated archeglyph.content.v1.Localization label = 2;
-   */
-  label: Localization[];
-
-  /**
-   * Parent group id, for nested groups. Empty = top-level group.
-   * Group hierarchy must be acyclic (validation enforces).
-   *
-   * @generated from field: optional string parent_group = 3;
-   */
-  parentGroup?: string | undefined;
-
-  /**
-   * Free-form tags.
-   *
-   * @generated from field: map<string, string> tags = 4;
-   */
-  tags: { [key: string]: string };
-};
-
-/**
- * Describes the message archeglyph.content.v1.Group.
- * Use `create(GroupSchema)` to create a new message.
- */
-export const GroupSchema: GenMessage<Group> = /*@__PURE__*/
-  messageDesc(file_content, 5);
-
-/**
  * @generated from message archeglyph.content.v1.Delta
  */
 export type Delta = Message<"archeglyph.content.v1.Delta"> & {
@@ -292,24 +257,18 @@ export type Delta = Message<"archeglyph.content.v1.Delta"> & {
   targetRef: string;
 
   /**
-   * @generated from field: repeated archeglyph.content.v1.NodeDelta node_deltas = 4;
-   */
-  nodeDeltas: NodeDelta[];
-
-  /**
    * @generated from field: repeated archeglyph.content.v1.EdgeDelta edge_deltas = 5;
    */
   edgeDeltas: EdgeDelta[];
 
   /**
-   * Groups are topology, not presentation: they live in Graph alongside nodes
-   * and edges, and only their render_mode (in the STYLE file) is presentational.
-   * Without this, adding or deleting a group produced nothing while re-parenting
-   * a node did -- so a containment change reported half of itself.
+   * Elements are topology, not presentation. A move between parents is one
+   * MODIFIED delta carrying both parents; a leaf gaining its first child
+   * produces no delta on the element itself.
    *
-   * @generated from field: repeated archeglyph.content.v1.GroupDelta group_deltas = 6;
+   * @generated from field: repeated archeglyph.content.v1.ElementDelta element_deltas = 4;
    */
-  groupDeltas: GroupDelta[];
+  elementDeltas: ElementDelta[];
 };
 
 /**
@@ -317,16 +276,16 @@ export type Delta = Message<"archeglyph.content.v1.Delta"> & {
  * Use `create(DeltaSchema)` to create a new message.
  */
 export const DeltaSchema: GenMessage<Delta> = /*@__PURE__*/
-  messageDesc(file_content, 6);
+  messageDesc(file_content, 5);
 
 /**
- * @generated from message archeglyph.content.v1.NodeDelta
+ * @generated from message archeglyph.content.v1.ElementDelta
  */
-export type NodeDelta = Message<"archeglyph.content.v1.NodeDelta"> & {
+export type ElementDelta = Message<"archeglyph.content.v1.ElementDelta"> & {
   /**
-   * @generated from field: string node_id = 1;
+   * @generated from field: string element_id = 1;
    */
-  nodeId: string;
+  elementId: string;
 
   /**
    * @generated from field: archeglyph.content.v1.ChangeType change_type = 2;
@@ -334,14 +293,14 @@ export type NodeDelta = Message<"archeglyph.content.v1.NodeDelta"> & {
   changeType: ChangeType;
 
   /**
-   * @generated from field: optional archeglyph.content.v1.Node before = 3;
+   * @generated from field: optional archeglyph.content.v1.Element before = 3;
    */
-  before?: Node | undefined;
+  before?: Element | undefined;
 
   /**
-   * @generated from field: optional archeglyph.content.v1.Node after = 4;
+   * @generated from field: optional archeglyph.content.v1.Element after = 4;
    */
-  after?: Node | undefined;
+  after?: Element | undefined;
 
   /**
    * Free-text rationale, carried over from archegraph's ViewNodeDelta.description
@@ -354,11 +313,11 @@ export type NodeDelta = Message<"archeglyph.content.v1.NodeDelta"> & {
 };
 
 /**
- * Describes the message archeglyph.content.v1.NodeDelta.
- * Use `create(NodeDeltaSchema)` to create a new message.
+ * Describes the message archeglyph.content.v1.ElementDelta.
+ * Use `create(ElementDeltaSchema)` to create a new message.
  */
-export const NodeDeltaSchema: GenMessage<NodeDelta> = /*@__PURE__*/
-  messageDesc(file_content, 7);
+export const ElementDeltaSchema: GenMessage<ElementDelta> = /*@__PURE__*/
+  messageDesc(file_content, 6);
 
 /**
  * @generated from message archeglyph.content.v1.EdgeDelta
@@ -398,54 +357,12 @@ export type EdgeDelta = Message<"archeglyph.content.v1.EdgeDelta"> & {
  * Use `create(EdgeDeltaSchema)` to create a new message.
  */
 export const EdgeDeltaSchema: GenMessage<EdgeDelta> = /*@__PURE__*/
-  messageDesc(file_content, 8);
-
-/**
- * @generated from message archeglyph.content.v1.GroupDelta
- */
-export type GroupDelta = Message<"archeglyph.content.v1.GroupDelta"> & {
-  /**
-   * @generated from field: string group_id = 1;
-   */
-  groupId: string;
-
-  /**
-   * @generated from field: archeglyph.content.v1.ChangeType change_type = 2;
-   */
-  changeType: ChangeType;
-
-  /**
-   * Carries the group's own fields only. Membership is NOT here -- containment
-   * lives per-node on Node.parent_group -- so rendering a DELETED group means
-   * recovering its members from their own NodeDelta.before.parent_group. This
-   * message alone would draw an empty box.
-   *
-   * @generated from field: optional archeglyph.content.v1.Group before = 3;
-   */
-  before?: Group | undefined;
-
-  /**
-   * @generated from field: optional archeglyph.content.v1.Group after = 4;
-   */
-  after?: Group | undefined;
-
-  /**
-   * @generated from field: optional string description = 5;
-   */
-  description?: string | undefined;
-};
-
-/**
- * Describes the message archeglyph.content.v1.GroupDelta.
- * Use `create(GroupDeltaSchema)` to create a new message.
- */
-export const GroupDeltaSchema: GenMessage<GroupDelta> = /*@__PURE__*/
-  messageDesc(file_content, 9);
+  messageDesc(file_content, 7);
 
 /**
  * One locale's version of a text. Markdown source with KaTeX-style math.
  * Used as `repeated Localization` wherever localizable text is needed
- * (Node/Edge/Group `label`, Diagram `title`, AnnotationEntry `content`).
+ * (Element/Edge `label`, Diagram `title`, AnnotationEntry `content`).
  *
  * Document's DiagramMetadata.canonical_locale determines which entry is the
  * fallback when render-time --locale doesn't match any explicit entry.
@@ -485,7 +402,43 @@ export type Localization = Message<"archeglyph.content.v1.Localization"> & {
  * Use `create(LocalizationSchema)` to create a new message.
  */
 export const LocalizationSchema: GenMessage<Localization> = /*@__PURE__*/
-  messageDesc(file_content, 10);
+  messageDesc(file_content, 8);
+
+/**
+ * @generated from enum archeglyph.content.v1.ElementRole
+ */
+export enum ElementRole {
+  /**
+   * Reads as ENTITY, so an element that says nothing is a real thing.
+   *
+   * @generated from enum value: ELEMENT_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The source asserts this element takes part in relations (a class, a file,
+   * a method, a component). May be an Edge endpoint. Open or closed, never
+   * DISSOLVED.
+   *
+   * @generated from enum value: ELEMENT_ROLE_ENTITY = 1;
+   */
+  ENTITY = 1,
+
+  /**
+   * Only gathers members ("auth subsystem"). Never an Edge endpoint. The only
+   * role that may be DISSOLVED. A grouping gathers siblings: inserting one must
+   * not change any entity's nearest-entity ancestor relative to the source.
+   *
+   * @generated from enum value: ELEMENT_ROLE_GROUPING = 2;
+   */
+  GROUPING = 2,
+}
+
+/**
+ * Describes the enum archeglyph.content.v1.ElementRole.
+ */
+export const ElementRoleSchema: GenEnum<ElementRole> = /*@__PURE__*/
+  enumDesc(file_content, 0);
 
 /**
  * @generated from enum archeglyph.content.v1.ChangeType
@@ -521,5 +474,5 @@ export enum ChangeType {
  * Describes the enum archeglyph.content.v1.ChangeType.
  */
 export const ChangeTypeSchema: GenEnum<ChangeType> = /*@__PURE__*/
-  enumDesc(file_content, 0);
+  enumDesc(file_content, 1);
 

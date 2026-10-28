@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { NodeLayoutSchema, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayoutSchema, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
@@ -61,7 +61,7 @@ describe('an unpinned box is sized to hold its own label', () => {
   test('an explicit size still wins over the measurement', async () => {
     const node = init(new ResolvedNode(), {
       id: 'pinned', shape: {} as never, typography: typography(), label: label(LONG),
-      layout: create(NodeLayoutSchema, { size: create(Vec2Schema, { x: 64, y: 20 }) }),
+      layout: create(ElementLayoutSchema, { size: create(Vec2Schema, { x: 64, y: 20 }) }),
     });
     const graph = await elkGraph(init(new ResolvedDiagram(), {
       id: 'd', canvas: {} as never, nodes: { pinned: node }, edges: {}, groups: {}, annotations: {},
@@ -76,7 +76,7 @@ describe('an unpinned box is sized to hold its own label', () => {
     });
     const pinned = init(new ResolvedNode(), {
       id: 'n', shape: {} as never, typography: typography(), label: label(LONG),
-      layout: create(NodeLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
+      layout: create(ElementLayoutSchema, { position: create(Vec2Schema, { x: 0, y: 0 }) }),
     });
     const diagram = (node: ResolvedNode) => init(new ResolvedDiagram(), {
       id: 'd', canvas: {} as never, nodes: { n: node }, edges: {}, groups: {}, annotations: {},

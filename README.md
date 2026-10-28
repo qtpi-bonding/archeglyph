@@ -148,12 +148,25 @@ names has to already be on the reader's machine, which is why a generic
 family travels further than a specific one.
 
 To skip the manual step, [`.github/workflows/diagrams.yml`](.github/workflows/diagrams.yml)
-does it for you: on a pull request that touches a diagram it re-renders each
-one, and keeps a single comment showing the current picture with a link that
-opens it in the editor, this pull request's review comments included. It also
-says when a committed SVG no longer matches the source it was rendered from,
-which is the same determinism the golden renders check. The convention it follows is
-that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+does it for you. On a pull request that touches a diagram, its stylesheet, a
+theme or the renderer, it re-renders each affected diagram and keeps a single
+comment that shows, for each one:
+
+- what changed, in words — elements and edges added, removed or changed;
+- the **before and after** pictures side by side. Both are the SVGs the
+  repository committed, one at the commit the branch left and one at its head,
+  so nothing is hosted anywhere and each picture stays what the comment
+  described;
+- links that open the diagram in the editor, and compare it with the base
+  there.
+
+A diagram that did not change collapses to one line. The convention it follows
+is that `x.diag.json` renders to `x.svg` beside it — see `examples/`.
+
+The check **fails the pull request** when a committed SVG no longer matches the
+source it was rendered from, or has none: the same determinism the golden
+renders check. The comment is posted first and says which one and how to fix
+it.
 
 It comments only on pull requests from the repository itself. A fork's token
 is read-only by design, and the alternative (`pull_request_target`) would hand
@@ -191,6 +204,18 @@ scripts/architecture_diagram.ts`. The `.archegraph/specs/` directory and the
 `spec/<pillar>-v1` tags hold the build history of every pillar here, if you
 would rather check that than take it on trust.
 
+The package diagram is the top of the zoom. The same index also holds every
+file, class and function, which is far too much to draw at once: 8,500 elements
+and 39,000 edges. `archeglyph open` chooses a readable piece of it.
+
+![two files of archeglyph's own source, and the calls around them](docs/img/code-view.svg)
+
+<sub>Two files, `resolver/visibility_filter/impl.ts` and
+`layout/layout_adapter/impl.ts`, each opened one level, with whatever is one
+edge away left as closed blocks and only `invocation` edges drawn. Regenerate
+with `bun run code-view`; the picks, depth, hops and kind are at the top of
+`scripts/code_view.ts`.</sub>
+
 archeglyph does not depend on any of it. It is a general node-and-edge engine;
 archegraph is one importer, alongside DOT, Mermaid and JSON later.
 
@@ -205,8 +230,8 @@ theme.theme.json     ──┘
 (optional)
 ```
 
-- **content** — graph topology (nodes, edges, groups, localizable labels, tags)
-- **style** — per-element layout, visual overrides, component bindings, annotations
+- **content** — graph topology (elements that may contain other elements, edges, localizable labels, tags)
+- **style** — per-element layout, render modes, visual overrides, component bindings, annotations
 - **theme** — design system: tokens (colors, fonts, sizes) + named components
 
 All three files are canonical proto3 JSON. The renderer emits a deterministic SVG with an embedded provenance comment.
@@ -226,7 +251,7 @@ All three files are canonical proto3 JSON. The renderer emits a deterministic SV
 
 The styling vocabulary is organized as three orthogonal "glyph" types:
 
-- **Glyph2D** — visual identity of a shape-based element (Node, Group, Annotation): geometry + outline + fill + halo + decorations
+- **Glyph2D** — visual identity of a shape-based element (Element, Annotation): geometry + outline + fill + halo + decorations
 - **Glyph1D** — visual identity of a line-based element (Edge, Annotation callout): stroke + arrowheads + glow
 - **Typography** — visual identity of text: font, color, size, weight, alignment, visibility
 

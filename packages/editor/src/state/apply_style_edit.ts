@@ -6,8 +6,7 @@ import {
   AnnotationEntry,
   CanvasStyle,
   EdgeStyleEntry,
-  GroupStyleEntry,
-  NodeStyleEntry,
+  ElementStyleEntry,
   Stylesheet,
   StylesheetSchema,
   StyleChangeType,
@@ -17,10 +16,10 @@ import {
 import { FeatureSet_FieldPresence } from '@bufbuild/protobuf/wkt';
 
 export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit): Stylesheet {
-  const newNodes: { [key: string]: NodeStyleEntry } = applyMapChanges(
-    current.nodes,
-    edit.nodeChanges,
-    (change) => change.nodeId,
+  const newElements: { [key: string]: ElementStyleEntry } = applyMapChanges(
+    current.elements,
+    edit.elementChanges,
+    (change) => change.elementId,
     (change) => change.changeType,
     (change) => change.after,
     (change) => change.unsetPaths,
@@ -29,14 +28,6 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     current.edges,
     edit.edgeChanges,
     (change) => change.edgeId,
-    (change) => change.changeType,
-    (change) => change.after,
-    (change) => change.unsetPaths,
-  );
-  const newGroups: { [key: string]: GroupStyleEntry } = applyMapChanges(
-    current.groups,
-    edit.groupChanges,
-    (change) => change.groupId,
     (change) => change.changeType,
     (change) => change.after,
     (change) => change.unsetPaths,
@@ -60,11 +51,12 @@ export function applyStyleEditToStylesheet(current: Stylesheet, edit: StyleEdit)
     schemaVersion: current.schemaVersion,
     themes: newThemes,
     canvas: newCanvas,
-    nodes: newNodes,
+    elements: newElements,
     edges: newEdges,
-    groups: newGroups,
     annotations: newAnnotations,
     pendingEdits: current.pendingEdits,
+    openDepth: current.openDepth,
+    shownEdgeKinds: current.shownEdgeKinds,
   });
 }
 /** A protobuf-es message, which carries $typeName; a map or oneof wrapper does not. */

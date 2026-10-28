@@ -18,6 +18,7 @@ import { Ok, type Result } from '@archeglyph/proto/util/result';
 import type { AdapterError, FileStamp, HostAdapter, LoadResult } from '../adapters/host_adapter';
 import type { EditorState } from '../state/editor_state';
 import { createSaveController, type SaveController } from './save_controller';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 /** A host that records writes instead of performing them. */
 class FakeAdapter implements HostAdapter {
@@ -59,7 +60,7 @@ class FakeAdapter implements HostAdapter {
 /** Just enough EditorState to drive the controller's version effect. */
 function fakeState(): { state: EditorState; edit: () => void } {
   const [version, setVersion] = createSignal<number>(0);
-  const sheet = create(StylesheetSchema, { schemaVersion: 1 });
+  const sheet = create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION });
   const state = {
     diagram: () => { throw new Error('not used'); },
     stylesheet: (): Stylesheet => sheet,

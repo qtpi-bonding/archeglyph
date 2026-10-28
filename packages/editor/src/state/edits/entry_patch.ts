@@ -13,14 +13,12 @@ import {
   EdgeStyleEntrySchema,
   Glyph1D,
   Glyph2D,
+  BoxLayoutSchema,
+  ElementLayoutSchema,
+  ElementStyleEntry,
+  ElementStyleEntrySchema,
   GroupLabelPosition,
-  GroupLayoutSchema,
   GroupRenderMode,
-  GroupStyleEntry,
-  GroupStyleEntrySchema,
-  NodeLayoutSchema,
-  NodeStyleEntry,
-  NodeStyleEntrySchema,
   NodeVisibility,
   Typography,
   Vec2
@@ -52,9 +50,9 @@ export interface AnnotationEntryPatch {
   callout?: Glyph1D; component?: string;
 }
 
-export function patchNodeEntry(existing: NodeStyleEntry | undefined, patch: NodeEntryPatch): NodeStyleEntry {
+export function patchNodeEntry(existing: ElementStyleEntry | undefined, patch: NodeEntryPatch): ElementStyleEntry {
   const hasLayoutPatch = patch.position !== undefined || patch.size !== undefined || patch.rotation !== undefined;
-  return create(NodeStyleEntrySchema, { ...initOf(existing), ...(hasLayoutPatch ? { layout: create(NodeLayoutSchema, {
+  return create(ElementStyleEntrySchema, { ...initOf(existing), ...(hasLayoutPatch ? { layout: create(ElementLayoutSchema, {
     ...initOf(existing?.layout), ...(patch.position === undefined ? {} : { position: patch.position }),
     ...(patch.size === undefined ? {} : { size: patch.size }), ...(patch.rotation === undefined ? {} : { rotation: patch.rotation }),
   }) } : {}), ...(patch.shape === undefined ? {} : { shape: patch.shape }),
@@ -88,12 +86,13 @@ export function patchEdgeEntry(existing: EdgeStyleEntry | undefined, patch: Edge
     ...(patch.component === undefined ? {} : { component: patch.component }) });
 }
 
-export function patchGroupEntry(existing: GroupStyleEntry | undefined, patch: GroupEntryPatch): GroupStyleEntry {
-  const hasLayoutPatch = patch.position !== undefined || patch.size !== undefined || patch.padding !== undefined || patch.renderMode !== undefined || patch.labelPosition !== undefined;
-  return create(GroupStyleEntrySchema, { ...initOf(existing), ...(hasLayoutPatch ? { layout: create(GroupLayoutSchema, { ...initOf(existing?.layout),
+export function patchGroupEntry(existing: ElementStyleEntry | undefined, patch: GroupEntryPatch): ElementStyleEntry {
+  const hasLayoutPatch = patch.position !== undefined || patch.size !== undefined || patch.padding !== undefined || patch.labelPosition !== undefined;
+  return create(ElementStyleEntrySchema, { ...initOf(existing), ...(hasLayoutPatch ? { boxLayout: create(BoxLayoutSchema, { ...initOf(existing?.boxLayout),
     ...(patch.position === undefined ? {} : { position: patch.position }), ...(patch.size === undefined ? {} : { size: patch.size }),
-    ...(patch.padding === undefined ? {} : { padding: patch.padding }), ...(patch.renderMode === undefined ? {} : { renderMode: patch.renderMode }),
+    ...(patch.padding === undefined ? {} : { padding: patch.padding }),
     ...(patch.labelPosition === undefined ? {} : { labelPosition: patch.labelPosition }) }) } : {}),
-    ...(patch.shape === undefined ? {} : { shape: patch.shape }), ...(patch.typography === undefined ? {} : { typography: patch.typography }),
-    ...(patch.component === undefined ? {} : { component: patch.component }) });
+    ...(patch.renderMode === undefined ? {} : { renderMode: patch.renderMode }),
+    ...(patch.shape === undefined ? {} : { box: patch.shape }), ...(patch.typography === undefined ? {} : { typography: patch.typography }),
+    ...(patch.component === undefined ? {} : { boxComponent: patch.component }) });
 }

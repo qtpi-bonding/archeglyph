@@ -18,6 +18,7 @@ import { type RenderParams, renderParamsSchema } from './render_params';
 import { RenderOutput } from './render_output';
 import { RenderOpError } from './render_op_error';
 import { deriveDefaultStylePath } from '../style_path';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { init } from '@archeglyph/proto/util/init';
 import { resolveThemes } from '../themes/resolve_themes';
 
@@ -87,7 +88,7 @@ export const renderOp: Operation<RenderParams, RenderOutput> = {
     // Skipped on the delta path: the union does not exist yet, so
     // renderPipeline seeds it after merging.
     const seeded = delta === undefined
-      ? seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: 1 }), themes.get('default'))
+      ? seedComponentBindings(diagramResult.value, stylesheet ?? create(StylesheetSchema, { schemaVersion: STYLE_SCHEMA_VERSION }), themes.get('default'))
       : stylesheet;
     const layoutEngine = new LayoutEngineImpl(new ElkAdapterImpl(createNodeElk()));
     const pipelineResult = await renderPipeline(diagramResult.value, seeded, themes, layoutEngine, delta);

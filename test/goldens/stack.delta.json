@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "baseRef": "examples/stack-managed.diag.json",
   "targetRef": "examples/stack-selfhosted.diag.json",
-  "nodeDeltas": [
+  "elementDeltas": [
     {
-      "nodeId": "auth0",
+      "elementId": "auth0",
       "changeType": "DELETED",
       "before": {
         "label": [
@@ -13,11 +13,11 @@
             "source": "Auth0"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       }
     },
     {
-      "nodeId": "caddy",
+      "elementId": "caddy",
       "changeType": "ADDED",
       "after": {
         "label": [
@@ -29,7 +29,7 @@
       }
     },
     {
-      "nodeId": "heroku",
+      "elementId": "heroku",
       "changeType": "DELETED",
       "before": {
         "label": [
@@ -41,7 +41,20 @@
       }
     },
     {
-      "nodeId": "keycloak",
+      "elementId": "hosted",
+      "changeType": "DELETED",
+      "before": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Managed"
+          }
+        ],
+        "role": "ELEMENT_ROLE_GROUPING"
+      }
+    },
+    {
+      "elementId": "keycloak",
       "changeType": "ADDED",
       "after": {
         "label": [
@@ -50,11 +63,24 @@
             "source": "Keycloak"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       }
     },
     {
-      "nodeId": "planetscale",
+      "elementId": "ours",
+      "changeType": "ADDED",
+      "after": {
+        "label": [
+          {
+            "locale": "en",
+            "source": "Self-hosted"
+          }
+        ],
+        "role": "ELEMENT_ROLE_GROUPING"
+      }
+    },
+    {
+      "elementId": "planetscale",
       "changeType": "DELETED",
       "before": {
         "label": [
@@ -63,11 +89,11 @@
             "source": "PlanetScale"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       }
     },
     {
-      "nodeId": "postgres",
+      "elementId": "postgres",
       "changeType": "ADDED",
       "after": {
         "label": [
@@ -76,11 +102,11 @@
             "source": "Postgres"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       }
     },
     {
-      "nodeId": "restic",
+      "elementId": "restic",
       "changeType": "ADDED",
       "after": {
         "label": [
@@ -92,7 +118,7 @@
       }
     },
     {
-      "nodeId": "segment",
+      "elementId": "segment",
       "changeType": "DELETED",
       "before": {
         "label": [
@@ -101,11 +127,11 @@
             "source": "Segment"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       }
     },
     {
-      "nodeId": "upstash",
+      "elementId": "upstash",
       "changeType": "DELETED",
       "before": {
         "label": [
@@ -114,11 +140,11 @@
             "source": "Upstash Redis"
           }
         ],
-        "parentGroup": "hosted"
+        "parent": "hosted"
       }
     },
     {
-      "nodeId": "valkey",
+      "elementId": "valkey",
       "changeType": "ADDED",
       "after": {
         "label": [
@@ -127,7 +153,7 @@
             "source": "Valkey"
           }
         ],
-        "parentGroup": "ours"
+        "parent": "ours"
       }
     }
   ],
@@ -210,32 +236,6 @@
       "after": {
         "source": "postgres",
         "target": "restic"
-      }
-    }
-  ],
-  "groupDeltas": [
-    {
-      "groupId": "hosted",
-      "changeType": "DELETED",
-      "before": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "Managed"
-          }
-        ]
-      }
-    },
-    {
-      "groupId": "ours",
-      "changeType": "ADDED",
-      "after": {
-        "label": [
-          {
-            "locale": "en",
-            "source": "Self-hosted"
-          }
-        ]
       }
     }
   ]

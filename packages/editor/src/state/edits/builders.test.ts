@@ -17,19 +17,17 @@ import {
   AnnotationEntry,
   AnnotationEntrySchema,
   AnnotationLayoutSchema,
+  BoxLayoutSchema,
   CanvasStyleSchema,
   EdgeLayoutSchema,
   EdgeRouting,
   EdgeStyleEntrySchema,
+  ElementLayoutSchema,
+  ElementStyleEntry,
+  ElementStyleEntrySchema,
   Glyph1DSchema,
   Glyph2DSchema,
-  GroupLayoutSchema,
   GroupRenderMode,
-  GroupStyleEntry,
-  GroupStyleEntrySchema,
-  NodeLayoutSchema,
-  NodeStyleEntry,
-  NodeStyleEntrySchema,
   NodeVisibility,
   RefKind,
   StyleChangeType,
@@ -42,6 +40,7 @@ import {
   Vec2Schema,
 } from '@archeglyph/proto/gen/style_pb';
 import { LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 import { applyStyleEditToStylesheet } from '../apply_style_edit';
 
@@ -51,7 +50,7 @@ import {
   patchGroupEntry,
   patchAnnotationEntry,
 } from './entry_patch';
-import { styleEdit, nodeChange, edgeChange, groupChange, annotationChange } from './edit_builder';
+import { styleEdit, elementChange, edgeChange, annotationChange } from './edit_builder';
 import { moveNodeEdit, moveElementsEdit, moveGroupEdit, moveAnnotationEdit, ElementMove } from './move';
 import { resizeNodeEdit, resizeGroupEdit, resizeAnnotationEdit, clearNodeSizeEdit } from './resize';
 import { setNodeHiddenEdit, setNodesHiddenEdit, showAllEdit } from './visibility';
@@ -79,22 +78,21 @@ function vec2(x: number, y: number): Vec2 {
 
 function emptyStylesheet(overrides: Omit<Partial<Stylesheet>, '$typeName' | '$unknown'> = {}): Stylesheet {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {},
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {},
     edges: {},
-    groups: {},
     annotations: {},
     pendingEdits: [],
     ...overrides,
   });
 }
 
-function nodeEntry(overrides: Partial<NodeStyleEntry> = {}): NodeStyleEntry {
-  return create(NodeStyleEntrySchema, overrides);
+function nodeEntry(overrides: Partial<ElementStyleEntry> = {}): ElementStyleEntry {
+  return create(ElementStyleEntrySchema, overrides);
 }
 
-function groupEntry(overrides: Partial<GroupStyleEntry> = {}): GroupStyleEntry {
-  return create(GroupStyleEntrySchema, overrides);
+function groupEntry(overrides: Partial<ElementStyleEntry> = {}): ElementStyleEntry {
+  return create(ElementStyleEntrySchema, overrides);
 }
 
 function annotationEntry(overrides: Partial<Omit<AnnotationEntry, '$typeName' | '$unknown'>> = {}): AnnotationEntry {
@@ -164,7 +162,7 @@ describe('patchNodeEntry', () => {
 
   test('patching position does not clear existing size or rotation (layout merges field-wise)', () => {
     const existing = nodeEntry({
-      layout: create(NodeLayoutSchema, { position: vec2(0, 0), size: vec2(50, 50), rotation: 45 }),
+      layout: create(ElementLayoutSchema, { position: vec2(0, 0), size: vec2(50, 50), rotation: 45 }),
     });
     const result = patchNodeEntry(existing, { position: vec2(9, 9) });
     expect(result.layout?.position).toEqual(vec2(9, 9));
@@ -217,18 +215,18 @@ describe('patchEdgeEntry', () => {
 describe('patchGroupEntry', () => {
   test('patching position preserves padding, renderMode and labelPosition', () => {
     const existing = groupEntry({
-      layout: create(GroupLayoutSchema, {
+      boxLayout: create(BoxLayoutSchema, {
         position: vec2(0, 0),
         padding: 8,
-        renderMode: GroupRenderMode.CONTRACTED,
         labelPosition: 3,
       }),
+      renderMode: GroupRenderMode.CLOSED,
     });
     const result = patchGroupEntry(existing, { position: vec2(3, 3) });
-    expect(result.layout?.position).toEqual(vec2(3, 3));
-    expect(result.layout?.padding).toBe(8);
-    expect(result.layout?.renderMode).toBe(GroupRenderMode.CONTRACTED);
-    expect(result.layout?.labelPosition).toBe(3);
+    expect(result.boxLayout?.position).toEqual(vec2(3, 3));
+    expect(result.boxLayout?.padding).toBe(8);
+    expect(result.renderMode).toBe(GroupRenderMode.CLOSED);
+    expect(result.boxLayout?.labelPosition).toBe(3);
   });
 });
 
@@ -276,19 +274,19 @@ describe('styleEdit', () => {
   });
 });
 
-describe('nodeChange / edgeChange / groupChange — change_type per spec doc', () => {
-  test('nodeChange with an after entry is MODIFIED (first write and update are not distinguished)', () => {
+describe('elementChange / edgeChange — change_type per spec doc', () => {
+  test('elementChange with an after entry is MODIFIED (first write and update are not distinguished)', () => {
     const entry = nodeEntry({ component: 'x' });
-    const change = nodeChange('n1', entry);
+    const change = elementChange('n1', entry);
     expect(change.changeType).toBe(StyleChangeType.MODIFIED);
     expect(change.after).toEqual(entry);
   });
 
-  // Spec (edit_builder.spec.textproto, nodeChange doc): "DELETED (used by
+  // Spec (edit_builder.spec.textproto, elementChange doc): "DELETED (used by
   // layout_command) drops the entry entirely and is spelled with an absent
   // `after`." An absent `after` should therefore produce changeType DELETED.
-  test('nodeChange with no after is spelled DELETED per spec doc', () => {
-    const change = nodeChange('n1');
+  test('elementChange with no after is spelled DELETED per spec doc', () => {
+    const change = elementChange('n1');
     expect(change.after).toBeUndefined();
     expect(change.changeType).toBe(StyleChangeType.DELETED);
   });
@@ -299,8 +297,8 @@ describe('nodeChange / edgeChange / groupChange — change_type per spec doc', (
     expect(change.changeType).toBe(StyleChangeType.DELETED);
   });
 
-  test('groupChange with no after is spelled DELETED per the same parallel-structure contract', () => {
-    const change = groupChange('g1');
+  test('elementChange with no after, for a group, is spelled DELETED per the same parallel-structure contract', () => {
+    const change = elementChange('g1');
     expect(change.after).toBeUndefined();
     expect(change.changeType).toBe(StyleChangeType.DELETED);
   });
@@ -327,9 +325,9 @@ describe('annotationChange — annotations ADD/DELETE rather than MODIFY (annota
 describe('moveNodeEdit', () => {
   test('preserves size, rotation and every visual field on the existing entry (per doc)', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({
-          layout: create(NodeLayoutSchema, { size: vec2(20, 20), rotation: 15 }),
+          layout: create(ElementLayoutSchema, { size: vec2(20, 20), rotation: 15 }),
           shape: create(Glyph2DSchema, { cornerRadius: 3 }),
           typography: create(TypographySchema, { size: 10 }),
           component: 'box',
@@ -339,7 +337,7 @@ describe('moveNodeEdit', () => {
     });
     const edit = moveNodeEdit(sheet, 'n1', vec2(100, 100));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.layout?.position).toEqual(vec2(100, 100));
     expect(after.layout?.size).toEqual(vec2(20, 20));
     expect(after.layout?.rotation).toBe(15);
@@ -351,41 +349,43 @@ describe('moveNodeEdit', () => {
 
   test('moving one node does not disturb a sibling node entry', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({ component: 'moved' }),
         n2: nodeEntry({ component: 'sibling' }),
       },
     });
     const edit = moveNodeEdit(sheet, 'n1', vec2(5, 5));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n2']).toEqual(sheet.nodes['n2']);
+    expect(applied.elements['n2']).toEqual(sheet.elements['n2']);
   });
 
   test('moving a node with no prior entry pins only its position, leaving other fields absent', () => {
     const sheet = emptyStylesheet();
     const edit = moveNodeEdit(sheet, 'n1', vec2(3, 4));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.layout?.position).toEqual(vec2(3, 4));
     expect(after.layout?.size).toBeUndefined();
     expect(after.shape).toBeUndefined();
   });
 
   test('is idempotent: applying the same move twice yields the same stylesheet', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ component: 'box' }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ component: 'box' }) } });
     const edit = moveNodeEdit(sheet, 'n1', vec2(7, 7));
     const once = applyStyleEditToStylesheet(sheet, edit);
     const editAgain = moveNodeEdit(once, 'n1', vec2(7, 7));
     const twice = applyStyleEditToStylesheet(once, editAgain);
-    expect(twice.nodes['n1']).toEqual(once.nodes['n1']);
+    expect(twice.elements['n1']).toEqual(once.elements['n1']);
   });
 });
 
 describe('moveElementsEdit', () => {
   test('one edit moves nodes, groups and annotations together, each keeping its own other fields', () => {
     const sheet = emptyStylesheet({
-      nodes: { n1: nodeEntry({ component: 'node-comp' }) },
-      groups: { g1: groupEntry({ component: 'group-comp' }) },
+      elements: {
+        n1: nodeEntry({ component: 'node-comp' }),
+        g1: groupEntry({ boxComponent: 'group-comp' }),
+      },
       annotations: { a1: annotationEntry({ component: 'annot-comp' }) },
     });
     const moves: ElementMove[] = [
@@ -395,19 +395,19 @@ describe('moveElementsEdit', () => {
     ];
     const edit = moveElementsEdit(sheet, moves);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout?.position).toEqual(vec2(1, 1));
-    expect(applied.nodes['n1'].component).toBe('node-comp');
-    expect(applied.groups['g1'].layout?.position).toEqual(vec2(2, 2));
-    expect(applied.groups['g1'].component).toBe('group-comp');
+    expect(applied.elements['n1'].layout?.position).toEqual(vec2(1, 1));
+    expect(applied.elements['n1'].component).toBe('node-comp');
+    expect(applied.elements['g1'].boxLayout?.position).toEqual(vec2(2, 2));
+    expect(applied.elements['g1'].boxComponent).toBe('group-comp');
     expect(applied.annotations['a1'].layout?.position).toEqual(vec2(3, 3));
     expect(applied.annotations['a1'].component).toBe('annot-comp');
   });
 
   test('an empty move list produces an edit that changes nothing when applied', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ component: 'unchanged' }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ component: 'unchanged' }) } });
     const edit = moveElementsEdit(sheet, []);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1']).toEqual(sheet.nodes['n1']);
+    expect(applied.elements['n1']).toEqual(sheet.elements['n1']);
   });
 
   // Doc: "Edges are not movable and are skipped if present". ElementMove's
@@ -425,12 +425,12 @@ describe('moveElementsEdit', () => {
 describe('moveGroupEdit / moveAnnotationEdit', () => {
   test('moveGroupEdit preserves the group size', () => {
     const sheet = emptyStylesheet({
-      groups: { g1: groupEntry({ layout: create(GroupLayoutSchema, { size: vec2(40, 40) }) }) },
+      elements: { g1: groupEntry({ boxLayout: create(BoxLayoutSchema, { size: vec2(40, 40) }) }) },
     });
     const edit = moveGroupEdit(sheet, 'g1', vec2(11, 11));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['g1'].layout?.position).toEqual(vec2(11, 11));
-    expect(applied.groups['g1'].layout?.size).toEqual(vec2(40, 40));
+    expect(applied.elements['g1'].boxLayout?.position).toEqual(vec2(11, 11));
+    expect(applied.elements['g1'].boxLayout?.size).toEqual(vec2(40, 40));
   });
 
   test('moveAnnotationEdit preserves content and shape', () => {
@@ -457,16 +457,16 @@ describe('moveGroupEdit / moveAnnotationEdit', () => {
 describe('resizeNodeEdit / resizeGroupEdit / resizeAnnotationEdit', () => {
   test('resizeNodeEdit writes both position and size, preserving rotation and shape', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({
-          layout: create(NodeLayoutSchema, { rotation: 30 }),
+          layout: create(ElementLayoutSchema, { rotation: 30 }),
           shape: create(Glyph2DSchema, { cornerRadius: 5 }),
         }),
       },
     });
     const edit = resizeNodeEdit(sheet, 'n1', vec2(1, 1), vec2(50, 60));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.layout?.position).toEqual(vec2(1, 1));
     expect(after.layout?.size).toEqual(vec2(50, 60));
     expect(after.layout?.rotation).toBe(30);
@@ -475,20 +475,21 @@ describe('resizeNodeEdit / resizeGroupEdit / resizeAnnotationEdit', () => {
 
   test('resizeGroupEdit does not touch renderMode or labelPosition', () => {
     const sheet = emptyStylesheet({
-      groups: {
+      elements: {
         g1: groupEntry({
-          layout: create(GroupLayoutSchema, { renderMode: GroupRenderMode.EXPANDED, labelPosition: 2 }),
+          boxLayout: create(BoxLayoutSchema, { labelPosition: 2 }),
+          renderMode: GroupRenderMode.DISSOLVED,
         }),
       },
     });
     const edit = resizeGroupEdit(sheet, 'g1', vec2(0, 0), vec2(10, 10));
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['g1'].layout?.renderMode).toBe(GroupRenderMode.EXPANDED);
-    expect(applied.groups['g1'].layout?.labelPosition).toBe(2);
+    expect(applied.elements['g1'].renderMode).toBe(GroupRenderMode.DISSOLVED);
+    expect(applied.elements['g1'].boxLayout?.labelPosition).toBe(2);
   });
 
   test('resizeAnnotationEdit preserves the anchor', () => {
-    const anchor = create(AnnotationAnchorSchema, { refId: 'n9', refKind: RefKind.NODE });
+    const anchor = create(AnnotationAnchorSchema, { refId: 'n9', refKind: RefKind.ELEMENT });
     const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor }) } });
     const edit = resizeAnnotationEdit(sheet, 'a1', vec2(2, 2), vec2(30, 30));
     const applied = applyStyleEditToStylesheet(sheet, edit);
@@ -500,16 +501,16 @@ describe('resizeNodeEdit / resizeGroupEdit / resizeAnnotationEdit', () => {
 describe('clearNodeSizeEdit', () => {
   test('hands the size back to the label measurement while keeping position and rotation', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({
-          layout: create(NodeLayoutSchema, { position: vec2(1, 2), size: vec2(99, 99), rotation: 7 }),
+          layout: create(ElementLayoutSchema, { position: vec2(1, 2), size: vec2(99, 99), rotation: 7 }),
           shape: create(Glyph2DSchema, { cornerRadius: 6 }),
         }),
       },
     });
     const edit = clearNodeSizeEdit(sheet, 'n1');
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.layout?.size).toBeUndefined();
     expect(after.layout?.position).toEqual(vec2(1, 2));
     expect(after.layout?.rotation).toBe(7);
@@ -520,7 +521,7 @@ describe('clearNodeSizeEdit', () => {
     const sheet = emptyStylesheet();
     const edit = clearNodeSizeEdit(sheet, 'ghost');
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['ghost']).toBeUndefined();
+    expect(applied.elements['ghost']).toBeUndefined();
   });
 });
 
@@ -531,42 +532,42 @@ describe('clearNodeSizeEdit', () => {
 describe('setNodeHiddenEdit / setNodesHiddenEdit / showAllEdit', () => {
   test('hiding sets NODE_VISIBILITY_HIDDEN and preserves other fields', () => {
     const sheet = emptyStylesheet({
-      nodes: { n1: nodeEntry({ component: 'kept', layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }) },
+      elements: { n1: nodeEntry({ component: 'kept', layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }) },
     });
     const edit = setNodeHiddenEdit(sheet, 'n1', true);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].visibility).toBe(NodeVisibility.HIDDEN);
-    expect(applied.nodes['n1'].component).toBe('kept');
-    expect(applied.nodes['n1'].layout?.position).toEqual(vec2(1, 1));
+    expect(applied.elements['n1'].visibility).toBe(NodeVisibility.HIDDEN);
+    expect(applied.elements['n1'].component).toBe('kept');
+    expect(applied.elements['n1'].layout?.position).toEqual(vec2(1, 1));
   });
 
   test('un-hiding sets UNSPECIFIED, not some other "visible" variant (the schema has none)', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ visibility: NodeVisibility.HIDDEN }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ visibility: NodeVisibility.HIDDEN }) } });
     const edit = setNodeHiddenEdit(sheet, 'n1', false);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].visibility).toBe(NodeVisibility.UNSPECIFIED);
+    expect(applied.elements['n1'].visibility).toBe(NodeVisibility.UNSPECIFIED);
   });
 
   test('setNodesHiddenEdit hides a selection as one edit without touching an unselected sibling', () => {
     const sheet = emptyStylesheet({
-      nodes: { n1: nodeEntry({}), n2: nodeEntry({ component: 'untouched' }) },
+      elements: { n1: nodeEntry({}), n2: nodeEntry({ component: 'untouched' }) },
     });
     const edit = setNodesHiddenEdit(sheet, ['n1'], true);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].visibility).toBe(NodeVisibility.HIDDEN);
-    expect(applied.nodes['n2']).toEqual(sheet.nodes['n2']);
+    expect(applied.elements['n1'].visibility).toBe(NodeVisibility.HIDDEN);
+    expect(applied.elements['n2']).toEqual(sheet.elements['n2']);
   });
 
   test('setNodesHiddenEdit with an empty selection changes nothing', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ component: 'x' }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ component: 'x' }) } });
     const edit = setNodesHiddenEdit(sheet, [], true);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1']).toEqual(sheet.nodes['n1']);
+    expect(applied.elements['n1']).toEqual(sheet.elements['n1']);
   });
 
   test('showAllEdit clears every hidden node in the stylesheet', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({ visibility: NodeVisibility.HIDDEN, component: 'a' }),
         n2: nodeEntry({ visibility: NodeVisibility.HIDDEN, component: 'b' }),
         n3: nodeEntry({ component: 'c' }),
@@ -574,12 +575,12 @@ describe('setNodeHiddenEdit / setNodesHiddenEdit / showAllEdit', () => {
     });
     const edit = showAllEdit(sheet);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].visibility).toBe(NodeVisibility.UNSPECIFIED);
-    expect(applied.nodes['n2'].visibility).toBe(NodeVisibility.UNSPECIFIED);
-    expect(applied.nodes['n1'].component).toBe('a');
-    expect(applied.nodes['n2'].component).toBe('b');
-    expect(applied.nodes['n3'].visibility).not.toBe(NodeVisibility.HIDDEN);
-    expect(applied.nodes['n3'].component).toBe('c');
+    expect(applied.elements['n1'].visibility).toBe(NodeVisibility.UNSPECIFIED);
+    expect(applied.elements['n2'].visibility).toBe(NodeVisibility.UNSPECIFIED);
+    expect(applied.elements['n1'].component).toBe('a');
+    expect(applied.elements['n2'].component).toBe('b');
+    expect(applied.elements['n3'].visibility).not.toBe(NodeVisibility.HIDDEN);
+    expect(applied.elements['n3'].component).toBe('c');
   });
 
   // Doc says showAllEdit "Clears every NODE_VISIBILITY_HIDDEN" — implying only
@@ -588,16 +589,16 @@ describe('setNodeHiddenEdit / setNodesHiddenEdit / showAllEdit', () => {
   // ones that were never hidden, stamping an explicit UNSPECIFIED where the
   // field was previously simply absent.
   test('showAllEdit does not rewrite a node that was never hidden', () => {
-    const sheet = emptyStylesheet({ nodes: { n3: nodeEntry({ component: 'c' }) } });
+    const sheet = emptyStylesheet({ elements: { n3: nodeEntry({ component: 'c' }) } });
     const applied = applyStyleEditToStylesheet(sheet, showAllEdit(sheet));
-    expect(applied.nodes['n3']).toEqual(sheet.nodes['n3']);
+    expect(applied.elements['n3']).toEqual(sheet.elements['n3']);
   });
 
   test('showAllEdit on a stylesheet with no nodes is a no-op, not an error', () => {
     const sheet = emptyStylesheet();
     expect(() => showAllEdit(sheet)).not.toThrow();
     const applied = applyStyleEditToStylesheet(sheet, showAllEdit(sheet));
-    expect(applied.nodes).toEqual({});
+    expect(applied.elements).toEqual({});
   });
 });
 
@@ -654,14 +655,14 @@ describe('setAnnotationTextEdit', () => {
 describe('setAnnotationAnchorEdit', () => {
   test('anchors the annotation at a graph element', () => {
     const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({}) } });
-    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.NODE });
+    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.ELEMENT });
     const edit = setAnnotationAnchorEdit(sheet, 'a1', anchor);
     const applied = applyStyleEditToStylesheet(sheet, edit);
     expect(applied.annotations['a1'].anchor).toEqual(anchor);
   });
 
   test('detaches the annotation when anchor is absent, actually clearing the field', () => {
-    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.NODE });
+    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.ELEMENT });
     const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor }) } });
     const edit = setAnnotationAnchorEdit(sheet, 'a1', undefined);
     const applied = applyStyleEditToStylesheet(sheet, edit);
@@ -669,7 +670,7 @@ describe('setAnnotationAnchorEdit', () => {
   });
 
   test('detaching preserves the rest of the annotation (content, shape)', () => {
-    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.NODE });
+    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.ELEMENT });
     const sheet = emptyStylesheet({
       annotations: {
         a1: annotationEntry({
@@ -688,13 +689,13 @@ describe('setAnnotationAnchorEdit', () => {
   // The hint is target-local, and no editor UI writes it back.
   test('re-anchoring drops the old target\'s attachment hint', () => {
     const before = create(AnnotationAnchorSchema, {
-      refId: 'n1', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
+      refId: 'n1', refKind: RefKind.ELEMENT, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
     });
     const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor: before }) } });
 
     const applied = applyStyleEditToStylesheet(
       sheet,
-      setAnnotationAnchorEdit(sheet, 'a1', create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.NODE })),
+      setAnnotationAnchorEdit(sheet, 'a1', create(AnnotationAnchorSchema, { refId: 'n2', refKind: RefKind.ELEMENT })),
     );
 
     expect(applied.annotations['a1'].anchor?.refId).toBe('n2');
@@ -703,11 +704,11 @@ describe('setAnnotationAnchorEdit', () => {
 
   test('re-anchoring keeps a hint the new anchor states for itself', () => {
     const before = create(AnnotationAnchorSchema, {
-      refId: 'n1', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
+      refId: 'n1', refKind: RefKind.ELEMENT, anchorPosition: create(Vec2Schema, { x: 0, y: -1 }),
     });
     const sheet = emptyStylesheet({ annotations: { a1: annotationEntry({ anchor: before }) } });
     const next = create(AnnotationAnchorSchema, {
-      refId: 'n2', refKind: RefKind.NODE, anchorPosition: create(Vec2Schema, { x: 1, y: 0 }),
+      refId: 'n2', refKind: RefKind.ELEMENT, anchorPosition: create(Vec2Schema, { x: 1, y: 0 }),
     });
 
     const applied = applyStyleEditToStylesheet(sheet, setAnnotationAnchorEdit(sheet, 'a1', next));
@@ -749,17 +750,17 @@ describe('localized', () => {
 describe('setNodesGlyphEdit', () => {
   test('absent patch fields are left alone — a single-field commit does not clobber the rest', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({
           typography: create(TypographySchema, { size: 14 }),
           component: 'kept-component',
-          layout: create(NodeLayoutSchema, { position: vec2(1, 1) }),
+          layout: create(ElementLayoutSchema, { position: vec2(1, 1) }),
         }),
       },
     });
     const edit = setNodesGlyphEdit(sheet, ['n1'], { shape: create(Glyph2DSchema, { cornerRadius: 2 }) });
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.shape?.cornerRadius).toBe(2);
     expect(after.typography?.size).toBe(14);
     expect(after.component).toBe('kept-component');
@@ -768,18 +769,18 @@ describe('setNodesGlyphEdit', () => {
 
   test('setNodesGlyphEdit applies the same patch across a multi-selection as one edit, each node keeping its own other fields', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({ component: 'one' }),
         n2: nodeEntry({ component: 'two' }),
       },
     });
     const edit = setNodesGlyphEdit(sheet, ['n1', 'n2'], { typography: create(TypographySchema, { size: 20 }) });
-    expect(edit.nodeChanges).toHaveLength(2);
+    expect(edit.elementChanges).toHaveLength(2);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].typography?.size).toBe(20);
-    expect(applied.nodes['n1'].component).toBe('one');
-    expect(applied.nodes['n2'].typography?.size).toBe(20);
-    expect(applied.nodes['n2'].component).toBe('two');
+    expect(applied.elements['n1'].typography?.size).toBe(20);
+    expect(applied.elements['n1'].component).toBe('one');
+    expect(applied.elements['n2'].typography?.size).toBe(20);
+    expect(applied.elements['n2'].component).toBe('two');
   });
 });
 
@@ -800,19 +801,19 @@ describe('setEdgesGlyphEdit', () => {
 describe('setGroupsGlyphEdit', () => {
   test('setting renderMode preserves position and size', () => {
     const sheet = emptyStylesheet({
-      groups: { g1: groupEntry({ layout: create(GroupLayoutSchema, { position: vec2(2, 2), size: vec2(30, 30) }) }) },
+      elements: { g1: groupEntry({ boxLayout: create(BoxLayoutSchema, { position: vec2(2, 2), size: vec2(30, 30) }) }) },
     });
-    const edit = setGroupsGlyphEdit(sheet, ['g1'], { renderMode: GroupRenderMode.CONTRACTED });
+    const edit = setGroupsGlyphEdit(sheet, ['g1'], { renderMode: GroupRenderMode.CLOSED });
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['g1'].layout?.renderMode).toBe(GroupRenderMode.CONTRACTED);
-    expect(applied.groups['g1'].layout?.position).toEqual(vec2(2, 2));
-    expect(applied.groups['g1'].layout?.size).toEqual(vec2(30, 30));
+    expect(applied.elements['g1'].renderMode).toBe(GroupRenderMode.CLOSED);
+    expect(applied.elements['g1'].boxLayout?.position).toEqual(vec2(2, 2));
+    expect(applied.elements['g1'].boxLayout?.size).toEqual(vec2(30, 30));
   });
 });
 
 describe('setAnnotationsGlyphEdit', () => {
   test('patching callout preserves anchor and content', () => {
-    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.NODE });
+    const anchor = create(AnnotationAnchorSchema, { refId: 'n1', refKind: RefKind.ELEMENT });
     const sheet = emptyStylesheet({
       annotations: {
         a1: annotationEntry({ anchor, content: [create(LocalizationSchema, { locale: 'en', source: 'text' })] }),
@@ -837,7 +838,7 @@ describe('pinAllEdit', () => {
     const diagram = laidOutDiagram({ groups: [group], nodes: [node] });
     const edit = pinAllEdit(sheet, diagram);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout?.position).toEqual(vec2(50, 20));
+    expect(applied.elements['n1'].layout?.position).toEqual(vec2(50, 20));
   });
 
   test('a top-level node (no parent group) is pinned at its absolute position unchanged', () => {
@@ -846,18 +847,18 @@ describe('pinAllEdit', () => {
     const diagram = laidOutDiagram({ nodes: [node] });
     const edit = pinAllEdit(sheet, diagram);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout?.position).toEqual(vec2(42, 43));
+    expect(applied.elements['n1'].layout?.position).toEqual(vec2(42, 43));
   });
 
   test('an already-pinned element is rewritten with the new laid-out value rather than skipped', () => {
     const sheet = emptyStylesheet({
-      nodes: { n1: nodeEntry({ layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }) },
+      elements: { n1: nodeEntry({ layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }) },
     });
     const node = laidOutNode({ id: 'n1', position: vec2(77, 77) });
     const diagram = laidOutDiagram({ nodes: [node] });
     const edit = pinAllEdit(sheet, diagram);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout?.position).toEqual(vec2(77, 77));
+    expect(applied.elements['n1'].layout?.position).toEqual(vec2(77, 77));
   });
 
   test('pins groups relative to their own parent group', () => {
@@ -867,17 +868,17 @@ describe('pinAllEdit', () => {
     const diagram = laidOutDiagram({ groups: [outer, inner] });
     const edit = pinAllEdit(sheet, diagram);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['inner'].layout?.position).toEqual(vec2(20, 30));
-    expect(applied.groups['outer'].layout?.position).toEqual(vec2(10, 10));
+    expect(applied.elements['inner'].boxLayout?.position).toEqual(vec2(20, 30));
+    expect(applied.elements['outer'].boxLayout?.position).toEqual(vec2(10, 10));
   });
 });
 
 describe('unpinAllEdit', () => {
   test('clears position but keeps every other field on a node (colours survive unpinning)', () => {
     const sheet = emptyStylesheet({
-      nodes: {
+      elements: {
         n1: nodeEntry({
-          layout: create(NodeLayoutSchema, { position: vec2(5, 5), size: vec2(20, 20) }),
+          layout: create(ElementLayoutSchema, { position: vec2(5, 5), size: vec2(20, 20) }),
           shape: create(Glyph2DSchema, { cornerRadius: 3 }),
           component: 'keep',
         }),
@@ -885,7 +886,7 @@ describe('unpinAllEdit', () => {
     });
     const edit = unpinAllEdit(sheet);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    const after = applied.nodes['n1'];
+    const after = applied.elements['n1'];
     expect(after.layout?.position).toBeUndefined();
     expect(after.layout?.size).toEqual(vec2(20, 20));
     expect(after.shape?.cornerRadius).toBe(3);
@@ -894,48 +895,48 @@ describe('unpinAllEdit', () => {
 
   test('drops layout entirely when position was the only thing it held', () => {
     const sheet = emptyStylesheet({
-      nodes: { n1: nodeEntry({ layout: create(NodeLayoutSchema, { position: vec2(5, 5) }), component: 'keep' }) },
+      elements: { n1: nodeEntry({ layout: create(ElementLayoutSchema, { position: vec2(5, 5) }), component: 'keep' }) },
     });
     const edit = unpinAllEdit(sheet);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout).toBeUndefined();
-    expect(applied.nodes['n1'].component).toBe('keep');
+    expect(applied.elements['n1'].layout).toBeUndefined();
+    expect(applied.elements['n1'].component).toBe('keep');
   });
 
   test('also clears group positions while keeping group renderMode', () => {
     const sheet = emptyStylesheet({
-      groups: {
-        g1: groupEntry({ layout: create(GroupLayoutSchema, { position: vec2(1, 1), renderMode: GroupRenderMode.EXPANDED }) }),
+      elements: {
+        g1: groupEntry({ boxLayout: create(BoxLayoutSchema, { position: vec2(1, 1) }), renderMode: GroupRenderMode.DISSOLVED }),
       },
     });
     const edit = unpinAllEdit(sheet);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.groups['g1'].layout?.position).toBeUndefined();
-    expect(applied.groups['g1'].layout?.renderMode).toBe(GroupRenderMode.EXPANDED);
+    expect(applied.elements['g1'].boxLayout?.position).toBeUndefined();
+    expect(applied.elements['g1'].renderMode).toBe(GroupRenderMode.DISSOLVED);
   });
 
   test('a node with no layout at all is unaffected (nothing to unpin, no crash)', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ component: 'plain' }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ component: 'plain' }) } });
     expect(() => unpinAllEdit(sheet)).not.toThrow();
     const applied = applyStyleEditToStylesheet(sheet, unpinAllEdit(sheet));
-    expect(applied.nodes['n1'].component).toBe('plain');
-    expect(applied.nodes['n1'].layout).toBeUndefined();
+    expect(applied.elements['n1'].component).toBe('plain');
+    expect(applied.elements['n1'].layout).toBeUndefined();
   });
 });
 
 describe('unpinElementsEdit', () => {
   test('unpins only the referenced elements, leaving an un-referenced sibling pinned', () => {
     const sheet = emptyStylesheet({
-      nodes: {
-        n1: nodeEntry({ layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }),
-        n2: nodeEntry({ layout: create(NodeLayoutSchema, { position: vec2(2, 2) }) }),
+      elements: {
+        n1: nodeEntry({ layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }),
+        n2: nodeEntry({ layout: create(ElementLayoutSchema, { position: vec2(2, 2) }) }),
       },
     });
     const refs: ElementMove[] = [{ kind: 'node', id: 'n1', position: vec2(0, 0) }];
     const edit = unpinElementsEdit(sheet, refs);
     const applied = applyStyleEditToStylesheet(sheet, edit);
-    expect(applied.nodes['n1'].layout?.position).toBeUndefined();
-    expect(applied.nodes['n2'].layout?.position).toEqual(vec2(2, 2));
+    expect(applied.elements['n1'].layout?.position).toBeUndefined();
+    expect(applied.elements['n2'].layout?.position).toEqual(vec2(2, 2));
   });
 
   // Doc: "Annotations in `refs` are skipped: they are always explicitly
@@ -952,9 +953,9 @@ describe('unpinElementsEdit', () => {
   });
 
   test('an empty refs list changes nothing', () => {
-    const sheet = emptyStylesheet({ nodes: { n1: nodeEntry({ layout: create(NodeLayoutSchema, { position: vec2(1, 1) }) }) } });
+    const sheet = emptyStylesheet({ elements: { n1: nodeEntry({ layout: create(ElementLayoutSchema, { position: vec2(1, 1) }) }) } });
     const applied = applyStyleEditToStylesheet(sheet, unpinElementsEdit(sheet, []));
-    expect(applied.nodes['n1']).toEqual(sheet.nodes['n1']);
+    expect(applied.elements['n1']).toEqual(sheet.elements['n1']);
   });
 });
 

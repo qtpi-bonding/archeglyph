@@ -6,8 +6,7 @@ import {
   ColorSchema,
   FillSchema,
   Glyph2DSchema,
-  GroupStyleEntrySchema,
-  NodeStyleEntrySchema,
+  ElementStyleEntrySchema,
   ShapeType,
   StrokeSchema,
   StylesheetSchema,
@@ -16,6 +15,7 @@ import {
 import { commitShape } from './shape_commit';
 import { applyStyleEditToStylesheet } from '../../state/apply_style_edit';
 import type { InspectorModel } from '../model';
+import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -23,21 +23,20 @@ import type { InspectorModel } from '../model';
 
 function stylesheet() {
   return create(StylesheetSchema, {
-    schemaVersion: 1,
-    nodes: {},
+    schemaVersion: STYLE_SCHEMA_VERSION,
+    elements: {},
     edges: {},
-    groups: {},
     annotations: {},
     pendingEdits: [],
   });
 }
 
 function nodeEntry(overrides = {}) {
-  return create(NodeStyleEntrySchema, overrides);
+  return create(ElementStyleEntrySchema, overrides);
 }
 
 function groupEntry(overrides = {}) {
-  return create(GroupStyleEntrySchema, overrides);
+  return create(ElementStyleEntrySchema, overrides);
 }
 
 // ---------------------------------------------------------------------------
@@ -59,14 +58,13 @@ describe('commitShape', () => {
 
     test('returns undefined when value is already set on the only selected node', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, { cornerRadius: 5 }),
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
@@ -81,14 +79,13 @@ describe('commitShape', () => {
 
     test('returns a StyleEdit when value differs on a single node', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, { cornerRadius: 3 }),
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
@@ -99,8 +96,8 @@ describe('commitShape', () => {
       };
       const edit = commitShape(model, sheet, 'cornerRadius', 5);
       expect(edit).toBeDefined();
-      expect(edit?.nodeChanges).toHaveLength(1);
-      expect(edit?.groupChanges).toHaveLength(0);
+      expect(edit?.elementChanges).toHaveLength(1);
+      expect(edit?.elementChanges.map((change) => change.elementId)).toEqual(['n1']);
     });
   });
 
@@ -110,26 +107,25 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'cornerRadius', 6);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.cornerRadius).toBe(6);
+      expect(applied.elements['n1'].shape?.cornerRadius).toBe(6);
     });
 
     test('undefined value clears cornerRadius', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, { cornerRadius: 4 }),
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'cornerRadius', undefined);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.cornerRadius).toBeUndefined();
+      expect(applied.elements['n1'].shape?.cornerRadius).toBeUndefined();
     });
   });
 
@@ -139,16 +135,16 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'fill', '#ff0000');
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.fill?.paint.case).toBe('color');
-      if (applied.nodes['n1'].shape?.fill?.paint.case === 'color') {
-        expect(applied.nodes['n1'].shape.fill.paint.value.value).toBe('#ff0000');
+      expect(applied.elements['n1'].shape?.fill?.paint.case).toBe('color');
+      if (applied.elements['n1'].shape?.fill?.paint.case === 'color') {
+        expect(applied.elements['n1'].shape.fill.paint.value.value).toBe('#ff0000');
       }
     });
 
     test('undefined fill value clears the fill field', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, {
               fill: create(FillSchema, {
@@ -158,21 +154,20 @@ describe('commitShape', () => {
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'fill', undefined);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.fill).toBeUndefined();
+      expect(applied.elements['n1'].shape?.fill).toBeUndefined();
     });
   });
 
   describe('clearing a stroke part', () => {
     const strokedNode = () => create(StylesheetSchema, {
-      schemaVersion: 1,
-      nodes: {
+      schemaVersion: STYLE_SCHEMA_VERSION,
+      elements: {
         n1: nodeEntry({
           shape: create(Glyph2DSchema, {
             stroke: create(StrokeSchema, {
@@ -183,7 +178,6 @@ describe('commitShape', () => {
         }),
       },
       edges: {},
-      groups: {},
       annotations: {},
       pendingEdits: [],
     });
@@ -192,15 +186,15 @@ describe('commitShape', () => {
     test('undefined strokeColor clears the paint and leaves the width', () => {
       const sheet = strokedNode();
       const applied = applyStyleEditToStylesheet(sheet, commitShape(model, sheet, 'strokeColor', undefined)!);
-      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBeUndefined();
-      expect(applied.nodes['n1'].shape?.stroke?.width).toBe(3);
+      expect(applied.elements['n1'].shape?.stroke?.paint.case).toBeUndefined();
+      expect(applied.elements['n1'].shape?.stroke?.width).toBe(3);
     });
 
     test('undefined strokeWidth clears the width and leaves the paint', () => {
       const sheet = strokedNode();
       const applied = applyStyleEditToStylesheet(sheet, commitShape(model, sheet, 'strokeWidth', undefined)!);
-      expect(applied.nodes['n1'].shape?.stroke?.width).toBeUndefined();
-      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBe('color');
+      expect(applied.elements['n1'].shape?.stroke?.width).toBeUndefined();
+      expect(applied.elements['n1'].shape?.stroke?.paint.case).toBe('color');
     });
   });
 
@@ -210,16 +204,16 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'strokeColor', '#00ff00');
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBe('color');
-      if (applied.nodes['n1'].shape?.stroke?.paint.case === 'color') {
-        expect(applied.nodes['n1'].shape.stroke.paint.value.value).toBe('#00ff00');
+      expect(applied.elements['n1'].shape?.stroke?.paint.case).toBe('color');
+      if (applied.elements['n1'].shape?.stroke?.paint.case === 'color') {
+        expect(applied.elements['n1'].shape.stroke.paint.value.value).toBe('#00ff00');
       }
     });
 
     test('does not clear existing stroke width when setting color', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, {
               stroke: create(StrokeSchema, { width: 2 }),
@@ -227,15 +221,14 @@ describe('commitShape', () => {
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'strokeColor', '#0000ff');
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.stroke?.width).toBe(2);
-      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBe('color');
+      expect(applied.elements['n1'].shape?.stroke?.width).toBe(2);
+      expect(applied.elements['n1'].shape?.stroke?.paint.case).toBe('color');
     });
   });
 
@@ -245,13 +238,13 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'strokeWidth', 3);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.stroke?.width).toBe(3);
+      expect(applied.elements['n1'].shape?.stroke?.width).toBe(3);
     });
 
     test('does not clear existing stroke color when setting width', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({
             shape: create(Glyph2DSchema, {
               stroke: create(StrokeSchema, {
@@ -261,16 +254,15 @@ describe('commitShape', () => {
           }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1'], sections: [] };
       const edit = commitShape(model, sheet, 'strokeWidth', 5);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.stroke?.paint.case).toBe('color');
-      if (applied.nodes['n1'].shape?.stroke?.paint.case === 'color') {
-        expect(applied.nodes['n1'].shape.stroke.paint.value.value).toBe('#ff0000');
+      expect(applied.elements['n1'].shape?.stroke?.paint.case).toBe('color');
+      if (applied.elements['n1'].shape?.stroke?.paint.case === 'color') {
+        expect(applied.elements['n1'].shape.stroke.paint.value.value).toBe('#ff0000');
       }
     });
   });
@@ -290,9 +282,9 @@ describe('commitShape', () => {
       const edit = commitShape(model, sheet, 'shape', 'rect');
       expect(edit).toBeDefined();
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.shapeKind.case).toBe('standard');
-      if (applied.nodes['n1'].shape?.shapeKind.case === 'standard') {
-        expect(applied.nodes['n1'].shape.shapeKind.value).toBe(ShapeType.SHAPE_RECT);
+      expect(applied.elements['n1'].shape?.shapeKind.case).toBe('standard');
+      if (applied.elements['n1'].shape?.shapeKind.case === 'standard') {
+        expect(applied.elements['n1'].shape.shapeKind.value).toBe(ShapeType.SHAPE_RECT);
       }
     });
 
@@ -307,31 +299,29 @@ describe('commitShape', () => {
   describe('multi-select', () => {
     test('applies one edit to multiple nodes', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({}),
           n2: nodeEntry({}),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1', 'n2'], sections: [] };
       const edit = commitShape(model, sheet, 'cornerRadius', 8);
       expect(edit).toBeDefined();
-      expect(edit?.nodeChanges).toHaveLength(2);
+      expect(edit?.elementChanges).toHaveLength(2);
       const applied = applyStyleEditToStylesheet(sheet, edit!);
-      expect(applied.nodes['n1'].shape?.cornerRadius).toBe(8);
-      expect(applied.nodes['n2'].shape?.cornerRadius).toBe(8);
+      expect(applied.elements['n1'].shape?.cornerRadius).toBe(8);
+      expect(applied.elements['n2'].shape?.cornerRadius).toBe(8);
     });
 
     test('applies one edit to multiple groups', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {},
+        schemaVersion: STYLE_SCHEMA_VERSION,
         edges: {},
-        groups: {
+        elements: {
           g1: groupEntry({}),
           g2: groupEntry({}),
         },
@@ -341,18 +331,17 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'group', ids: ['g1', 'g2'], sections: [] };
       const edit = commitShape(model, sheet, 'fill', '#0000ff');
       expect(edit).toBeDefined();
-      expect(edit?.groupChanges).toHaveLength(2);
+      expect(edit?.elementChanges).toHaveLength(2);
     });
 
     test('returns undefined when all nodes already have the value', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({ shape: create(Glyph2DSchema, { cornerRadius: 4 }) }),
           n2: nodeEntry({ shape: create(Glyph2DSchema, { cornerRadius: 4 }) }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
@@ -363,30 +352,28 @@ describe('commitShape', () => {
 
     test('returns an edit when at least one node differs', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {
+        schemaVersion: STYLE_SCHEMA_VERSION,
+        elements: {
           n1: nodeEntry({ shape: create(Glyph2DSchema, { cornerRadius: 4 }) }),
           n2: nodeEntry({ shape: create(Glyph2DSchema, { cornerRadius: 5 }) }),
         },
         edges: {},
-        groups: {},
         annotations: {},
         pendingEdits: [],
       });
       const model: InspectorModel = { kind: 'node', ids: ['n1', 'n2'], sections: [] };
       const edit = commitShape(model, sheet, 'cornerRadius', 6);
       expect(edit).toBeDefined();
-      expect(edit?.nodeChanges).toHaveLength(2);
+      expect(edit?.elementChanges).toHaveLength(2);
     });
   });
 
   describe('mixed kinds (annotation and group)', () => {
     test('applies one edit across groups when model kind is group', () => {
       const sheet = create(StylesheetSchema, {
-        schemaVersion: 1,
-        nodes: {},
+        schemaVersion: STYLE_SCHEMA_VERSION,
         edges: {},
-        groups: {
+        elements: {
           g1: groupEntry({}),
           g2: groupEntry({}),
         },
@@ -396,7 +383,7 @@ describe('commitShape', () => {
       const model: InspectorModel = { kind: 'group', ids: ['g1', 'g2'], sections: [] };
       const edit = commitShape(model, sheet, 'cornerRadius', 3);
       expect(edit).toBeDefined();
-      expect(edit?.groupChanges).toHaveLength(2);
+      expect(edit?.elementChanges).toHaveLength(2);
     });
   });
 });

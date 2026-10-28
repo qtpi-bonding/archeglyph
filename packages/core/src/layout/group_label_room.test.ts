@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { create } from '@bufbuild/protobuf';
-import { NodeLayoutSchema, GroupLayoutSchema, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
+import { ElementLayoutSchema, BoxLayoutSchema, TypographySchema, Vec2Schema } from '@archeglyph/proto/gen/style_pb';
 import { LocalizationSchema } from '@archeglyph/proto/gen/content_pb';
 import { init } from '@archeglyph/proto/util/init';
 import { ResolvedDiagram } from '../resolver/resolved_diagram';
@@ -23,12 +23,12 @@ const vec = (x: number, y: number) => create(Vec2Schema, { x, y });
 function pinned(): ResolvedDiagram {
   const child = init(new ResolvedNode(), {
     id: 'c', parentGroup: 'g', shape: {} as never, typography: typography(), label: label('x'),
-    layout: create(NodeLayoutSchema, { position: vec(16, 40), size: vec(60, 30) }),
+    layout: create(ElementLayoutSchema, { position: vec(16, 40), size: vec(60, 30) }),
   });
   const group = init(new ResolvedGroup(), {
     id: 'g', shape: {} as never, typography: typography(), label: label(LONG),
     isSuperNode: false, hiddenDescendantCount: 0,
-    layout: create(GroupLayoutSchema, { position: vec(0, 0) }),
+    layout: create(BoxLayoutSchema, { position: vec(0, 0) }),
   });
   return init(new ResolvedDiagram(), {
     id: 'd', canvas: {} as never, nodes: { c: child }, groups: { g: group }, edges: {}, annotations: {},

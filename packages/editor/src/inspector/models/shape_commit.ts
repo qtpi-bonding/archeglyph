@@ -10,7 +10,7 @@ import {
 } from '@archeglyph/proto/gen/style_pb';
 
 import { SHAPE_TABLE } from './shape_names';
-import { styleEdit, nodeChange, groupChange, annotationChange } from '../../state/edits/edit_builder';
+import { styleEdit, elementChange, annotationChange } from '../../state/edits/edit_builder';
 import {
   patchNodeEntry,
   patchGroupEntry,
@@ -25,10 +25,11 @@ import type { Stylesheet, StyleEdit } from '@archeglyph/proto/gen/style_pb';
 
 function getCurrentShapeFieldValue(
   entry: any,
-  field: 'shape' | 'cornerRadius' | 'fill' | 'strokeColor' | 'strokeWidth'
+  field: 'shape' | 'cornerRadius' | 'fill' | 'strokeColor' | 'strokeWidth',
+  glyphKey: 'shape' | 'box' = 'shape',
 ): any {
-  if (!entry?.shape) return undefined;
-  const shape = entry.shape;
+  if (!entry?.[glyphKey]) return undefined;
+  const shape = entry[glyphKey];
 
   if (field === 'cornerRadius') {
     return shape.cornerRadius;
@@ -64,15 +65,19 @@ function getCurrentShapeFieldValue(
  * The path a cleared shape field occupies. `after` merges, so a rebuilt
  * Glyph2D without the field would leave the old value in place.
  */
-function clearedShapePath(field: string, value: unknown): ReadonlyArray<string> {
+function clearedShapePath(
+  field: string,
+  value: unknown,
+  glyphKey: 'shape' | 'box' = 'shape',
+): ReadonlyArray<string> {
   if (value !== undefined) {
     return [];
   }
   const paths: Record<string, string> = {
-    cornerRadius: 'shape.cornerRadius',
-    fill: 'shape.fill',
-    strokeColor: 'shape.stroke.paint',
-    strokeWidth: 'shape.stroke.width',
+    cornerRadius: `${glyphKey}.cornerRadius`,
+    fill: `${glyphKey}.fill`,
+    strokeColor: `${glyphKey}.stroke.paint`,
+    strokeWidth: `${glyphKey}.stroke.width`,
   };
   const path: string | undefined = paths[field];
   return path === undefined ? [] : [path];
@@ -150,10 +155,11 @@ export function commitShape(
     }
   }
 
-  if (model.kind === 'node') {
+  // A closed container is a group drawn as a block: it takes the block shape.
+  if (model.kind === 'node' || (model.kind === 'group' && model.block === true)) {
     const changes = model.ids
       .map((id) => {
-        const existing = stylesheet.nodes[id];
+        const existing = stylesheet.elements[id];
         if (getCurrentShapeFieldValue(existing, field) === value) {
           return undefined;
         }
@@ -164,32 +170,32 @@ export function commitShape(
         }
 
         const patched = patchNodeEntry(existing, { shape: updatedShape });
-        return nodeChange(id, patched, clearedShapePath(field, value));
+        return elementChange(id, patched, clearedShapePath(field, value));
       })
       .filter((c): c is any => c !== undefined);
 
-    return changes.length > 0 ? styleEdit({ nodeChanges: changes }) : undefined;
+    return changes.length > 0 ? styleEdit({ elementChanges: changes }) : undefined;
   }
 
   if (model.kind === 'group') {
     const changes = model.ids
       .map((id) => {
-        const existing = stylesheet.groups[id];
-        if (getCurrentShapeFieldValue(existing, field) === value) {
+        const existing = stylesheet.elements[id];
+        if (getCurrentShapeFieldValue(existing, field, 'box') === value) {
           return undefined;
         }
 
-        const updatedShape = buildUpdatedGlyph2D(existing?.shape, field, value);
+        const updatedShape = buildUpdatedGlyph2D(existing?.box, field, value);
         if (updatedShape === undefined) {
           return undefined;
         }
 
         const patched = patchGroupEntry(existing, { shape: updatedShape });
-        return groupChange(id, patched, clearedShapePath(field, value));
+        return elementChange(id, patched, clearedShapePath(field, value, 'box'));
       })
       .filter((c): c is any => c !== undefined);
 
-    return changes.length > 0 ? styleEdit({ groupChanges: changes }) : undefined;
+    return changes.length > 0 ? styleEdit({ elementChanges: changes }) : undefined;
   }
 
   if (model.kind === 'annotation') {

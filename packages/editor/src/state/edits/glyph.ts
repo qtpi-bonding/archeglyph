@@ -10,7 +10,7 @@ import {
   Stylesheet,
   Typography,
 } from '@archeglyph/proto/gen/style_pb';
-import { annotationChange, edgeChange, groupChange, nodeChange, styleEdit } from './edit_builder';
+import { annotationChange, edgeChange, elementChange, styleEdit } from './edit_builder';
 import { patchAnnotationEntry, patchEdgeEntry, patchGroupEntry, patchNodeEntry } from './entry_patch';
 
 export interface NodeGlyphPatch {
@@ -43,8 +43,8 @@ export interface EdgeGlyphPatch {
 
 export function setGroupsGlyphEdit(stylesheet: Stylesheet, groupIds: ReadonlyArray<string>, patch: GroupGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    groupChanges: groupIds.map((groupId) =>
-      groupChange(groupId, patchGroupEntry(stylesheet.groups[groupId], patch), unsetPaths),
+    elementChanges: groupIds.map((groupId) =>
+      elementChange(groupId, patchGroupEntry(stylesheet.elements[groupId], patch), unsetPaths),
     ),
     description: 'Set glyph on selected groups',
   });
@@ -60,8 +60,8 @@ export interface GroupGlyphPatch {
 
 export function setNodesGlyphEdit(stylesheet: Stylesheet, nodeIds: ReadonlyArray<string>, patch: NodeGlyphPatch, unsetPaths: ReadonlyArray<string> = []): StyleEdit {
   return styleEdit({
-    nodeChanges: nodeIds.map((nodeId) =>
-      nodeChange(nodeId, patchNodeEntry(stylesheet.nodes[nodeId], patch), unsetPaths),
+    elementChanges: nodeIds.map((nodeId) =>
+      elementChange(nodeId, patchNodeEntry(stylesheet.elements[nodeId], patch), unsetPaths),
     ),
     description: 'Set glyph on selected nodes',
   });

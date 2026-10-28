@@ -33,29 +33,36 @@ function opacityOf(host: SVGGElement, selector: string): string | null {
 }
 
 describe('emphasizeProposal', () => {
-  test('draws the parts a proposal touches solid and hides the rest', () => {
+  test('draws the open proposal solid, the others faint, and hides the rest', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note']), true);
+    emphasizeProposal(host, new Set(['annotation:note']), new Set(['element:app']));
 
     expect(opacityOf(host, '#annotation-note')).toBe('1');
-    expect(opacityOf(host, '#node-app')).toBe('0');
-    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
-    host.remove();
-  });
-
-  test('with none open, the parts any proposal touches are faint and the rest hidden', () => {
-    const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note', 'element:app']), false);
-
-    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
     expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
     expect(opacityOf(host, '#edge-app__cache')).toBe('0');
     host.remove();
   });
 
+  test('with none open, every part a proposal changes is faint', () => {
+    const host = ghost();
+    emphasizeProposal(host, new Set(), new Set(['annotation:note', 'element:app']));
+
+    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
+    expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
+    host.remove();
+  });
+
+  test('a proposal that only another one touches stays on the canvas', () => {
+    const host = ghost();
+    emphasizeProposal(host, new Set(['element:app']), new Set(['annotation:note']));
+
+    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
+    host.remove();
+  });
+
   test('an element and an annotation sharing an id are told apart', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:note']), true);
+    emphasizeProposal(host, new Set(['element:note']), new Set());
 
     expect(opacityOf(host, '#annotation-note')).toBe('0');
     host.remove();
@@ -63,7 +70,7 @@ describe('emphasizeProposal', () => {
 
   test('the defs are left alone', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['element:app']), true);
+    emphasizeProposal(host, new Set(['element:app']), new Set());
 
     expect(host.querySelector('defs')!.getAttribute('opacity')).toBeNull();
     host.remove();

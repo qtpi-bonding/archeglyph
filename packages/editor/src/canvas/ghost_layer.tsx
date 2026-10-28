@@ -61,19 +61,13 @@ export const GhostLayer: Component<GhostLayerProps> = (props: GhostLayerProps): 
 };
 
 const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): JSX.Element => {
-  // With a proposal open, only that one is applied: merging them all piles
-  // one proposal's moves on top of another's, and a swap lands on parts the
-  // reader is trying to compare it with.
-  const source = createMemo((): GhostSource => {
-    const open = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
-    return {
-      diagram: props.diagram,
-      stylesheet: open === undefined
-        ? applyAllPendingEdits(props.stylesheet)
-        : applyStyleEditToStylesheet(props.stylesheet, open),
-      themes: props.themes,
-    };
-  });
+  // Always every proposal, whichever is open: a part that exists only in one
+  // (a proposed note) has to stay on the canvas while another is being read.
+  const source = createMemo((): GhostSource => ({
+    diagram: props.diagram,
+    stylesheet: applyAllPendingEdits(props.stylesheet),
+    themes: props.themes,
+  }));
 
   const [svg] = createResource<string, GhostSource>(
     source,
@@ -104,16 +98,12 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
     injectDiagram(host, svg() ?? '');
     // Read after injecting, and tracking the selection, so a re-render keeps
     // the emphasis and a new selection needs no re-render.
-    const selected = props.stylesheet.pendingEdits.find((edit) => edit.id === props.selectedId);
-    if (selected !== undefined) {
-      emphasizeProposal(host, touchedKeys(selected), true);
-    } else {
-      const everything: Set<string> = new Set();
-      for (const edit of props.stylesheet.pendingEdits) {
-        for (const key of touchedKeys(edit)) { everything.add(key); }
-      }
-      emphasizeProposal(host, everything, false);
+    const solid: Set<string> = new Set();
+    const faint: Set<string> = new Set();
+    for (const edit of props.stylesheet.pendingEdits) {
+      for (const key of touchedKeys(edit)) { (edit.id === props.selectedId ? solid : faint).add(key); }
     }
+    emphasizeProposal(host, solid, faint);
   });
 
   return <g ref={host} data-ghost="true" />;
@@ -122,20 +112,27 @@ const GhostRender: Component<GhostRenderProps> = ({ props }: GhostRenderProps): 
 export const GHOST_OPACITY: string = '0.3';
 
 /**
- * Draw only the parts in `touched`, solid when a proposal is open and faint
- * otherwise, and hide every other part. The real diagram already shows the
+ * Draw the parts of the open proposal solid, the parts any other proposal
+ * changes faint, and hide every other part. The real diagram already shows the
  * unchanged parts, and a second copy of one only adds clutter wherever the
  * ghost's layout has shifted off the real one, such as a group resized to fit
  * a moved child. The ghost's markup is one flat <g> per element, so each can
  * take its own opacity; a wrapper's opacity would cap the solid parts at the
  * faint one.
  */
-export function emphasizeProposal(host: SVGGElement, touched: ReadonlySet<string>, solid: boolean): void {
+export function emphasizeProposal(
+  host: SVGGElement,
+  solid: ReadonlySet<string>,
+  faint: ReadonlySet<string>,
+): void {
   for (const child of Array.from(host.children)) {
     if (child.tagName !== 'g') { continue; }
     const key: string | undefined = markupKey(child);
-    const shown: boolean = key !== undefined && touched.has(key);
-    child.setAttribute('opacity', !shown ? '0' : solid ? '1' : GHOST_OPACITY);
+    const opacity: string = key === undefined ? '0'
+      : solid.has(key) ? '1'
+      : faint.has(key) ? GHOST_OPACITY
+      : '0';
+    child.setAttribute('opacity', opacity);
   }
 }
 

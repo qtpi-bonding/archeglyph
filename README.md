@@ -23,13 +23,16 @@ and pick them off disk.
 one from a person, and each is accepted or rejected on its own. The first is
 open, showing the agent's reasoning and a person's reply to it: a purple rule
 marks an agent, a teal one a person. A proposal never touches the saved file
-until it is accepted — it lives in `Stylesheet.pending_edits` and draws as the
-ghost you can see behind the canvas. Regenerate with
+until it is accepted — it lives in `Stylesheet.pending_edits` and draws in
+front of the canvas as a faint picture of just the parts it changes, solid
+for the proposal you have open. Click a faint part, or its row, to open it.
+Regenerate with
 `bun run editor:screenshot`.</sub>
 
 **Status:** pre-1.0. The engine, all seven CLI operations and the visual editor
-are shipped and tested; there is no npm package and no user guide beyond the
-generated CLI reference.
+are shipped and tested. It is run from GitHub with `npx` (see Install), not
+from a package registry, and there is no user guide beyond the generated CLI
+reference.
 
 ## What it is
 
@@ -65,8 +68,27 @@ archeglyph is a kernel + adapters: a general-purpose node/edge engine, with impo
 
 ## Install
 
-**Requires [Bun](https://bun.sh) 1.3 or newer.** The CLI is TypeScript executed
-directly by Bun; there is no build step and no compiled binary.
+There are two ways to run the CLI. Neither uses a package registry.
+
+**From GitHub, nothing to clone.** This needs only Node 20 or newer. It
+downloads the repository and runs the committed bundle, `bin/archeglyph.js`:
+
+```bash
+npx github:qtpi-bonding/archeglyph render \
+  --diagram x.diag.json --style x.style.json --out x.svg
+```
+
+The first run takes about half a minute while it fetches dependencies; later
+ones are cached. Pin a commit or tag for anything that has to stay
+reproducible:
+
+```bash
+npx github:qtpi-bonding/archeglyph#<commit-or-tag> validate --diagram x.diag.json
+```
+
+**From a clone**, to work on archeglyph itself. This needs
+[Bun](https://bun.sh) 1.3 or newer. The source is TypeScript that Bun runs
+directly, so there is no build step:
 
 ```bash
 git clone https://github.com/qtpi-bonding/archeglyph
@@ -74,19 +96,12 @@ cd archeglyph
 bun install
 ```
 
-To use the CLI without cloning, run the committed bundle straight from GitHub.
-It needs only Node 20 or newer, not Bun, and nothing is published to a package
-registry:
+The bundle that `npx` runs is built from the same source with
+`bun run build:cli`. It is committed, and CI fails when the committed copy is
+stale.
 
-```bash
-npx github:qtpi-bonding/archeglyph render --diagram x.diag.json --out x.svg
-```
-
-Pin a commit or tag (`github:qtpi-bonding/archeglyph#<sha>`) in anything you
-want reproducible. The bundle is `bin/archeglyph.js`, rebuilt with
-`bun run build:cli`; CI fails if the committed copy is stale.
-
-Confirm it works by rendering a bundled example:
+Confirm it works by rendering a bundled example (from a clone; with `npx`,
+download the two files from `examples/` first):
 
 ```bash
 bun run archeglyph render \

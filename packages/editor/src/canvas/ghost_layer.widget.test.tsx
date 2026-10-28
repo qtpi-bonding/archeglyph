@@ -32,24 +32,37 @@ function opacityOf(host: SVGGElement, selector: string): string | null {
   return host.querySelector(selector)!.getAttribute('opacity');
 }
 
+function shown(host: SVGGElement, selector: string): boolean {
+  return host.querySelector(selector)!.getAttribute('display') !== 'none';
+}
+
 describe('emphasizeProposal', () => {
-  test('draws the parts a proposal touches solid and hides the rest', () => {
+  test('shows the parts a proposal touches and takes the rest out', () => {
     const host = ghost();
     emphasizeProposal(host, new Set(['annotation:note']), true);
 
+    expect(shown(host, '#annotation-note')).toBe(true);
     expect(opacityOf(host, '#annotation-note')).toBe('1');
-    expect(opacityOf(host, '#node-app')).toBe('0');
-    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
+    expect(shown(host, '#node-app')).toBe(false);
+    expect(shown(host, '#edge-app__cache')).toBe(false);
     host.remove();
   });
 
-  test('with none open, the parts any proposal touches are faint and the rest hidden', () => {
+  test('an open proposal is solid and any other is faint', () => {
     const host = ghost();
-    emphasizeProposal(host, new Set(['annotation:note', 'element:app']), false);
+    emphasizeProposal(host, new Set(['element:app']), false);
 
-    expect(opacityOf(host, '#annotation-note')).toBe(GHOST_OPACITY);
     expect(opacityOf(host, '#node-app')).toBe(GHOST_OPACITY);
-    expect(opacityOf(host, '#edge-app__cache')).toBe('0');
+    host.remove();
+  });
+
+  test('a part comes back when a later call touches it', () => {
+    const host = ghost();
+    emphasizeProposal(host, new Set(), true);
+    expect(shown(host, '#node-app')).toBe(false);
+
+    emphasizeProposal(host, new Set(['element:app']), true);
+    expect(shown(host, '#node-app')).toBe(true);
     host.remove();
   });
 
@@ -57,7 +70,7 @@ describe('emphasizeProposal', () => {
     const host = ghost();
     emphasizeProposal(host, new Set(['element:note']), true);
 
-    expect(opacityOf(host, '#annotation-note')).toBe('0');
+    expect(shown(host, '#annotation-note')).toBe(false);
     host.remove();
   });
 
@@ -65,7 +78,7 @@ describe('emphasizeProposal', () => {
     const host = ghost();
     emphasizeProposal(host, new Set(['element:app']), true);
 
-    expect(host.querySelector('defs')!.getAttribute('opacity')).toBeNull();
+    expect(host.querySelector('defs')!.getAttribute('display')).toBeNull();
     host.remove();
   });
 });

@@ -23,7 +23,7 @@ const forge = {
   authenticate: async (): Promise<void> => {},
   fetchPrComments: async () => [
     { id: '1', body: body('Amber reads as outside the trust boundary.', 'a1b2c3d4e5f60001', 'c00000000000ff01', 'user:reviewer'), author: 'reviewer' },
-    { id: '2', body: body('Swapping these shortens the egress hop.', 'a1b2c3d4e5f60002', 'c00000000000ff02', 'user:reviewer'), author: 'reviewer' },
+    { id: '2', body: body('Dashed reads as optional.', 'a1b2c3d4e5f60002', 'c00000000000ff02', 'user:reviewer'), author: 'reviewer' },
     { id: '3', body: body('Anchor it to the group instead.', 'a1b2c3d4e5f60003', 'c00000000000ff03', 'ai:claude'), author: 'claude' },
   ],
   postPrComment: async (): Promise<void> => {},

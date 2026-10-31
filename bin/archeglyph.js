@@ -13218,9 +13218,7 @@ var mermaidOp = {
     }
     const fence = params.fence === true;
     const body = fence ? `\`\`\`mermaid
-${text}${text.endsWith(`
-`) ? "" : `
-`}\`\`\`
+${text}\`\`\`
 ` : text;
     const outPath = resolve10(ctx.projectRoot, params.out ?? deriveOutPath(params.diagram, fence ? ".md" : ".mmd"));
     await writeFile6(outPath, body, "utf8");

@@ -69,7 +69,7 @@ export const mermaidOp: Operation<MermaidParams, MermaidOutput> = {
     }
 
     const fence = params.fence === true;
-    const body = fence ? `\`\`\`mermaid\n${text}${text.endsWith('\n') ? '' : '\n'}\`\`\`\n` : text;
+    const body = fence ? `\`\`\`mermaid\n${text}\`\`\`\n` : text;
     const outPath = resolve(ctx.projectRoot, params.out ?? deriveOutPath(params.diagram, fence ? '.md' : '.mmd'));
     await writeFile(outPath, body, 'utf8');
 

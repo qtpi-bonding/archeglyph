@@ -25,7 +25,7 @@ const GOLDEN_DIR: string = join(PROJECT_ROOT, 'test', 'goldens');
 const UPDATING: boolean = process.env['UPDATE_GOLDENS'] === '1';
 
 // Mermaid's default limits, so a parse here means a parse in a default viewer.
-const PELE_LIMITS = { limit: 1_000_000, outputLimit: 8_000_000, maxEdges: 10_000 };
+const PELE_LIMITS = { limit: 50_000, outputLimit: 8_000_000, maxEdges: 500 };
 
 const CASES: ReadonlyArray<string> = ['stack-managed', 'pipeline', 'stack-selfhosted'];
 
@@ -53,14 +53,14 @@ function node(id: string, label: string | null, parentGroup?: string): FilteredN
   return init(new FilteredNode(), { id, parentGroup, tags: new Map(), label: label === null ? [] : lab(label) });
 }
 
-function group(id: string, label: string | null, parentGroup?: string): FilteredGroup {
+function group(id: string, label: string | null, parentGroup?: string, block = false): FilteredGroup {
   return init(new FilteredGroup(), {
     id,
     parentGroup,
-    viewRole: 'box',
+    viewRole: block ? 'block' : 'box',
     tags: new Map(),
     label: label === null ? [] : lab(label),
-    isSuperNode: false,
+    isSuperNode: block,
     hiddenDescendantCount: 0,
   });
 }
@@ -121,7 +121,7 @@ describe('mermaid parses in Pele', () => {
   });
 
   test('U+2028 and U+2029 in a label', async () => {
-    await expectParses(mermaidOf(diagram({ nodes: [node('a', 'one two'), node('b', 'x y')] })));
+    await expectParses(mermaidOf(diagram({ nodes: [node('a', 'one\u2028two'), node('b', 'x\u2029y')] })));
   });
 
   test('empty diagram', async () => {
@@ -138,6 +138,10 @@ describe('mermaid parses in Pele', () => {
 
   test('empty-string subgraph label', async () => {
     await expectParses(mermaidOf(diagram({ groups: [group('g', '')], nodes: [node('a', 'A', 'g')] })));
+  });
+
+  test('empty-string closed block label', async () => {
+    await expectParses(mermaidOf(diagram({ groups: [group('g', '', undefined, true)] })));
   });
 
   test('empty-string edge label', async () => {

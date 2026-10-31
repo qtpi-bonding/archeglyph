@@ -4,7 +4,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MERMAID_WARN_EDGES } from '@archeglyph/core/mermaid';
+import { MERMAID_WARN_CHARS, MERMAID_WARN_EDGES } from '@archeglyph/core/mermaid';
 
 import { createOpContext, type OpContext } from '../op';
 import { REGISTRY } from '../registry';
@@ -54,7 +54,7 @@ describe('mermaid op', () => {
     expect(text.split('\n')[0]).toBe('flowchart LR');
     expect(out.bytesWritten).toBe(Buffer.byteLength(text, 'utf8'));
     expect(out.edges).toBe(1);
-    expect(out.nodes).toBeGreaterThanOrEqual(4);
+    expect(out.nodes).toBe(4);
   });
 
   test('fence writes <name>.diag.md wrapped in a mermaid code fence', async () => {
@@ -115,5 +115,22 @@ describe('mermaid op', () => {
     const quiet = spyCtx(small.dir);
     await byName().execute({ diagram: small.diagram }, quiet.ctx);
     expect(quiet.warnings.length).toBe(0);
+  });
+
+  test('crossing the character limit warns once with the count, and still writes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'archeglyph-mermaid-'));
+    const diagram = join(dir, 'wide.diag.json');
+    const source = 'x'.repeat(MERMAID_WARN_CHARS + 1);
+    await writeFile(diagram, JSON.stringify({
+      schemaVersion: 2,
+      id: 'wide',
+      graph: { elements: { A: { label: [{ locale: 'en', source }], tags: {} } }, edges: {} },
+    }), 'utf8');
+    const { ctx, warnings } = spyCtx(dir);
+    const out = (await byName().execute({ diagram }, ctx)) as { outPath: string };
+    expect(warnings.length).toBe(1);
+    expect(warnings[0]).toMatch(/\d+ characters/);
+    expect(warnings[0]).toContain(String(MERMAID_WARN_CHARS));
+    expect((await readFile(out.outPath, 'utf8')).length).toBeGreaterThan(MERMAID_WARN_CHARS);
   });
 });

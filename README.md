@@ -241,7 +241,21 @@ with `bun run code-view`; the picks, depth, hops and kind are at the top of
 `scripts/code_view.ts`.</sub>
 
 archeglyph does not depend on any of it. It is a general node-and-edge engine;
-archegraph is one importer, alongside DOT, Mermaid and JSON later.
+archegraph is one importer, alongside DOT and JSON later.
+
+Mermaid also goes the other way. `archeglyph mermaid` writes a diagram, as its
+stylesheet views it, as Mermaid flowchart text. GitHub renders `mermaid` code
+fences in Markdown, so `--fence` writes the text as a `.md` file ready to paste:
+
+```bash
+bun run archeglyph mermaid \
+  --diagram examples/pipeline.diag.json \
+  --fence
+```
+
+Without `--fence` you get a bare `.mmd` file. `--direction` (`TB`, `BT`, `LR` or
+`RL`; default `LR`) sets the flow. The op warns when the output passes Mermaid's
+default limits of 500 edges or 50,000 characters.
 
 ## How it works (overview)
 

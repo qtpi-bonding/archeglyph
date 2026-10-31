@@ -22,11 +22,11 @@ import { STYLE_SCHEMA_VERSION } from '@archeglyph/proto/schema_version';
 import { init } from '@archeglyph/proto/util/init';
 import { resolveThemes } from '../themes/resolve_themes';
 
-export function deriveOutPath(diagramPath: string): string {
+export function deriveOutPath(diagramPath: string, extension: string = '.svg'): string {
   const ext = extname(diagramPath);
   const base = ext
-    ? basename(diagramPath, ext) + '.svg'
-    : basename(diagramPath) + '.svg';
+    ? basename(diagramPath, ext) + extension
+    : basename(diagramPath) + extension;
   const dir = dirname(diagramPath);
   return dir === '.' ? base : join(dir, base);
 }

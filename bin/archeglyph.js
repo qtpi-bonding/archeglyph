@@ -11999,9 +11999,9 @@ async function resolveThemes(bindings, override, projectRoot) {
 }
 
 // packages/ops/src/render/op.ts
-function deriveOutPath(diagramPath) {
+function deriveOutPath(diagramPath, extension = ".svg") {
   const ext = extname(diagramPath);
-  const base = ext ? basename2(diagramPath, ext) + ".svg" : basename2(diagramPath) + ".svg";
+  const base = ext ? basename2(diagramPath, ext) + extension : basename2(diagramPath) + extension;
   const dir = dirname2(diagramPath);
   return dir === "." ? base : join2(dir, base);
 }
@@ -13063,6 +13063,168 @@ var openOp = {
   }
 };
 
+// packages/ops/src/mermaid/op.ts
+import { access as access6, readFile as readFile8, writeFile as writeFile6 } from "node:fs/promises";
+import { resolve as resolve10 } from "node:path";
+
+// packages/core/src/mermaid/mermaid_text.ts
+var MERMAID_WARN_EDGES = 500;
+var MERMAID_WARN_CHARS = 50000;
+function escapeLabel(text) {
+  return text.replaceAll("#", "#35;").replaceAll('"', "#quot;").replaceAll("<", "#lt;").replaceAll(">", "#gt;").replaceAll("&", "#amp;").replaceAll("`", "#96;").replace(/\r?\n/g, " ");
+}
+function labelOf(label, fallback) {
+  const first = label[0];
+  return first === undefined ? fallback : first.source;
+}
+// packages/core/src/mermaid/to_mermaid.ts
+function isOpen(group) {
+  return group.viewRole === "box";
+}
+function byDefaultOrder(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function toMermaid(diagram, direction) {
+  const ids = [...Object.keys(diagram.nodes), ...Object.keys(diagram.groups)].sort();
+  const opaque = new Map;
+  ids.forEach((id, k) => opaque.set(id, `n${k}`));
+  const edges = Object.values(diagram.edges);
+  for (const e of edges) {
+    for (const end of [e.source, e.target]) {
+      if (!opaque.has(end)) {
+        return Err(`edge '${e.id}' has an endpoint '${end}' that is not in the diagram`);
+      }
+    }
+  }
+  const children = new Map;
+  const roots = [];
+  const place = (id, parent) => {
+    if (parent === undefined || parent === "" || !diagram.groups[parent]) {
+      roots.push(id);
+      return;
+    }
+    const list = children.get(parent);
+    if (list === undefined)
+      children.set(parent, [id]);
+    else
+      list.push(id);
+  };
+  for (const n of Object.values(diagram.nodes))
+    place(n.id, n.parentGroup);
+  for (const g of Object.values(diagram.groups))
+    place(g.id, g.parentGroup);
+  const lines = [`flowchart ${direction}`];
+  const emit = (id, depth) => {
+    const pad = "  ".repeat(depth);
+    const name = opaque.get(id);
+    const group = diagram.groups[id];
+    if (group === undefined) {
+      const text = escapeLabel(labelOf(diagram.nodes[id].label, id));
+      lines.push(`${pad}${name}["${text}"]`);
+    } else if (isOpen(group)) {
+      lines.push(`${pad}subgraph ${name}["${escapeLabel(labelOf(group.label, id))}"]`);
+      for (const child of (children.get(id) ?? []).sort(byDefaultOrder))
+        emit(child, depth + 1);
+      lines.push(`${pad}end`);
+    } else {
+      const base = escapeLabel(labelOf(group.label, id));
+      const text = group.hiddenDescendantCount > 0 ? `${base} (+${group.hiddenDescendantCount})` : base;
+      lines.push(`${pad}${name}[["${text}"]]`);
+    }
+  };
+  for (const id of roots.sort(byDefaultOrder))
+    emit(id, 1);
+  const ordered = edges.sort((a, b) => a.ordinal !== b.ordinal ? a.ordinal - b.ordinal : byDefaultOrder(a.id, b.id));
+  for (const e of ordered) {
+    const text = labelOf(e.label, "");
+    const arrow = text === "" ? "-->" : `-->|"${escapeLabel(text)}"|`;
+    lines.push(`  ${opaque.get(e.source)} ${arrow} ${opaque.get(e.target)}`);
+  }
+  return Ok(lines.join(`
+`) + `
+`);
+}
+// packages/ops/src/mermaid/mermaid_op_error.ts
+class MermaidOpError extends Error {
+  stage;
+  cause;
+}
+
+// packages/ops/src/mermaid/mermaid_output.ts
+class MermaidOutput {
+  outPath;
+  bytesWritten;
+  nodes;
+  edges;
+}
+
+// packages/ops/src/mermaid/mermaid_params.ts
+var rawMermaidParamsSchema = exports_external.object({
+  diagram: exports_external.string().describe("The diagram to convert"),
+  style: exports_external.string().optional().describe("The stylesheet choosing the view; default: the one beside the diagram, if any"),
+  direction: exports_external.enum(["TB", "BT", "LR", "RL"]).optional().describe("Flow direction of the flowchart; default LR"),
+  fence: exports_external.boolean().optional().describe("Wrap the output in a ```mermaid code fence and write a .md file"),
+  out: exports_external.string().optional().describe("Where to write the text; default: beside the diagram, as .mmd (.md with --fence)")
+});
+var mermaidParamsSchema = rawMermaidParamsSchema;
+
+// packages/ops/src/mermaid/op.ts
+var mermaidOp = {
+  name: "mermaid",
+  description: "Convert a diagram, as the stylesheet views it, to Mermaid flowchart text",
+  params: mermaidParamsSchema,
+  format: (o) => `wrote ${o.bytesWritten} bytes (${o.nodes} node(s), ${o.edges} edge(s)) to ${o.outPath}`,
+  async execute(params, ctx) {
+    const diagramPath = resolve10(ctx.projectRoot, params.diagram);
+    const diagramText = await readFile8(diagramPath, "utf8").catch((err) => {
+      throw init(new MermaidOpError, { stage: "load", cause: err });
+    });
+    const diagramResult = await loadDiagram(diagramText);
+    if (diagramResult.kind === "err") {
+      throw init(new MermaidOpError, { stage: "load", cause: diagramResult.error });
+    }
+    const stylePath = params.style !== undefined ? resolve10(ctx.projectRoot, params.style) : deriveDefaultStylePath(diagramPath);
+    const styleExists = params.style !== undefined || await access6(stylePath).then(() => true, () => false);
+    let stylesheet;
+    if (styleExists) {
+      const styleText = await readFile8(stylePath, "utf8").catch((err) => {
+        throw init(new MermaidOpError, { stage: "load", cause: err });
+      });
+      const styleResult = await loadStylesheet(styleText);
+      if (styleResult.kind === "err") {
+        throw init(new MermaidOpError, { stage: "load", cause: styleResult.error });
+      }
+      stylesheet = styleResult.value;
+    }
+    const filtered = new VisibilityFilterImpl().filter(init(new FilterRequest, { diagram: diagramResult.value, stylesheet }));
+    if (filtered.kind === "err") {
+      throw init(new MermaidOpError, { stage: "filter", cause: filtered.error });
+    }
+    const converted = toMermaid(filtered.value, params.direction ?? "LR");
+    if (converted.kind === "err") {
+      throw init(new MermaidOpError, { stage: "convert", cause: new Error(converted.error) });
+    }
+    const text = converted.value;
+    const nodes = Object.keys(filtered.value.nodes).length + Object.keys(filtered.value.groups).length;
+    const edges = Object.keys(filtered.value.edges).length;
+    if (edges > MERMAID_WARN_EDGES) {
+      ctx.logger.warn(`${edges} edges is more than Mermaid draws legibly (over ${MERMAID_WARN_EDGES}); narrow the view with a stylesheet or \`open\``);
+    }
+    if (text.length > MERMAID_WARN_CHARS) {
+      ctx.logger.warn(`${text.length} characters is more than Mermaid renders by default (over ${MERMAID_WARN_CHARS}); narrow the view with a stylesheet or \`open\``);
+    }
+    const fence = params.fence === true;
+    const body = fence ? `\`\`\`mermaid
+${text}${text.endsWith(`
+`) ? "" : `
+`}\`\`\`
+` : text;
+    const outPath = resolve10(ctx.projectRoot, params.out ?? deriveOutPath(params.diagram, fence ? ".md" : ".mmd"));
+    await writeFile6(outPath, body, "utf8");
+    return init(new MermaidOutput, { outPath, bytesWritten: Buffer.byteLength(body, "utf8"), nodes, edges });
+  }
+};
+
 // packages/ops/src/registry.ts
 var REGISTRY = [
   renderOp,
@@ -13072,7 +13234,8 @@ var REGISTRY = [
   bindOp,
   watchOp,
   diffOp,
-  openOp
+  openOp,
+  mermaidOp
 ];
 // packages/ops/src/zod_argv.ts
 import { parseArgs } from "node:util";

@@ -1,7 +1,7 @@
 ---
 name: archeglyph-manual
 description: Command reference for the archeglyph CLI, generated from --help — do not edit by hand.
-manual-source-hash: e98d4a4f08649e427c10af2c718e959447580f5ac92ca2a1c97c86dac417feab
+manual-source-hash: 754466e2fc3083e4b1f524ea7460963e6c157f8effa52a62fc5cc0bf8b07c46f
 ---
 
 # archeglyph command reference
@@ -32,6 +32,7 @@ Subcommands:
   watch     Watch a diagram file and re-render on changes
   diff      Compare two diagram files and emit the change set between them
   open      Choose a view of a diagram: open the elements you name, to a depth, and leave the rest as closed blocks
+  mermaid   Convert a diagram, as the stylesheet views it, to Mermaid flowchart text
   help      Show this help (or pass --help to any subcommand)
 
 Run `archeglyph <subcommand> --help` for per-command details.
@@ -86,6 +87,21 @@ Usage: archeglyph init [options]
 
 Options:
   --name  string  (no description)  [default: diagram]
+```
+
+#### `archeglyph mermaid`
+
+```text
+archeglyph mermaid — Convert a diagram, as the stylesheet views it, to Mermaid flowchart text
+
+Usage: archeglyph mermaid [options]
+
+Options:
+  --diagram    string             The diagram to convert                                                            [required]
+  --style      string             The stylesheet choosing the view; default: the one beside the diagram, if any     [optional]
+  --direction  enum<TB|BT|LR|RL>  Flow direction of the flowchart; default LR                                       [optional]
+  --fence      boolean            Wrap the output in a ```mermaid code fence and write a .md file                   [optional]
+  --out        string             Where to write the text; default: beside the diagram, as .mmd (.md with --fence)  [optional]
 ```
 
 #### `archeglyph open`

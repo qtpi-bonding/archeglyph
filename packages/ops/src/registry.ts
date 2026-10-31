@@ -9,6 +9,7 @@ import { bindOp } from './bind/op';
 import { watchOp } from './watch/op';
 import { diffOp } from './diff/op';
 import { openOp } from './open/op';
+import { mermaidOp } from './mermaid/op';
 
 export const REGISTRY: Operation<unknown, unknown>[] = [
   renderOp as unknown as Operation<unknown, unknown>,
@@ -19,4 +20,5 @@ export const REGISTRY: Operation<unknown, unknown>[] = [
   watchOp as unknown as Operation<unknown, unknown>,
   diffOp as unknown as Operation<unknown, unknown>,
   openOp as unknown as Operation<unknown, unknown>,
+  mermaidOp as unknown as Operation<unknown, unknown>,
 ];

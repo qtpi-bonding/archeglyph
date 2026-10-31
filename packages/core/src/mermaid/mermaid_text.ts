@@ -17,7 +17,7 @@ export function escapeLabel(text: string): string {
     .replaceAll('>', '#gt;')
     .replaceAll('&', '#amp;')
     .replaceAll('`', '#96;')
-    .replace(/\r?\n/g, ' ');
+    .replace(/\r\n|[\n\r\u2028\u2029]/g, ' ');
 }
 
 export function labelOf(label: Localization[], fallback: string): string {

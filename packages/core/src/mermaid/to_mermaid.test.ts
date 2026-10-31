@@ -181,9 +181,14 @@ describe('toMermaid', () => {
     expect(lines).toEqual(['  n1 -->|"second"| n0', '  n0 -->|"first"| n1', '  n0 -->|"third"| n1']);
   });
 
-  test('unlabelled node prints its escaped id; empty label stays empty', () => {
+  test('unlabelled node prints its escaped id; empty label becomes one space', () => {
     const d = diagram({ nodes: [node('a#b', null), node('c', '')] });
-    expect(ok(d)).toBe('flowchart LR\n  n0["a#35;b"]\n  n1[""]\n');
+    expect(ok(d)).toBe('flowchart LR\n  n0["a#35;b"]\n  n1[" "]\n');
+  });
+
+  test('empty subgraph and block labels become one space', () => {
+    const d = diagram({ groups: [group('g', ''), group('h', '', { block: true })] });
+    expect(ok(d)).toBe('flowchart LR\n  subgraph n0[" "]\n  end\n  n1[[" "]]\n');
   });
 
   test('unlabelled group prints its id', () => {

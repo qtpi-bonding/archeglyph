@@ -34,6 +34,15 @@ describe('escapeLabel', () => {
     expect(escapeLabel('a\r\nb')).toBe('a b');
   });
 
+  test('turns a lone carriage return into one space', () => {
+    expect(escapeLabel('a\rb')).toBe('a b');
+  });
+
+  test('turns U+2028 and U+2029 into one space each', () => {
+    expect(escapeLabel('a\u2028b')).toBe('a b');
+    expect(escapeLabel('a\u2029b')).toBe('a b');
+  });
+
   test('passes semicolons through unchanged', () => {
     expect(escapeLabel('a;b')).toBe('a;b');
   });

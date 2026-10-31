@@ -13071,7 +13071,7 @@ import { resolve as resolve10 } from "node:path";
 var MERMAID_WARN_EDGES = 500;
 var MERMAID_WARN_CHARS = 50000;
 function escapeLabel(text) {
-  return text.replaceAll("#", "#35;").replaceAll('"', "#quot;").replaceAll("<", "#lt;").replaceAll(">", "#gt;").replaceAll("&", "#amp;").replaceAll("`", "#96;").replace(/\r?\n/g, " ");
+  return text.replaceAll("#", "#35;").replaceAll('"', "#quot;").replaceAll("<", "#lt;").replaceAll(">", "#gt;").replaceAll("&", "#amp;").replaceAll("`", "#96;").replace(/\r\n|[\n\r\u2028\u2029]/g, " ");
 }
 function labelOf(label, fallback) {
   const first = label[0];
@@ -13080,6 +13080,9 @@ function labelOf(label, fallback) {
 // packages/core/src/mermaid/to_mermaid.ts
 function isOpen(group) {
   return group.viewRole === "box";
+}
+function nonEmpty(text) {
+  return text === "" ? " " : text;
 }
 function byDefaultOrder(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -13119,15 +13122,15 @@ function toMermaid(diagram, direction) {
     const name = opaque.get(id);
     const group = diagram.groups[id];
     if (group === undefined) {
-      const text = escapeLabel(labelOf(diagram.nodes[id].label, id));
+      const text = nonEmpty(escapeLabel(labelOf(diagram.nodes[id].label, id)));
       lines.push(`${pad}${name}["${text}"]`);
     } else if (isOpen(group)) {
-      lines.push(`${pad}subgraph ${name}["${escapeLabel(labelOf(group.label, id))}"]`);
+      lines.push(`${pad}subgraph ${name}["${nonEmpty(escapeLabel(labelOf(group.label, id)))}"]`);
       for (const child of (children.get(id) ?? []).sort(byDefaultOrder))
         emit(child, depth + 1);
       lines.push(`${pad}end`);
     } else {
-      const base = escapeLabel(labelOf(group.label, id));
+      const base = nonEmpty(escapeLabel(labelOf(group.label, id)));
       const text = group.hiddenDescendantCount > 0 ? `${base} (+${group.hiddenDescendantCount})` : base;
       lines.push(`${pad}${name}[["${text}"]]`);
     }

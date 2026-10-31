@@ -15,6 +15,12 @@ function isOpen(group: FilteredGroup): boolean {
   return group.viewRole === 'box';
 }
 
+// Mermaid's parser rejects an empty quoted label (`n0[""]`), so a node or
+// subgraph whose label is empty gets a single space instead.
+function nonEmpty(text: string): string {
+  return text === '' ? ' ' : text;
+}
+
 function byDefaultOrder(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -55,14 +61,14 @@ export function toMermaid(diagram: FilteredDiagram, direction: MermaidDirection)
     const name = opaque.get(id)!;
     const group = diagram.groups[id];
     if (group === undefined) {
-      const text = escapeLabel(labelOf(diagram.nodes[id].label, id));
+      const text = nonEmpty(escapeLabel(labelOf(diagram.nodes[id].label, id)));
       lines.push(`${pad}${name}["${text}"]`);
     } else if (isOpen(group)) {
-      lines.push(`${pad}subgraph ${name}["${escapeLabel(labelOf(group.label, id))}"]`);
+      lines.push(`${pad}subgraph ${name}["${nonEmpty(escapeLabel(labelOf(group.label, id)))}"]`);
       for (const child of (children.get(id) ?? []).sort(byDefaultOrder)) emit(child, depth + 1);
       lines.push(`${pad}end`);
     } else {
-      const base = escapeLabel(labelOf(group.label, id));
+      const base = nonEmpty(escapeLabel(labelOf(group.label, id)));
       const text = group.hiddenDescendantCount > 0 ? `${base} (+${group.hiddenDescendantCount})` : base;
       lines.push(`${pad}${name}[["${text}"]]`);
     }

@@ -115,7 +115,7 @@ describe('mermaid parses in Pele', () => {
     await expectParses(mermaidOf(d));
   });
 
-  // Known gap in escapeLabel: a bare \r or U+2028/U+2029 is not turned into a space.
+  // escapeLabel turns a bare \r into a space; Mermaid may treat it as a line break.
   test('bare carriage return in a label', async () => {
     await expectParses(mermaidOf(diagram({ nodes: [node('a', 'one\rtwo')] })));
   });
@@ -132,12 +132,17 @@ describe('mermaid parses in Pele', () => {
     await expectParses(mermaidOf(diagram({ groups: [group('g', 'Empty')] })));
   });
 
-  // Pele rejects `n0[""]` (Parse error, got 'SQE'); `n0[" "]` parses. Whether
-  // Mermaid itself accepts an empty quoted label is unverified, so this is
-  // pinned as failing rather than fixed in escapeLabel: it goes green the day
-  // the converter or Pele changes, which test.failing reports as a failure.
-  test.failing('empty-string label', async () => {
-    await expectParses(mermaidOf(diagram({ nodes: [node('a', '')], edges: [edge('e', 'a', 'a', 0, '')] })));
+  test('empty-string node label', async () => {
+    await expectParses(mermaidOf(diagram({ nodes: [node('a', '')] })));
+  });
+
+  test('empty-string subgraph label', async () => {
+    await expectParses(mermaidOf(diagram({ groups: [group('g', '')], nodes: [node('a', 'A', 'g')] })));
+  });
+
+  test('empty-string edge label', async () => {
+    const d = diagram({ nodes: [node('a', 'A'), node('b', 'B')], edges: [edge('e', 'a', 'b', 0, '')] });
+    await expectParses(mermaidOf(d));
   });
 
   test('edge from a child to its own ancestor container', async () => {

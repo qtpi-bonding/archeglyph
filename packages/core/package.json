@@ -12,7 +12,8 @@
     "./renderer/*": "./src/renderer/*/index.ts",
     "./validator/*": "./src/validator/*/index.ts",
     "./pipeline": "./src/pipeline/index.ts",
-    "./diff": "./src/diff/index.ts"
+    "./diff": "./src/diff/index.ts",
+    "./mermaid": "./src/mermaid/index.ts"
   },
   "dependencies": {
     "@archeglyph/proto": "*",

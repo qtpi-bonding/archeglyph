@@ -1,0 +1,14 @@
+flowchart LR
+  n0["Django + HTMX"]
+  n1["Caddy"]
+  subgraph n3["Self-hosted"]
+    n2["Keycloak"]
+    n4["Postgres"]
+    n6["Valkey"]
+  end
+  n5["restic"]
+  n0 --> n2
+  n0 --> n4
+  n0 --> n6
+  n1 --> n0
+  n4 --> n5

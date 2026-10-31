@@ -27,7 +27,7 @@
     "build:editor": "bun run --filter @archeglyph/editor build",
     "dev:editor": "bun run --filter @archeglyph/editor dev",
     "test": "bun test --conditions browser --preload ./test/solid_preload.ts",
-    "test:golden:update": "UPDATE_GOLDENS=1 bun test --conditions browser --preload ./test/solid_preload.ts test/golden_render.test.ts"
+    "test:golden:update": "UPDATE_GOLDENS=1 bun test --conditions browser --preload ./test/solid_preload.ts test/golden_render.test.ts test/golden_mermaid.test.ts"
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
@@ -42,6 +42,7 @@
     "babel-preset-solid": "1.9.15",
     "fast-check": "4.10.1",
     "happy-dom": "20.14.5",
+    "pele": "1.9.0",
     "typescript": "^5.6.0"
   },
   "dependencies": {

@@ -1,0 +1,16 @@
+flowchart LR
+  subgraph n0["@archeglyph/core"]
+    n2["layout"]
+    n3["load"]
+    n4["render"]
+    n5["resolve"]
+  end
+  n1["diagram.json"]
+  n6["style.json"]
+  n7["out.svg"]
+  n1 --> n3
+  n2 --> n4
+  n3 --> n5
+  n4 --> n7
+  n5 --> n2
+  n6 --> n3

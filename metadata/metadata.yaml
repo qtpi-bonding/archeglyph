@@ -21,12 +21,6 @@ public:
     alt: Blueprint-themed stack diagram rendered by archeglyph - Heroku and Django feeding four managed services
     fit: contain
     background: '#0f1626'
-private:
-  started: 2026-05
-  visibility: public
-  license: MPL-2.0
-  ownership: designed and directed; code written with AI assistance
-  build: agentic
 facts:
 - id: deterministic-svg
   state: working
